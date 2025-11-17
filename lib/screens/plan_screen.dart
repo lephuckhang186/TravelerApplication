@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/user_service.dart';
 
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key});
@@ -9,6 +10,28 @@ class PlanScreen extends StatefulWidget {
 }
 
 class _PlanScreenState extends State<PlanScreen> {
+  String _currentUsername = 'User';
+  String _displayName = 'User';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+  
+  void _loadUserData() async {
+    final userService = UserService();
+    final profile = userService.getUserProfile();
+    final username = await userService.getDisplayName();
+    
+    setState(() {
+      _currentUsername = username;
+      _displayName = profile['fullName']?.isNotEmpty == true 
+          ? profile['fullName']! 
+          : username;
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +115,7 @@ class _PlanScreenState extends State<PlanScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Kiệt Milo',
+                        _displayName,
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
