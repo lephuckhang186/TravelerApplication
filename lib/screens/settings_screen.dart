@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
+import '../services/user_service.dart';
+import 'auth_screen.dart';
+import 'profile_edit_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,6 +17,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _emailNotificationEnabled = true;
   bool _locationServicesEnabled = true;
   bool _darkModeEnabled = true;
+  
+  String _currentUsername = 'User';
+  String? _currentAvatarPath;
+  String _displayName = 'User';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+  
+  void _loadUserData() async {
+    final userService = UserService();
+    final profile = userService.getUserProfile();
+    final username = await userService.getDisplayName();
+    
+    setState(() {
+      _currentUsername = username;
+      _displayName = profile['fullName']?.isNotEmpty == true 
+          ? profile['fullName']! 
+          : username;
+      _currentAvatarPath = profile['avatarPath'];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,42 +108,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: Colors.grey[200],
                 ),
                 child: ClipOval(
-                  child: Image.asset(
-                    'images/hanoi.jpg',
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      print('Error loading kietmilo.jpg: $error');
-                      // Try fallback to an existing image
-                      return ClipOval(
-                        child: Image.asset(
-                          'images/hcmc_skyline.jpg',
+                  child: _currentAvatarPath != null
+                      ? Image.file(
+                          File(_currentAvatarPath!),
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error2, stackTrace2) {
-                            print('Error loading fallback image: $error2');
-                            return Container(
-                              width: 80,
-                              height: 80,
-                              decoration: const BoxDecoration(
-                                color: Colors.black,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 32,
-                                ),
-                              ),
-                            );
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildDefaultAvatar();
                           },
-                        ),
-                      );
-                    },
-                  ),
+                        )
+                      : _buildDefaultAvatar(),
                 ),
               ),
             ),
@@ -124,9 +127,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         
         const SizedBox(height: 12),
         
-        // Phone Number
+        // Display Name
         Text(
-          'Kiệt Milo',
+          _displayName,
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -134,6 +137,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Build default avatar with user initial
+  Widget _buildDefaultAvatar() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: const BoxDecoration(
+        color: Color(0xFF7B61FF),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'U',
+          style: GoogleFonts.inter(
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 
@@ -324,6 +349,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 () => _onFAQ(),
                 showArrow: true,
               ),
+              _buildDivider(),
+              _buildSettingsItem(
+                Icons.logout,
+                'Log out',
+                () => _onLogout(),
+                showArrow: false,
+              ),
             ],
           ),
         ),
@@ -494,52 +526,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _onEditProfile() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          'Edit Profile',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showMessage('Profile updated!');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7B61FF),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Save'),
-          ),
-        ],
+  void _onEditProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileEditScreen(),
       ),
     );
+    
+    // Reload user data if profile was updated
+    if (result == true) {
+      _loadUserData();
+    }
   }
 
   void _onChangePassword() {
@@ -838,6 +836,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Colors.grey[700],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onLogout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          'Đăng xuất',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
+          style: GoogleFonts.inter(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Hủy',
+              style: GoogleFonts.inter(color: Colors.grey[600]),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              // Show loading indicator
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+              
+              // Logout user
+              final userService = UserService();
+              await userService.logout();
+              
+              // Close loading dialog
+              Navigator.pop(context);
+              
+              // Navigate to auth screen
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const AuthScreen()),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Đăng xuất', style: GoogleFonts.inter()),
           ),
         ],
       ),
