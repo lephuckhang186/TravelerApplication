@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'home_screen.dart';
+import 'auth_screen.dart';
+import '../services/user_service.dart';
 
 /// Modern Loading Screen - Gen Z Vibes 🚀
 class LoadingScreen extends StatefulWidget {
@@ -53,11 +55,15 @@ class _LoadingScreenState extends State<LoadingScreen>
     _rotationController.repeat();
 
     // Navigate after 2.5 seconds
-    Timer(const Duration(milliseconds: 2500), () {
+    Timer(const Duration(milliseconds: 2500), () async {
       if (mounted) {
+        final userService = UserService();
+        final isLoggedIn = await userService.isLoggedIn();
+        
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+            pageBuilder: (context, animation, secondaryAnimation) => 
+                isLoggedIn ? const HomeScreen() : const AuthScreen(),
             transitionDuration: const Duration(milliseconds: 800),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return FadeTransition(

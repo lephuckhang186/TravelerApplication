@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/loading_screen.dart';
+import 'services/user_service.dart';
 // import 'dart:async'; // Tạm thời comment vì không dùng Timer
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize UserService
+  await UserService().init();
+  
   runApp(
     DevicePreview(
       enabled: true, // Bật mô phỏng thiết bị
