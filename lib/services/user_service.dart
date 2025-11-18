@@ -1,6 +1,8 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bcrypt/bcrypt.dart';
 
 class UserService {
   static const String _keyUsername = 'username';
@@ -32,6 +34,46 @@ class UserService {
       _currentEmail = prefs.getString('${_keyEmail}_$_currentUsername');
       _currentFullName = prefs.getString('${_keyFullName}_$_currentUsername');
     }
+    
+    // Also try to load user from JSON if SharedPreferences is empty
+    if (_currentUsername == null) {
+      await _loadUserFromJson();
+    }
+  }
+  
+  // Load user from JSON file
+  Future<void> _loadUserFromJson() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/users.json');
+      
+      if (await file.exists()) {
+        final jsonString = await file.readAsString();
+        if (jsonString.isNotEmpty) {
+          final List<dynamic> jsonList = jsonDecode(jsonString);
+          final List<Map<String, dynamic>> users = jsonList.cast<Map<String, dynamic>>();
+          
+          // If there's at least one user, we can auto-load the last one
+          // (In a real app, you'd implement proper session management)
+          if (users.isNotEmpty) {
+            final lastUser = users.last;
+            final username = lastUser['username'] as String;
+            
+            // Set as current user in SharedPreferences for next login
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_keyUsername, username);
+            _currentUsername = username;
+            
+            // Load profile data if exists
+            _currentAvatarPath = prefs.getString('${_keyAvatarPath}_$username');
+            _currentEmail = prefs.getString('${_keyEmail}_$username');
+            _currentFullName = prefs.getString('${_keyFullName}_$username');
+          }
+        }
+      }
+    } catch (e) {
+      // Handle error silently
+    }
   }
   
   // Register user
@@ -59,8 +101,8 @@ class UserService {
       final prefs = await SharedPreferences.getInstance();
       
       // Check credentials
-      final savedPassword = prefs.getString('user_$username');
-      if (savedPassword == password) {
+      final savedHashedPassword = prefs.getString('user_$username');
+      if (savedHashedPassword != null && BCrypt.checkpw(password, savedHashedPassword)) {
         // Save login state
         await prefs.setString(_keyUsername, username);
         await prefs.setBool(_keyIsLoggedIn, true);
@@ -215,14 +257,95 @@ class UserService {
       if (_currentUsername == null) return false;
       
       final prefs = await SharedPreferences.getInstance();
-      final savedPassword = prefs.getString('user_$_currentUsername');
+      final savedHashedPassword = prefs.getString('user_$_currentUsername');
       
-      if (savedPassword != currentPassword) {
+      if (savedHashedPassword == null || !BCrypt.checkpw(currentPassword, savedHashedPassword)) {
         return false; // Current password is incorrect
       }
       
-      await prefs.setString('user_$_currentUsername', newPassword);
+      // Hash new password before saving
+      final newHashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+      await prefs.setString('user_$_currentUsername', newHashedPassword);
       return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Save user to JSON file
+  Future<bool> saveUserToJson(String username, String passwordHash, String email) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/users.json');
+      
+      List<Map<String, dynamic>> users = [];
+      
+      // Read existing users if file exists
+      if (await file.exists()) {
+        final jsonString = await file.readAsString();
+        if (jsonString.isNotEmpty) {
+          final List<dynamic> jsonList = jsonDecode(jsonString);
+          users = jsonList.cast<Map<String, dynamic>>();
+        }
+      }
+      
+      // Check if user already exists and update, otherwise add new
+      final existingUserIndex = users.indexWhere((user) => user['username'] == username);
+      final userData = {
+        'username': username,
+        'passwordHash': passwordHash,
+        'email': email,
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+      
+      if (existingUserIndex >= 0) {
+        users[existingUserIndex] = userData;
+      } else {
+        users.add(userData);
+      }
+      
+      // Write back to file
+      final jsonString = jsonEncode(users);
+      await file.writeAsString(jsonString);
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Update email in JSON file
+  Future<bool> updateEmailInJson(String username, String email) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/users.json');
+      
+      if (!await file.exists()) {
+        return false; // File doesn't exist
+      }
+      
+      final jsonString = await file.readAsString();
+      if (jsonString.isEmpty) {
+        return false; // Empty file
+      }
+      
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      final List<Map<String, dynamic>> users = jsonList.cast<Map<String, dynamic>>();
+      
+      // Find and update user
+      final userIndex = users.indexWhere((user) => user['username'] == username);
+      if (userIndex >= 0) {
+        users[userIndex]['email'] = email;
+        users[userIndex]['updatedAt'] = DateTime.now().toIso8601String();
+        
+        // Write back to file
+        final updatedJsonString = jsonEncode(users);
+        await file.writeAsString(updatedJsonString);
+        
+        return true;
+      }
+      
+      return false; // User not found
     } catch (e) {
       return false;
     }
