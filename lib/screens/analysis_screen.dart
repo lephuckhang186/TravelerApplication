@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../core/theme/app_theme.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -41,7 +42,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -72,19 +73,19 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: AppColors.background,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: AppColors.support),
               ),
               child: Row(
                 children: [
                   const SizedBox(width: 12),
-                  Icon(Icons.search, color: Colors.grey[600], size: 20),
+                  Icon(Icons.search, color: AppColors.textSecondary, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Search for transactions',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         color: Colors.grey[600],
                         fontSize: 14,
                       ),
@@ -190,7 +191,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.grey[200] : Colors.transparent,
+            color: isSelected ? AppColors.support : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -204,7 +205,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected ? Colors.black87 : Colors.grey[600],
@@ -352,7 +353,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                 const SizedBox(width: 8),
                 Text(
                   '${_months[_currentMonthIndex]}/$_currentYear',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -400,7 +401,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
             child: Center(
               child: Text(
                 '$day',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected ? Colors.orange[800] : Colors.black87,
@@ -455,14 +456,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                     children: [
                       Text(
                         expense['title'] as String,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         expense['date'] as String,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 12,
                           color: Colors.grey[600],
                         ),
@@ -472,7 +473,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                 ),
                 Text(
                   expense['amount'] as String,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.red[700],
@@ -520,21 +521,21 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                   title: '85%\nFixed Cost',
                   radius: 50,
                   color: Colors.grey[300]!,
-                  titleStyle: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600),
+                  titleStyle: GoogleFonts.quattrocento(fontSize: 10, fontWeight: FontWeight.w600),
                 ),
                 PieChartSectionData(
                   value: 509,
                   title: '509%\nLiving Exp',
                   radius: 60,
                   color: Colors.orange[400]!,
-                  titleStyle: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600),
+                  titleStyle: GoogleFonts.quattrocento(fontSize: 10, fontWeight: FontWeight.w600),
                 ),
                 PieChartSectionData(
                   value: 22,
                   title: '22%\nOthers',
                   radius: 45,
                   color: Colors.grey[400]!,
-                  titleStyle: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600),
+                  titleStyle: GoogleFonts.quattrocento(fontSize: 10, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -585,7 +586,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
             child: Text(
               'CHI TIÊU THÁNG NÀY\n+1.500.000đ',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -598,7 +599,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         
         Text(
           'Hiện không có thông tin gì thêm',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 12,
             color: Colors.grey[600],
           ),
@@ -632,10 +633,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('1.5M', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
-                      Text('1M', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
-                      Text('500K', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
-                      Text('0', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+                      Text('1.5M', style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[600])),
+                      Text('1M', style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[600])),
+                      Text('500K', style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[600])),
+                      Text('0', style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[600])),
                     ],
                   ),
                 ),
@@ -710,7 +711,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                 return Text(
                   item['month'] as String,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14, 
                     fontWeight: FontWeight.w500,
                     color: Colors.grey[700],
@@ -745,7 +746,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: isSelected ? Colors.amber[600] : Colors.black,
@@ -801,7 +802,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                 Expanded(
                   child: Text(
                     category['title'] as String,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -809,7 +810,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                 ),
                 Text(
                   category['amount'] as String,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),

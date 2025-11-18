@@ -65,7 +65,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       appBar: AppBar(
         title: Text(
           'Edit Profile',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -111,7 +111,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       children: [
         Text(
           'Avatar',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -159,7 +159,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           onTap: _showImagePickerOptions,
           child: Text(
             'Change profile picture',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF7B61FF),
@@ -183,7 +183,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       child: Center(
         child: Text(
           _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'U',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 48,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -206,7 +206,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         children: [
           Text(
             'Thông tin cá nhân',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -228,7 +228,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               filled: true,
               fillColor: Colors.grey[100],
             ),
-            style: GoogleFonts.inter(color: Colors.grey[600]),
+            style: GoogleFonts.quattrocento(color: Colors.grey[600]),
           ),
           
           const SizedBox(height: 16),
@@ -247,7 +247,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
               ),
             ),
-            style: GoogleFonts.inter(fontSize: 16),
+            style: GoogleFonts.quattrocento(fontSize: 16),
           ),
           
           const SizedBox(height: 16),
@@ -266,7 +266,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
               ),
             ),
-            style: GoogleFonts.inter(fontSize: 16),
+            style: GoogleFonts.quattrocento(fontSize: 16),
             validator: (value) {
               if (value != null && value.isNotEmpty && !value.contains('@')) {
                 return 'Email không hợp lệ';
@@ -292,7 +292,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         children: [
           Text(
             'Thay đổi mật khẩu (tùy chọn)',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -303,7 +303,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           
           Text(
             'Để trống nếu không muốn thay đổi mật khẩu',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 12,
               color: Colors.grey[600],
             ),
@@ -329,7 +329,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
                 ),
               ),
-              style: GoogleFonts.inter(fontSize: 16),
+              style: GoogleFonts.quattrocento(fontSize: 16),
               validator: (value) {
                 // Only validate if user is trying to change password
                 if (_isPasswordChangeAttempted() && (value?.isEmpty ?? true)) {
@@ -360,7 +360,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
                 ),
               ),
-              style: GoogleFonts.inter(fontSize: 16),
+              style: GoogleFonts.quattrocento(fontSize: 16),
               validator: (value) {
                 if (_isPasswordChangeAttempted()) {
                   if (value?.isEmpty ?? true) {
@@ -395,7 +395,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
                 ),
               ),
-              style: GoogleFonts.inter(fontSize: 16),
+              style: GoogleFonts.quattrocento(fontSize: 16),
               validator: (value) {
                 if (_isPasswordChangeAttempted()) {
                   if (value?.isEmpty ?? true) {
@@ -438,7 +438,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               )
             : Text(
                 'Lưu thay đổi',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -467,7 +467,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           children: [
             Text(
               'Chọn ảnh đại diện',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -475,7 +475,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             const SizedBox(height: 24),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Color(0xFF7B61FF)),
-              title: Text('Chụp ảnh', style: GoogleFonts.inter()),
+              title: Text('Chụp ảnh', style: GoogleFonts.quattrocento()),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
@@ -483,7 +483,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: Color(0xFF7B61FF)),
-              title: Text('Chọn từ thư viện', style: GoogleFonts.inter()),
+              title: Text('Chọn từ thư viện', style: GoogleFonts.quattrocento()),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -492,7 +492,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             if (_currentAvatarPath != null || _selectedImage != null)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: Text('Xóa ảnh đại diện', style: GoogleFonts.inter()),
+                title: Text('Xóa ảnh đại diện', style: GoogleFonts.quattrocento()),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() {

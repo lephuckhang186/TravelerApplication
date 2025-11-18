@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
 import 'home_screen.dart';
 import 'package:bcrypt/bcrypt.dart';
+import '../core/theme/app_theme.dart';
 
 /// AuthScreen - Main authentication screen for the TripWise app
 /// 
@@ -129,7 +130,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.background,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -142,17 +143,17 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           child: const Icon(
             Icons.trending_up, /// Travel/growth icon representing the app's purpose
             size: 40,
-            color: Color(0xFF7B61FF),
+            color: AppColors.accent,
           ),
         ),
         const SizedBox(height: 24),
         /// App title with custom font styling
         Text(
           'TripWise',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 32,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: AppColors.textOnAccent,
             letterSpacing: -1,
           ),
         ),
@@ -160,9 +161,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         /// Dynamic subtitle that changes based on current mode
         Text(
           _isLogin ? 'Đăng nhập vào tài khoản' : 'Tạo tài khoản mới',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
-            color: Colors.white.withOpacity(0.8),
+            color: AppColors.textOnAccent.withOpacity(0.8),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -263,7 +264,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   onTap: _showForgotPasswordDialog,
                   child: Text(
                     'Quên mật khẩu?',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       color: const Color(0xFF7B61FF),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -299,7 +300,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     )
                   : Text(
                       _isLogin ? 'Đăng nhập' : 'Đăng ký', /// Dynamic button text
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -331,28 +332,28 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       controller: controller,
       obscureText: obscureText,
       validator: validator,
-      style: GoogleFonts.inter(fontSize: 16),
+      style: GoogleFonts.quattrocento(fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFF7B61FF)),
+        prefixIcon: Icon(icon, color: AppColors.accent),
         suffixIcon: suffixIcon,
         /// Default border style
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          borderSide: const BorderSide(color: AppColors.support),
         ),
         /// Focused border style with purple accent
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
+          borderSide: const BorderSide(color: AppColors.accent, width: 2),
         ),
         /// Enabled border style
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          borderSide: const BorderSide(color: AppColors.support),
         ),
         filled: true,
-        fillColor: Colors.grey[50], /// Light background fill
+        fillColor: AppColors.background, /// Light background fill
       ),
     );
   }
@@ -366,7 +367,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         /// Contextual text based on current mode
         Text(
           _isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? ',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             color: Colors.white.withOpacity(0.8),
             fontSize: 14,
           ),
@@ -385,7 +386,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           }),
           child: Text(
             _isLogin ? 'Đăng ký ngay' : 'Đăng nhập', /// Dynamic button text
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -560,7 +561,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Đặt lại mật khẩu',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF7B61FF),
@@ -574,7 +575,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 /// Instructions for the user
                 Text(
                   'Nhập tên đăng nhập và mật khẩu mới',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     color: Colors.grey[600],
                   ),
@@ -663,7 +664,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               onPressed: isLoading ? null : () => Navigator.pop(context),
               child: Text(
                 'Hủy',
-                style: GoogleFonts.inter(color: Colors.grey[600]),
+                style: GoogleFonts.quattrocento(color: Colors.grey[600]),
               ),
             ),
             /// Submit button with loading state
@@ -725,7 +726,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Text('Đặt lại', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  : Text('Đặt lại', style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
