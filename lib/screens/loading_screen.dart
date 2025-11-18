@@ -136,7 +136,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                           
                           // App name with modern typography
                           Text(
-                            'MoneyFlow',
+                            'TripWise',
                             style: Theme.of(context).textTheme.displayMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
