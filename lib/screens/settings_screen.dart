@@ -140,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         // Display Name
         Text(
           _displayName,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -162,7 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
       child: Center(
         child: Text(
           _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'U',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 32,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -224,7 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Notification',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -272,7 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Privacy & Security',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -327,7 +327,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Help & Support',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -408,7 +408,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -455,7 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
@@ -557,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Change Password',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -621,7 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           children: [
             Text(
               'Select Language',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -671,7 +671,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           children: [
             Text(
               'Select Currency',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -712,7 +712,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Privacy Policy',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
         ),
         content: const SingleChildScrollView(
           child: Text(
@@ -746,7 +746,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           children: [
             Text(
               'Contact Us',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -793,7 +793,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           appBar: AppBar(
             title: Text(
               'FAQ',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
             ),
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
@@ -831,7 +831,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
       child: ExpansionTile(
         title: Text(
           question,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontWeight: FontWeight.w600,
             fontSize: 14,
           ),
@@ -841,7 +841,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             padding: const EdgeInsets.all(16),
             child: Text(
               answer,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 14,
                 color: Colors.grey[700],
               ),
@@ -859,18 +859,18 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đăng xuất',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
-          style: GoogleFonts.inter(),
+          style: GoogleFonts.quattrocento(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: GoogleFonts.inter(color: Colors.grey[600]),
+              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
             ),
           ),
           ElevatedButton(
@@ -903,7 +903,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Đăng xuất', style: GoogleFonts.inter()),
+            child: Text('Đăng xuất', style: GoogleFonts.quattrocento()),
           ),
         ],
       ),

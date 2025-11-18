@@ -126,7 +126,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                     Expanded(
                       child: Text(
                         _displayName,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -174,7 +174,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
       children: [
         Text(
           'Jump back in',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -267,7 +267,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                       child: Center(
                         child: Text(
                           title,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.quattrocento(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -297,7 +297,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
           children: [
             Text(
               'Private',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -363,7 +363,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -406,7 +406,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
           children: [
             Text(
               'Collaborations',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -472,7 +472,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                         ),
                         child: Text(
                           '01',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.quattrocento(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Colors.grey[600],
@@ -486,7 +486,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
               const SizedBox(height: 16),
               Text(
                 'Uh oh! There is not anyone yet!',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 16,
                   color: Colors.grey[600],
                 ),
@@ -537,7 +537,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                     Expanded(
                       child: Text(
                         'Ask, chat, plan trip with AI...',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
