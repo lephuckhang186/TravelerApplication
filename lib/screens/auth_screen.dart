@@ -443,8 +443,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
       if (_isLogin) {
         /// LOGIN FLOW: Send raw password - server handles bcrypt comparison
-        success = await userService.login(username, password);
-        message = success ? 'Đăng nhập thành công!' : 'Tên đăng nhập hoặc mật khẩu không đúng';
+        final loginResult = await userService.loginWithDetails(username, password);
+        success = loginResult['success'] ?? false;
         
         if (success) {
           /// Reset security counters on successful login
@@ -452,16 +452,24 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           _lockUntil = null;
           /// Load user data after successful login
           await userService.init();
+          message = 'Đăng nhập thành công!';
         } else {
-          /// Handle failed login attempts with progressive security
-          _failCount += 1;
-          if (_failCount >= 3) {
-            /// Lock login for 30 seconds after 3 failed attempts
-            _lockUntil = DateTime.now().add(const Duration(seconds: 30));
-            _failCount = 0;
-            message = 'Bạn đã nhập sai 3 lần. Hãy thử lại sau 30 giây.';
+          /// Check if user exists or wrong password
+          final userExists = loginResult['userExists'] ?? false;
+          if (!userExists) {
+            message = 'Tài khoản này chưa được đăng ký. Vui lòng đăng ký trước.';
+            _failCount = 0; // Don't count as failed attempt for non-existent user
           } else {
-            message = 'Sai mật khẩu. Bạn còn ${3 - _failCount} lần.';
+            /// Handle failed login attempts with progressive security
+            _failCount += 1;
+            if (_failCount >= 3) {
+              /// Lock login for 30 seconds after 3 failed attempts
+              _lockUntil = DateTime.now().add(const Duration(seconds: 30));
+              _failCount = 0;
+              message = 'Bạn đã nhập sai 3 lần. Hãy thử lại sau 30 giây.';
+            } else {
+              message = 'Sai mật khẩu. Bạn còn ${3 - _failCount} lần thử.';
+            }
           }
         }
       } else {

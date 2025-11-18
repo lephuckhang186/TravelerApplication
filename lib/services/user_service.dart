@@ -120,6 +120,50 @@ class UserService {
     }
   }
   
+  // Login user with detailed information about success/failure reason
+  Future<Map<String, dynamic>> loginWithDetails(String username, String password) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Check if user exists
+      final savedHashedPassword = prefs.getString('user_$username');
+      if (savedHashedPassword == null) {
+        return {
+          'success': false,
+          'userExists': false,
+        };
+      }
+      
+      // Check password
+      if (BCrypt.checkpw(password, savedHashedPassword)) {
+        // Save login state
+        await prefs.setString(_keyUsername, username);
+        await prefs.setBool(_keyIsLoggedIn, true);
+        _currentUsername = username;
+        
+        // Load user profile data
+        _currentAvatarPath = prefs.getString('${_keyAvatarPath}_$username');
+        _currentEmail = prefs.getString('${_keyEmail}_$username');
+        _currentFullName = prefs.getString('${_keyFullName}_$username');
+        
+        return {
+          'success': true,
+          'userExists': true,
+        };
+      } else {
+        return {
+          'success': false,
+          'userExists': true,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'userExists': false,
+      };
+    }
+  }
+  
   // Logout user
   Future<void> logout() async {
     try {
