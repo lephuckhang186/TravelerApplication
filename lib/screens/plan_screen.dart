@@ -9,14 +9,23 @@ class PlanScreen extends StatefulWidget {
   State<PlanScreen> createState() => _PlanScreenState();
 }
 
-class _PlanScreenState extends State<PlanScreen> {
+class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMixin {
   String _currentUsername = 'User';
   String _displayName = 'User';
+  
+  @override
+  bool get wantKeepAlive => false; // Don't keep alive so it refreshes
   
   @override
   void initState() {
     super.initState();
     _loadUserData();
+  }
+  
+  @override
+  void didUpdateWidget(PlanScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadUserData(); // Refresh when widget updates
   }
   
   void _loadUserData() async {
@@ -34,6 +43,7 @@ class _PlanScreenState extends State<PlanScreen> {
   
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

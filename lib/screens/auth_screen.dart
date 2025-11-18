@@ -1,8 +1,19 @@
+/// Import necessary packages for authentication functionality
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
 import 'home_screen.dart';
+import 'package:bcrypt/bcrypt.dart';
 
+/// AuthScreen - Main authentication screen for the TripWise app
+/// 
+/// This screen provides both login and registration functionality with:
+/// - Form validation
+/// - Password security features (bcrypt hashing)
+/// - Login attempt limiting (3 attempts with 30s lockout)
+/// - Smooth animations and modern UI
+/// - Forgot password functionality
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -11,76 +22,93 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
-  bool _isLogin = true;
-  bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
+  /// UI state variables
+  bool _isLogin = true; /// Toggle between login and registration mode
+  bool _isLoading = false; /// Loading state for async operations
+  bool _obscurePassword = true; /// Password visibility toggle
+  bool _obscureConfirmPassword = true; /// Confirm password visibility toggle
   
-  final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  /// Form controllers and validation
+  final _formKey = GlobalKey<FormState>(); /// Form validation key
+  final _usernameController = TextEditingController(); /// Username input controller
+  final _passwordController = TextEditingController(); /// Password input controller
+  final _confirmPasswordController = TextEditingController(); /// Confirm password input controller
   
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+  /// Security features: Login attempt limiting
+  int _failCount = 0; /// Number of failed login attempts
+  DateTime? _lockUntil; /// Timestamp when login will be unlocked
+  
+  /// Animation controllers for smooth UI transitions
+  late AnimationController _fadeController; /// Controls fade-in animation
+  late Animation<double> _fadeAnimation; /// Fade animation definition
 
+  /// Initialize animation controllers and start fade-in animation
+  /// when the widget is first created
   @override
   void initState() {
     super.initState();
+    /// Setup fade animation controller
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+    /// Create smooth fade-in animation
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
+    /// Start the fade-in animation
     _fadeController.forward();
   }
 
+  /// Clean up resources when the widget is disposed
+  /// to prevent memory leaks
   @override
   void dispose() {
-    _fadeController.dispose();
-    _usernameController.dispose();
+    _fadeController.dispose(); /// Dispose animation controller
+    _usernameController.dispose(); /// Dispose text controllers
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  /// Main build method that creates the authentication screen UI
+  /// with gradient background, fade animation, and responsive layout
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        /// Purple gradient background for modern look
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF7B61FF),
-              Color(0xFF9B7FFF),
-              Color(0xFFE8E0FF),
+              Color(0xFF7B61FF), /// Primary purple
+              Color(0xFF9B7FFF), /// Mid-tone purple
+              Color(0xFFE8E0FF), /// Light purple
             ],
           ),
         ),
         child: SafeArea(
           child: FadeTransition(
-            opacity: _fadeAnimation,
+            opacity: _fadeAnimation, /// Apply fade-in animation
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
                   const SizedBox(height: 60),
                   
-                  // Logo and Title
+                  /// App logo, title and subtitle
                   _buildHeader(),
                   
                   const SizedBox(height: 60),
                   
-                  // Auth Form
+                  /// Main authentication form (login/register)
                   _buildAuthForm(),
                   
                   const SizedBox(height: 30),
                   
-                  // Toggle between Login/Register
+                  /// Button to switch between login and register modes
                   _buildToggleButton(),
                 ],
               ),
@@ -91,9 +119,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
+  /// Builds the header section with app logo, title, and subtitle
+  /// Changes subtitle text based on login/register mode
   Widget _buildHeader() {
     return Column(
       children: [
+        /// App logo container with circular design and shadow
         Container(
           width: 80,
           height: 80,
@@ -109,14 +140,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             ],
           ),
           child: const Icon(
-            Icons.trending_up,
+            Icons.trending_up, /// Travel/growth icon representing the app's purpose
             size: 40,
             color: Color(0xFF7B61FF),
           ),
         ),
         const SizedBox(height: 24),
+        /// App title with custom font styling
         Text(
-          'MoneyFlow',
+          'TripWise',
           style: GoogleFonts.inter(
             fontSize: 32,
             fontWeight: FontWeight.w800,
@@ -125,6 +157,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ),
         ),
         const SizedBox(height: 8),
+        /// Dynamic subtitle that changes based on current mode
         Text(
           _isLogin ? 'Đăng nhập vào tài khoản' : 'Tạo tài khoản mới',
           style: GoogleFonts.inter(
@@ -137,9 +170,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
+  /// Builds the main authentication form container
+  /// Dynamically shows/hides fields based on login/register mode
+  /// Includes validation, password visibility toggles, and submit button
   Widget _buildAuthForm() {
     return Container(
       padding: const EdgeInsets.all(24),
+      /// White card container with rounded corners and shadow
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -152,11 +189,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         ],
       ),
       child: Form(
-        key: _formKey,
+        key: _formKey, /// Form validation key
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Username Field
+            /// Username input field with validation
             _buildTextField(
               controller: _usernameController,
               label: 'Tên đăng nhập',
@@ -171,7 +208,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             
             const SizedBox(height: 20),
             
-            // Password Field
+            /// Password field with visibility toggle and validation
             _buildTextField(
               controller: _passwordController,
               label: 'Mật khẩu',
@@ -192,7 +229,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               },
             ),
             
-            // Confirm Password Field (only for register)
+            /// Confirm password field - only shown in registration mode
             if (!_isLogin) ...[
               const SizedBox(height: 20),
               _buildTextField(
@@ -218,7 +255,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             
             const SizedBox(height: 16),
             
-            // Forgot Password (only for login)
+            /// Forgot password link - only shown in login mode
             if (_isLogin)
               Align(
                 alignment: Alignment.centerRight,
@@ -239,9 +276,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             
             const SizedBox(height: 24),
             
-            // Submit Button
+            /// Submit button with loading state
             ElevatedButton(
-              onPressed: _isLoading ? null : _handleSubmit,
+              onPressed: _isLoading ? null : _handleSubmit, /// Disable when loading
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7B61FF),
                 foregroundColor: Colors.white,
@@ -261,7 +298,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       ),
                     )
                   : Text(
-                      _isLogin ? 'Đăng nhập' : 'Đăng ký',
+                      _isLogin ? 'Đăng nhập' : 'Đăng ký', /// Dynamic button text
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -274,6 +311,14 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
+  /// Helper method to build consistent styled text input fields
+  /// 
+  /// [controller] - TextEditingController for the input field
+  /// [label] - Display label for the field
+  /// [icon] - Prefix icon to display
+  /// [obscureText] - Whether to hide text (for passwords)
+  /// [suffixIcon] - Optional suffix icon (e.g., visibility toggle)
+  /// [validator] - Validation function for form validation
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -291,28 +336,34 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         labelText: label,
         prefixIcon: Icon(icon, color: const Color(0xFF7B61FF)),
         suffixIcon: suffixIcon,
+        /// Default border style
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
         ),
+        /// Focused border style with purple accent
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
         ),
+        /// Enabled border style
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Colors.grey[50], /// Light background fill
       ),
     );
   }
 
+  /// Builds the toggle button that allows switching between login and register modes
+  /// Also clears form data and resets security counters when switching
   Widget _buildToggleButton() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        /// Contextual text based on current mode
         Text(
           _isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? ',
           style: GoogleFonts.inter(
@@ -320,10 +371,20 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             fontSize: 14,
           ),
         ),
+        /// Clickable toggle button
         GestureDetector(
-          onTap: () => setState(() => _isLogin = !_isLogin),
+          onTap: () => setState(() {
+            _isLogin = !_isLogin; /// Switch between login/register
+            /// Clear all form fields to prevent data confusion
+            _usernameController.clear();
+            _passwordController.clear();
+            _confirmPasswordController.clear();
+            /// Reset security features when switching modes
+            _failCount = 0;
+            _lockUntil = null;
+          }),
           child: Text(
-            _isLogin ? 'Đăng ký ngay' : 'Đăng nhập',
+            _isLogin ? 'Đăng ký ngay' : 'Đăng nhập', /// Dynamic button text
             style: GoogleFonts.inter(
               color: Colors.white,
               fontSize: 14,
@@ -337,9 +398,39 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 
+  /// Handles form submission for both login and registration
+  /// 
+  /// Security features:
+  /// - Form validation before processing
+  /// - Login attempt limiting (3 attempts with 30s lockout)
+  /// - Password hashing for registration using bcrypt
+  /// - Raw password for login (server handles bcrypt comparison)
+  /// 
+  /// Flow:
+  /// 1. Validate form inputs
+  /// 2. Check for login lockout (if in login mode)
+  /// 3. Call appropriate service method (login/register)
+  /// 4. Handle success/failure with appropriate UI feedback
+  /// 5. Navigate to home screen on success
   void _handleSubmit() async {
+    /// Validate form before proceeding
     if (!_formKey.currentState!.validate()) return;
 
+    /// Security: Check if login is temporarily locked due to failed attempts
+    if (_isLogin && _lockUntil != null && DateTime.now().isBefore(_lockUntil!)) {
+      final remainingSeconds = _lockUntil!.difference(DateTime.now()).inSeconds;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bạn đã nhập sai quá nhiều. Vui lòng thử lại sau $remainingSeconds giây.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    /// Show loading state
     setState(() => _isLoading = true);
 
     try {
@@ -351,20 +442,60 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       String message;
 
       if (_isLogin) {
-        success = await userService.login(username, password);
-        message = success ? 'Đăng nhập thành công!' : 'Tên đăng nhập hoặc mật khẩu không đúng';
+        /// LOGIN FLOW: Send raw password - server handles bcrypt comparison
+        final loginResult = await userService.loginWithDetails(username, password);
+        success = loginResult['success'] ?? false;
+        
+        if (success) {
+          /// Reset security counters on successful login
+          _failCount = 0;
+          _lockUntil = null;
+          /// Load user data after successful login
+          await userService.init();
+          message = 'Đăng nhập thành công!';
+        } else {
+          /// Check if user exists or wrong password
+          final userExists = loginResult['userExists'] ?? false;
+          if (!userExists) {
+            message = 'Tài khoản này chưa được đăng ký. Vui lòng đăng ký trước.';
+            _failCount = 0; // Don't count as failed attempt for non-existent user
+          } else {
+            /// Handle failed login attempts with progressive security
+            _failCount += 1;
+            if (_failCount >= 3) {
+              /// Lock login for 30 seconds after 3 failed attempts
+              _lockUntil = DateTime.now().add(const Duration(seconds: 30));
+              _failCount = 0;
+              message = 'Bạn đã nhập sai 3 lần. Hãy thử lại sau 30 giây.';
+            } else {
+              message = 'Sai mật khẩu. Bạn còn ${3 - _failCount} lần thử.';
+            }
+          }
+        }
       } else {
-        success = await userService.register(username, password);
+        /// REGISTRATION FLOW: Hash password before sending to server
+        final hashed = BCrypt.hashpw(password, BCrypt.gensalt());
+        success = await userService.register(username, hashed);
         message = success ? 'Đăng ký thành công!' : 'Tên đăng nhập đã tồn tại';
+        
+        if (success) {
+          /// Save user data to local storage
+          await userService.saveUserToJson(username, hashed, '');
+          
+          /// Auto-login after successful registration
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('username', username);
+          await prefs.setBool('isLoggedIn', true);
+          
+          /// Load user data after registration
+          await userService.init();
+        }
       }
 
+      /// Handle successful authentication
       if (success) {
-        if (!_isLogin) {
-          // After successful registration, auto login
-          await userService.login(username, password);
-        }
-        
         if (mounted) {
+          /// Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
@@ -372,12 +503,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             ),
           );
           
-          // Navigate to home screen
+          /// Navigate to main app screen
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const HomeScreen()),
           );
         }
       } else {
+        /// Show error message for failed authentication
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -388,6 +520,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         }
       }
     } catch (e) {
+      /// Handle unexpected errors
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -397,13 +530,23 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         );
       }
     } finally {
+      /// Always hide loading state when done
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
   }
 
+  /// Shows a dialog for resetting forgotten passwords
+  /// 
+  /// Features:
+  /// - Form validation for username and new password
+  /// - Password confirmation matching
+  /// - bcrypt hashing before sending to server
+  /// - Loading states and error handling
+  /// - Success/failure feedback via SnackBars
   void _showForgotPasswordDialog() {
+    /// Local controllers for the dialog form
     final usernameController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
@@ -428,6 +571,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                /// Instructions for the user
                 Text(
                   'Nhập tên đăng nhập và mật khẩu mới',
                   style: GoogleFonts.inter(
@@ -437,6 +581,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
+                /// Username input field
                 TextFormField(
                   controller: usernameController,
                   decoration: InputDecoration(
@@ -458,6 +603,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   },
                 ),
                 const SizedBox(height: 16),
+                /// New password input field
                 TextFormField(
                   controller: newPasswordController,
                   obscureText: true,
@@ -483,6 +629,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   },
                 ),
                 const SizedBox(height: 16),
+                /// Confirm password input field
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: true,
@@ -511,6 +658,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             ),
           ),
           actions: [
+            /// Cancel button
             TextButton(
               onPressed: isLoading ? null : () => Navigator.pop(context),
               child: Text(
@@ -518,6 +666,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 style: GoogleFonts.inter(color: Colors.grey[600]),
               ),
             ),
+            /// Submit button with loading state
             ElevatedButton(
               onPressed: isLoading ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -526,9 +675,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
                 try {
                   final userService = UserService();
+                  /// Hash the new password before sending to server
+                  final hashedNew = BCrypt.hashpw(newPasswordController.text, BCrypt.gensalt());
                   final success = await userService.resetPassword(
                     usernameController.text.trim(),
-                    newPasswordController.text,
+                    hashedNew,
                   );
 
                   if (success) {

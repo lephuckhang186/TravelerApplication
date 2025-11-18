@@ -12,7 +12,7 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveClientMixin {
   bool _pushNotificationEnabled = true;
   bool _emailNotificationEnabled = true;
   bool _locationServicesEnabled = true;
@@ -23,9 +23,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _displayName = 'User';
   
   @override
+  bool get wantKeepAlive => false; // Don't keep alive so it refreshes
+  
+  @override
   void initState() {
     super.initState();
     _loadUserData();
+  }
+  
+  @override
+  void didUpdateWidget(SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadUserData(); // Refresh when widget updates
   }
   
   void _loadUserData() async {
@@ -44,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
