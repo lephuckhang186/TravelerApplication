@@ -556,6 +556,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         avatarPath: newAvatarPath,
       );
       
+      // Update email in JSON file if email was changed
+      if (profileSuccess && _emailController.text.trim().isNotEmpty) {
+        await userService.updateEmailInJson(_currentUsername, _emailController.text.trim());
+      }
+      
       // Change password if requested
       bool passwordSuccess = true;
       if (_isPasswordChangeAttempted()) {
