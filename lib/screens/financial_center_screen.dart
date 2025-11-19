@@ -129,7 +129,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -178,7 +178,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -288,7 +288,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -375,10 +375,10 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: progressPercentage > 80
-                              ? [const Color(0xFFE91E63), const Color(0xFFE91E63).withOpacity(0.8)]
+                              ? [const Color(0xFFE91E63), const Color(0xFFE91E63).withValues(alpha: 0.8)]
                               : progressPercentage > 60
-                                  ? [const Color(0xFFFF9800), const Color(0xFFFF9800).withOpacity(0.8)]
-                                  : [const Color(0xFF4CAF50), const Color(0xFF4CAF50).withOpacity(0.8)],
+                                  ? [const Color(0xFFFF9800), const Color(0xFFFF9800).withValues(alpha: 0.8)]
+                                  : [const Color(0xFF4CAF50), const Color(0xFF4CAF50).withValues(alpha: 0.8)],
                         ),
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -673,7 +673,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -684,7 +684,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -1077,7 +1077,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: (category['color'] as Color).withOpacity(0.1),
+                  color: (category['color'] as Color).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -1159,3 +1159,4 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
   }
 
 }
+
