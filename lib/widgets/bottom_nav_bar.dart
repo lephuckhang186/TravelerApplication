@@ -48,13 +48,13 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.support.withOpacity(0.3),
+            color: AppColors.support.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -149,7 +149,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                               end: Alignment.bottomRight,
                               colors: [
                                 color,
-                                color.withOpacity(0.7),
+                                color.withValues(alpha: 0.7),
                               ],
                             )
                           : null,
@@ -158,7 +158,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: color.withOpacity(0.3),
+                                color: color.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -211,3 +211,4 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
     );
   }
 }
+

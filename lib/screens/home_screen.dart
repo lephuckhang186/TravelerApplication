@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'settings_screen.dart';
 import 'plan_screen.dart';
@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -219,7 +219,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   border: Border.all(color: AppColors.support),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -249,7 +249,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
               border: Border.all(color: Colors.grey[300]!),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -259,8 +259,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                splashColor: AppColors.accent.withOpacity(0.2),
-                highlightColor: AppColors.accent.withOpacity(0.1),
+                splashColor: AppColors.accent.withValues(alpha: 0.2),
+                highlightColor: AppColors.accent.withValues(alpha: 0.1),
                 onTap: () {
                   _onPlanTap(context);
                 },
@@ -280,7 +280,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
               border: Border.all(color: Colors.grey[300]!),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -290,8 +290,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                splashColor: AppColors.accent.withOpacity(0.2),
-                highlightColor: AppColors.accent.withOpacity(0.1),
+                splashColor: AppColors.accent.withValues(alpha: 0.2),
+                highlightColor: AppColors.accent.withValues(alpha: 0.1),
                 onTap: () {
                   _onNotificationTap(context);
                 },
@@ -330,13 +330,13 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   decoration: BoxDecoration(
                     color: AppColors.background, shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey[300]!, width: 1.5),
-                    boxShadow: [BoxShadow(color: (category['color'] as Color).withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))],
+                    boxShadow: [BoxShadow(color: (category['color'] as Color).withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 3))],
                   ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(28),
-                      splashColor: (category['color'] as Color).withOpacity(0.3),
+                      splashColor: (category['color'] as Color).withValues(alpha: 0.3),
                       onTap: () => _onCategoryTap(context, category['label'] as String),
                       child: Center(child: Icon(category['icon'] as IconData, color: Colors.grey[700], size: 24)),
                     ),
@@ -375,7 +375,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   onTap: () => _onNearbyGemsSeMoreTap(context),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    transform: Matrix4.identity()..scale(_isHoveringNearbyHeader ? 1.05 : 1.0),
+                    transform: Matrix4.diagonal3Values(_isHoveringNearbyHeader ? 1.05 : 1.0, _isHoveringNearbyHeader ? 1.05 : 1.0, 1.0),
                     child: Text('See more', style: GoogleFonts.quattrocento(
                       color: _isHoveringNearbyHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF),
                       fontWeight: FontWeight.w600, fontSize: 14,
@@ -414,11 +414,11 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
     return Container(
       width: 200, margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 6))]),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 6))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          SizedBox(
             height: 140,
             child: Stack(children: [
               ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -463,7 +463,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             onExit: (_) => setState(() => _isHoveringRecentlyViewedHeader = false),
             child: GestureDetector(onTap: () => _onRecentlyViewedSeeMoreTap(context),
               child: AnimatedContainer(duration: const Duration(milliseconds: 200),
-                transform: Matrix4.identity()..scale(_isHoveringRecentlyViewedHeader ? 1.05 : 1.0),
+                transform: Matrix4.diagonal3Values(_isHoveringRecentlyViewedHeader ? 1.05 : 1.0, _isHoveringRecentlyViewedHeader ? 1.05 : 1.0, 1.0),
                 child: Text('See more', style: GoogleFonts.quattrocento(
                   color: _isHoveringRecentlyViewedHeader ? AppColors.accentHover : AppColors.accent,
                   fontWeight: FontWeight.w600, fontSize: 14, 
@@ -477,31 +477,6 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
     ]);
   }
 
-  Widget _buildRecentCard(BuildContext context, int index) {
-    final recentTours = [
-      {'title': 'Ho Chi Minh City Hop On Hop Off Pass', 'image': 'images/hcmc_skyline.jpg', 'color': Colors.blue[300]!},
-      {'title': 'Ho Chi Minh City Sightseeing Double-Decker', 'image': 'images/hcmc_bus_tour.jpg', 'color': Colors.red[300]!},
-      {'title': 'Ho Chi Minh City Food Tour', 'image': 'images/hcmc_food_tour.jpg', 'color': Colors.orange[300]!},
-      {'title': 'Ho Chi Minh City Center Tour', 'image': 'images/hcmc_skyline.jpg', 'color': Colors.purple[300]!},
-    ];
-
-    return Container(width: 160, margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 6))]),
-      child: Material(color: Colors.transparent,
-        child: InkWell(borderRadius: BorderRadius.circular(12),
-          splashColor: (recentTours[index % recentTours.length]['color'] as Color).withOpacity(0.2),
-          onTap: () => _onRecentlyViewedTap(context, recentTours[index % recentTours.length]['title'] as String),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: _buildImageWithAnimation(recentTours[index % recentTours.length]['image'] as String, 100, double.infinity,
-                recentTours[index % recentTours.length]['color'] as Color)),
-            Padding(padding: const EdgeInsets.all(10),
-              child: Text(recentTours[index % recentTours.length]['title'] as String,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                maxLines: 2, overflow: TextOverflow.ellipsis)),
-          ]))));
-  }
 
   Widget _buildCompactRecentCard(BuildContext context, int index) {
     final recentTours = [
@@ -517,7 +492,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 4)
           )
@@ -527,8 +502,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          splashColor: (recentTours[index]['color'] as Color).withOpacity(0.2),
-          hoverColor: (recentTours[index]['color'] as Color).withOpacity(0.05),
+          splashColor: (recentTours[index]['color'] as Color).withValues(alpha: 0.2),
+          hoverColor: (recentTours[index]['color'] as Color).withValues(alpha: 0.05),
           onTap: () => _onRecentlyViewedTap(context, recentTours[index]['title'] as String),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -547,7 +522,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.7)
+                        Colors.black.withValues(alpha: 0.7)
                       ]
                     )
                   ),
@@ -590,7 +565,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             onExit: (_) => setState(() => _isHoveringWhereToNextHeader = false),
             child: GestureDetector(onTap: () => _onWhereToNextSeeMoreTap(context),
               child: AnimatedContainer(duration: const Duration(milliseconds: 200),
-                transform: Matrix4.identity()..scale(_isHoveringWhereToNextHeader ? 1.05 : 1.0),
+                transform: Matrix4.diagonal3Values(_isHoveringWhereToNextHeader ? 1.05 : 1.0, _isHoveringWhereToNextHeader ? 1.05 : 1.0, 1.0),
                 child: Text('See more', style: GoogleFonts.quattrocento(
                   color: _isHoveringWhereToNextHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF),
                   fontWeight: FontWeight.w600, fontSize: 14, 
@@ -604,35 +579,6 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
     ]);
   }
 
-  Widget _buildDestinationCard(BuildContext context, int index) {
-    final destinations = [
-      {'title': 'Da Nang', 'subtitle': 'Beach & Mountains', 'image': 'images/danang.jpg', 'color': Colors.blue[300]!},
-      {'title': 'Hanoi', 'subtitle': 'Culture & History', 'image': 'images/hanoi.jpg', 'color': Colors.red[300]!},
-      {'title': 'Hue', 'subtitle': 'Imperial City', 'image': 'images/hue.jpg', 'color': Colors.purple[300]!},
-      {'title': 'Ho Chi Minh City', 'subtitle': 'Modern & Dynamic', 'image': 'images/hcmc_skyline.jpg', 'color': Colors.orange[300]!},
-    ];
-    final destination = destinations[index % destinations.length];
-
-    return Container(width: 180, margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))]),
-      child: Material(color: Colors.transparent,
-        child: InkWell(borderRadius: BorderRadius.circular(16), 
-          onTap: () => _onWhereToNextTap(context, destination['title'] as String),
-          child: Stack(children: [
-            ClipRRect(borderRadius: BorderRadius.circular(16),
-              child: _buildImageWithAnimation(destination['image'] as String, 200, 180, destination['color'] as Color)),
-            Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.7)]))),
-            Positioned(bottom: 16, left: 16, right: 16,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(destination['title'] as String, style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                const SizedBox(height: 4),
-                Text(destination['subtitle'] as String, style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.white.withOpacity(0.9))),
-              ])),
-          ]))));
-  }
 
   Widget _buildCompactDestinationCard(BuildContext context, int index) {
     final destinations = [
@@ -650,7 +596,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 6,
             offset: const Offset(0, 3)
           )
@@ -660,8 +606,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          splashColor: (destination['color'] as Color).withOpacity(0.3),
-          hoverColor: (destination['color'] as Color).withOpacity(0.1),
+          splashColor: (destination['color'] as Color).withValues(alpha: 0.3),
+          hoverColor: (destination['color'] as Color).withValues(alpha: 0.1),
           onTap: () => _onWhereToNextTap(context, destination['title'] as String),
           child: Stack(
             children: [
@@ -682,7 +628,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.6)
+                      Colors.black.withValues(alpha: 0.6)
                     ]
                   )
                 ),
@@ -724,7 +670,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             onExit: (_) => setState(() => _isHoveringRecommendedHeader = false),
             child: GestureDetector(onTap: () => _onRecommendedSeeMoreTap(context),
               child: AnimatedContainer(duration: const Duration(milliseconds: 200),
-                transform: Matrix4.identity()..scale(_isHoveringRecommendedHeader ? 1.05 : 1.0),
+                transform: Matrix4.diagonal3Values(_isHoveringRecommendedHeader ? 1.05 : 1.0, _isHoveringRecommendedHeader ? 1.05 : 1.0, 1.0),
                 child: Text('See more', style: GoogleFonts.quattrocento(color: _isHoveringRecommendedHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF),
                   fontWeight: FontWeight.w600, fontSize: 14, decoration: TextDecoration.underline))))),
         ])),
@@ -762,7 +708,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
 
     return Container(width: 160, height: 200, margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))]),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))]),
       child: Material(color: Colors.transparent,
         child: InkWell(borderRadius: BorderRadius.circular(12),
           onTap: () => _onRecommendedTap(context, place['title'] as String),
@@ -772,7 +718,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: _buildImageWithAnimation(place['image'] as String, 110, 160, place['color'] as Color)),
               Positioned(top: 6, right: 6,
                 child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(10)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.star, color: Colors.yellow, size: 10),
                     const SizedBox(width: 2),
@@ -803,11 +749,11 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
 
     return Container(width: 160, height: 200, margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))]),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))]),
       child: Material(color: Colors.transparent,
         child: InkWell(borderRadius: BorderRadius.circular(12),
-          splashColor: (place['color'] as Color).withOpacity(0.2),
-          hoverColor: (place['color'] as Color).withOpacity(0.05),
+          splashColor: (place['color'] as Color).withValues(alpha: 0.2),
+          hoverColor: (place['color'] as Color).withValues(alpha: 0.05),
           onTap: () => _onNearbyTap(context, place['title'] as String),
           child: Column(children: [
             Stack(children: [
@@ -815,7 +761,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: _buildImageWithAnimation(place['image'] as String, 110, 160, place['color'] as Color)),
               Positioned(top: 6, right: 6,
                 child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(10)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.location_on, color: Colors.white, size: 10),
                     const SizedBox(width: 2),
@@ -836,7 +782,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
   }
 
   Widget _buildImageWithAnimation(String imagePath, double height, double width, Color fallbackColor) {
-    return Container(height: height, width: width,
+    return SizedBox(height: height, width: width,
       child: Image.asset(imagePath, height: height, width: width, fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(height: height, width: width, color: fallbackColor,
           child: Center(child: Icon(Icons.image_not_supported_outlined, color: Colors.white, size: height * 0.3)))));
@@ -863,9 +809,6 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loading more nearby gems...'), backgroundColor: const Color(0xFF7B61FF)));
   }
 
-  void _onLocationPromptClose(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Location prompt dismissed')));
-  }
 
   void _onRecentlyViewedTap(BuildContext context, String tourName) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Opening $tourName...'), backgroundColor: Colors.blueAccent));
@@ -895,3 +838,4 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loading more ${_recommendedTabIndex == 0 ? "recommended" : "nearby"} places...'), backgroundColor: const Color(0xFF7B61FF)));
   }
 }
+

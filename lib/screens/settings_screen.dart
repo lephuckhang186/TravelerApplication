@@ -13,28 +13,50 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveClientMixin {
-  bool _pushNotificationEnabled = true;
-  bool _emailNotificationEnabled = true;
-  bool _locationServicesEnabled = true;
-  bool _darkModeEnabled = true;
-  
-  String _currentUsername = 'User';
+  String _currentUsername = 'Nguyễn Kiều Anh Quân';
   String? _currentAvatarPath;
-  String _displayName = 'User';
+  String _displayName = 'Nguyễn Kiều Anh Quân';
+  String _phoneNumber = '0898999033';
+  String _currentLanguage = 'VI';
+  bool _isVerified = true;
+  
+  ScrollController _scrollController = ScrollController();
+  bool _isScrolled = false;
   
   @override
-  bool get wantKeepAlive => false; // Don't keep alive so it refreshes
+  bool get wantKeepAlive => false;
   
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _scrollController.addListener(_onScroll);
+  }
+  
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+  
+  void _onScroll() {
+    const scrollThreshold = 100.0;
+    if (_scrollController.offset > scrollThreshold && !_isScrolled) {
+      setState(() {
+        _isScrolled = true;
+      });
+    } else if (_scrollController.offset <= scrollThreshold && _isScrolled) {
+      setState(() {
+        _isScrolled = false;
+      });
+    }
   }
   
   @override
   void didUpdateWidget(SettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _loadUserData(); // Refresh when widget updates
+    _loadUserData();
   }
   
   void _loadUserData() async {
@@ -43,86 +65,128 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     final username = await userService.getDisplayName();
     
     setState(() {
-      _currentUsername = username;
+      _currentUsername = username.isNotEmpty ? username : 'Nguyễn Kiều Anh Quân';
       _displayName = profile['fullName']?.isNotEmpty == true 
           ? profile['fullName']! 
-          : username;
+          : _currentUsername;
       _currentAvatarPath = profile['avatarPath'];
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              
-              // Profile Section
-              _buildProfileSection(),
-              
-              const SizedBox(height: 16),
-              
-              // Main Settings
-              _buildMainSettings(),
-              
-              const SizedBox(height: 16),
-              
-              // Notification Settings
-              _buildNotificationSettings(),
-              
-              const SizedBox(height: 16),
-              
-              // Privacy & Security
-              _buildPrivacySettings(),
-              
-              const SizedBox(height: 16),
-              
-              // Help & Support
-              _buildHelpSettings(),
-              
-              const SizedBox(height: 100), // Space for bottom nav
-            ],
-          ),
+        child: Stack(
+          children: [
+            // Main scroll content
+            SingleChildScrollView(
+              controller: _scrollController,
+              child: Column(
+                children: [
+                  // Header section (shows when not scrolled)
+                  if (!_isScrolled) _buildFullHeaderSection(),
+                  if (_isScrolled) const SizedBox(height: 56), // Space for pinned header
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Quick Actions (4 icons)
+                  _buildQuickActions(),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Utilities Section
+                  _buildUtilitiesSection(),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Expense Management Card
+                  _buildExpenseCard(),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Settings Menu
+                  _buildSettingsMenu(),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Action Buttons
+                  _buildActionButtons(),
+                  
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+            
+            // Pinned header when scrolled
+            if (_isScrolled) _buildCompactHeader(),
+          ],
         ),
       ),
     );
   }
 
-  /// Profile Section
-  Widget _buildProfileSection() {
-    return Column(
-      children: [
-        // Profile Avatar with horizontal line
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Horizontal black line
-            Container(
-              width: double.infinity,
-              height: 2,
-              color: Colors.black,
-            ),
-            // Profile Avatar
-            GestureDetector(
-              onTap: () => _onProfileTap(),
-              child: Container(
-                width: 80,
-                height: 80,
+  /// Full Header Section (tôi1.jpg - when at top)
+  Widget _buildFullHeaderSection() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF5F7FA),
+      ),
+      child: Column(
+        children: [
+          // Top right "Đổi ảnh nền" button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GestureDetector(
+                onTap: _onChangeBackground,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.palette_outlined, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Đổi ảnh nền',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Centered Profile Avatar
+          Stack(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.grey[200],
+                  border: Border.all(color: Colors.white, width: 3),
                 ),
                 child: ClipOval(
                   child: _currentAvatarPath != null
                       ? Image.file(
                           File(_currentAvatarPath!),
-                          width: 80,
-                          height: 80,
+                          width: 100,
+                          height: 100,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return _buildDefaultAvatar();
@@ -131,39 +195,326 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                       : _buildDefaultAvatar(),
                 ),
               ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 12),
-        
-        // Display Name
-        Text(
-          _displayName,
-          style: GoogleFonts.quattrocento(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+              // Verified badge
+              if (_isVerified)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ),
-      ],
+          
+          const SizedBox(height: 15),
+          
+          // Centered Name
+          Text(
+            _displayName,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Centered Phone and Status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _phoneNumber,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Đã sinh trắc học',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // QR Code and Gift sections
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _showMessage('Mở trang cá nhân...'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.qr_code, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Trang cá nhân',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey[600]),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _showMessage('Mở nhận quà 250K...'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.pink[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: Colors.pink,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'M',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Nhận Ngay 250K',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.pink[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.pink[600]),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Compact Header (tôi2.jpg - when scrolled)
+  Widget _buildCompactHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7FA),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Small Avatar
+          Stack(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[200],
+                  border: Border.all(color: Colors.white, width: 1),
+                ),
+                child: ClipOval(
+                  child: _currentAvatarPath != null
+                      ? Image.file(
+                          File(_currentAvatarPath!),
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildDefaultAvatar(size: 40);
+                          },
+                        )
+                      : _buildDefaultAvatar(size: 40),
+                ),
+              ),
+              // Verified badge
+              if (_isVerified)
+                Positioned(
+                  bottom: -1,
+                  right: -1,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 8,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          
+          const SizedBox(width: 10),
+          
+          // Name and Status in horizontal layout
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _displayName,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Đã sinh trắc học',
+                    style: GoogleFonts.inter(
+                      fontSize: 8,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Right side - simplified buttons
+          GestureDetector(
+            onTap: () => _showMessage('Mở trang cá nhân...'),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.qr_code, size: 16, color: Colors.grey[600]),
+            ),
+          ),
+          
+          const SizedBox(width: 4),
+          
+          GestureDetector(
+            onTap: () => _showMessage('Mở nhận quà 250K...'),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.pink,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: const Center(
+                  child: Text(
+                    'M',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(width: 4),
+          
+          // "Đổi ảnh nền" button
+          GestureDetector(
+            onTap: _onChangeBackground,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.palette_outlined, size: 16, color: Colors.grey[600]),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   /// Build default avatar with user initial
-  Widget _buildDefaultAvatar() {
+  Widget _buildDefaultAvatar({double size = 100}) {
     return Container(
-      width: 80,
-      height: 80,
+      width: size,
+      height: size,
       decoration: const BoxDecoration(
         color: Color(0xFF7B61FF),
         shape: BoxShape.circle,
       ),
       child: Center(
         child: Text(
-          _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'U',
-          style: GoogleFonts.quattrocento(
-            fontSize: 32,
+          _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'N',
+          style: GoogleFonts.inter(
+            fontSize: size * 0.4,
             fontWeight: FontWeight.w700,
             color: Colors.white,
           ),
@@ -172,330 +523,722 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 
-  /// Main Settings Section
-  Widget _buildMainSettings() {
+  /// Quick Actions Section (4 icons) - matching tôi1.jpg
+  Widget _buildQuickActions() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[400]!, width: 1.5),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.06),
+            spreadRadius: 1,
+            blurRadius: 6,
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildSettingsItem(
-            Icons.person_outline,
-            'Edit profile',
-            () => _onEditProfile(),
-            showArrow: true,
+          _buildQuickActionItem(
+            Icons.account_balance_wallet_outlined,
+            'Quản lý',
+            Colors.orange,
+            '1',
+            () => _onExpenseManagement(),
           ),
-          _buildDivider(),
-          _buildSettingsItem(
+          _buildQuickActionItem(
+            Icons.settings_outlined,
+            'Cài đặt\nthanh toán',
+            Colors.grey[600]!,
+            null,
+            () => _onPaymentSettings(),
+          ),
+          _buildQuickActionItem(
             Icons.lock_outline,
-            'Change password',
-            () => _onChangePassword(),
-            showArrow: true,
+            'Đăng nhập\nvà bảo mật',
+            Colors.grey[600]!,
+            null,
+            () => _onSecuritySettings(),
           ),
-          _buildDivider(),
-          _buildSettingsItem(
-            Icons.language,
-            'Languages',
-            () => _onLanguages(),
-            showArrow: true,
-          ),
-          _buildDivider(),
-          _buildSettingsItem(
-            Icons.attach_money,
-            'Currencies',
-            () => _onCurrencies(),
-            showArrow: true,
+          _buildQuickActionItem(
+            Icons.notifications_outlined,
+            'Cài đặt\nthông báo',
+            Colors.grey[600]!,
+            null,
+            () => _onNotificationSettings(),
           ),
         ],
       ),
     );
   }
 
-  /// Notification Settings
-  Widget _buildNotificationSettings() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Notification',
-            style: GoogleFonts.quattrocento(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[400]!, width: 1.5),
-          ),
-          child: Column(
-            children: [
-              _buildToggleItem(
-                Icons.notifications_outlined,
-                'Push notification',
-                _pushNotificationEnabled,
-                (value) => setState(() => _pushNotificationEnabled = value),
-              ),
-              _buildDivider(),
-              _buildToggleItem(
-                Icons.email_outlined,
-                'Email notification',
-                _emailNotificationEnabled,
-                (value) => setState(() => _emailNotificationEnabled = value),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Privacy & Security Settings
-  Widget _buildPrivacySettings() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Privacy & Security',
-            style: GoogleFonts.quattrocento(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[400]!, width: 1.5),
-          ),
-          child: Column(
-            children: [
-              _buildToggleItem(
-                Icons.location_on_outlined,
-                'Location Services',
-                _locationServicesEnabled,
-                (value) => setState(() => _locationServicesEnabled = value),
-              ),
-              _buildDivider(),
-              _buildToggleItem(
-                Icons.dark_mode_outlined,
-                'Dark Mode',
-                _darkModeEnabled,
-                (value) => setState(() => _darkModeEnabled = value),
-              ),
-              _buildDivider(),
-              _buildSettingsItem(
-                Icons.privacy_tip_outlined,
-                'Privacy Policy',
-                () => _onPrivacyPolicy(),
-                showArrow: true,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Help & Support Settings
-  Widget _buildHelpSettings() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Help & Support',
-            style: GoogleFonts.quattrocento(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[400]!, width: 1.5),
-          ),
-          child: Column(
-            children: [
-              _buildSettingsItem(
-                Icons.phone_outlined,
-                'Contact Us',
-                () => _onContactUs(),
-                showArrow: true,
-              ),
-              _buildDivider(),
-              _buildSettingsItem(
-                Icons.help_outline,
-                'FAQ',
-                () => _onFAQ(),
-                showArrow: true,
-              ),
-              _buildDivider(),
-              _buildSettingsItem(
-                Icons.logout,
-                'Log out',
-                () => _onLogout(),
-                showArrow: false,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Settings Item Widget
-  Widget _buildSettingsItem(
-    IconData icon,
-    String title,
-    VoidCallback onTap, {
-    bool showArrow = false,
-    Widget? trailing,
-  }) {
+  Widget _buildQuickActionItem(IconData icon, String label, Color iconColor, String? badge, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () => _onSettingsItemTapWithAnimation(onTap),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: iconColor,
+                ),
+              ),
+              if (badge != null)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    child: Center(
+                      child: Text(
+                        badge,
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Utilities Section - 2 horizontal rows with synchronized scrolling
+  Widget _buildUtilitiesSection() {
+    final ScrollController scrollController = ScrollController();
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tiện ích',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Synchronized scrolling for both rows
+          SizedBox(
+            height: 138, // Height for 2 rows + spacing
+            child: ListView(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              children: [
+                Column(
+                  children: [
+                    // First row
+                    Row(
+                      children: [
+                        _buildRectangularUtilityItem(
+                          Icons.monetization_on,
+                          'Trung Tâm Tài Chính',
+                          const Color(0xFF2196F3), // Blue
+                          () => _onHelpCenter(),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRectangularUtilityItem(
+                          Icons.verified_user,
+                          'Điểm Tin Cậy VIP',
+                          const Color(0xFF9C27B0), // Purple/Pink
+                          () => _onCreditScore(),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRectangularUtilityItem(
+                          Icons.receipt_long,
+                          'Thanh Toán Nhanh',
+                          const Color(0xFF00BCD4), // Cyan
+                          () => _onPaymentHistory(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Second row
+                    Row(
+                      children: [
+                        _buildRectangularUtilityItem(
+                          Icons.card_giftcard,
+                          'Nhận Ngay 250K',
+                          const Color(0xFFE91E63), // Pink (MoMo color)
+                          () => _onGiftCard(),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRectangularUtilityItem(
+                          Icons.account_balance_wallet,
+                          'Quản lý chi tiêu',
+                          const Color(0xFF00BCD4), // Cyan
+                          () => _onExpenseManagement(),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRectangularUtilityItem(
+                          Icons.redeem,
+                          'Quà của tôi',
+                          const Color(0xFF8BC34A), // Green
+                          () => _onMoreGifts(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16), // End padding
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUtilityItem(IconData icon, String label, Color iconColor, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.06),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                  ),
+                ],
               ),
               child: Icon(
                 icon,
-                size: 20,
-                color: Colors.grey[700],
+                size: 22,
+                color: iconColor,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.quattrocento(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            if (trailing != null) trailing,
-            if (showArrow)
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[600],
-                size: 20,
-              ),
           ],
         ),
       ),
     );
   }
 
-  /// Toggle Item Widget
-  Widget _buildToggleItem(
-    IconData icon,
-    String title,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
+  /// Rectangular Utility Item - icon at top left, text below
+  Widget _buildRectangularUtilityItem(IconData icon, String label, Color iconColor, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 140, // Rectangular width
+        height: 65,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              spreadRadius: 1,
+              blurRadius: 4,
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.quattrocento(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon at top left
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                icon,
+                size: 16,
+                color: iconColor,
               ),
             ),
-          ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: Switch.adaptive(
-              key: ValueKey(value),
-              value: value,
-              onChanged: onChanged,
-              activeColor: Colors.orange[600],
-              activeTrackColor: Colors.orange[300],
-              inactiveThumbColor: Colors.grey[400],
-              inactiveTrackColor: Colors.grey[200],
+            const SizedBox(height: 6), // Reduced spacing
+            // Text below icon - using Flexible instead of Expanded
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 10, // Slightly smaller font
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                  height: 1.2, // Line height for better spacing
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.left,
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Expense Management Card
+  Widget _buildExpenseCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Header Row
+          Row(
+            children: [
+              Icon(Icons.account_balance_wallet, size: 20, color: Colors.blue),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Quản lý chi tiêu',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      'Tháng này',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 18),
+            ],
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Expense Summary Cards
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.06),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tổng chi',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '113.045đ',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.arrow_downward, size: 10, color: Colors.green),
+                          const SizedBox(width: 2),
+                          Text(
+                            '389.955đ',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              color: Colors.green,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'Cùng kỳ tháng trước',
+                        style: GoogleFonts.inter(
+                          fontSize: 8,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3CD),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.06),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Xem biến động thu chi',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '100% Nhận xu',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.orange[800],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '1 lần/SĐT',
+                        style: GoogleFonts.inter(
+                          fontSize: 8,
+                          color: Colors.orange[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  /// Divider
-  Widget _buildDivider() {
+  /// Settings Menu
+  Widget _buildSettingsMenu() {
     return Container(
-      height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      color: Colors.grey[400],
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.06),
+            spreadRadius: 1,
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMenuListItem(
+            Icons.help_center_outlined,
+            'Trung tâm trợ giúp',
+            () => _onHelpCenter(),
+          ),
+          _buildMenuDivider(),
+          _buildMenuListItem(
+            Icons.notifications_outlined,
+            'Cài đặt thông báo',
+            () => _onNotificationSettings(),
+          ),
+          _buildMenuDivider(),
+          _buildMenuListItem(
+            Icons.share_outlined,
+            'Chia sẻ góp ý',
+            () => _onShareFeedback(),
+          ),
+          _buildMenuDivider(),
+          _buildMenuListItem(
+            Icons.info_outline,
+            'Thông tin chung',
+            () => _onGeneralInfo(),
+          ),
+          _buildMenuDivider(),
+          _buildMenuListItem(
+            Icons.palette_outlined,
+            'Đổi hình nền',
+            () => _onChangeBackground(),
+          ),
+          _buildMenuDivider(),
+          _buildLanguageItem(),
+        ],
+      ),
     );
   }
 
-  // Event handlers with animations
-  void _onSettingsItemTapWithAnimation(VoidCallback onTap) {
-    // Add subtle animation
-    setState(() {});
-    Future.delayed(const Duration(milliseconds: 100), onTap);
+  Widget _buildMenuListItem(IconData icon, String title, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: Colors.grey[600]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 16),
+          ],
+        ),
+      ),
+    );
   }
 
-  void _onProfileTap() {
+  Widget _buildLanguageItem() {
+    return GestureDetector(
+      onTap: () => _onLanguages(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(Icons.language_outlined, size: 24, color: Colors.grey[600]),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                'Ngôn ngữ',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'EN',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _currentLanguage,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuDivider() {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      color: Colors.grey[200],
+    );
+  }
+
+  /// Action Buttons - Combined logout and switch account with vertical divider
+  Widget _buildActionButtons() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey[300]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.06),
+              spreadRadius: 1,
+              blurRadius: 4,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _onLogout(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Text(
+                    'Đăng xuất',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Vertical divider
+            Container(
+              width: 1,
+              height: 24,
+              color: Colors.grey[300],
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _onSwitchAccount(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Text(
+                    'Đổi tài khoản',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  // Event handlers for new design
+  void _onExpenseManagement() {
+    _showMessage('Mở quản lý chi tiêu...');
+  }
+
+  void _onPaymentSettings() {
+    _showMessage('Mở cài đặt thanh toán...');
+  }
+
+  void _onSecuritySettings() {
+    _showMessage('Mở cài đặt bảo mật...');
+  }
+
+  void _onNotificationSettings() {
+    _showMessage('Mở cài đặt thông báo...');
+  }
+
+  void _onHelpCenter() {
+    _showMessage('Mở trung tâm trợ giúp...');
+  }
+
+  void _onShareFeedback() {
+    _showMessage('Mở chia sẻ góp ý...');
+  }
+
+  void _onGeneralInfo() {
+    _showMessage('Mở thông tin chung...');
+  }
+
+  // New utility handlers
+  void _onCreditScore() {
+    _showMessage('Mở điểm tín cậy...');
+  }
+
+  void _onPaymentHistory() {
+    _showMessage('Mở lịch sử thanh toán...');
+  }
+
+  void _onGiftCard() {
+    _showMessage('Mở quà tặng...');
+  }
+
+  void _onMoreGifts() {
+    _showMessage('Mở thêm quà tặng...');
+  }
+
+  void _onChangeBackground() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -506,28 +1249,28 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Text(
+              'Chọn ảnh nền',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 20),
             ListTile(
               leading: const Icon(Icons.photo_camera),
-              title: const Text('Change Photo'),
+              title: const Text('Chụp ảnh mới'),
               onTap: () {
                 Navigator.pop(context);
-                _showMessage('Opening camera...');
+                _showMessage('Đang mở camera...');
               },
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from Gallery'),
+              title: const Text('Chọn từ thư viện'),
               onTap: () {
                 Navigator.pop(context);
-                _showMessage('Opening gallery...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('View Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Opening profile...');
+                _showMessage('Đang mở thư viện ảnh...');
               },
             ),
           ],
@@ -536,77 +1279,43 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 
-  void _onEditProfile() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ProfileEditScreen(),
-      ),
-    );
-    
-    // Reload user data if profile was updated
-    if (result == true) {
-      _loadUserData();
-    }
-  }
-
-  void _onChangePassword() {
+  void _onSwitchAccount() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
-          'Change Password',
-          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+          'Đổi tài khoản',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Current Password',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'New Password',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Confirm Password',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ],
+        content: Text(
+          'Bạn có muốn đăng nhập bằng tài khoản khác?',
+          style: GoogleFonts.inter(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Hủy',
+              style: GoogleFonts.inter(color: Colors.grey[600]),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _showMessage('Password changed!');
+              _showMessage('Đang chuyển tài khoản...');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7B61FF),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Change'),
+            child: Text('Đồng ý', style: GoogleFonts.inter()),
           ),
         ],
       ),
     );
   }
+
 
   void _onLanguages() {
     showModalBottomSheet(
@@ -620,8 +1329,8 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Select Language',
-              style: GoogleFonts.quattrocento(
+              'Chọn ngôn ngữ',
+              style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -630,73 +1339,29 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             ListTile(
               leading: const Text('🇺🇸'),
               title: const Text('English'),
-              trailing: const Icon(Icons.check, color: Colors.green),
+              trailing: _currentLanguage == 'EN' 
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
               onTap: () {
+                setState(() {
+                  _currentLanguage = 'EN';
+                });
                 Navigator.pop(context);
-                _showMessage('Language changed to English');
+                _showMessage('Đã chuyển sang tiếng Anh');
               },
             ),
             ListTile(
               leading: const Text('🇻🇳'),
               title: const Text('Tiếng Việt'),
+              trailing: _currentLanguage == 'VI' 
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
               onTap: () {
+                setState(() {
+                  _currentLanguage = 'VI';
+                });
                 Navigator.pop(context);
-                _showMessage('Language changed to Vietnamese');
-              },
-            ),
-            ListTile(
-              leading: const Text('🇯🇵'),
-              title: const Text('日本語'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Language changed to Japanese');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onCurrencies() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Select Currency',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              title: const Text('VND (₫)'),
-              trailing: const Icon(Icons.check, color: Colors.green),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Currency changed to VND');
-              },
-            ),
-            ListTile(
-              title: const Text('USD (\$)'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Currency changed to USD');
-              },
-            ),
-            ListTile(
-              title: const Text('EUR (€)'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Currency changed to EUR');
+                _showMessage('Đã chuyển sang tiếng Việt');
               },
             ),
           ],
@@ -705,152 +1370,6 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 
-  void _onPrivacyPolicy() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          'Privacy Policy',
-          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
-        ),
-        content: const SingleChildScrollView(
-          child: Text(
-            'This is a sample privacy policy content. In a real app, this would contain the actual privacy policy text with details about data collection, usage, and user rights.',
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7B61FF),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _onContactUs() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Contact Us',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.email),
-              title: const Text('Email Support'),
-              subtitle: const Text('support@travelapp.com'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Opening email...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.phone),
-              title: const Text('Phone Support'),
-              subtitle: const Text('+84 937 877 653'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Calling support...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('Live Chat'),
-              subtitle: const Text('Available 24/7'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Starting live chat...');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onFAQ() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: Text(
-              'FAQ',
-              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
-            ),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0,
-          ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildFAQItem(
-                'How to create a travel plan?',
-                'You can create a travel plan by going to the Plan tab and tapping the "+" button.',
-              ),
-              _buildFAQItem(
-                'How to track expenses?',
-                'Use the Analysis tab to view your spending patterns and add new expenses.',
-              ),
-              _buildFAQItem(
-                'How to change language?',
-                'Go to Settings > Languages to change your preferred language.',
-              ),
-              _buildFAQItem(
-                'How to contact support?',
-                'You can contact support through Settings > Help & Support > Contact Us.',
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFAQItem(String question, String answer) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ExpansionTile(
-        title: Text(
-          question,
-          style: GoogleFonts.quattrocento(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              answer,
-              style: GoogleFonts.quattrocento(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _onLogout() {
     showDialog(
@@ -859,18 +1378,18 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đăng xuất',
-          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
-          style: GoogleFonts.quattrocento(),
+          style: GoogleFonts.inter(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
+              style: GoogleFonts.inter(color: Colors.grey[600]),
             ),
           ),
           ElevatedButton(
@@ -903,7 +1422,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Đăng xuất', style: GoogleFonts.quattrocento()),
+            child: Text('Đăng xuất', style: GoogleFonts.inter()),
           ),
         ],
       ),
@@ -913,8 +1432,11 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF7B61FF),
+        content: Text(
+          message,
+          style: GoogleFonts.inter(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF2E7D32),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -922,3 +1444,4 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 }
+
