@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_theme.dart';
 
 /// Modern Bottom Navigation Bar - MoMo Style 🔥
 class CustomBottomNavBar extends StatefulWidget {
@@ -43,17 +44,17 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.15),
+            color: AppColors.support.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -73,7 +74,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                 label: 'Home',
                 index: 0,
                 isSelected: widget.currentIndex == 0,
-                color: const Color(0xFF6366F1),
+                color: AppColors.accent,
               ),
               _buildNavItem(
                 icon: Icons.event_note_outlined,
@@ -81,7 +82,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                 label: 'Plan',
                 index: 1,
                 isSelected: widget.currentIndex == 1,
-                color: const Color(0xFFEC4899),
+                color: AppColors.accent,
               ),
               _buildNavItem(
                 icon: Icons.analytics_outlined,
@@ -89,7 +90,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                 label: 'Analysis', 
                 index: 2,
                 isSelected: widget.currentIndex == 2,
-                color: const Color(0xFF10B981),
+                color: AppColors.accent,
               ),
               _buildNavItem(
                 icon: Icons.person_outline_rounded,
@@ -97,7 +98,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                 label: 'Me',
                 index: 3,
                 isSelected: widget.currentIndex == 3,
-                color: const Color(0xFF8B5CF6),
+                color: AppColors.accent,
               ),
             ],
           ),
@@ -148,7 +149,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                               end: Alignment.bottomRight,
                               colors: [
                                 color,
-                                color.withOpacity(0.7),
+                                color.withValues(alpha: 0.7),
                               ],
                             )
                           : null,
@@ -157,7 +158,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: color.withOpacity(0.3),
+                                color: color.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -170,7 +171,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                         child: Icon(
                           isSelected ? activeIcon : icon,
                           key: ValueKey(isSelected),
-                          color: isSelected ? Colors.white : Colors.grey[600],
+                          color: isSelected ? AppColors.textOnAccent : AppColors.textSecondary,
                           size: 24,
                         ),
                       ),
@@ -210,3 +211,4 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
     );
   }
 }
+
