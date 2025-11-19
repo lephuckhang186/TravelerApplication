@@ -492,86 +492,8 @@ class ExpenseManager:
         if status.category_overruns:
             print(f"\nWARNING: Over-budget categories: {', '.join(cat.value for cat in status.category_overruns)}")
 
-# Example usage and testing
-def demo_expense_manager():
-    """Demonstrate the enhanced expense manager functionality"""
-    print("Enhanced Travel Expense Manager Demo")
-    print("=" * 50)
-    
-    try:
-        # Create a sample trip
-        start_date = date(2024, 3, 1)
-        end_date = date(2024, 3, 10)
-        trip = Trip(start_date=start_date, end_date=end_date)
-        
-        # Create budget with custom allocations
-        total_budget = Decimal('5000000')  # 5M VND
-        custom_allocations = {
-            ExpenseCategory.ACCOMMODATION: Decimal('1750000'),  # 35%
-            ExpenseCategory.FOOD_BEVERAGE: Decimal('1250000'),  # 25%
-            ExpenseCategory.TRANSPORTATION: Decimal('1000000'), # 20%
-            ExpenseCategory.ACTIVITIES: Decimal('500000'),      # 10%
-            ExpenseCategory.SHOPPING: Decimal('250000'),        # 5%
-            ExpenseCategory.MISCELLANEOUS: Decimal('150000'),   # 3%
-            ExpenseCategory.EMERGENCY: Decimal('100000')        # 2%
-        }
-        budget = Budget(total_budget, category_allocations=custom_allocations)
-        
-        # Initialize manager
-        manager = ExpenseManager()
-        manager.create_budget_plan(trip, budget)
-        
-        # Add sample expenses
-        sample_expenses = [
-            (500000, ExpenseCategory.ACCOMMODATION, "Hotel night 1", datetime(2024, 3, 1, 15, 0)),
-            (150000, ExpenseCategory.FOOD_BEVERAGE, "Dinner at local restaurant", datetime(2024, 3, 1, 19, 30)),
-            (200000, ExpenseCategory.TRANSPORTATION, "Airport taxi", datetime(2024, 3, 1, 10, 0)),
-            (300000, ExpenseCategory.ACTIVITIES, "City tour", datetime(2024, 3, 2, 9, 0)),
-            (80000, ExpenseCategory.FOOD_BEVERAGE, "Breakfast", datetime(2024, 3, 2, 8, 0)),
-            (500000, ExpenseCategory.ACCOMMODATION, "Hotel night 2", datetime(2024, 3, 2, 15, 0)),
-            (120000, ExpenseCategory.SHOPPING, "Souvenirs", datetime(2024, 3, 2, 16, 0)),
-        ]
-        
-        print("Adding sample expenses...")
-        for amount, category, description, expense_date in sample_expenses:
-            manager.add_expense(Decimal(str(amount)), category, description, expense_date)
-            print(f"Added: {amount:,} VND - {category.value} - {description}")
-        
-        # Display comprehensive budget summary
-        manager.print_budget_summary()
-        
-        # Show spending trends
-        if manager.analytics:
-            trends = manager.analytics.get_spending_trends(trip)
-            print(f"\nSPENDING TRENDS")
-            print("-" * 30)
-            print(f"Trend: {trends['trend']}")
-            if trends['trend'] != 'INSUFFICIENT_DATA':
-                print(f"Recent Average: {trends['recent_average']:,.0f} VND/day")
-                print(f"Overall Average: {trends['overall_average']:,.0f} VND/day")
-        
-        # Show expense history for a specific category
-        print(f"\nFOOD & BEVERAGE EXPENSES")
-        print("-" * 40)
-        manager.print_expense_history(ExpenseCategory.FOOD_BEVERAGE)
-        
-        # Export data
-        exported_data = manager.export_data()
-        print(f"\nData Export Sample:")
-        print(f"Total expenses tracked: {len(exported_data['expenses'])}")
-        print(f"Budget allocation: {len(exported_data['budget']['category_allocations'])} categories")
-        
-        return manager
-        
-    except Exception as e:
-        print(f"Error in demo: {str(e)}")
-        return None
-
 def interactive_mode():
     """Interactive mode for manual expense tracking"""
-    print("\nInteractive Expense Tracking Mode")
-    print("=" * 50)
-    
     try:
         # Get trip details
         print("Trip Setup:")
@@ -664,22 +586,5 @@ def interactive_mode():
 
 if __name__ == "__main__":
     print("Travel Expense Analytics Service")
-    print("Choose mode:")
-    print("1. Demo mode (with sample data)")
-    print("2. Interactive mode")
+    interactive_mode()
     
-    try:
-        mode = input("Enter choice (1 or 2): ").strip()
-        
-        if mode == '1':
-            demo_expense_manager()
-        elif mode == '2':
-            interactive_mode()
-        else:
-            print("Running demo mode by default...")
-            demo_expense_manager()
-            
-    except KeyboardInterrupt:
-        print("\nGoodbye!")
-    except Exception as e:
-        print(f"Unexpected error: {str(e)}")
