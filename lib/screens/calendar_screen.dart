@@ -302,7 +302,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -334,7 +334,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             shape: BoxShape.circle,
           ),
           todayDecoration: BoxDecoration(
-            color: const Color(0xFFFF5A00).withOpacity(0.5),
+            color: const Color(0xFFFF5A00).withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
           markersMaxCount: 1,
@@ -368,10 +368,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
               return Container(
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.3), // Màu vàng kim với alpha
+                  color: Colors.amber.withValues(alpha: 0.3), // Màu vàng kim với alpha
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: Colors.amber.withOpacity(0.6),
+                    color: Colors.amber.withValues(alpha: 0.6),
                     width: 1,
                   ),
                 ),
@@ -402,7 +402,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: hasExpense 
-                    ? Colors.amber.withOpacity(0.8)  // Vàng đậm hơn khi selected + có expense
+                    ? Colors.amber.withValues(alpha: 0.8)  // Vàng đậm hơn khi selected + có expense
                     : const Color(0xFFE91E63),       // Pink khi selected không có expense
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
@@ -435,8 +435,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: hasExpense 
-                    ? Colors.amber.withOpacity(0.5)     // Vàng nhạt cho today + expense
-                    : const Color(0xFFE91E63).withOpacity(0.3), // Pink nhạt cho today
+                    ? Colors.amber.withValues(alpha: 0.5)     // Vàng nhạt cho today + expense
+                    : const Color(0xFFE91E63).withValues(alpha: 0.3), // Pink nhạt cho today
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: hasExpense 
@@ -472,7 +472,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -516,7 +516,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -562,7 +562,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFE91E63).withOpacity(0.3),
+                  color: const Color(0xFFE91E63).withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -602,7 +602,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   'Tổng chi tiêu',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -628,7 +628,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -692,7 +692,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (config['color'] as Color).withOpacity(0.1),
+              color: (config['color'] as Color).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -755,3 +755,4 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 }
+

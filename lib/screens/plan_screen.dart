@@ -10,7 +10,7 @@ class PlanScreen extends StatefulWidget {
 }
 
 class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMixin {
-  String _currentUsername = 'User';
+  // String _currentUsername = 'User'; // Removed unused field
   String _displayName = 'User';
   
   @override
@@ -34,7 +34,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
     final username = await userService.getDisplayName();
     
     setState(() {
-      _currentUsername = username;
+      // _currentUsername = username; // Removed unused field
       _displayName = profile['fullName']?.isNotEmpty == true 
           ? profile['fullName']! 
           : username;
@@ -226,7 +226,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -237,7 +237,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                 child: Column(
                   children: [
                     // Image area (3/4 of height = 90px)
-                    Container(
+                    SizedBox(
                       height: 90,
                       width: double.infinity,
                       child: Image.asset(
@@ -249,7 +249,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                               gradient: LinearGradient(
                                 colors: [
                                   fallbackColor,
-                                  fallbackColor.withOpacity(0.8),
+                                  fallbackColor.withValues(alpha: 0.8),
                                 ],
                               ),
                             ),
@@ -520,7 +520,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                   border: Border.all(color: Colors.grey[300]!),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -757,3 +757,4 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
     );
   }
 }
+

@@ -113,7 +113,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                   border: Border.all(color: Colors.grey[200]!),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -147,7 +147,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                   border: Border.all(color: Colors.grey[200]!),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -888,3 +888,4 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     );
   }
 }
+

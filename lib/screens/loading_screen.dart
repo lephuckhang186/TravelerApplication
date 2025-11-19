@@ -60,6 +60,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         final userService = UserService();
         final isLoggedIn = await userService.isLoggedIn();
         
+        if (!mounted) return;
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => 
@@ -188,9 +189,9 @@ class _LoadingScreenState extends State<LoadingScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -239,22 +240,22 @@ class _LoadingScreenState extends State<LoadingScreen>
         Positioned(
           top: 100,
           left: 50,
-          child: _buildOrb(60, Colors.white.withOpacity(0.1)),
+          child: _buildOrb(60, Colors.white.withValues(alpha: 0.1)),
         ),
         Positioned(
           top: 200,
           right: 30,
-          child: _buildOrb(80, Colors.white.withOpacity(0.05)),
+          child: _buildOrb(80, Colors.white.withValues(alpha: 0.05)),
         ),
         Positioned(
           bottom: 150,
           left: 30,
-          child: _buildOrb(40, Colors.white.withOpacity(0.08)),
+          child: _buildOrb(40, Colors.white.withValues(alpha: 0.08)),
         ),
         Positioned(
           bottom: 300,
           right: 60,
-          child: _buildOrb(70, Colors.white.withOpacity(0.06)),
+          child: _buildOrb(70, Colors.white.withValues(alpha: 0.06)),
         ),
       ],
     );
@@ -298,7 +299,7 @@ class _LoadingScreenState extends State<LoadingScreen>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -332,7 +333,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   width: 8 + (4 * _rotationAnimation.value),
                   height: 8 + (4 * _rotationAnimation.value),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.7 + (0.3 * _rotationAnimation.value)),
+                    color: Colors.white.withValues(alpha: 0.7 + (0.3 * _rotationAnimation.value)),
                     shape: BoxShape.circle,
                   ),
                 );
@@ -358,3 +359,4 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 }
+

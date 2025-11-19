@@ -57,8 +57,6 @@ class AppTheme {
         tertiary: AppColors.support,
         surface: AppColors.background,
         onSurface: AppColors.textPrimary,
-        background: AppColors.background,
-        onBackground: AppColors.textPrimary,
         error: AppColors.warning,
         onError: AppColors.textOnAccent,
       ),
@@ -184,11 +182,11 @@ class AppTheme {
           ),
         ).copyWith(
           // Hover state
-          backgroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.hovered)) {
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered)) {
               return AppColors.accentHover;
             }
-            if (states.contains(MaterialState.pressed)) {
+            if (states.contains(WidgetState.pressed)) {
               return AppColors.accentPressed;
             }
             return AppColors.accent;
@@ -204,8 +202,8 @@ class AppTheme {
             fontSize: 14,
           ),
         ).copyWith(
-          foregroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.hovered)) {
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered)) {
               return AppColors.accentHover;
             }
             return AppColors.accent;

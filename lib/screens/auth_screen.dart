@@ -1,4 +1,4 @@
-/// Import necessary packages for authentication functionality
+// Import necessary packages for authentication functionality
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -134,7 +134,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -163,7 +163,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           _isLogin ? 'Đăng nhập vào tài khoản' : 'Tạo tài khoản mới',
           style: GoogleFonts.quattrocento(
             fontSize: 16,
-            color: AppColors.textOnAccent.withOpacity(0.8),
+            color: AppColors.textOnAccent.withValues(alpha: 0.8),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -183,7 +183,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -368,7 +368,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         Text(
           _isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? ',
           style: GoogleFonts.quattrocento(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontSize: 14,
           ),
         ),
@@ -684,6 +684,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   );
 
                   if (success) {
+                    if (!mounted) return;
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -692,6 +693,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       ),
                     );
                   } else {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tên đăng nhập không tồn tại'),
@@ -700,6 +702,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     );
                   }
                 } catch (e) {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Có lỗi xảy ra, vui lòng thử lại'),
@@ -734,3 +737,4 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
   }
 }
+

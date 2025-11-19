@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'screens/loading_screen.dart';
 import 'services/user_service.dart';
 import 'core/theme/app_theme.dart';
@@ -28,7 +27,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'MoneyFlow - Smart Finance Tracker',
       debugShowCheckedModeBanner: false,
-      useInheritedMediaQuery: true,
       builder: (context, child) {
         // Use system/default text scaling without overriding
         return DevicePreview.appBuilder(context, child!);
@@ -40,3 +38,4 @@ class MyApp extends StatelessWidget {
   }
 
 }
+
