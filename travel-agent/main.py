@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import List, Dict
 from workflow import app
 from models import WorkflowState
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,13 +22,25 @@ api.add_middleware(
 # Define the request body model
 class InvokeRequest(BaseModel):
     input: str
+    history: List[Dict[str, str]] = []
 
 # Define the API endpoint
 @api.post("/invoke")
 async def invoke_workflow(request: InvokeRequest):
     """
-    Invokes the AI travel agent workflow with the user's input.
+    Invokes the AI travel agent workflow with the user's input and history.
     """
+    # Construct the message history from the request
+    messages = []
+    for item in request.history:
+        if item.get('role') == 'user':
+            messages.append(HumanMessage(content=item.get('content', '')))
+        elif item.get('role') == 'assistant':
+            messages.append(AIMessage(content=item.get('content', '')))
+    
+    # Add the new user input
+    messages.append(HumanMessage(content=request.input))
+
     state = WorkflowState(
         destination=None,
         budget=None,
@@ -38,7 +51,7 @@ async def invoke_workflow(request: InvokeRequest):
         accommodation_type=None,
         dietary_restrictions=None,
         transportation_preferences=None,
-        messages=[HumanMessage(content=request.input)]
+        messages=messages
     )
     
     # The result of app.invoke is a dictionary
