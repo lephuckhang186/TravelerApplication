@@ -8,8 +8,8 @@ from fastapi.responses import JSONResponse
 import time
 import logging
 
-from .api.endpoints import expenses, auth
-from .core.config import get_settings
+from api.endpoints import expenses, auth
+from core.config import get_settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -131,15 +131,15 @@ async def get_version():
 @app.on_event("startup")
 async def startup_event():
     """Application startup tasks"""
-    logger.info("🚀 TravelPro Backend API is starting up...")
-    logger.info(f"📊 Debug mode: {settings.DEBUG}")
-    logger.info(f"🔥 Firebase integration enabled")
-    logger.info(f"🌐 API available at: {settings.API_V1_STR}")
+    logger.info("TravelPro Backend API is starting up...")
+    logger.info(f"Debug mode: {settings.DEBUG}")
+    logger.info(f"Firebase integration enabled")
+    logger.info(f"API available at: {settings.API_V1_STR}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown tasks"""
-    logger.info("🛑 TravelPro Backend API is shutting down...")
+    logger.info("TravelPro Backend API is shutting down...")
 
 # ============= DEVELOPMENT HELPERS =============
 
