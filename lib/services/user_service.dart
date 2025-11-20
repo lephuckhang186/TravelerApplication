@@ -6,7 +6,7 @@ import 'package:bcrypt/bcrypt.dart';
 
 class UserService {
   static const String _keyUsername = 'username';
-  static const String _keyPassword = 'password';
+  // static const String _keyPassword = 'password'; // Removed unused field
   static const String _keyIsLoggedIn = 'isLoggedIn';
   static const String _keyAvatarPath = 'avatarPath';
   static const String _keyEmail = 'email';
