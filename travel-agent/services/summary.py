@@ -16,7 +16,12 @@ class TripSummary:
       "generate a friendly and comprehensive summary for the user. "
       "Include key details like destination, duration, budget, weather overview, "
       "and highlights from the itinerary. The goal is to present a final, polished "
-      "plan that is exciting and easy to read."
+      "plan that is exciting and easy to read. "
+      "IMPORTANT: Format your response as plain text without markdown syntax (no *, #, **, ###). "
+      "Instead, use relevant emojis and icons to make the content visually appealing. "
+      "Use emojis like 🏨 for hotels, 🍕 for food, 🌤️ for weather, 💰 for budget, "
+      "📍 for locations, ✈️ for travel, 🎯 for activities, etc. "
+      "Structure with clear sections using natural formatting and line breaks."
     )
     human_prompt = "Here is the complete trip plan to summarize:\n\n{trip_plan}"
     self.prompt = get_default_prompt(system_prompt, human_prompt)

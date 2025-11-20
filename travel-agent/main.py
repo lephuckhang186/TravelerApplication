@@ -4,6 +4,7 @@ from typing import List, Dict
 from workflow import app
 from models import WorkflowState
 from langchain_core.messages import HumanMessage, AIMessage
+from services.greeting_handler import greeting_handler
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,6 +31,19 @@ async def invoke_workflow(request: InvokeRequest):
     """
     Invokes the AI travel agent workflow with the user's input and history.
     """
+    user_input = request.input.strip()
+    
+    # Check if this is a greeting message
+    if greeting_handler.is_greeting_message(user_input):
+        greeting_response = greeting_handler.generate_greeting_response(user_input)
+        return {"summary": greeting_response}
+    
+    # Check if this is a thanks message
+    if greeting_handler.is_simple_thanks(user_input):
+        thanks_response = greeting_handler.generate_thanks_response()
+        return {"summary": thanks_response}
+    
+    # For non-greeting messages, proceed with normal workflow
     # Construct the message history from the request
     messages = []
     for item in request.history:
@@ -67,6 +81,11 @@ async def invoke_workflow(request: InvokeRequest):
 @api.get("/")
 def read_root():
     return {"message": "AI Travel Agent is running"}
+
+# Health check endpoint
+@api.get("/health")
+def health_check():
+    return {"status": "healthy", "message": "AI Travel Agent is running"}
 
 # To run this API, use the command:
 # uvicorn main:api --reload

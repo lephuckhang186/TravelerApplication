@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/user_service.dart';
-import 'ai_assistant_screen.dart';
+import '../widgets/ai_assistant_panel.dart';
 
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key});
@@ -571,11 +571,25 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
   void _onAIChatTapWithAnimation() {
     setState(() {});
     Future.delayed(const Duration(milliseconds: 100), () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AiAssistantScreen()),
-      );
+      _showAIAssistantPanel();
     });
+  }
+
+  void _showAIAssistantPanel() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: AiAssistantPanel(
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
   }
 
   // Event handlers with bottom sheet animations
