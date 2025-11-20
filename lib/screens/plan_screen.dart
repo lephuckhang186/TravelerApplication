@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/user_service.dart';
+import 'ai_assistant_screen.dart';
 
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key});
@@ -570,7 +571,10 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
   void _onAIChatTapWithAnimation() {
     setState(() {});
     Future.delayed(const Duration(milliseconds: 100), () {
-      _showMessage('Starting AI chat...');
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AiAssistantScreen()),
+      );
     });
   }
 
