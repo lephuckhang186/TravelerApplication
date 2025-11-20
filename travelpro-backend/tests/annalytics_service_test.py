@@ -7,7 +7,7 @@ import os
 # Add the parent directory (services) to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from annalytics_service import (
+from app.services.annalytics_service import (
     ExpenseCategory, Expense, CategoryBudget, Budget, BudgetStatus,
     Trip, Analytics, ExpenseManager
 )
