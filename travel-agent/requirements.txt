@@ -1,0 +1,22 @@
+# Core LangChain & LangGraph
+langchain==0.1.16
+langgraph==0.0.37
+langchain-core==0.1.45
+langchain-community==0.0.32
+
+# LLM Providers
+langchain-openai==0.0.8
+langchain-google-genai==0.0.4
+google-generativeai==0.4.1
+
+# Web & Data
+fastapi==0.109.2
+uvicorn==0.27.1
+pydantic==2.5.3
+requests==2.31.0
+python-dotenv==1.0.1
+
+# Tools & Utilities
+langchain-tavily==0.2.13
+bs4==0.0.2
+langgraph-checkpoint-sqlite==2.0.11
