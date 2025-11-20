@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../core/theme/app_theme.dart';
+import '../features/expense_management/presentation/providers/expense_provider.dart';
+import '../features/expense_management/data/models/expense_models.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -12,13 +14,14 @@ class AnalysisScreen extends StatefulWidget {
 
 class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStateMixin {
   int _currentViewIndex = 0; // 0: Activities, 1: Statistic
-  int _currentMonthIndex = 9; // October (index 9)
-  int _currentYear = 2025;
+  int _currentMonthIndex = DateTime.now().month - 1; // Current month (0-based)
+  int _currentYear = DateTime.now().year;
   int _chartTypeIndex = 0; // 0: Pie chart, 1: Bar chart
   int _categoryTabIndex = 0; // 0: Subcategory, 1: Category
 
   late TabController _mainTabController;
   late TabController _categoryTabController;
+  late ExpenseProvider _expenseProvider;
 
   final List<String> _months = [
     'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
@@ -30,12 +33,29 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     super.initState();
     _mainTabController = TabController(length: 2, vsync: this);
     _categoryTabController = TabController(length: 2, vsync: this);
+    _expenseProvider = ExpenseProvider();
+    _loadData();
+  }
+
+  /// Load data from backend
+  void _loadData() {
+    final startDate = DateTime(_currentYear, _currentMonthIndex + 1, 1);
+    final endDate = DateTime(_currentYear, _currentMonthIndex + 2, 0);
+    
+    _expenseProvider.fetchExpenses(
+      startDate: startDate,
+      endDate: endDate,
+    );
+    _expenseProvider.fetchExpenseSummary();
+    _expenseProvider.fetchCategoryStatus();
+    _expenseProvider.fetchSpendingTrends();
   }
 
   @override
   void dispose() {
     _mainTabController.dispose();
     _categoryTabController.dispose();
+    _expenseProvider.dispose();
     super.dispose();
   }
 
@@ -416,132 +436,238 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
 
   /// Expense list for activities
   Widget _buildExpenseList() {
-    final expenses = [
-      {'title': 'Spend on car rentals', 'date': '14:32 07/10/2025', 'amount': '-562.000đ', 'icon': Icons.directions_car},
-      {'title': 'Spend on hamburger', 'date': '15:01 02/10/2025', 'amount': '-126.000đ', 'icon': Icons.restaurant},
-      {'title': 'Money to Alisa', 'date': '19:21 02/10/2025', 'amount': '-1.500.000đ', 'icon': Icons.person},
-      {'title': 'Spend on beverage', 'date': '21:18 02/10/2025', 'amount': '-89.000đ', 'icon': Icons.local_drink},
-    ];
+    return AnimatedBuilder(
+      animation: _expenseProvider,
+      builder: (context, child) {
+        if (_expenseProvider.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
 
-    return Column(
-      children: expenses.map((expense) {
-        return GestureDetector(
-          onTap: () => _onExpenseTap(expense['title'] as String),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: Row(
+        if (_expenseProvider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    expense['icon'] as IconData,
-                    size: 20,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        expense['title'] as String,
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        expense['date'] as String,
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+                const SizedBox(height: 16),
                 Text(
-                  expense['amount'] as String,
+                  'Lỗi tải dữ liệu',
                   style: GoogleFonts.quattrocento(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.red[700],
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _loadData,
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final expenses = _expenseProvider.expenses;
+
+        if (expenses.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.receipt_long, size: 48, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'Chưa có giao dịch nào',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 16,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
             ),
-          ),
+          );
+        }
+
+        return Column(
+          children: expenses.map((expense) {
+            return GestureDetector(
+              onTap: () => _onExpenseTap(expense.description.isNotEmpty ? expense.description : expense.category.displayName),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _getCategoryIcon(expense.category),
+                        size: 20,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            expense.description.isNotEmpty ? expense.description : expense.category.displayName,
+                            style: GoogleFonts.quattrocento(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            _formatExpenseDate(expense.expenseDate),
+                            style: GoogleFonts.quattrocento(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '-${_formatMoney(expense.amount)}₫',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 
   /// Pie chart
   Widget _buildPieChart() {
-    return Column(
-      children: [
-        // Chart toggle buttons
-        Row(
+    return AnimatedBuilder(
+      animation: _expenseProvider,
+      builder: (context, child) {
+        return Column(
           children: [
-            const Spacer(),
-            GestureDetector(
-              onTap: () => _toggleChartType(),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+            // Chart toggle buttons
+            Row(
+              children: [
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => _toggleChartType(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.bar_chart, size: 16, color: Colors.grey[600]),
+                  ),
                 ),
-                child: Icon(Icons.bar_chart, size: 16, color: Colors.grey[600]),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            Expanded(
+              child: _buildPieChartContent(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPieChartContent() {
+    if (_expenseProvider.isSummaryLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final summary = _expenseProvider.expenseSummary;
+    if (summary == null || summary.categoryBreakdown.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.pie_chart, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Chưa có dữ liệu',
+              style: GoogleFonts.quattrocento(
+                fontSize: 16,
+                color: Colors.grey[600],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        
-        Expanded(
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 2,
-              centerSpaceRadius: 50,
-              sections: [
-                PieChartSectionData(
-                  value: 85,
-                  title: '85%\nFixed Cost',
-                  radius: 50,
-                  color: Colors.grey[300]!,
-                  titleStyle: GoogleFonts.quattrocento(fontSize: 10, fontWeight: FontWeight.w600),
-                ),
-                PieChartSectionData(
-                  value: 509,
-                  title: '509%\nLiving Exp',
-                  radius: 60,
-                  color: Colors.orange[400]!,
-                  titleStyle: GoogleFonts.quattrocento(fontSize: 10, fontWeight: FontWeight.w600),
-                ),
-                PieChartSectionData(
-                  value: 22,
-                  title: '22%\nOthers',
-                  radius: 45,
-                  color: Colors.grey[400]!,
-                  titleStyle: GoogleFonts.quattrocento(fontSize: 10, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
+      );
+    }
+
+    final categoryData = summary.categoryBreakdown;
+    final total = categoryData.values.fold<double>(0, (sum, value) => sum + value);
+    
+    if (total == 0) {
+      return Center(
+        child: Text(
+          'Chưa có chi tiêu nào',
+          style: GoogleFonts.quattrocento(
+            fontSize: 16,
+            color: Colors.grey[600],
           ),
         ),
-      ],
+      );
+    }
+
+    final colors = [
+      Colors.orange[400]!,
+      Colors.blue[400]!,
+      Colors.green[400]!,
+      Colors.purple[400]!,
+      Colors.red[400]!,
+      Colors.teal[400]!,
+      Colors.amber[400]!,
+      Colors.pink[400]!,
+      Colors.indigo[400]!,
+    ];
+
+    final sections = categoryData.entries.toList().asMap().entries.map((entry) {
+      final index = entry.key;
+      final categoryEntry = entry.value;
+      final percentage = (categoryEntry.value / total * 100);
+      
+      return PieChartSectionData(
+        value: categoryEntry.value,
+        title: '${percentage.toStringAsFixed(1)}%\n${_getCategoryDisplayName(categoryEntry.key)}',
+        radius: 50 + (percentage / 100 * 20), // Dynamic radius based on percentage
+        color: colors[index % colors.length],
+        titleStyle: GoogleFonts.quattrocento(
+          fontSize: 10, 
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      );
+    }).toList();
+
+    return PieChart(
+      PieChartData(
+        sectionsSpace: 2,
+        centerSpaceRadius: 50,
+        sections: sections,
+      ),
     );
   }
 
@@ -768,56 +894,144 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
 
   /// Category list
   Widget _buildCategoryList() {
-    final categories = _categoryTabIndex == 0 ? [
-      {'title': 'Living expenses', 'amount': '509.000đ', 'icon': Icons.home},
-      {'title': 'Others', 'amount': '22.000đ', 'icon': Icons.more_horiz},
-      {'title': 'Fixed Cost', 'amount': '85.000đ', 'icon': Icons.attach_money},
-    ] : [
-      {'title': 'Foods & Drinks', 'amount': '359.000đ', 'icon': Icons.restaurant},
-      {'title': 'Others', 'amount': '213.000đ', 'icon': Icons.more_horiz},
-      {'title': 'Transportations', 'amount': '93.000đ', 'icon': Icons.directions_bus},
-    ];
+    return AnimatedBuilder(
+      animation: _expenseProvider,
+      builder: (context, child) {
+        if (_expenseProvider.isSummaryLoading || _expenseProvider.isCategoryLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return ListView.builder(
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final category = categories[index];
-        return GestureDetector(
-          onTap: () => _onCategoryTap(category['title'] as String),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
+        final summary = _expenseProvider.expenseSummary;
+        final categoryStatuses = _expenseProvider.categoryStatus;
+
+        List<Map<String, dynamic>> categories = [];
+
+        if (_categoryTabIndex == 0) {
+          // Show detailed categories from summary
+          if (summary != null && summary.categoryBreakdown.isNotEmpty) {
+            categories = summary.categoryBreakdown.entries.map((entry) {
+              return {
+                'title': _getCategoryDisplayName(entry.key),
+                'amount': entry.value,
+                'icon': _getCategoryIconByName(entry.key),
+                'categoryKey': entry.key,
+              };
+            }).toList();
+            
+            // Sort by amount descending
+            categories.sort((a, b) => (b['amount'] as double).compareTo(a['amount'] as double));
+          }
+        } else {
+          // Show category status from backend
+          if (categoryStatuses.isNotEmpty) {
+            categories = categoryStatuses.map((status) {
+              return {
+                'title': _getCategoryDisplayName(status.category),
+                'amount': status.spent,
+                'icon': _getCategoryIconByName(status.category),
+                'categoryKey': status.category,
+                'status': status,
+              };
+            }).toList();
+          }
+        }
+
+        if (categories.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  category['icon'] as IconData,
-                  size: 20,
-                  color: Colors.grey[700],
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    category['title'] as String,
-                    style: GoogleFonts.quattrocento(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+                Icon(Icons.category, size: 48, color: Colors.grey[400]),
+                const SizedBox(height: 16),
                 Text(
-                  category['amount'] as String,
+                  'Chưa có dữ liệu danh mục',
                   style: GoogleFonts.quattrocento(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
             ),
-          ),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            final amount = category['amount'] as double;
+            
+            return GestureDetector(
+              onTap: () => _onCategoryTap(category['title'] as String),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      category['icon'] as IconData,
+                      size: 20,
+                      color: Colors.grey[700],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            category['title'] as String,
+                            style: GoogleFonts.quattrocento(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (_categoryTabIndex == 1 && category['status'] != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Budget: ${_formatMoney((category['status'] as CategoryStatus).allocated)}₫',
+                              style: GoogleFonts.quattrocento(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${_formatMoney(amount)}₫',
+                          style: GoogleFonts.quattrocento(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (_categoryTabIndex == 1 && category['status'] != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${((category['status'] as CategoryStatus).percentageUsed).toStringAsFixed(1)}%',
+                            style: GoogleFonts.quattrocento(
+                              fontSize: 12,
+                              color: (category['status'] as CategoryStatus).isOverBudget 
+                                  ? Colors.red[600] 
+                                  : Colors.green[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -848,6 +1062,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         _currentYear--;
       }
     });
+    _loadData(); // Reload data for new month
   }
 
   void _toggleChartType() {
@@ -886,6 +1101,65 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
+  }
+
+  /// Get icon for expense category
+  IconData _getCategoryIcon(ExpenseCategory category) {
+    switch (category) {
+      case ExpenseCategory.food:
+        return Icons.restaurant;
+      case ExpenseCategory.transportation:
+        return Icons.directions_car;
+      case ExpenseCategory.accommodation:
+        return Icons.hotel;
+      case ExpenseCategory.entertainment:
+        return Icons.movie;
+      case ExpenseCategory.shopping:
+        return Icons.shopping_cart;
+      case ExpenseCategory.health:
+        return Icons.local_hospital;
+      case ExpenseCategory.education:
+        return Icons.school;
+      case ExpenseCategory.utilities:
+        return Icons.power;
+      case ExpenseCategory.other:
+        return Icons.more_horiz;
+    }
+  }
+
+  /// Format expense date
+  String _formatExpenseDate(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  /// Format money amount
+  String _formatMoney(double amount) {
+    if (amount >= 1000000) {
+      return '${(amount / 1000000).toStringAsFixed(1)}M';
+    } else if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(0)}K';
+    }
+    return amount.toStringAsFixed(0);
+  }
+
+  /// Get category display name from string key
+  String _getCategoryDisplayName(String categoryKey) {
+    try {
+      final category = ExpenseCategoryExtension.fromString(categoryKey);
+      return category.displayName;
+    } catch (e) {
+      return categoryKey;
+    }
+  }
+
+  /// Get category icon by string name
+  IconData _getCategoryIconByName(String categoryName) {
+    try {
+      final category = ExpenseCategoryExtension.fromString(categoryName);
+      return _getCategoryIcon(category);
+    } catch (e) {
+      return Icons.category;
+    }
   }
 }
 
