@@ -3,16 +3,20 @@ Firebase Authentication Service for TravelPro
 """
 import os
 import json
+import sys
 from typing import Optional, Dict, Any
 from datetime import datetime
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-from ..models.user import User, UserCreate, UserInDB
-from ..core.config import get_settings
+from models.user import User, UserCreate, UserInDB
+from core.config import get_settings
 
 settings = get_settings()
 

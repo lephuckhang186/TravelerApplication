@@ -3,12 +3,17 @@ from typing import List, Optional
 from datetime import datetime, date
 from decimal import Decimal
 from pydantic import BaseModel, Field
+import sys
+import os
 
-from ...services.annalytics_service import (
+# Add parent directories to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from services.annalytics_service import (
     ExpenseManager, ExpenseCategory, Expense, Budget, Trip
 )
-from ...core.dependencies import get_current_user
-from ...models.user import User
+from core.dependencies import get_current_user
+from models.user import User
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 
@@ -29,6 +34,9 @@ class ExpenseResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 class BudgetCreateRequest(BaseModel):
     total_budget: float = Field(..., gt=0)
@@ -40,6 +48,7 @@ class TripCreateRequest(BaseModel):
     end_date: date
     
     class Config:
+        from_attributes = True
         json_encoders = {
             date: lambda v: v.isoformat()
         }
@@ -81,25 +90,24 @@ async def create_trip(
     trip_request: TripCreateRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new trip"""
+    """Create a new trip for the user"""
     try:
         manager = get_expense_manager(current_user.id)
         trip = Trip(
             start_date=trip_request.start_date,
             end_date=trip_request.end_date
         )
+        manager.set_trip(trip)
         
         return {
             "message": "Trip created successfully",
             "trip": {
                 "start_date": trip.start_date.isoformat(),
                 "end_date": trip.end_date.isoformat(),
-                "total_days": trip.total_days,
-                "days_remaining": trip.days_remaining,
-                "is_active": trip.is_active
+                "duration_days": (trip.end_date - trip.start_date).days + 1
             }
         }
-    except ValueError as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/budget/create")
@@ -107,47 +115,25 @@ async def create_budget(
     budget_request: BudgetCreateRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Create budget plan for the trip"""
+    """Create a budget for the current trip"""
     try:
         manager = get_expense_manager(current_user.id)
-        
-        # Convert category allocations if provided
-        category_allocations = None
-        if budget_request.category_allocations:
-            category_allocations = {
-                ExpenseCategory(k): Decimal(str(v))
-                for k, v in budget_request.category_allocations.items()
-            }
-        
         budget = Budget(
             total_budget=Decimal(str(budget_request.total_budget)),
             daily_limit=Decimal(str(budget_request.daily_limit)) if budget_request.daily_limit else None,
-            category_allocations=category_allocations
+            category_allocations=budget_request.category_allocations or {}
         )
-        
-        # Note: In a real app, you'd also need the trip
-        # For now, create a default trip if none exists
-        if not manager.trip:
-            from datetime import timedelta
-            today = date.today()
-            default_trip = Trip(
-                start_date=today,
-                end_date=today + timedelta(days=7)
-            )
-            manager.create_budget_plan(default_trip, budget)
-        else:
-            manager.create_budget_plan(manager.trip, budget)
+        manager.set_budget(budget)
         
         return {
             "message": "Budget created successfully",
             "budget": {
-                "total_budget": float(budget.total),
+                "total_budget": float(budget.total_budget),
                 "daily_limit": float(budget.daily_limit) if budget.daily_limit else None,
-                "total_allocated": float(budget.get_total_allocated()),
-                "unallocated": float(budget.get_unallocated())
+                "category_allocations": budget.category_allocations
             }
         }
-    except ValueError as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 # Expense Management Endpoints
@@ -156,32 +142,27 @@ async def create_expense(
     expense_request: ExpenseCreateRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Add a new expense"""
+    """Create a new expense"""
     try:
         manager = get_expense_manager(current_user.id)
-        
-        if not manager.trip_budget:
-            raise HTTPException(
-                status_code=400, 
-                detail="Please create a budget plan first"
-            )
-        
-        expense = manager.add_expense(
+        expense = Expense(
             amount=Decimal(str(expense_request.amount)),
             category=expense_request.category,
             description=expense_request.description,
-            expense_date=expense_request.expense_date
+            expense_date=expense_request.expense_date or datetime.now()
         )
         
+        expense_id = manager.add_expense(expense)
+        
         return ExpenseResponse(
-            id=str(id(expense)),  # In production, use proper ID
+            id=expense_id,
             amount=float(expense.amount),
             category=expense.category.value,
             description=expense.description,
-            expense_date=expense.date,
-            currency=expense.currency
+            expense_date=expense.expense_date,
+            currency=current_user.preferred_currency
         )
-    except ValueError as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/", response_model=List[ExpenseResponse])
@@ -191,179 +172,224 @@ async def get_expenses(
     end_date: Optional[date] = Query(None, description="Filter to date"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get expense history with optional filters"""
-    manager = get_expense_manager(current_user.id)
-    
-    date_range = None
-    if start_date and end_date:
-        date_range = (start_date, end_date)
-    
-    expenses = manager.get_expense_history(
-        category_filter=category,
-        date_range=date_range
-    )
-    
-    return [
-        ExpenseResponse(
-            id=str(id(expense)),
-            amount=float(expense.amount),
-            category=expense.category.value,
-            description=expense.description,
-            expense_date=expense.date,
-            currency=expense.currency
+    """Get all expenses with optional filters"""
+    try:
+        manager = get_expense_manager(current_user.id)
+        expenses = manager.get_expenses(
+            category=category,
+            start_date=start_date,
+            end_date=end_date
         )
-        for expense in expenses
-    ]
+        
+        return [
+            ExpenseResponse(
+                id=expense_id,
+                amount=float(expense.amount),
+                category=expense.category.value,
+                description=expense.description,
+                expense_date=expense.expense_date,
+                currency=current_user.preferred_currency
+            )
+            for expense_id, expense in expenses.items()
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{expense_id}")
 async def delete_expense(
     expense_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete an expense"""
-    manager = get_expense_manager(current_user.id)
-    
-    # In production, find expense by proper ID
-    # For now, this is a simplified implementation
-    if not manager.expenses:
-        raise HTTPException(status_code=404, detail="Expense not found")
-    
-    # Remove the last expense as example (improve this in production)
-    expense = manager.expenses[-1]
-    success = manager.remove_expense(expense)
-    
-    if success:
+    """Delete an expense by ID"""
+    try:
+        manager = get_expense_manager(current_user.id)
+        success = manager.delete_expense(expense_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Expense not found")
+        
         return {"message": "Expense deleted successfully"}
-    else:
-        raise HTTPException(status_code=404, detail="Expense not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Analytics Endpoints
 @router.get("/budget/status", response_model=BudgetStatusResponse)
 async def get_budget_status(
     current_user: User = Depends(get_current_user)
 ):
-    """Get comprehensive budget status"""
-    manager = get_expense_manager(current_user.id)
-    
-    if not manager.trip_budget:
-        raise HTTPException(status_code=400, detail="No budget plan found")
-    
-    status = manager.get_budget_status()
-    
-    if not status:
-        raise HTTPException(status_code=400, detail="Unable to generate budget status")
-    
-    return BudgetStatusResponse(
-        total_budget=float(status.total_budget),
-        total_spent=float(status.total_spent),
-        percentage_used=status.percentage_used,
-        remaining_budget=float(status.remaining_budget),
-        days_remaining=status.days_remaining,
-        days_total=status.days_total,
-        recommended_daily_spending=float(status.recommended_daily_spending),
-        average_daily_spending=float(status.average_daily_spending),
-        burn_rate_status=status.burn_rate_status,
-        is_over_budget=status.is_over_budget,
-        category_overruns=[cat.value for cat in status.category_overruns]
-    )
+    """Get current budget status and analytics"""
+    try:
+        manager = get_expense_manager(current_user.id)
+        analytics = manager.get_analytics()
+        
+        if not analytics:
+            raise HTTPException(status_code=404, detail="No budget or trip data found")
+        
+        budget_status = analytics.get_budget_status()
+        
+        return BudgetStatusResponse(
+            total_budget=float(budget_status['total_budget']),
+            total_spent=float(budget_status['total_spent']),
+            percentage_used=budget_status['percentage_used'],
+            remaining_budget=float(budget_status['remaining_budget']),
+            days_remaining=budget_status['days_remaining'],
+            days_total=budget_status['days_total'],
+            recommended_daily_spending=float(budget_status['recommended_daily_spending']),
+            average_daily_spending=float(budget_status['average_daily_spending']),
+            burn_rate_status=budget_status['burn_rate_status'],
+            is_over_budget=budget_status['is_over_budget'],
+            category_overruns=budget_status['category_overruns']
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/categories/status", response_model=List[CategoryStatusResponse])
 async def get_category_status(
     current_user: User = Depends(get_current_user)
 ):
-    """Get status for all expense categories"""
-    manager = get_expense_manager(current_user.id)
-    
-    if not manager.trip_budget:
-        raise HTTPException(status_code=400, detail="No budget plan found")
-    
-    category_status = manager.get_category_status()
-    
-    return [
-        CategoryStatusResponse(
-            category=category.value,
-            allocated=float(info['allocated']),
-            spent=float(info['spent']),
-            remaining=float(info['remaining']),
-            percentage_used=info['percentage_used'],
-            is_over_budget=info['is_over_budget'],
-            status=info['status']
-        )
-        for category, info in category_status.items()
-    ]
+    """Get spending status by category"""
+    try:
+        manager = get_expense_manager(current_user.id)
+        analytics = manager.get_analytics()
+        
+        if not analytics:
+            raise HTTPException(status_code=404, detail="No budget or trip data found")
+        
+        category_status = analytics.get_category_status()
+        
+        return [
+            CategoryStatusResponse(
+                category=category,
+                allocated=float(data['allocated']),
+                spent=float(data['spent']),
+                remaining=float(data['remaining']),
+                percentage_used=data['percentage_used'],
+                is_over_budget=data['is_over_budget'],
+                status=data['status']
+            )
+            for category, data in category_status.items()
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/analytics/trends")
 async def get_spending_trends(
     current_user: User = Depends(get_current_user)
 ):
     """Get spending trends and patterns"""
-    manager = get_expense_manager(current_user.id)
-    
-    if not manager.analytics or not manager.trip:
-        raise HTTPException(status_code=400, detail="No analytics data available")
-    
-    trends = manager.analytics.get_spending_trends(manager.trip)
-    
-    return {
-        "trend": trends["trend"],
-        "recent_average": float(trends.get("recent_average", 0)),
-        "overall_average": float(trends.get("overall_average", 0)),
-        "daily_totals": {
-            date_str: float(amount) 
-            for date_str, amount in trends.get("daily_totals", {}).items()
+    try:
+        manager = get_expense_manager(current_user.id)
+        analytics = manager.get_analytics()
+        
+        if not analytics:
+            return {"trends": [], "patterns": {}}
+        
+        trends = analytics.get_spending_trends()
+        
+        return {
+            "daily_trends": trends.get('daily_spending', []),
+            "category_trends": trends.get('category_trends', {}),
+            "spending_patterns": trends.get('patterns', {}),
+            "predictions": trends.get('predictions', {})
         }
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/analytics/summary")
 async def get_expense_summary(
     current_user: User = Depends(get_current_user)
 ):
     """Get comprehensive expense summary"""
-    manager = get_expense_manager(current_user.id)
-    
-    if not manager.analytics:
-        raise HTTPException(status_code=400, detail="No analytics data available")
-    
-    category_totals = manager.analytics.get_category_totals()
-    daily_totals = manager.analytics.get_daily_totals()
-    
-    return {
-        "total_expenses": len(manager.expenses),
-        "total_amount": float(manager.get_total_spent()),
-        "category_breakdown": {
-            category.value: float(amount)
-            for category, amount in category_totals.items()
-        },
-        "daily_breakdown": {
-            date_obj.isoformat(): float(amount)
-            for date_obj, amount in daily_totals.items()
+    try:
+        manager = get_expense_manager(current_user.id)
+        
+        if not manager.expenses:
+            return {
+                "total_expenses": 0,
+                "total_amount": 0.0,
+                "category_breakdown": {},
+                "daily_breakdown": {}
+            }
+        
+        total_amount = sum(float(expense.amount) for expense in manager.expenses.values())
+        
+        # Category breakdown
+        category_totals = {}
+        for expense in manager.expenses.values():
+            cat = expense.category.value
+            category_totals[cat] = category_totals.get(cat, 0) + float(expense.amount)
+        
+        # Daily breakdown
+        daily_totals = {}
+        for expense in manager.expenses.values():
+            day = expense.expense_date.date().isoformat()
+            daily_totals[day] = daily_totals.get(day, 0) + float(expense.amount)
+        
+        return {
+            "total_expenses": len(manager.expenses),
+            "total_amount": total_amount,
+            "category_breakdown": category_totals,
+            "daily_breakdown": daily_totals
         }
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/export")
 async def export_data(
     current_user: User = Depends(get_current_user)
 ):
     """Export all expense data"""
-    manager = get_expense_manager(current_user.id)
-    
-    data = manager.export_data()
-    
-    return {
-        "message": "Data exported successfully",
-        "data": data,
-        "exported_at": datetime.now().isoformat(),
-        "user_id": current_user.id
-    }
+    try:
+        manager = get_expense_manager(current_user.id)
+        
+        expenses_data = [
+            {
+                "id": expense_id,
+                "amount": float(expense.amount),
+                "category": expense.category.value,
+                "description": expense.description,
+                "expense_date": expense.expense_date.isoformat(),
+                "currency": getattr(expense, 'currency', 'VND')
+            }
+            for expense_id, expense in manager.expenses.items()
+        ]
+        
+        return {
+            "message": "Data exported successfully",
+            "data": {
+                "expenses": expenses_data,
+                "summary": {
+                    "total_count": len(expenses_data),
+                    "total_amount": sum(exp["amount"] for exp in expenses_data)
+                }
+            },
+            "exported_at": datetime.now().isoformat(),
+            "user_id": current_user.id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Health check endpoint
 @router.get("/health")
 async def health_check():
-    """Health check for expense service"""
+    """Health check for expenses service"""
     return {
         "status": "healthy",
-        "service": "expense_management",
+        "service": "expenses",
         "timestamp": datetime.now().isoformat(),
-        "active_users": len(expense_managers)
+        "active_managers": len(expense_managers)
     }
+
+# Development: Make this file runnable for testing
+if __name__ == "__main__":
+    print("Expenses API module loaded successfully!")
+    print("Available endpoints:")
+    for route in router.routes:
+        print(f"  {getattr(route, 'methods', 'N/A')} {route.path}")
     

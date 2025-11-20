@@ -9,10 +9,9 @@ from pydantic import BaseModel, EmailStr, Field
 class UserBase(BaseModel):
     """Base user model with common fields."""
     email: EmailStr
-    username: str = Field(..., min_length=3, max_length=50)
+    username: str = Field(..., min_length=6, max_length=50)
     first_name: Optional[str] = Field(None, max_length=50)
     last_name: Optional[str] = Field(None, max_length=50)
-    phone: Optional[str] = Field(None, max_length=20)
     profile_picture: Optional[str] = None
 
 
@@ -24,10 +23,9 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     """User update model - all fields optional."""
     email: Optional[EmailStr] = None
-    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    username: Optional[str] = Field(None, min_length=6, max_length=50)
     first_name: Optional[str] = Field(None, max_length=50)
     last_name: Optional[str] = Field(None, max_length=50)
-    phone: Optional[str] = Field(None, max_length=20)
     profile_picture: Optional[str] = None
 
 
@@ -48,7 +46,7 @@ class User(UserBase):
     last_login: Optional[datetime] = None
     
     # Travel-specific fields
-    preferred_currency: str = "USD"
+    preferred_currency: str = "VND"
     preferred_language: str = "en"
     time_zone: str = "UTC"
     travel_preferences: Optional[dict] = None
