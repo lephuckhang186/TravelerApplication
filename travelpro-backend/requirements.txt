@@ -1,0 +1,43 @@
+# Core FastAPI dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Pydantic and validation
+pydantic[email]==2.5.0
+pydantic-settings==2.12.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dateutil==2.8.2
+
+# Firebase & Google Auth
+firebase-admin==7.1.0
+google-auth==2.41.1
+google-auth-oauthlib==1.2.3
+google-auth-httplib2==0.2.0
+
+# Database (choose one)
+sqlalchemy==2.0.23
+databases[sqlite]==0.8.0
+# databases[postgresql]==0.8.0  # Uncomment for PostgreSQL
+
+# Caching (optional)
+# redis==5.0.1
+
+# Environment & Configuration
+python-dotenv==1.2.1
+
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.28.1
+
+# Data processing
+pandas==2.1.4
+numpy==1.26.2
+
+# Additional utilities
+python-slugify==8.0.1
+pillow==10.1.0  # For image processing
