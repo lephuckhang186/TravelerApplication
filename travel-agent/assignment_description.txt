@@ -1,0 +1,48 @@
+Assignment: # design a trip to any place worldwide
+    
+AI Travel Agent & Expense Planner(Purpose: Trip planning for any city worldwide with Realtime data.")
+
+• Real-time weather information
+• Top attractions and activities
+• Hotel cost calculation (per day × total days)
+• Currency conversion to user's native currency
+• Complete itinerary generation
+• Total expense calculation
+• generate a summary of the entire output
+
+user_input
+  |
+search attraction and activity
+1. search attracation
+2. search restaurant
+3. search activity # what can I do in the city
+4. search transportation
+  |
+search weather forcasting
+1. get current weather
+2. get weather forecast
+  |
+search hotel costs
+1. search hotel
+2. estimate the hotel cost
+3. budget_range
+  |
+calculate total cost
+1. add
+2. multiply
+3. calculated total cost
+4. calculate the daily budget # calculate the daily budget based on the total cost and the number of days
+    | 
+currency_conversion
+1. get exchnage rate
+2. convert currency
+    | 
+itinerary generation (a planned route or journey)
+1. get day plan
+2. create full itinerary 
+    |
+create Trip Summary
+    |
+Retun complete travel plan
+
+Note: if you know the OOPS then design this entire system using object and class in modular fashion. Each tool is a class with methods inside.
