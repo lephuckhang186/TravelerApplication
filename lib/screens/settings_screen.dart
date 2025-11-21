@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import '../services/user_service.dart';
 import 'auth_screen.dart';
-import 'profile_edit_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,34 +11,35 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveClientMixin {
+class _SettingsScreenState extends State<SettingsScreen>
+    with AutomaticKeepAliveClientMixin {
   String _currentUsername = 'Nguyễn Kiều Anh Quân';
   String? _currentAvatarPath;
   String _displayName = 'Nguyễn Kiều Anh Quân';
   String _phoneNumber = '0898999033';
   String _currentLanguage = 'VI';
   bool _isVerified = true;
-  
+
   ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
-  
+
   @override
   bool get wantKeepAlive => false;
-  
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _scrollController.addListener(_onScroll);
   }
-  
+
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
-  
+
   void _onScroll() {
     const scrollThreshold = 100.0;
     if (_scrollController.offset > scrollThreshold && !_isScrolled) {
@@ -52,22 +52,24 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
       });
     }
   }
-  
+
   @override
   void didUpdateWidget(SettingsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     _loadUserData();
   }
-  
+
   void _loadUserData() async {
     final userService = UserService();
     final profile = userService.getUserProfile();
     final username = await userService.getDisplayName();
-    
+
     setState(() {
-      _currentUsername = username.isNotEmpty ? username : 'Nguyễn Kiều Anh Quân';
-      _displayName = profile['fullName']?.isNotEmpty == true 
-          ? profile['fullName']! 
+      _currentUsername = username.isNotEmpty
+          ? username
+          : 'Nguyễn Kiều Anh Quân';
+      _displayName = profile['fullName']?.isNotEmpty == true
+          ? profile['fullName']!
           : _currentUsername;
       _currentAvatarPath = profile['avatarPath'];
     });
@@ -88,38 +90,39 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                 children: [
                   // Header section (shows when not scrolled)
                   if (!_isScrolled) _buildFullHeaderSection(),
-                  if (_isScrolled) const SizedBox(height: 56), // Space for pinned header
-                  
+                  if (_isScrolled)
+                    const SizedBox(height: 56), // Space for pinned header
+
                   const SizedBox(height: 12),
-                  
+
                   // Quick Actions (4 icons)
                   _buildQuickActions(),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Utilities Section
                   _buildUtilitiesSection(),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Expense Management Card
                   _buildExpenseCard(),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Settings Menu
                   _buildSettingsMenu(),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Action Buttons
                   _buildActionButtons(),
-                  
+
                   const SizedBox(height: 40),
                 ],
               ),
             ),
-            
+
             // Pinned header when scrolled
             if (_isScrolled) _buildCompactHeader(),
           ],
@@ -132,9 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
   Widget _buildFullHeaderSection() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF5F7FA),
-      ),
+      decoration: const BoxDecoration(color: Color(0xFFF5F7FA)),
       child: Column(
         children: [
           // Top right "Đổi ảnh nền" button
@@ -144,7 +145,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               GestureDetector(
                 onTap: _onChangeBackground,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(20),
@@ -152,7 +156,11 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.palette_outlined, size: 16, color: Colors.grey[600]),
+                      Icon(
+                        Icons.palette_outlined,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Đổi ảnh nền',
@@ -167,9 +175,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Centered Profile Avatar
           Stack(
             children: [
@@ -217,9 +225,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                 ),
             ],
           ),
-          
+
           const SizedBox(height: 15),
-          
+
           // Centered Name
           Text(
             _displayName,
@@ -230,23 +238,23 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               color: Colors.black87,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Centered Phone and Status
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 _phoneNumber,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
               ),
               const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green,
                   borderRadius: BorderRadius.circular(12),
@@ -262,9 +270,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // QR Code and Gift sections
           Row(
             children: [
@@ -272,7 +280,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                 child: GestureDetector(
                   onTap: () => _showMessage('Mở trang cá nhân...'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
@@ -289,7 +300,11 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey[600]),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 12,
+                          color: Colors.grey[600],
+                        ),
                       ],
                     ),
                   ),
@@ -300,7 +315,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                 child: GestureDetector(
                   onTap: () => _showMessage('Mở nhận quà 250K...'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.pink[50],
                       borderRadius: BorderRadius.circular(8),
@@ -335,7 +353,11 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.pink[600]),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 12,
+                          color: Colors.pink[600],
+                        ),
                       ],
                     ),
                   ),
@@ -357,7 +379,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         color: const Color(0xFFF5F7FA),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
           ),
@@ -412,9 +434,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                 ),
             ],
           ),
-          
+
           const SizedBox(width: 10),
-          
+
           // Name and Status in horizontal layout
           Expanded(
             child: Column(
@@ -432,7 +454,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                 ),
                 const SizedBox(height: 2),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green,
                     borderRadius: BorderRadius.circular(8),
@@ -449,7 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               ],
             ),
           ),
-          
+
           // Right side - simplified buttons
           GestureDetector(
             onTap: () => _showMessage('Mở trang cá nhân...'),
@@ -458,9 +483,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               child: Icon(Icons.qr_code, size: 16, color: Colors.grey[600]),
             ),
           ),
-          
+
           const SizedBox(width: 4),
-          
+
           GestureDetector(
             onTap: () => _showMessage('Mở nhận quà 250K...'),
             child: Container(
@@ -485,15 +510,19 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               ),
             ),
           ),
-          
+
           const SizedBox(width: 4),
-          
+
           // "Đổi ảnh nền" button
           GestureDetector(
             onTap: _onChangeBackground,
             child: Container(
               padding: const EdgeInsets.all(4),
-              child: Icon(Icons.palette_outlined, size: 16, color: Colors.grey[600]),
+              child: Icon(
+                Icons.palette_outlined,
+                size: 16,
+                color: Colors.grey[600],
+              ),
             ),
           ),
         ],
@@ -533,7 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.06),
+            color: Colors.grey.withValues(alpha: 0.06),
             spreadRadius: 1,
             blurRadius: 6,
           ),
@@ -575,7 +604,13 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 
-  Widget _buildQuickActionItem(IconData icon, String label, Color iconColor, String? badge, VoidCallback onTap) {
+  Widget _buildQuickActionItem(
+    IconData icon,
+    String label,
+    Color iconColor,
+    String? badge,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -589,11 +624,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: iconColor,
-                ),
+                child: Icon(icon, size: 20, color: iconColor),
               ),
               if (badge != null)
                 Positioned(
@@ -640,7 +671,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
   /// Utilities Section - 2 horizontal rows with synchronized scrolling
   Widget _buildUtilitiesSection() {
     final ScrollController scrollController = ScrollController();
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -727,52 +758,14 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 
-  Widget _buildUtilityItem(IconData icon, String label, Color iconColor, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Column(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.06),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                  ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                size: 22,
-                color: iconColor,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   /// Rectangular Utility Item - icon at top left, text below
-  Widget _buildRectangularUtilityItem(IconData icon, String label, Color iconColor, VoidCallback onTap) {
+  Widget _buildRectangularUtilityItem(
+    IconData icon,
+    String label,
+    Color iconColor,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -784,7 +777,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
+              color: Colors.grey.withValues(alpha: 0.08),
               spreadRadius: 1,
               blurRadius: 4,
             ),
@@ -799,14 +792,10 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(
-                icon,
-                size: 16,
-                color: iconColor,
-              ),
+              child: Icon(icon, size: 16, color: iconColor),
             ),
             const SizedBox(height: 6), // Reduced spacing
             // Text below icon - using Flexible instead of Expanded
@@ -866,9 +855,9 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               Icon(Icons.chevron_right, color: Colors.grey[400], size: 18),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Expense Summary Cards
           Row(
             children: [
@@ -880,7 +869,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.06),
+                        color: Colors.grey.withValues(alpha: 0.06),
                         spreadRadius: 1,
                         blurRadius: 4,
                       ),
@@ -908,7 +897,11 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.arrow_downward, size: 10, color: Colors.green),
+                          Icon(
+                            Icons.arrow_downward,
+                            size: 10,
+                            color: Colors.green,
+                          ),
                           const SizedBox(width: 2),
                           Text(
                             '389.955đ',
@@ -940,7 +933,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.06),
+                        color: Colors.grey.withValues(alpha: 0.06),
                         spreadRadius: 1,
                         blurRadius: 4,
                       ),
@@ -994,7 +987,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.06),
+            color: Colors.grey.withValues(alpha: 0.06),
             spreadRadius: 1,
             blurRadius: 6,
           ),
@@ -1137,7 +1130,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           border: Border.all(color: Colors.grey[300]!),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.06),
+              color: Colors.grey.withValues(alpha: 0.06),
               spreadRadius: 1,
               blurRadius: 4,
             ),
@@ -1163,11 +1156,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
               ),
             ),
             // Vertical divider
-            Container(
-              width: 1,
-              height: 24,
-              color: Colors.grey[300],
-            ),
+            Container(width: 1, height: 24, color: Colors.grey[300]),
             Expanded(
               child: GestureDetector(
                 onTap: () => _onSwitchAccount(),
@@ -1190,7 +1179,6 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
       ),
     );
   }
-
 
   // Event handlers for new design
   void _onExpenseManagement() {
@@ -1316,7 +1304,6 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 
-
   void _onLanguages() {
     showModalBottomSheet(
       context: context,
@@ -1339,7 +1326,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             ListTile(
               leading: const Text('🇺🇸'),
               title: const Text('English'),
-              trailing: _currentLanguage == 'EN' 
+              trailing: _currentLanguage == 'EN'
                   ? const Icon(Icons.check, color: Colors.green)
                   : null,
               onTap: () {
@@ -1353,7 +1340,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
             ListTile(
               leading: const Text('🇻🇳'),
               title: const Text('Tiếng Việt'),
-              trailing: _currentLanguage == 'VI' 
+              trailing: _currentLanguage == 'VI'
                   ? const Icon(Icons.check, color: Colors.green)
                   : null,
               onTap: () {
@@ -1369,7 +1356,6 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
       ),
     );
   }
-
 
   void _onLogout() {
     showDialog(
@@ -1395,23 +1381,22 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               // Show loading indicator
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                builder: (context) =>
+                    const Center(child: CircularProgressIndicator()),
               );
-              
+
               // Logout user
               final userService = UserService();
               await userService.logout();
-              
+
               // Close loading dialog
               Navigator.pop(context);
-              
+
               // Navigate to auth screen
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const AuthScreen()),
@@ -1432,10 +1417,7 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
+        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
         backgroundColor: const Color(0xFF2E7D32),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
@@ -1444,4 +1426,3 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
     );
   }
 }
-
