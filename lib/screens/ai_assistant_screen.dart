@@ -26,7 +26,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   Future<void> _loadChatHistories() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _chatHistories = prefs.getStringList('chat_histories') ?? ['chat_history_1'];
+      _chatHistories =
+          prefs.getStringList('chat_histories') ?? ['chat_history_1'];
       _currentChat = prefs.getString('current_chat') ?? _chatHistories.first;
     });
     _loadMessages();
@@ -53,14 +54,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     final prefs = await SharedPreferences.getInstance();
     final history = _messages.map((message) => jsonEncode(message)).toList();
     await prefs.setStringList(_currentChat, history);
-  }
-
-  Future<void> _clearMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_currentChat);
-    setState(() {
-      _messages.clear();
-    });
   }
 
   void _newChat() {
@@ -115,11 +108,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         setState(() {
-          _messages.add({'role': 'assistant', 'content': responseData['summary']});
+          _messages.add({
+            'role': 'assistant',
+            'content': responseData['summary'],
+          });
         });
       } else {
         setState(() {
-          _messages.add({'role': 'assistant', 'content': 'Error: ${response.reasonPhrase}'});
+          _messages.add({
+            'role': 'assistant',
+            'content': 'Error: ${response.reasonPhrase}',
+          });
         });
       }
     } catch (e) {
@@ -138,7 +137,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('AI Travel Assistant', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        title: Text(
+          'AI Travel Assistant',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
         elevation: 1,
         backgroundColor: Colors.white,
       ),
@@ -208,7 +210,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = _messages[index];
-                      return _buildMessageBubble(message['content']!, message['role']!);
+                      return _buildMessageBubble(
+                        message['content']!,
+                        message['role']!,
+                      );
                     },
                   ),
           ),
@@ -228,32 +233,34 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       {
         'icon': Icons.location_on,
         'text': 'Gợi ý địa điểm du lịch Việt Nam',
-        'query': 'Bạn có thể gợi ý cho tôi những địa điểm du lịch nổi tiếng ở Việt Nam không?'
+        'query':
+            'Bạn có thể gợi ý cho tôi những địa điểm du lịch nổi tiếng ở Việt Nam không?',
       },
       {
         'icon': Icons.flight,
         'text': 'Lên kế hoạch chuyến đi',
-        'query': 'Tôi muốn lên kế hoạch cho một chuyến du lịch 3 ngày 2 đêm'
+        'query': 'Tôi muốn lên kế hoạch cho một chuyến du lịch 3 ngày 2 đêm',
       },
       {
         'icon': Icons.restaurant,
         'text': 'Khám phá ẩm thực địa phương',
-        'query': 'Những món ăn đặc sản nào tôi nên thử khi du lịch?'
+        'query': 'Những món ăn đặc sản nào tôi nên thử khi du lịch?',
       },
       {
         'icon': Icons.hotel,
         'text': 'Tìm chỗ ở phù hợp',
-        'query': 'Bạn có thể giúp tôi tìm khách sạn với ngân sách hợp lý không?'
+        'query':
+            'Bạn có thể giúp tôi tìm khách sạn với ngân sách hợp lý không?',
       },
       {
         'icon': Icons.directions_car,
         'text': 'Phương tiện di chuyển',
-        'query': 'Cách di chuyển tốt nhất giữa các thành phố là gì?'
+        'query': 'Cách di chuyển tốt nhất giữa các thành phố là gì?',
       },
       {
         'icon': Icons.attach_money,
         'text': 'Ước tính chi phí',
-        'query': 'Chi phí cho một chuyến du lịch thường là bao nhiêu?'
+        'query': 'Chi phí cho một chuyến du lịch thường là bao nhiêu?',
       },
     ];
 
@@ -263,7 +270,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(height: 40),
-          
+
           // Welcome message
           Container(
             padding: const EdgeInsets.all(20),
@@ -285,11 +292,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ),
             child: Column(
               children: [
-                Icon(
-                  Icons.travel_explore,
-                  size: 48,
-                  color: Colors.white,
-                ),
+                Icon(Icons.travel_explore, size: 48, color: Colors.white),
                 const SizedBox(height: 12),
                 Text(
                   'Xin chào! 👋',
@@ -312,9 +315,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           Text(
             'Bạn muốn hỏi gì? 🤔',
             style: GoogleFonts.inter(
@@ -323,9 +326,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               color: Colors.grey[700],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Suggestion cards
           GridView.builder(
             shrinkWrap: true,
@@ -384,9 +387,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               );
             },
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           Text(
             'Hoặc nhập câu hỏi của bạn bên dưới! ✨',
             style: GoogleFonts.inter(
