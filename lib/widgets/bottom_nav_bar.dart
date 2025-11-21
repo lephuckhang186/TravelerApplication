@@ -87,7 +87,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
               _buildNavItem(
                 icon: Icons.analytics_outlined,
                 activeIcon: Icons.analytics,
-                label: 'Analysis', 
+                label: 'Analysis',
                 index: 2,
                 isSelected: widget.currentIndex == 2,
                 color: AppColors.accent,
@@ -147,10 +147,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                           ? LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                color,
-                                color.withValues(alpha: 0.7),
-                              ],
+                              colors: [color, color.withValues(alpha: 0.7)],
                             )
                           : null,
                       color: isSelected ? null : Colors.transparent,
@@ -171,15 +168,17 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
                         child: Icon(
                           isSelected ? activeIcon : icon,
                           key: ValueKey(isSelected),
-                          color: isSelected ? AppColors.textOnAccent : AppColors.textSecondary,
+                          color: isSelected
+                              ? AppColors.textOnAccent
+                              : AppColors.textSecondary,
                           size: 24,
                         ),
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 3),
-                  
+
                   // Label với animation - chỉ hiện khi selected
                   SizedBox(
                     height: 14,
@@ -211,4 +210,3 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
     );
   }
 }
-
