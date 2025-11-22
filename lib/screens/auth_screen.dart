@@ -1,20 +1,8 @@
-// Import necessary packages for authentication functionality
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../services/user_service.dart';
+import '../services/auth_service.dart';
+import 'email_auth_screen.dart';
 import 'home_screen.dart';
-import 'package:bcrypt/bcrypt.dart';
-import '../core/theme/app_theme.dart';
 
-/// AuthScreen - Main authentication screen for the TripWise app
-/// 
-/// This screen provides both login and registration functionality with:
-/// - Form validation
-/// - Password security features (bcrypt hashing)
-/// - Login attempt limiting (3 attempts with 30s lockout)
-/// - Smooth animations and modern UI
-/// - Forgot password functionality
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -22,719 +10,657 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
-  /// UI state variables
-  bool _isLogin = true; /// Toggle between login and registration mode
-  bool _isLoading = false; /// Loading state for async operations
-  bool _obscurePassword = true; /// Password visibility toggle
-  bool _obscureConfirmPassword = true; /// Confirm password visibility toggle
-  
-  /// Form controllers and validation
-  final _formKey = GlobalKey<FormState>(); /// Form validation key
-  final _usernameController = TextEditingController(); /// Username input controller
-  final _passwordController = TextEditingController(); /// Password input controller
-  final _confirmPasswordController = TextEditingController(); /// Confirm password input controller
-  
-  /// Security features: Login attempt limiting
-  int _failCount = 0; /// Number of failed login attempts
-  DateTime? _lockUntil; /// Timestamp when login will be unlocked
-  
-  /// Animation controllers for smooth UI transitions
-  late AnimationController _fadeController; /// Controls fade-in animation
-  late Animation<double> _fadeAnimation; /// Fade animation definition
+class _AuthScreenState extends State<AuthScreen> {
+  String _currentScreen = 'welcome'; // welcome, signup, login
 
-  /// Initialize animation controllers and start fade-in animation
-  /// when the widget is first created
   @override
-  void initState() {
-    super.initState();
-    /// Setup fade animation controller
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    /// Create smooth fade-in animation
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-    /// Start the fade-in animation
-    _fadeController.forward();
+  Widget build(BuildContext context) {
+    switch (_currentScreen) {
+      case 'signup':
+        return SignUpScreen(
+          onBack: () => setState(() => _currentScreen = 'welcome'),
+          onLogin: () => setState(() => _currentScreen = 'login'),
+        );
+      case 'login':
+        return LoginScreen(
+          onBack: () => setState(() => _currentScreen = 'welcome'),
+          onSignUp: () => setState(() => _currentScreen = 'signup'),
+        );
+      default:
+        return WelcomeScreen(
+          onSignUp: () => setState(() => _currentScreen = 'signup'),
+          onLogin: () => setState(() => _currentScreen = 'login'),
+        );
+    }
   }
+}
 
-  /// Clean up resources when the widget is disposed
-  /// to prevent memory leaks
-  @override
-  void dispose() {
-    _fadeController.dispose(); /// Dispose animation controller
-    _usernameController.dispose(); /// Dispose text controllers
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
+// Màn hình chào mừng
+class WelcomeScreen extends StatelessWidget {
+  final VoidCallback onSignUp;
+  final VoidCallback onLogin;
 
-  /// Main build method that creates the authentication screen UI
-  /// with gradient background, fade animation, and responsive layout
+  const WelcomeScreen({
+    super.key,
+    required this.onSignUp,
+    required this.onLogin,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        /// Purple gradient background for modern look
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF7B61FF), /// Primary purple
-              Color(0xFF9B7FFF), /// Mid-tone purple
-              Color(0xFFE8E0FF), /// Light purple
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            children: [
+              const Spacer(flex: 3),
+              
+              // Logo Spotify
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.graphic_eq,
+                  size: 40,
+                  color: Colors.black,
+                ),
+              ),
+              
+              const Spacer(flex: 2),
+              
+              // Slogan
+              const Text(
+                'Chuyến đi của bạn,',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const Text(
+                'kế hoạch của TripWise',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Không chỉ là du lịch, là hành trình của chúng ta',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w400,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const Spacer(flex: 3),
+              
+              // Nút Đăng ký miễn phí
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: onSignUp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1ED760), // Spotify green
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: const Text(
+                    'Bắt đầu hành trình',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Nút Đăng nhập
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: onLogin,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.white.withOpacity(0.8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: const Text(
+                    'Đăng nhập',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const Spacer(),
             ],
           ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation, /// Apply fade-in animation
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 60),
-                  
-                  /// App logo, title and subtitle
-                  _buildHeader(),
-                  
-                  const SizedBox(height: 60),
-                  
-                  /// Main authentication form (login/register)
-                  _buildAuthForm(),
-                  
-                  const SizedBox(height: 30),
-                  
-                  /// Button to switch between login and register modes
-                  _buildToggleButton(),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Builds the header section with app logo, title, and subtitle
-  /// Changes subtitle text based on login/register mode
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        /// App logo container with circular design and shadow
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.trending_up, /// Travel/growth icon representing the app's purpose
-            size: 40,
-            color: AppColors.accent,
-          ),
-        ),
-        const SizedBox(height: 24),
-        /// App title with custom font styling
-        Text(
-          'TripWise',
-          style: GoogleFonts.quattrocento(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textOnAccent,
-            letterSpacing: -1,
-          ),
-        ),
-        const SizedBox(height: 8),
-        /// Dynamic subtitle that changes based on current mode
-        Text(
-          _isLogin ? 'Đăng nhập vào tài khoản' : 'Tạo tài khoản mới',
-          style: GoogleFonts.quattrocento(
-            fontSize: 16,
-            color: AppColors.textOnAccent.withValues(alpha: 0.8),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds the main authentication form container
-  /// Dynamically shows/hides fields based on login/register mode
-  /// Includes validation, password visibility toggles, and submit button
-  Widget _buildAuthForm() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      /// White card container with rounded corners and shadow
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Form(
-        key: _formKey, /// Form validation key
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            /// Username input field with validation
-            _buildTextField(
-              controller: _usernameController,
-              label: 'Tên đăng nhập',
-              icon: Icons.person,
-              validator: (value) {
-                if (value?.isEmpty ?? true) {
-                  return 'Vui lòng nhập tên đăng nhập';
-                }
-                return null;
-              },
-            ),
-            
-            const SizedBox(height: 20),
-            
-            /// Password field with visibility toggle and validation
-            _buildTextField(
-              controller: _passwordController,
-              label: 'Mật khẩu',
-              icon: Icons.lock,
-              obscureText: _obscurePassword,
-              suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-              ),
-              validator: (value) {
-                if (value?.isEmpty ?? true) {
-                  return 'Vui lòng nhập mật khẩu';
-                }
-                if (value!.length < 6) {
-                  return 'Mật khẩu phải có ít nhất 6 ký tự';
-                }
-                return null;
-              },
-            ),
-            
-            /// Confirm password field - only shown in registration mode
-            if (!_isLogin) ...[
-              const SizedBox(height: 20),
-              _buildTextField(
-                controller: _confirmPasswordController,
-                label: 'Xác nhận mật khẩu',
-                icon: Icons.lock_outline,
-                obscureText: _obscureConfirmPassword,
-                suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
-                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                ),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) {
-                    return 'Vui lòng xác nhận mật khẩu';
-                  }
-                  if (value != _passwordController.text) {
-                    return 'Mật khẩu xác nhận không khớp';
-                  }
-                  return null;
-                },
-              ),
-            ],
-            
-            const SizedBox(height: 16),
-            
-            /// Forgot password link - only shown in login mode
-            if (_isLogin)
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: _showForgotPasswordDialog,
-                  child: Text(
-                    'Quên mật khẩu?',
-                    style: GoogleFonts.quattrocento(
-                      color: const Color(0xFF7B61FF),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      decoration: TextDecoration.underline,
-                      decorationColor: const Color(0xFF7B61FF),
-                    ),
-                  ),
-                ),
-              ),
-            
-            const SizedBox(height: 24),
-            
-            /// Submit button with loading state
-            ElevatedButton(
-              onPressed: _isLoading ? null : _handleSubmit, /// Disable when loading
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B61FF),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      _isLogin ? 'Đăng nhập' : 'Đăng ký', /// Dynamic button text
-                      style: GoogleFonts.quattrocento(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Helper method to build consistent styled text input fields
-  /// 
-  /// [controller] - TextEditingController for the input field
-  /// [label] - Display label for the field
-  /// [icon] - Prefix icon to display
-  /// [obscureText] - Whether to hide text (for passwords)
-  /// [suffixIcon] - Optional suffix icon (e.g., visibility toggle)
-  /// [validator] - Validation function for form validation
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      validator: validator,
-      style: GoogleFonts.quattrocento(fontSize: 16),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.accent),
-        suffixIcon: suffixIcon,
-        /// Default border style
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.support),
-        ),
-        /// Focused border style with purple accent
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.accent, width: 2),
-        ),
-        /// Enabled border style
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.support),
-        ),
-        filled: true,
-        fillColor: AppColors.background, /// Light background fill
-      ),
-    );
-  }
-
-  /// Builds the toggle button that allows switching between login and register modes
-  /// Also clears form data and resets security counters when switching
-  Widget _buildToggleButton() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        /// Contextual text based on current mode
-        Text(
-          _isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? ',
-          style: GoogleFonts.quattrocento(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 14,
-          ),
-        ),
-        /// Clickable toggle button
-        GestureDetector(
-          onTap: () => setState(() {
-            _isLogin = !_isLogin; /// Switch between login/register
-            /// Clear all form fields to prevent data confusion
-            _usernameController.clear();
-            _passwordController.clear();
-            _confirmPasswordController.clear();
-            /// Reset security features when switching modes
-            _failCount = 0;
-            _lockUntil = null;
-          }),
-          child: Text(
-            _isLogin ? 'Đăng ký ngay' : 'Đăng nhập', /// Dynamic button text
-            style: GoogleFonts.quattrocento(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              decoration: TextDecoration.underline,
-              decorationColor: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Handles form submission for both login and registration
-  /// 
-  /// Security features:
-  /// - Form validation before processing
-  /// - Login attempt limiting (3 attempts with 30s lockout)
-  /// - Password hashing for registration using bcrypt
-  /// - Raw password for login (server handles bcrypt comparison)
-  /// 
-  /// Flow:
-  /// 1. Validate form inputs
-  /// 2. Check for login lockout (if in login mode)
-  /// 3. Call appropriate service method (login/register)
-  /// 4. Handle success/failure with appropriate UI feedback
-  /// 5. Navigate to home screen on success
-  void _handleSubmit() async {
-    /// Validate form before proceeding
-    if (!_formKey.currentState!.validate()) return;
-
-    /// Security: Check if login is temporarily locked due to failed attempts
-    if (_isLogin && _lockUntil != null && DateTime.now().isBefore(_lockUntil!)) {
-      final remainingSeconds = _lockUntil!.difference(DateTime.now()).inSeconds;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Bạn đã nhập sai quá nhiều. Vui lòng thử lại sau $remainingSeconds giây.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      return;
-    }
-
-    /// Show loading state
-    setState(() => _isLoading = true);
-
-    try {
-      final userService = UserService();
-      final username = _usernameController.text.trim();
-      final password = _passwordController.text;
-
-      bool success;
-      String message;
-
-      if (_isLogin) {
-        /// LOGIN FLOW: Send raw password - server handles bcrypt comparison
-        final loginResult = await userService.loginWithDetails(username, password);
-        success = loginResult['success'] ?? false;
-        
-        if (success) {
-          /// Reset security counters on successful login
-          _failCount = 0;
-          _lockUntil = null;
-          /// Load user data after successful login
-          await userService.init();
-          message = 'Đăng nhập thành công!';
-        } else {
-          /// Check if user exists or wrong password
-          final userExists = loginResult['userExists'] ?? false;
-          if (!userExists) {
-            message = 'Tài khoản này chưa được đăng ký. Vui lòng đăng ký trước.';
-            _failCount = 0; // Don't count as failed attempt for non-existent user
-          } else {
-            /// Handle failed login attempts with progressive security
-            _failCount += 1;
-            if (_failCount >= 3) {
-              /// Lock login for 30 seconds after 3 failed attempts
-              _lockUntil = DateTime.now().add(const Duration(seconds: 30));
-              _failCount = 0;
-              message = 'Bạn đã nhập sai 3 lần. Hãy thử lại sau 30 giây.';
-            } else {
-              message = 'Sai mật khẩu. Bạn còn ${3 - _failCount} lần thử.';
-            }
-          }
-        }
-      } else {
-        /// REGISTRATION FLOW: Hash password before sending to server
-        final hashed = BCrypt.hashpw(password, BCrypt.gensalt());
-        success = await userService.register(username, hashed);
-        message = success ? 'Đăng ký thành công!' : 'Tên đăng nhập đã tồn tại';
-        
-        if (success) {
-          /// Save user data to local storage
-          await userService.saveUserToJson(username, hashed, '');
-          
-          /// Auto-login after successful registration
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('username', username);
-          await prefs.setBool('isLoggedIn', true);
-          
-          /// Load user data after registration
-          await userService.init();
-        }
-      }
-
-      /// Handle successful authentication
-      if (success) {
-        if (mounted) {
-          /// Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.green,
-            ),
-          );
-          
-          /// Navigate to main app screen
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        }
-      } else {
-        /// Show error message for failed authentication
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      /// Handle unexpected errors
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Có lỗi xảy ra, vui lòng thử lại'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      /// Always hide loading state when done
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  /// Shows a dialog for resetting forgotten passwords
-  /// 
-  /// Features:
-  /// - Form validation for username and new password
-  /// - Password confirmation matching
-  /// - bcrypt hashing before sending to server
-  /// - Loading states and error handling
-  /// - Success/failure feedback via SnackBars
-  void _showForgotPasswordDialog() {
-    /// Local controllers for the dialog form
-    final usernameController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    bool isLoading = false;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            'Đặt lại mật khẩu',
-            style: GoogleFonts.quattrocento(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF7B61FF),
-            ),
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                /// Instructions for the user
-                Text(
-                  'Nhập tên đăng nhập và mật khẩu mới',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                /// Username input field
-                TextFormField(
-                  controller: usernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Tên đăng nhập',
-                    prefixIcon: const Icon(Icons.person, color: Color(0xFF7B61FF)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Vui lòng nhập tên đăng nhập';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                /// New password input field
-                TextFormField(
-                  controller: newPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Mật khẩu mới',
-                    prefixIcon: const Icon(Icons.lock, color: Color(0xFF7B61FF)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Vui lòng nhập mật khẩu mới';
-                    }
-                    if (value!.length < 6) {
-                      return 'Mật khẩu phải có ít nhất 6 ký tự';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                /// Confirm password input field
-                TextFormField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Xác nhận mật khẩu',
-                    prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF7B61FF)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7B61FF), width: 2),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Vui lòng xác nhận mật khẩu';
-                    }
-                    if (value != newPasswordController.text) {
-                      return 'Mật khẩu xác nhận không khớp';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            /// Cancel button
-            TextButton(
-              onPressed: isLoading ? null : () => Navigator.pop(context),
-              child: Text(
-                'Hủy',
-                style: GoogleFonts.quattrocento(color: Colors.grey[600]),
-              ),
-            ),
-            /// Submit button with loading state
-            ElevatedButton(
-              onPressed: isLoading ? null : () async {
-                if (!formKey.currentState!.validate()) return;
-
-                setState(() => isLoading = true);
-
-                try {
-                  final userService = UserService();
-                  /// Hash the new password before sending to server
-                  final hashedNew = BCrypt.hashpw(newPasswordController.text, BCrypt.gensalt());
-                  final success = await userService.resetPassword(
-                    usernameController.text.trim(),
-                    hashedNew,
-                  );
-
-                  if (success) {
-                    if (!mounted) return;
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đặt lại mật khẩu thành công!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Tên đăng nhập không tồn tại'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Có lỗi xảy ra, vui lòng thử lại'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                } finally {
-                  setState(() => isLoading = false);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B61FF),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: isLoading
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text('Đặt lại', style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600)),
-            ),
-          ],
         ),
       ),
     );
   }
 }
 
+class SignUpScreen extends StatefulWidget {
+  final VoidCallback onBack;
+  final VoidCallback onLogin;
+
+  const SignUpScreen({
+    super.key,
+    required this.onBack,
+    required this.onLogin,
+  });
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
+
+  Future<void> _handleSocialAuth(String provider) async {
+    setState(() => _isLoading = true);
+    
+    try {
+      switch (provider) {
+        case 'Google':
+          await _authService.signInWithGoogle();
+          break;
+      }
+      
+      if (mounted) {
+        _showSuccessMessage('Đăng ký thành công!');
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      _showErrorMessage(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF1ED760),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _navigateToEmailSignUp() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EmailAuthScreen(
+          isSignUp: true,
+          onBack: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: widget.onBack,
+        ),
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 60),
+              
+              // Logo
+              Container(
+                width: 60,
+                height: 60,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.graphic_eq,
+                  size: 30,
+                  color: Colors.black,
+                ),
+              ),
+              
+              const SizedBox(height: 60),
+              
+              // Tiêu đề
+              const Text(
+                'Tạo tài khoản',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const Text(
+                'TripWise',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 60),
+              
+              // Nút đăng ký bằng email
+              _buildSignUpButton(
+                'Tiếp tục bằng email',
+                Icons.email_outlined,
+                const Color(0xFF1ED760),
+                Colors.black,
+                onPressed: _navigateToEmailSignUp,
+              ),
+              
+              const SizedBox(height: 16),
+              
+              
+              // Nút đăng ký bằng Google
+              _buildSignUpButton(
+                'Tiếp tục bằng Google',
+                Icons.g_mobiledata_rounded,
+                Colors.transparent,
+                Colors.white,
+                borderColor: Colors.white.withOpacity(0.8),
+                onPressed: () => _handleSocialAuth('Google'),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              
+              const Spacer(),
+              
+              // Text "Bạn đã có tài khoản?"
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Bạn đã có tài khoản? ',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: widget.onLogin,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                    ),
+                    child: const Text(
+                      'Đăng nhập',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoonMessage(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature sẽ được cập nhật sớm!'),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildSignUpButton(
+    String text,
+    IconData icon,
+    Color backgroundColor,
+    Color textColor, {
+    Color? borderColor,
+    VoidCallback? onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: _isLoading ? null : onPressed,
+        icon: _isLoading 
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : Icon(icon, color: textColor, size: 20),
+        label: Text(
+          text,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          side: borderColor != null ? BorderSide(color: borderColor) : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  final VoidCallback onBack;
+  final VoidCallback onSignUp;
+
+  const LoginScreen({
+    super.key,
+    required this.onBack,
+    required this.onSignUp,
+  });
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
+
+  Future<void> _handleSocialAuth(String provider) async {
+    setState(() => _isLoading = true);
+    
+    try {
+      switch (provider) {
+        case 'Google':
+          await _authService.signInWithGoogle();
+          break;
+      }
+      
+      if (mounted) {
+        _showSuccessMessage('Đăng nhập thành công!');
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      _showErrorMessage(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF1ED760),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showComingSoonMessage(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature sẽ được cập nhật sớm!'),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _navigateToEmailLogin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EmailAuthScreen(
+          isSignUp: false,
+          onBack: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: widget.onBack,
+        ),
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 60),
+              
+              // Logo
+              Container(
+                width: 60,
+                height: 60,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.graphic_eq,
+                  size: 30,
+                  color: Colors.black,
+                ),
+              ),
+              
+              const SizedBox(height: 60),
+              
+              // Tiêu đề
+              const Text(
+                'Đăng nhập',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const Text(
+                'TripWise',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 60),
+              
+              // Nút đăng nhập bằng email
+              _buildLoginButton(
+                'Tiếp tục bằng email',
+                Icons.email_outlined,
+                const Color(0xFF1ED760),
+                Colors.black,
+                onPressed: _navigateToEmailLogin,
+              ),
+              
+              const SizedBox(height: 16),
+              
+              
+              // Nút đăng nhập bằng Google
+              _buildLoginButton(
+                'Tiếp tục bằng Google',
+                Icons.g_mobiledata_rounded,
+                Colors.transparent,
+                Colors.white,
+                borderColor: Colors.white.withOpacity(0.8),
+                onPressed: () => _handleSocialAuth('Google'),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              
+              const Spacer(),
+              
+              // Text "Bạn chưa có tài khoản?"
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Bạn chưa có tài khoản? ',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: widget.onSignUp,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                    ),
+                    child: const Text(
+                      'Đăng ký',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(
+    String text,
+    IconData icon,
+    Color backgroundColor,
+    Color textColor, {
+    Color? borderColor,
+    VoidCallback? onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: _isLoading ? null : onPressed,
+        icon: _isLoading 
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : Icon(icon, color: textColor, size: 20),
+        label: Text(
+          text,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          side: borderColor != null ? BorderSide(color: borderColor) : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+}

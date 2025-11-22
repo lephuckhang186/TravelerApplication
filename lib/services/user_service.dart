@@ -257,7 +257,7 @@ class UserService {
   }
   
   // Save avatar image to app directory
-  Future<String?> saveAvatarImage(File imageFile) async {
+  Future<String?> saveAvatarImage(dynamic imageFile) async {
     try {
       if (_currentUsername == null) return null;
       
@@ -268,7 +268,7 @@ class UserService {
       }
       
       final fileName = '${_currentUsername}_avatar.jpg';
-      final savedImage = await imageFile.copy('${avatarDir.path}/$fileName');
+      final savedImage = await (imageFile as File).copy('${avatarDir.path}/$fileName');
       
       return savedImage.path;
     } catch (e) {
