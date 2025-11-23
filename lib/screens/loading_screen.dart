@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'home_screen.dart';
 import 'auth_screen.dart';
-import '../services/user_service.dart';
+import '../services/auth_service.dart';
 
 /// Modern Loading Screen - Gen Z Vibes 🚀
 class LoadingScreen extends StatefulWidget {
@@ -57,8 +57,8 @@ class _LoadingScreenState extends State<LoadingScreen>
     // Navigate after 2.5 seconds
     Timer(const Duration(milliseconds: 2500), () async {
       if (mounted) {
-        final userService = UserService();
-        final isLoggedIn = await userService.isLoggedIn();
+        final authService = AuthService();
+        final isLoggedIn = authService.isLoggedIn;
         
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
