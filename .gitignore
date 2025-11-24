@@ -55,6 +55,14 @@ service-account-*.json
 .env.production
 .env.*.local
 
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.npm
+
 # Python backend specific
 travelpro-backend/__pycache__/
 travelpro-backend/*.pyc
