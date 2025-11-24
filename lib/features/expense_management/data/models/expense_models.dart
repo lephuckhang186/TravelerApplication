@@ -1,117 +1,105 @@
-import 'dart:convert';
-
-/// Expense category enumeration
+///Định nghĩa các data models cho expense management
+/// Expense category enumeration matching backend
 enum ExpenseCategory {
-  food,
   transportation,
   accommodation,
-  entertainment,
+  foodBeverage,
+  activities,
   shopping,
-  health,
-  education,
-  utilities,
-  other
+  miscellaneous,
+  emergency
 }
 
 /// Extension for ExpenseCategory to handle string conversion
 extension ExpenseCategoryExtension on ExpenseCategory {
   String get value {
     switch (this) {
-      case ExpenseCategory.food:
-        return 'FOOD';
       case ExpenseCategory.transportation:
-        return 'TRANSPORTATION';
+        return 'transportation';
       case ExpenseCategory.accommodation:
-        return 'ACCOMMODATION';
-      case ExpenseCategory.entertainment:
-        return 'ENTERTAINMENT';
+        return 'accommodation';
+      case ExpenseCategory.foodBeverage:
+        return 'food_beverage';
+      case ExpenseCategory.activities:
+        return 'activities';
       case ExpenseCategory.shopping:
-        return 'SHOPPING';
-      case ExpenseCategory.health:
-        return 'HEALTH';
-      case ExpenseCategory.education:
-        return 'EDUCATION';
-      case ExpenseCategory.utilities:
-        return 'UTILITIES';
-      case ExpenseCategory.other:
-        return 'OTHER';
+        return 'shopping';
+      case ExpenseCategory.miscellaneous:
+        return 'miscellaneous';
+      case ExpenseCategory.emergency:
+        return 'emergency';
     }
   }
 
   String get displayName {
     switch (this) {
-      case ExpenseCategory.food:
-        return 'Ăn uống';
       case ExpenseCategory.transportation:
         return 'Di chuyển';
       case ExpenseCategory.accommodation:
         return 'Lưu trú';
-      case ExpenseCategory.entertainment:
-        return 'Giải trí';
+      case ExpenseCategory.foodBeverage:
+        return 'Ăn uống';
+      case ExpenseCategory.activities:
+        return 'Hoạt động';
       case ExpenseCategory.shopping:
         return 'Mua sắm';
-      case ExpenseCategory.health:
-        return 'Sức khỏe';
-      case ExpenseCategory.education:
-        return 'Giáo dục';
-      case ExpenseCategory.utilities:
-        return 'Tiện ích';
-      case ExpenseCategory.other:
+      case ExpenseCategory.miscellaneous:
         return 'Khác';
+      case ExpenseCategory.emergency:
+        return 'Khẩn cấp';
     }
   }
 
   static ExpenseCategory fromString(String value) {
-    switch (value.toUpperCase()) {
-      case 'FOOD':
-        return ExpenseCategory.food;
-      case 'TRANSPORTATION':
+    switch (value.toLowerCase()) {
+      case 'transportation':
         return ExpenseCategory.transportation;
-      case 'ACCOMMODATION':
+      case 'accommodation':
         return ExpenseCategory.accommodation;
-      case 'ENTERTAINMENT':
-        return ExpenseCategory.entertainment;
-      case 'SHOPPING':
+      case 'food_beverage':
+        return ExpenseCategory.foodBeverage;
+      case 'activities':
+        return ExpenseCategory.activities;
+      case 'shopping':
         return ExpenseCategory.shopping;
-      case 'HEALTH':
-        return ExpenseCategory.health;
-      case 'EDUCATION':
-        return ExpenseCategory.education;
-      case 'UTILITIES':
-        return ExpenseCategory.utilities;
-      case 'OTHER':
-        return ExpenseCategory.other;
+      case 'miscellaneous':
+        return ExpenseCategory.miscellaneous;
+      case 'emergency':
+        return ExpenseCategory.emergency;
       default:
-        return ExpenseCategory.other;
+        return ExpenseCategory.miscellaneous;
     }
   }
 }
 
-/// Expense model
+/// Expense model matching backend structure
 class Expense {
   final String id;
   final double amount;
   final ExpenseCategory category;
+  final DateTime date;
   final String description;
-  final DateTime expenseDate;
   final String currency;
 
   const Expense({
     required this.id,
     required this.amount,
     required this.category,
-    required this.description,
-    required this.expenseDate,
+    required this.date,
+    this.description = '',
     this.currency = 'VND',
   });
+
+  /// Validate expense amount
+  bool get isValid => amount >= 0;
 
   factory Expense.fromJson(Map<String, dynamic> json) {
     return Expense(
       id: json['id'] as String,
       amount: (json['amount'] as num).toDouble(),
       category: ExpenseCategoryExtension.fromString(json['category'] as String),
-      description: json['description'] as String,
-      expenseDate: DateTime.parse(json['expense_date'] as String),
+      date: DateTime.parse(json['expense_date'] as String),
+      description: json['description'] as String? ?? '',
       currency: json['currency'] as String? ?? 'VND',
     );
   }
@@ -121,14 +109,17 @@ class Expense {
       'id': id,
       'amount': amount,
       'category': category.value,
+      'date': date.toIso8601String(),
       'description': description,
-      'expense_date': expenseDate.toIso8601String(),
       'currency': currency,
     };
   }
+
+  /// Get expense date for backward compatibility
+  DateTime get expenseDate => date;
 }
 
-/// Expense create request model
+/// Expense create request model matching backend
 class ExpenseCreateRequest {
   final double amount;
   final ExpenseCategory category;
@@ -142,6 +133,9 @@ class ExpenseCreateRequest {
     this.expenseDate,
   });
 
+  /// Validate request data
+  bool get isValid => amount > 0;
+
   Map<String, dynamic> toJson() {
     return {
       'amount': amount,
@@ -152,17 +146,33 @@ class ExpenseCreateRequest {
   }
 }
 
-/// Budget model
+/// Budget model matching backend Budget class
 class Budget {
   final double totalBudget;
   final double? dailyLimit;
   final Map<String, double>? categoryAllocations;
+  final Map<ExpenseCategory, CategoryBudget>? categoryBudgets;
 
   const Budget({
     required this.totalBudget,
     this.dailyLimit,
     this.categoryAllocations,
+    this.categoryBudgets,
   });
+
+  /// Validate budget
+  bool get isValid => totalBudget > 0;
+
+  /// Get total allocated amount
+  double get totalAllocated {
+    if (categoryAllocations != null) {
+      return categoryAllocations!.values.fold(0.0, (sum, amount) => sum + amount);
+    }
+    return 0.0;
+  }
+
+  /// Get unallocated amount
+  double get unallocated => totalBudget - totalAllocated;
 
   factory Budget.fromJson(Map<String, dynamic> json) {
     return Budget(
@@ -249,25 +259,105 @@ class Trip {
   }
 }
 
-/// Budget status response model
+/// Category budget model matching backend CategoryBudget
+class CategoryBudget {
+  final double allocatedAmount;
+  final double spentAmount;
+
+  const CategoryBudget({
+    required this.allocatedAmount,
+    this.spentAmount = 0.0,
+  });
+
+  /// Get remaining budget
+  double get remaining => allocatedAmount - spentAmount;
+
+  /// Get percentage used
+  double get percentageUsed {
+    if (allocatedAmount <= 0) return 0.0;
+    return (spentAmount / allocatedAmount * 100).clamp(0.0, 100.0);
+  }
+
+  /// Check if over budget
+  bool get isOverBudget => spentAmount > allocatedAmount;
+
+  factory CategoryBudget.fromJson(Map<String, dynamic> json) {
+    return CategoryBudget(
+      allocatedAmount: (json['allocated_amount'] as num).toDouble(),
+      spentAmount: (json['spent_amount'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'allocated_amount': allocatedAmount,
+      'spent_amount': spentAmount,
+    };
+  }
+}
+
+/// Budget status response modelng backend
+enum BurnRateStatus {
+  completed,
+  highBurn,
+  moderateBurn,
+  onTrack,
+}
+
+/// Extension for BurnRateStatus
+extension BurnRateStatusExtension on BurnRateStatus {
+  String get value {
+    switch (this) {
+      case BurnRateStatus.completed:
+        return 'COMPLETED';
+      case BurnRateStatus.highBurn:
+        return 'HIGH_BURN';
+      case BurnRateStatus.moderateBurn:
+        return 'MODERATE_BURN';
+      case BurnRateStatus.onTrack:
+        return 'ON_TRACK';
+    }
+  }
+
+  static BurnRateStatus fromString(String value) {
+    switch (value.toUpperCase()) {
+      case 'COMPLETED':
+        return BurnRateStatus.completed;
+      case 'HIGH_BURN':
+        return BurnRateStatus.highBurn;
+      case 'MODERATE_BURN':
+        return BurnRateStatus.moderateBurn;
+      case 'ON_TRACK':
+        return BurnRateStatus.onTrack;
+      default:
+        return BurnRateStatus.onTrack;
+    }
+  }
+}
+
+/// Budget status response model matching backend BudgetStatus
 class BudgetStatus {
   final double totalBudget;
   final double totalSpent;
   final double percentageUsed;
   final double remainingBudget;
+  final DateTime startDate;
+  final DateTime endDate;
   final int daysRemaining;
   final int daysTotal;
   final double recommendedDailySpending;
   final double averageDailySpending;
-  final String burnRateStatus;
+  final BurnRateStatus burnRateStatus;
   final bool isOverBudget;
-  final List<String> categoryOverruns;
+  final List<ExpenseCategory> categoryOverruns;
 
   const BudgetStatus({
     required this.totalBudget,
     required this.totalSpent,
     required this.percentageUsed,
     required this.remainingBudget,
+    required this.startDate,
+    required this.endDate,
     required this.daysRemaining,
     required this.daysTotal,
     required this.recommendedDailySpending,
@@ -283,26 +373,64 @@ class BudgetStatus {
       totalSpent: (json['total_spent'] as num).toDouble(),
       percentageUsed: (json['percentage_used'] as num).toDouble(),
       remainingBudget: (json['remaining_budget'] as num).toDouble(),
+      startDate: DateTime.parse(json['start_date'] as String),
+      endDate: DateTime.parse(json['end_date'] as String),
       daysRemaining: json['days_remaining'] as int,
       daysTotal: json['days_total'] as int,
       recommendedDailySpending: (json['recommended_daily_spending'] as num).toDouble(),
       averageDailySpending: (json['average_daily_spending'] as num).toDouble(),
-      burnRateStatus: json['burn_rate_status'] as String,
+      burnRateStatus: BurnRateStatusExtension.fromString(json['burn_rate_status'] as String),
       isOverBudget: json['is_over_budget'] as bool,
-      categoryOverruns: List<String>.from(json['category_overruns'] as List),
+      categoryOverruns: (json['category_overruns'] as List)
+          .map((cat) => ExpenseCategoryExtension.fromString(cat.toString()))
+          .toList(),
     );
   }
 }
 
-/// Category status response model
+/// Category status type enum matching backend
+enum CategoryStatusType {
+  overBudget,
+  warning,
+  ok,
+}
+
+/// Extension for CategoryStatusType
+extension CategoryStatusTypeExtension on CategoryStatusType {
+  String get value {
+    switch (this) {
+      case CategoryStatusType.overBudget:
+        return 'OVER_BUDGET';
+      case CategoryStatusType.warning:
+        return 'WARNING';
+      case CategoryStatusType.ok:
+        return 'OK';
+    }
+  }
+
+  static CategoryStatusType fromString(String value) {
+    switch (value.toUpperCase()) {
+      case 'OVER_BUDGET':
+        return CategoryStatusType.overBudget;
+      case 'WARNING':
+        return CategoryStatusType.warning;
+      case 'OK':
+        return CategoryStatusType.ok;
+      default:
+        return CategoryStatusType.ok;
+    }
+  }
+}
+
+/// Category status response model matching backend
 class CategoryStatus {
-  final String category;
+  final ExpenseCategory category;
   final double allocated;
   final double spent;
   final double remaining;
   final double percentageUsed;
   final bool isOverBudget;
-  final String status;
+  final CategoryStatusType status;
 
   const CategoryStatus({
     required this.category,
@@ -316,13 +444,13 @@ class CategoryStatus {
 
   factory CategoryStatus.fromJson(Map<String, dynamic> json) {
     return CategoryStatus(
-      category: json['category'] as String,
+      category: ExpenseCategoryExtension.fromString(json['category'] as String),
       allocated: (json['allocated'] as num).toDouble(),
       spent: (json['spent'] as num).toDouble(),
       remaining: (json['remaining'] as num).toDouble(),
       percentageUsed: (json['percentage_used'] as num).toDouble(),
       isOverBudget: json['is_over_budget'] as bool,
-      status: json['status'] as String,
+      status: CategoryStatusTypeExtension.fromString(json['status'] as String),
     );
   }
 }
@@ -359,31 +487,90 @@ class ExpenseSummary {
   }
 }
 
-/// Spending trends model
+/// Spending trend type enum matching backend
+enum SpendingTrendType {
+  increasing,
+  decreasing,
+  stable,
+  insufficientData,
+}
+
+/// Extension for SpendingTrendType
+extension SpendingTrendTypeExtension on SpendingTrendType {
+  String get value {
+    switch (this) {
+      case SpendingTrendType.increasing:
+        return 'INCREASING';
+      case SpendingTrendType.decreasing:
+        return 'DECREASING';
+      case SpendingTrendType.stable:
+        return 'STABLE';
+      case SpendingTrendType.insufficientData:
+        return 'INSUFFICIENT_DATA';
+    }
+  }
+
+  static SpendingTrendType fromString(String value) {
+    switch (value.toUpperCase()) {
+      case 'INCREASING':
+        return SpendingTrendType.increasing;
+      case 'DECREASING':
+        return SpendingTrendType.decreasing;
+      case 'STABLE':
+        return SpendingTrendType.stable;
+      case 'INSUFFICIENT_DATA':
+        return SpendingTrendType.insufficientData;
+      default:
+        return SpendingTrendType.stable;
+    }
+  }
+}
+
+/// Spending trends model matching backend Analytics
 class SpendingTrends {
-  final List<DailySpending> dailyTrends;
-  final Map<String, double> categoryTrends;
+  final SpendingTrendType trend;
+  final double recentAverage;
+  final double overallAverage;
+  final Map<DateTime, double> dailyTotals;
+  final Map<ExpenseCategory, double> categoryTrends;
   final Map<String, dynamic> spendingPatterns;
   final Map<String, dynamic> predictions;
 
   const SpendingTrends({
-    required this.dailyTrends,
+    required this.trend,
+    required this.recentAverage,
+    required this.overallAverage,
+    required this.dailyTotals,
     required this.categoryTrends,
     required this.spendingPatterns,
     required this.predictions,
   });
 
   factory SpendingTrends.fromJson(Map<String, dynamic> json) {
-    final dailyTrendsData = json['daily_trends'] as List? ?? [];
+    // Parse daily totals from backend format
+    final dailyTotalsMap = json['daily_totals'] as Map? ?? {};
+    final dailyTotals = <DateTime, double>{};
+    for (final entry in dailyTotalsMap.entries) {
+      final date = DateTime.parse(entry.key.toString());
+      final amount = (entry.value as num).toDouble();
+      dailyTotals[date] = amount;
+    }
+
+    // Parse category trends
+    final categoryTrendsMap = json['category_trends'] as Map? ?? {};
+    final categoryTrends = <ExpenseCategory, double>{};
+    for (final entry in categoryTrendsMap.entries) {
+      final category = ExpenseCategoryExtension.fromString(entry.key.toString());
+      final amount = (entry.value as num).toDouble();
+      categoryTrends[category] = amount;
+    }
+
     return SpendingTrends(
-      dailyTrends: dailyTrendsData
-          .map((item) => DailySpending.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      categoryTrends: Map<String, double>.from(
-        (json['category_trends'] as Map? ?? {}).map(
-          (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
-        ),
-      ),
+      trend: SpendingTrendTypeExtension.fromString(json['trend'] as String? ?? 'STABLE'),
+      recentAverage: (json['recent_average'] as num?)?.toDouble() ?? 0.0,
+      overallAverage: (json['overall_average'] as num?)?.toDouble() ?? 0.0,
+      dailyTotals: dailyTotals,
+      categoryTrends: categoryTrends,
       spendingPatterns: json['spending_patterns'] as Map<String, dynamic>? ?? {},
       predictions: json['predictions'] as Map<String, dynamic>? ?? {},
     );

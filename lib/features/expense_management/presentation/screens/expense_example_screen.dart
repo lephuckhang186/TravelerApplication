@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../providers/expense_provider.dart';
 import '../../data/models/expense_models.dart';
+import '../../../../services/auth_service.dart';
 
 /// Example screen showing how to use the expense management system
 class ExpenseExampleScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
   late ExpenseProvider _expenseProvider;
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
-  ExpenseCategory _selectedCategory = ExpenseCategory.food;
+  ExpenseCategory _selectedCategory = ExpenseCategory.foodBeverage;
 
   @override
   void initState() {
@@ -24,25 +25,38 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
   }
 
   Future<void> _initializeData() async {
-    // Create a sample trip and budget if none exist
-    await _expenseProvider.createTrip(
-      DateTime.now().subtract(const Duration(days: 5)),
-      DateTime.now().add(const Duration(days: 25)),
-    );
-
-    await _expenseProvider.createBudget(
-      50000.0, // 50K VND budget
-      dailyLimit: 2000.0, // 2K daily limit
-      categoryAllocations: {
-        'FOOD': 20000.0,
-        'TRANSPORTATION': 15000.0,
-        'ENTERTAINMENT': 10000.0,
-        'OTHER': 5000.0,
-      },
-    );
-
-    // Load data
-    _expenseProvider.refreshAllData();
+    // Initialize authentication with Firebase token
+    await _setupAuthentication();
+    
+    // Load real user data from backend
+    await _expenseProvider.loadData();
+  }
+  
+  Future<void> _setupAuthentication() async {
+    try {
+      final AuthService authService = AuthService();
+      final token = await authService.getIdToken();
+      
+      if (token != null) {
+        // Set authentication token in expense provider
+        _expenseProvider.setAuthToken(token);
+      } else {
+        // User not authenticated, redirect to auth screen
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/auth');
+        }
+      }
+    } catch (e) {
+      print('Error setting up authentication: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Authentication error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -57,9 +71,21 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Expense Management Example'),
+        title: const Text('Expense Management'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _expenseProvider.refreshAllData(),
+            tooltip: 'Refresh Data',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleSignOut,
+            tooltip: 'Sign Out',
+          ),
+        ],
       ),
       body: AnimatedBuilder(
         animation: _expenseProvider,
@@ -191,10 +217,32 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
     }
 
     if (budgetStatus == null) {
-      return const Card(
+      return Card(
         child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('No budget data available'),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Budget Setup Required',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text('Create a budget to track your spending and stay within limits.'),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _showCreateBudgetDialog,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[600],
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Create Budget'),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -284,7 +332,24 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
             const SizedBox(height: 16),
             
             if (expenses.isEmpty)
-              const Text('No expenses yet')
+              Column(
+                children: [
+                  const Text('No expenses yet'),
+                  const SizedBox(height: 16),
+                  if (_expenseProvider.currentTrip == null)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _showCreateTripDialog,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[400],
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Create Trip First'),
+                      ),
+                    ),
+                ],
+              )
             else
               ...expenses.map((expense) {
                 return ListTile(
@@ -341,7 +406,7 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
             else
               ...categories.map((category) {
                 return ListTile(
-                  title: Text(category.category),
+                  title: Text(category.category.displayName),
                   subtitle: Text('Allocated: ₫${category.allocated.toStringAsFixed(0)}'),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -402,24 +467,197 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
 
   IconData _getCategoryIcon(ExpenseCategory category) {
     switch (category) {
-      case ExpenseCategory.food:
+      case ExpenseCategory.foodBeverage:
         return Icons.restaurant;
       case ExpenseCategory.transportation:
         return Icons.directions_car;
       case ExpenseCategory.accommodation:
         return Icons.hotel;
-      case ExpenseCategory.entertainment:
-        return Icons.movie;
+      case ExpenseCategory.activities:
+        return Icons.local_activity;
       case ExpenseCategory.shopping:
         return Icons.shopping_cart;
-      case ExpenseCategory.health:
-        return Icons.local_hospital;
-      case ExpenseCategory.education:
-        return Icons.school;
-      case ExpenseCategory.utilities:
-        return Icons.power;
-      case ExpenseCategory.other:
+      case ExpenseCategory.miscellaneous:
         return Icons.more_horiz;
+      case ExpenseCategory.emergency:
+        return Icons.emergency;
     }
+  }
+
+  Future<void> _handleSignOut() async {
+    try {
+      final authService = AuthService();
+      await authService.signOut();
+      
+      // Clear expense provider authentication
+      _expenseProvider.clearAuthToken();
+      
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/auth');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error signing out: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showCreateTripDialog() {
+    final startDateController = TextEditingController();
+    final endDateController = TextEditingController();
+    DateTime? startDate;
+    DateTime? endDate;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create New Trip'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('You need to create a trip first to track expenses.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: startDateController,
+              decoration: const InputDecoration(
+                labelText: 'Start Date',
+                hintText: 'YYYY-MM-DD',
+              ),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (date != null) {
+                  startDate = date;
+                  startDateController.text = date.toString().split(' ')[0];
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: endDateController,
+              decoration: const InputDecoration(
+                labelText: 'End Date',
+                hintText: 'YYYY-MM-DD',
+              ),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: startDate ?? DateTime.now().add(const Duration(days: 1)),
+                  firstDate: startDate ?? DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (date != null) {
+                  endDate = date;
+                  endDateController.text = date.toString().split(' ')[0];
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (startDate != null && endDate != null) {
+                Navigator.pop(context);
+                final success = await _expenseProvider.createTrip(startDate!, endDate!);
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Trip created successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateBudgetDialog() {
+    final budgetController = TextEditingController();
+    final dailyLimitController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create Budget'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: budgetController,
+              decoration: const InputDecoration(
+                labelText: 'Total Budget (VND)',
+                prefixText: '₫ ',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: dailyLimitController,
+              decoration: const InputDecoration(
+                labelText: 'Daily Limit (VND) - Optional',
+                prefixText: '₫ ',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final budgetText = budgetController.text.trim();
+              if (budgetText.isNotEmpty) {
+                final budget = double.tryParse(budgetText);
+                if (budget != null && budget > 0) {
+                  Navigator.pop(context);
+                  
+                  final dailyLimitText = dailyLimitController.text.trim();
+                  final dailyLimit = dailyLimitText.isNotEmpty 
+                    ? double.tryParse(dailyLimitText) 
+                    : null;
+                  
+                  final success = await _expenseProvider.createBudget(
+                    budget,
+                    dailyLimit: dailyLimit,
+                  );
+                  
+                  if (success && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Budget created successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
   }
 }

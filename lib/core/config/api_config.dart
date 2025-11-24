@@ -1,6 +1,6 @@
 class ApiConfig {
   // Base URL for the backend API
-  static const String baseUrl = 'http://localhost:8000/api';
+  static const String baseUrl = 'http://localhost:8000/api/v1';
   
   // Expense endpoints
   static const String expensesEndpoint = '/expenses';
