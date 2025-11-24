@@ -8,8 +8,17 @@ from fastapi.responses import JSONResponse
 import time
 import logging
 
-from .api.endpoints import expenses, auth
-from .core.config import get_settings
+# Handle both relative and absolute imports
+try:
+    from .api.endpoints import expenses, auth
+    from .core.config import get_settings
+except ImportError:
+    # Fallback for direct execution or ASGI
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from api.endpoints import expenses, auth
+    from core.config import get_settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -176,7 +185,7 @@ if __name__ == "__main__":
     import uvicorn
     
     uvicorn.run(
-        "app.main:app",
+        app,  # Pass the app directly instead of string reference
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG,
