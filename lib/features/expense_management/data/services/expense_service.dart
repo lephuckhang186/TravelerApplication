@@ -9,11 +9,28 @@ class ExpenseService {
 
   ExpenseService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
+  /// Get current trip
+  Future<Trip?> getCurrentTrip() async {
+    try {
+      final response = await _apiClient.get('/expenses/trip/current');
+      if (response != null) {
+        return Trip.fromJson(response as Map<String, dynamic>);
+      }
+      return null;
+    } catch (e) {
+      // Return null if no trip found instead of throwing error
+      if (e.toString().contains('404') || e.toString().contains('No active trip')) {
+        return null;
+      }
+      throw _handleException(e, 'Failed to fetch current trip');
+    }
+  }
+
   /// Create a new trip
   Future<Map<String, dynamic>> createTrip(Trip trip) async {
     try {
       final response = await _apiClient.post(
-        ApiConfig.createTripEndpoint,
+        '/expenses/trip/create',
         body: trip.toJson(),
       );
       return response as Map<String, dynamic>;

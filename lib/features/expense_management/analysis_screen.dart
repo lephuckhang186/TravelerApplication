@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../core/theme/app_theme.dart';
-import '../features/expense_management/presentation/providers/expense_provider.dart';
-import '../features/expense_management/data/models/expense_models.dart';
+import '../../core/theme/app_theme.dart';
+import 'presentation/providers/expense_provider.dart';
+import 'data/models/expense_models.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -39,8 +39,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
 
   /// Load data from backend
   void _loadData() {
-    final startDate = DateTime(_currentYear, _currentMonthIndex + 1, 1);
-    final endDate = DateTime(_currentYear, _currentMonthIndex + 2, 0);
+    final startDate = ExpenseProvider().startDate;
+    final endDate = ExpenseProvider().endDate;
     
     _expenseProvider.fetchExpenses(
       startDate: startDate,
@@ -409,7 +409,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       itemCount: 35, // 5 weeks
       itemBuilder: (context, index) {
         final day = index + 1;
-        final isSelected = day == 6 || day == 8 || day == 9; // Sample selected days
+        final isSelected = ExpenseProvider().selectedDay == day;
         return GestureDetector(
           onTap: () => _onDayTap(day),
           child: Container(
@@ -710,7 +710,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           ),
           child: Center(
             child: Text(
-              'CHI TIÊU THÁNG NÀY\n+1.500.000đ',
+              'CHI TIÊU THÁNG NÀY\n ${_formatMoney(_expenseProvider.expenseSummary?.totalExpense ?? 0)}₫',
               textAlign: TextAlign.center,
               style: GoogleFonts.quattrocento(
                 fontSize: 14,
@@ -723,13 +723,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         
         const SizedBox(height: 8),
         
-        Text(
-          'Hiện không có thông tin gì thêm',
-          style: GoogleFonts.quattrocento(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
       ],
     );
   }
@@ -737,9 +730,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   /// Custom vertical bar chart
   Widget _buildCustomHorizontalBarChart() {
     final data = [
-      {'month': 'T9', 'amount': 700000, 'color': Colors.grey[300]!},
-      {'month': 'T10', 'amount': 1300000, 'color': Colors.orange[400]!},
-      {'month': 'T11', 'amount': 500000, 'color': Colors.grey[300]!},
+      
     ];
     
     final maxAmount = 1500000.0; // Maximum value for scaling
@@ -757,7 +748,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                   width: 50,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('1.5M', style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[600])),
                       Text('1M', style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[600])),

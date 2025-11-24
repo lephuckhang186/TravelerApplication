@@ -186,6 +186,13 @@ class Trip:
             dates.append(current)
             current += timedelta(days=1)
         return dates
+    def __getattribute__(self, name):
+        if name in ['start_date', 'end_date']:
+            value = super().__getattribute__(name)
+            if not isinstance(value, date):
+                raise TypeError(f"{name} must be a date object")
+            return value
+        return object.__getattribute__(self, name)
 
 class Analytics:
     """Advanced analytics engine for expense tracking"""
@@ -276,6 +283,18 @@ class ExpenseManager:
         self.expenses: List[Expense] = []
         self.analytics: Optional[Analytics] = None
         self.trip: Optional[Trip] = None
+    
+    def set_trip(self, trip: Trip):
+        """Set the current trip"""
+        self.trip = trip
+        if self.analytics is None:
+            self.analytics = Analytics(self.expenses)
+    
+    def set_budget(self, budget: Budget):
+        """Set the budget for the current trip"""
+        self.trip_budget = budget
+        if self.analytics is None:
+            self.analytics = Analytics(self.expenses)
     
     def create_budget_plan(self, trip: Trip, budget: Budget):
         """Initialize trip with budget plan"""

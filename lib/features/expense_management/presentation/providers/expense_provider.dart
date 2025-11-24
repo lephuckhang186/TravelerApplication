@@ -12,6 +12,12 @@ class ExpenseProvider with ChangeNotifier {
   List<CategoryStatus> _categoryStatus = [];
   ExpenseSummary? _expenseSummary;
   SpendingTrends? _spendingTrends;
+  Trip? _currentTrip;
+  
+  // Calendar state
+  int? _selectedDay;
+  DateTime? _selectedMonth;
+  DateTime? _currentDate;
   
   // Loading states
   bool _isLoading = false;
@@ -57,6 +63,19 @@ class ExpenseProvider with ChangeNotifier {
   ExpenseCategory? get selectedCategory => _selectedCategory;
   DateTime? get startDate => _startDate;
   DateTime? get endDate => _endDate;
+  
+  // Trip and calendar getters
+  Trip? get currentTrip => _currentTrip;
+  int? get selectedDay => _selectedDay;
+  DateTime? get selectedMonth => _selectedMonth ?? DateTime.now();
+  DateTime? get currentDate => _currentDate ?? DateTime.now();
+  
+  // Get selected date as DateTime
+  DateTime? get selectedDate {
+    if (_selectedDay == null) return null;
+    final month = _selectedMonth ?? DateTime.now();
+    return DateTime(month.year, month.month, _selectedDay!);
+  }
 
   // Authentication
   void setAuthToken(String token) {
@@ -65,6 +84,43 @@ class ExpenseProvider with ChangeNotifier {
 
   void clearAuthToken() {
     _expenseService.clearAuthToken();
+  }
+
+  /// Get current trip from backend
+  Future<void> fetchCurrentTrip() async {
+    try {
+      _currentTrip = await _expenseService.getCurrentTrip();
+      notifyListeners();
+    } catch (e) {
+      // Trip not found, user needs to create one
+      _currentTrip = null;
+      notifyListeners();
+    }
+  }
+
+  /// Set selected day for calendar
+  void setSelectedDay(int day) {
+    _selectedDay = day;
+    notifyListeners();
+    
+    // Automatically fetch expenses for the selected date
+    if (_selectedMonth != null) {
+      final selectedDate = DateTime(_selectedMonth!.year, _selectedMonth!.month, day);
+      fetchExpensesForDate(selectedDate);
+    }
+  }
+
+  /// Set selected month for calendar
+  void setSelectedMonth(DateTime month) {
+    _selectedMonth = month;
+    _selectedDay = null; // Clear day selection when month changes
+    notifyListeners();
+  }
+
+  /// Clear day selection
+  void clearSelectedDay() {
+    _selectedDay = null;
+    notifyListeners();
   }
 
   /// Create a new trip
@@ -275,19 +331,44 @@ class ExpenseProvider with ChangeNotifier {
     }
   }
 
+  /// Load all data based on current trip
+  Future<void> loadData() async {
+    _setLoading(true);
+    
+    try {
+      // First get the current trip
+      await fetchCurrentTrip();
+      
+      if (_currentTrip != null) {
+        // Set date range based on trip
+        _startDate = _currentTrip!.startDate;
+        _endDate = _currentTrip!.endDate;
+        _selectedMonth = _currentTrip!.startDate;
+      }
+      
+      // Load all expense data
+      await Future.wait([
+        fetchExpenses(
+          category: _selectedCategory,
+          startDate: _startDate,
+          endDate: _endDate,
+        ),
+        fetchBudgetStatus(),
+        fetchCategoryStatus(),
+        fetchExpenseSummary(),
+        fetchSpendingTrends(),
+      ]);
+      
+    } catch (e) {
+      _setError('Failed to load data: ${e.toString()}');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// Refresh all data
   Future<void> refreshAllData() async {
-    await Future.wait([
-      fetchExpenses(
-        category: _selectedCategory,
-        startDate: _startDate,
-        endDate: _endDate,
-      ),
-      fetchBudgetStatus(),
-      fetchCategoryStatus(),
-      fetchExpenseSummary(),
-      fetchSpendingTrends(),
-    ]);
+    await loadData();
   }
 
   /// Clear filters
@@ -343,6 +424,53 @@ class ExpenseProvider with ChangeNotifier {
           expenseDate.month == date.month &&
           expenseDate.day == date.day;
     }).toList();
+  }
+
+  /// Fetch expenses for a specific date (API call)
+  Future<void> fetchExpensesForDate(DateTime date) async {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+    
+    await fetchExpenses(
+      startDate: startOfDay,
+      endDate: endOfDay,
+    );
+  }
+
+  /// Get total amount spent on a specific day
+  double getTotalForDay(int day) {
+    if (_selectedMonth == null) return 0.0;
+    
+    final date = DateTime(_selectedMonth!.year, _selectedMonth!.month, day);
+    final dayExpenses = getExpensesForDate(date);
+    return dayExpenses.fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  /// Check if a day has expenses
+  bool hasDayExpenses(int day) {
+    if (_selectedMonth == null) return false;
+    
+    final date = DateTime(_selectedMonth!.year, _selectedMonth!.month, day);
+    return getExpensesForDate(date).isNotEmpty;
+  }
+
+  /// Get days in current month
+  int getDaysInCurrentMonth() {
+    final month = _selectedMonth ?? DateTime.now();
+    return DateTime(month.year, month.month + 1, 0).day;
+  }
+
+  /// Check if trip is active
+  bool get hasActiveTrip => _currentTrip?.isActive ?? false;
+
+  /// Get trip progress percentage
+  double get tripProgressPercentage {
+    if (_currentTrip == null) return 0.0;
+    
+    final totalDays = _currentTrip!.totalDays;
+    final elapsedDays = _currentTrip!.daysElapsed;
+    
+    return (elapsedDays / totalDays * 100).clamp(0.0, 100.0);
   }
 
   @override

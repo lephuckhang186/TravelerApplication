@@ -32,8 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: _buildBottomNavBar(),
-    );
+      bottomNavigationBar: _buildBottomNavBar());
   }
 
   /// Bottom Navigation Bar
@@ -45,10 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+            offset: const Offset(0, -2)),
+        ]),
       child: SafeArea(
         top: false,
         child: Container(
@@ -58,43 +55,30 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
-                icon: Icons.home_outlined,
-                activeIcon: Icons.home,
+                iconPath: 'images/home.png',
                 label: 'Home',
                 index: 0,
-                isSelected: _currentIndex == 0,
-              ),
+                isSelected: _currentIndex == 0),
               _buildNavItem(
-                icon: Icons.event_note_outlined,
-                activeIcon: Icons.event_note,
+                iconPath: 'images/blueprint.png',
                 label: 'Plan',
                 index: 1,
-                isSelected: _currentIndex == 1,
-              ),
+                isSelected: _currentIndex == 1),
               _buildNavItem(
-                icon: Icons.analytics_outlined,
-                activeIcon: Icons.analytics,
+                iconPath: 'images/analytics.png',
                 label: 'Analysis',
                 index: 2,
-                isSelected: _currentIndex == 2,
-              ),
+                isSelected: _currentIndex == 2),
               _buildNavItem(
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
+                iconPath: 'images/account.png',
                 label: 'Me',
                 index: 3,
-                isSelected: _currentIndex == 3,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+                isSelected: _currentIndex == 3),
+            ]))));
   }
 
   Widget _buildNavItem({
-    required IconData icon,
-    required IconData activeIcon,
+    required String iconPath,
     required String label,
     required int index,
     required bool isSelected,
@@ -111,24 +95,20 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600],
-              size: 24,
-            ),
+            Image.asset(
+              iconPath,
+              width: 24,
+              height: 24,
+              color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600]),
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 11,
                 color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600],
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
+          ])));
   }
 }
 
@@ -142,7 +122,7 @@ class _TravelHomeContent extends StatefulWidget {
 
 class _TravelHomeContentState extends State<_TravelHomeContent> {
   int _recommendedTabIndex = 0; // 0: Recommended, 1: Nearby
-  
+
   // Hover state tracking
   bool _isHoveringNearbyHeader = false;
   bool _isHoveringRecentlyViewedHeader = false;
@@ -158,7 +138,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           children: [
             // Search Bar Section - Fixed at top
             _buildSearchBar(context),
-            
+
             // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
@@ -192,14 +172,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     _buildRecommendedSection(),
 
                     const SizedBox(height: 100), // Space for bottom nav
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+                  ]))),
+          ])));
   }
 
   /// Search Bar với icons
@@ -221,24 +195,23 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                      offset: const Offset(0, 2)),
+                  ]),
                 child: Row(
                   children: [
                     const SizedBox(width: 12),
-                    Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+                    Icon(
+                      Icons.search,
+                      color: AppColors.textSecondary,
+                      size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'Vietnam tradition places',
-                      style: GoogleFonts.quattrocento(color: AppColors.textSecondary, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+                      style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                        color: AppColors.textSecondary,
+                        fontSize: 14)),
+                  ])))),
           const SizedBox(width: 12),
           Container(
             width: 48,
@@ -251,10 +224,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+                  offset: const Offset(0, 2)),
+              ]),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -265,11 +236,9 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   _onPlanTap(context);
                 },
                 child: Center(
-                  child: Icon(Icons.event_note_outlined, color: AppColors.textSecondary),
-                ),
-              ),
-            ),
-          ),
+                  child: Icon(
+                    Icons.event_note_outlined,
+                    color: AppColors.textSecondary))))),
           const SizedBox(width: 8),
           Container(
             width: 48,
@@ -282,10 +251,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+                  offset: const Offset(0, 2)),
+              ]),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -296,21 +263,25 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   _onNotificationTap(context);
                 },
                 child: Center(
-                  child: Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                  child: Icon(
+                    Icons.notifications_outlined,
+                    color: AppColors.textSecondary))))),
+        ]));
   }
 
   // Category Icons Row
   Widget _buildCategoryIcons() {
     final categories = [
-      {'icon': Icons.beach_access, 'label': 'Beachs', 'color': const Color(0xFF7B61FF)},
-      {'icon': Icons.directions_bus, 'label': 'Transportation', 'color': Colors.blue},
+      {
+        'icon': Icons.beach_access,
+        'label': 'Beachs',
+        'color': const Color(0xFF7B61FF),
+      },
+      {
+        'icon': Icons.directions_bus,
+        'label': 'Transportation',
+        'color': Colors.blue,
+      },
       {'icon': Icons.apartment, 'label': 'Rentals', 'color': Colors.green},
       {'icon': Icons.location_city, 'label': 'Hotels', 'color': Colors.amber},
       {'icon': Icons.celebration, 'label': 'Concerts', 'color': Colors.pink},
@@ -326,32 +297,43 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             child: Column(
               children: [
                 Container(
-                  width: 56, height: 56,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: AppColors.background, shape: BoxShape.circle,
+                    color: AppColors.background,
+                    shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey[300]!, width: 1.5),
-                    boxShadow: [BoxShadow(color: (category['color'] as Color).withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 3))],
-                  ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (category['color'] as Color).withValues(
+                          alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3)),
+                    ]),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(28),
-                      splashColor: (category['color'] as Color).withValues(alpha: 0.3),
-                      onTap: () => _onCategoryTap(context, category['label'] as String),
-                      child: Center(child: Icon(category['icon'] as IconData, color: Colors.grey[700], size: 24)),
-                    ),
-                  ),
-                ),
+                      splashColor: (category['color'] as Color).withValues(
+                        alpha: 0.3),
+                      onTap: () =>
+                          _onCategoryTap(context, category['label'] as String),
+                      child: Center(
+                        child: Icon(
+                          category['icon'] as IconData,
+                          color: Colors.grey[700],
+                          size: 24))))),
                 const SizedBox(height: 8),
-                Text(category['label'] as String, textAlign: TextAlign.center, 
-                     style: GoogleFonts.quattrocento(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey[700]),
-                     maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
+                Text(
+                  category['label'] as String,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                    fontSize: 11,color: Colors.grey[700]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              ]));
+        }).toList()));
   }
 
   // Nearby gems Section
@@ -364,10 +346,13 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           child: Row(
             children: [
               Expanded(
-                child: Text('Nearby gems in Ho Chi Minh', 
-                     style: GoogleFonts.quattrocento(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                     overflow: TextOverflow.ellipsis, maxLines: 1),
-              ),
+                child: Text(
+                  'Nearby gems in Ho Chi Minh',
+                  style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                    fontSize: 20,color: AppColors.textPrimary),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1)),
               MouseRegion(
                 onEnter: (_) => setState(() => _isHoveringNearbyHeader = true),
                 onExit: (_) => setState(() => _isHoveringNearbyHeader = false),
@@ -375,18 +360,22 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   onTap: () => _onNearbyGemsSeMoreTap(context),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    transform: Matrix4.diagonal3Values(_isHoveringNearbyHeader ? 1.05 : 1.0, _isHoveringNearbyHeader ? 1.05 : 1.0, 1.0),
-                    child: Text('See more', style: GoogleFonts.quattrocento(
-                      color: _isHoveringNearbyHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF),
-                      fontWeight: FontWeight.w600, fontSize: 14,
-                      decoration: TextDecoration.underline,
-                      decorationColor: _isHoveringNearbyHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF))),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+                    transform: Matrix4.diagonal3Values(
+                      _isHoveringNearbyHeader ? 1.05 : 1.0,
+                      _isHoveringNearbyHeader ? 1.05 : 1.0,
+                      1.0),
+                    child: Text(
+                      'See more',
+                      style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                        color: _isHoveringNearbyHeader
+                            ? const Color(0xFF5B41FF)
+                            : const Color(0xFF7B61FF),fontSize: 14,
+                        decoration: TextDecoration.underline,
+                        decorationColor: _isHoveringNearbyHeader
+                            ? const Color(0xFF5B41FF)
+                            : const Color(0xFF7B61FF)))))),
+            ])),
         const SizedBox(height: 16),
         SizedBox(
           height: 280,
@@ -394,94 +383,185 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: 4,
-            itemBuilder: (context, index) => _buildTourCard(index),
-          ),
-        ),
-      ],
-    );
+            itemBuilder: (context, index) => _buildTourCard(index))),
+      ]);
   }
 
   // Tour Card
   Widget _buildTourCard(int index) {
     final tours = [
-      {'title': 'Ho Chi Minh City Sightseeing Double-Decker Bus', 'badge': 'Bestselling Tours', 'image': 'images/hcmc_bus_tour.jpg', 'imageColor': Colors.red[300]!},
-      {'title': 'Ho Chi Minh City Skyline & River View', 'badge': 'Most saved Tours', 'image': 'images/hcmc_skyline.jpg', 'imageColor': Colors.blue[300]!},
-      {'title': 'Ho Chi Minh City Street Food Tour', 'badge': 'Popular', 'image': 'images/hcmc_food_tour.jpg', 'imageColor': Colors.orange[300]!},
-      {'title': 'Ho Chi Minh City Center Tour', 'badge': 'New Tour', 'image': 'images/hcmc_skyline.jpg', 'imageColor': Colors.purple[300]!},
+      {
+        'title': 'Ho Chi Minh City Sightseeing Double-Decker Bus',
+        'badge': 'Bestselling Tours',
+        'image': 'images/hcmc_bus_tour.jpg',
+        'imageColor': Colors.red[300]!,
+      },
+      {
+        'title': 'Ho Chi Minh City Skyline & River View',
+        'badge': 'Most saved Tours',
+        'image': 'images/hcmc_skyline.jpg',
+        'imageColor': Colors.blue[300]!,
+      },
+      {
+        'title': 'Ho Chi Minh City Street Food Tour',
+        'badge': 'Popular',
+        'image': 'images/hcmc_food_tour.jpg',
+        'imageColor': Colors.orange[300]!,
+      },
+      {
+        'title': 'Ho Chi Minh City Center Tour',
+        'badge': 'New Tour',
+        'image': 'images/hcmc_skyline.jpg',
+        'imageColor': Colors.purple[300]!,
+      },
     ];
     final tour = tours[index % tours.length];
 
     return Container(
-      width: 200, margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 6))]),
+      width: 200,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6)),
+        ]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             height: 140,
-            child: Stack(children: [
-              ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: _buildImageWithAnimation(tour['image'] as String, 140, double.infinity, tour['imageColor'] as Color)),
-              Positioned(top: 8, left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.amber[700], borderRadius: BorderRadius.circular(4)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.star, size: 12, color: Colors.white),
-                    const SizedBox(width: 4),
-                    Text(tour['badge'] as String, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w600)),
-                  ]))),
-            ]),
-          ),
-          Expanded(
-            child: Padding(padding: const EdgeInsets.all(12),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(tour['title'] as String, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                     maxLines: 2, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 8),
-                SizedBox(width: double.infinity,
-                  child: ElevatedButton(onPressed: () {}, 
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.textOnAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      elevation: 0),
-                    child: const Text('Add to plan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)))),
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12)),
+                  child: _buildImageWithAnimation(
+                    tour['image'] as String,
+                    140,
+                    double.infinity,
+                    tour['imageColor'] as Color)),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber[700],
+                      borderRadius: BorderRadius.circular(4)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star, size: 12, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          tour['badge'] as String,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            color: Colors.white)),
+                      ]))),
               ])),
-          ),
-        ],
-      ),
-    );
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tour['title'] as String,
+                    style: const TextStyle(
+                      fontSize: 14,color: AppColors.textPrimary),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: AppColors.textOnAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                        elevation: 0),
+                      child: const Text(
+                        'Add to plan',
+                        style: TextStyle(
+                          fontSize: 13)))),
+                ]))),
+        ]));
   }
 
   Widget _buildRecentlyViewedSection() {
-    return Column(children: [
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(children: [
-          Expanded(child: Text('Recently Viewed', style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary))),
-          MouseRegion(
-            onEnter: (_) => setState(() => _isHoveringRecentlyViewedHeader = true),
-            onExit: (_) => setState(() => _isHoveringRecentlyViewedHeader = false),
-            child: GestureDetector(onTap: () => _onRecentlyViewedSeeMoreTap(context),
-              child: AnimatedContainer(duration: const Duration(milliseconds: 200),
-                transform: Matrix4.diagonal3Values(_isHoveringRecentlyViewedHeader ? 1.05 : 1.0, _isHoveringRecentlyViewedHeader ? 1.05 : 1.0, 1.0),
-                child: Text('See more', style: GoogleFonts.quattrocento(
-                  color: _isHoveringRecentlyViewedHeader ? AppColors.accentHover : AppColors.accent,
-                  fontWeight: FontWeight.w600, fontSize: 14, 
-                  decoration: TextDecoration.underline,
-                  decorationColor: _isHoveringRecentlyViewedHeader ? AppColors.accentHover : AppColors.accent))))),
-        ])),
-      const SizedBox(height: 12),
-      SizedBox(height: 140,
-        child: ListView.builder(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: 2, itemBuilder: (context, index) => _buildCompactRecentCard(context, index))),
-    ]);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Recently Viewed',
+                  style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                    fontSize: 18,color: AppColors.textPrimary))),
+              MouseRegion(
+                onEnter: (_) =>
+                    setState(() => _isHoveringRecentlyViewedHeader = true),
+                onExit: (_) =>
+                    setState(() => _isHoveringRecentlyViewedHeader = false),
+                child: GestureDetector(
+                  onTap: () => _onRecentlyViewedSeeMoreTap(context),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.diagonal3Values(
+                      _isHoveringRecentlyViewedHeader ? 1.05 : 1.0,
+                      _isHoveringRecentlyViewedHeader ? 1.05 : 1.0,
+                      1.0),
+                    child: Text(
+                      'See more',
+                      style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                        color: _isHoveringRecentlyViewedHeader
+                            ? AppColors.accentHover
+                            : AppColors.accent,fontSize: 14,
+                        decoration: TextDecoration.underline,
+                        decorationColor: _isHoveringRecentlyViewedHeader
+                            ? AppColors.accentHover
+                            : AppColors.accent))))),
+            ])),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 140,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: 2,
+            itemBuilder: (context, index) =>
+                _buildCompactRecentCard(context, index))),
+      ]);
   }
-
 
   Widget _buildCompactRecentCard(BuildContext context, int index) {
     final recentTours = [
-      {'title': 'Ho Chi Minh City Sightseeing Double-Decker Bus Ticket', 'subtitle': 'Bestselling Tours', 'image': 'images/hcmc_bus_tour.jpg', 'color': Colors.red[300]!},
-      {'title': 'Enjoy the great outdoor in Ho Chi Minh city with these local', 'subtitle': 'Popular', 'image': 'images/hcmc_skyline.jpg', 'color': Colors.blue[300]!},
+      {
+        'title': 'Ho Chi Minh City Sightseeing Double-Decker Bus Ticket',
+        'subtitle': 'Bestselling Tours',
+        'image': 'images/hcmc_bus_tour.jpg',
+        'color': Colors.red[300]!,
+      },
+      {
+        'title': 'Enjoy the great outdoor in Ho Chi Minh city with these local',
+        'subtitle': 'Popular',
+        'image': 'images/hcmc_skyline.jpg',
+        'color': Colors.blue[300]!,
+      },
     ];
 
     return Container(
@@ -494,27 +574,28 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
-            offset: const Offset(0, 4)
-          )
-        ]
-      ),
+            offset: const Offset(0, 4)),
+        ]),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          splashColor: (recentTours[index]['color'] as Color).withValues(alpha: 0.2),
-          hoverColor: (recentTours[index]['color'] as Color).withValues(alpha: 0.05),
-          onTap: () => _onRecentlyViewedTap(context, recentTours[index]['title'] as String),
+          splashColor: (recentTours[index]['color'] as Color).withValues(
+            alpha: 0.2),
+          hoverColor: (recentTours[index]['color'] as Color).withValues(
+            alpha: 0.05),
+          onTap: () => _onRecentlyViewedTap(
+            context,
+            recentTours[index]['title'] as String),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Stack(
               children: [
                 _buildImageWithAnimation(
-                  recentTours[index]['image'] as String, 
-                  140, 
-                  180, 
-                  recentTours[index]['color'] as Color
-                ),
+                  recentTours[index]['image'] as String,
+                  140,
+                  180,
+                  recentTours[index]['color'] as Color),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -522,11 +603,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.7)
-                      ]
-                    )
-                  ),
-                ),
+                        Colors.black.withValues(alpha: 0.7),
+                      ]))),
                 Positioned(
                   bottom: 12,
                   left: 12,
@@ -536,55 +614,82 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     children: [
                       Text(
                         recentTours[index]['title'] as String,
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white
-                        ),
+                        style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,color: Colors.white),
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+                        overflow: TextOverflow.ellipsis),
+                    ])),
+              ])))));
   }
 
   Widget _buildWhereToNextSection() {
-    return Column(children: [
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(children: [
-          Expanded(child: Text('Where to next?', style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary))),
-          MouseRegion(
-            onEnter: (_) => setState(() => _isHoveringWhereToNextHeader = true),
-            onExit: (_) => setState(() => _isHoveringWhereToNextHeader = false),
-            child: GestureDetector(onTap: () => _onWhereToNextSeeMoreTap(context),
-              child: AnimatedContainer(duration: const Duration(milliseconds: 200),
-                transform: Matrix4.diagonal3Values(_isHoveringWhereToNextHeader ? 1.05 : 1.0, _isHoveringWhereToNextHeader ? 1.05 : 1.0, 1.0),
-                child: Text('See more', style: GoogleFonts.quattrocento(
-                  color: _isHoveringWhereToNextHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF),
-                  fontWeight: FontWeight.w600, fontSize: 14, 
-                  decoration: TextDecoration.underline,
-                  decorationColor: _isHoveringWhereToNextHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF)))))),
-        ])),
-      const SizedBox(height: 12),
-      SizedBox(height: 80,
-        child: ListView.builder(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: 3, itemBuilder: (context, index) => _buildCompactDestinationCard(context, index))),
-    ]);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Where to next?',
+                  style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                    fontSize: 18,color: AppColors.textPrimary))),
+              MouseRegion(
+                onEnter: (_) =>
+                    setState(() => _isHoveringWhereToNextHeader = true),
+                onExit: (_) =>
+                    setState(() => _isHoveringWhereToNextHeader = false),
+                child: GestureDetector(
+                  onTap: () => _onWhereToNextSeeMoreTap(context),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.diagonal3Values(
+                      _isHoveringWhereToNextHeader ? 1.05 : 1.0,
+                      _isHoveringWhereToNextHeader ? 1.05 : 1.0,
+                      1.0),
+                    child: Text(
+                      'See more',
+                      style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                        color: _isHoveringWhereToNextHeader
+                            ? const Color(0xFF5B41FF)
+                            : const Color(0xFF7B61FF),fontSize: 14,
+                        decoration: TextDecoration.underline,
+                        decorationColor: _isHoveringWhereToNextHeader
+                            ? const Color(0xFF5B41FF)
+                            : const Color(0xFF7B61FF)))))),
+            ])),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 80,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: 3,
+            itemBuilder: (context, index) =>
+                _buildCompactDestinationCard(context, index))),
+      ]);
   }
-
 
   Widget _buildCompactDestinationCard(BuildContext context, int index) {
     final destinations = [
-      {'title': 'Ho Chi Minh', 'image': 'images/hcmc_skyline.jpg', 'color': Colors.orange[300]!},
-      {'title': 'Da Nang', 'image': 'images/danang.jpg', 'color': Colors.blue[300]!},
-      {'title': 'Ha Noi', 'image': 'images/hanoi.jpg', 'color': Colors.red[300]!},
+      {
+        'title': 'Ho Chi Minh',
+        'image': 'images/hcmc_skyline.jpg',
+        'color': Colors.orange[300]!,
+      },
+      {
+        'title': 'Da Nang',
+        'image': 'images/danang.jpg',
+        'color': Colors.blue[300]!,
+      },
+      {
+        'title': 'Ha Noi',
+        'image': 'images/hanoi.jpg',
+        'color': Colors.red[300]!,
+      },
     ];
     final destination = destinations[index];
 
@@ -598,28 +703,25 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 6,
-            offset: const Offset(0, 3)
-          )
-        ]
-      ),
+            offset: const Offset(0, 3)),
+        ]),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           splashColor: (destination['color'] as Color).withValues(alpha: 0.3),
           hoverColor: (destination['color'] as Color).withValues(alpha: 0.1),
-          onTap: () => _onWhereToNextTap(context, destination['title'] as String),
+          onTap: () =>
+              _onWhereToNextTap(context, destination['title'] as String),
           child: Stack(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: _buildImageWithAnimation(
-                  destination['image'] as String, 
-                  80, 
-                  100, 
-                  destination['color'] as Color
-                )
-              ),
+                  destination['image'] as String,
+                  80,
+                  100,
+                  destination['color'] as Color)),
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
@@ -628,214 +730,427 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.6)
-                    ]
-                  )
-                ),
-              ),
+                      Colors.black.withValues(alpha: 0.6),
+                    ]))),
               Positioned(
                 bottom: 8,
                 left: 8,
                 right: 8,
                 child: Text(
                   destination['title'] as String,
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white
-                  ),
+                  style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                    fontSize: 12,color: Colors.white),
                   textAlign: TextAlign.center,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+                  overflow: TextOverflow.ellipsis)),
+            ]))));
   }
 
   Widget _buildRecommendedSection() {
-    return Column(children: [
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(children: [
-          Expanded(child: Row(children: [
-            _buildTabButton('Recommended', 0),
-            const SizedBox(width: 16),
-            _buildTabButton('Nearby', 1),
-          ])),
-          MouseRegion(
-            onEnter: (_) => setState(() => _isHoveringRecommendedHeader = true),
-            onExit: (_) => setState(() => _isHoveringRecommendedHeader = false),
-            child: GestureDetector(onTap: () => _onRecommendedSeeMoreTap(context),
-              child: AnimatedContainer(duration: const Duration(milliseconds: 200),
-                transform: Matrix4.diagonal3Values(_isHoveringRecommendedHeader ? 1.05 : 1.0, _isHoveringRecommendedHeader ? 1.05 : 1.0, 1.0),
-                child: Text('See more', style: GoogleFonts.quattrocento(color: _isHoveringRecommendedHeader ? const Color(0xFF5B41FF) : const Color(0xFF7B61FF),
-                  fontWeight: FontWeight.w600, fontSize: 14, decoration: TextDecoration.underline))))),
-        ])),
-      const SizedBox(height: 16),
-      _buildTabContent(),
-    ]);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildTabButton('Recommended', 0),
+                    const SizedBox(width: 16),
+                    _buildTabButton('Nearby', 1),
+                  ])),
+              MouseRegion(
+                onEnter: (_) =>
+                    setState(() => _isHoveringRecommendedHeader = true),
+                onExit: (_) =>
+                    setState(() => _isHoveringRecommendedHeader = false),
+                child: GestureDetector(
+                  onTap: () => _onRecommendedSeeMoreTap(context),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.diagonal3Values(
+                      _isHoveringRecommendedHeader ? 1.05 : 1.0,
+                      _isHoveringRecommendedHeader ? 1.05 : 1.0,
+                      1.0),
+                    child: Text(
+                      'See more',
+                      style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                        color: _isHoveringRecommendedHeader
+                            ? const Color(0xFF5B41FF)
+                            : const Color(0xFF7B61FF),fontSize: 14,
+                        decoration: TextDecoration.underline))))),
+            ])),
+        const SizedBox(height: 16),
+        _buildTabContent(),
+      ]);
   }
 
   Widget _buildTabButton(String title, int index) {
     final isSelected = _recommendedTabIndex == index;
-    return GestureDetector(onTap: () => setState(() => _recommendedTabIndex = index),
-      child: AnimatedContainer(duration: const Duration(milliseconds: 200),
+    return GestureDetector(
+      onTap: () => setState(() => _recommendedTabIndex = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        decoration: BoxDecoration(color: isSelected ? const Color(0xFF7B61FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[300]!)),
-        child: Text(title, style: GoogleFonts.quattrocento(fontSize: 14, fontWeight: FontWeight.w600,
-          color: isSelected ? Colors.white : Colors.grey[700]))));
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF7B61FF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[300]!)),
+        child: Text(
+          title,
+          style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+            fontSize: 14,color: isSelected ? Colors.white : Colors.grey[700]))));
   }
 
   Widget _buildTabContent() {
-    return SizedBox(height: 220,
-      child: ListView.builder(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16),
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _recommendedTabIndex == 0 ? 4 : 4,
-        itemBuilder: (context, index) => _recommendedTabIndex == 0 ? _buildRecommendedCard(context, index) : _buildNearbyCard(context, index)));
+        itemBuilder: (context, index) => _recommendedTabIndex == 0
+            ? _buildRecommendedCard(context, index)
+            : _buildNearbyCard(context, index)));
   }
 
   Widget _buildRecommendedCard(BuildContext context, int index) {
     final places = [
-      {'title': 'Ben Thanh Market', 'subtitle': 'Traditional Market', 'image': 'images/hcmc_food_tour.jpg', 'color': Colors.orange[300]!, 'rating': '4.5'},
-      {'title': 'Saigon Skydeck', 'subtitle': 'City Views', 'image': 'images/hcmc_skyline.jpg', 'color': Colors.blue[300]!, 'rating': '4.7'},
-      {'title': 'War Remnants Museum', 'subtitle': 'History & Culture', 'image': 'images/hcm_war_remmants_museum.jpg', 'color': Colors.red[300]!, 'rating': '4.6'},
-      {'title': 'Independence Palace', 'subtitle': 'Historic Site', 'image': 'images/hcm_independence_palace.jpg', 'color': Colors.purple[300]!, 'rating': '4.4'},
+      {
+        'title': 'Ben Thanh Market',
+        'subtitle': 'Traditional Market',
+        'image': 'images/hcmc_food_tour.jpg',
+        'color': Colors.orange[300]!,
+        'rating': '4.5',
+      },
+      {
+        'title': 'Saigon Skydeck',
+        'subtitle': 'City Views',
+        'image': 'images/hcmc_skyline.jpg',
+        'color': Colors.blue[300]!,
+        'rating': '4.7',
+      },
+      {
+        'title': 'War Remnants Museum',
+        'subtitle': 'History & Culture',
+        'image': 'images/hcm_war_remmants_museum.jpg',
+        'color': Colors.red[300]!,
+        'rating': '4.6',
+      },
+      {
+        'title': 'Independence Palace',
+        'subtitle': 'Historic Site',
+        'image': 'images/hcm_independence_palace.jpg',
+        'color': Colors.purple[300]!,
+        'rating': '4.4',
+      },
     ];
     final place = places[index % places.length];
 
-    return Container(width: 160, height: 200, margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))]),
-      child: Material(color: Colors.transparent,
-        child: InkWell(borderRadius: BorderRadius.circular(12),
+    return Container(
+      width: 160,
+      height: 200,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4)),
+        ]),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
           onTap: () => _onRecommendedTap(context, place['title'] as String),
-          child: Column(children: [
-            Stack(children: [
-              ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: _buildImageWithAnimation(place['image'] as String, 110, 160, place['color'] as Color)),
-              Positioned(top: 6, right: 6,
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(10)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.star, color: Colors.yellow, size: 10),
-                    const SizedBox(width: 2),
-                    Text(place['rating'] as String, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600)),
-                  ]))),
-            ]),
-            Expanded(
-              child: Padding(padding: const EdgeInsets.all(10),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(place['title'] as String, style: GoogleFonts.quattrocento(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
-                       maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 3),
-                  Text(place['subtitle'] as String, style: GoogleFonts.quattrocento(fontSize: 11, color: Colors.grey[600]),
-                       maxLines: 1, overflow: TextOverflow.ellipsis),
-                ])),
-            ),
-          ]))));
+          child: Column(
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12)),
+                    child: _buildImageWithAnimation(
+                      place['image'] as String,
+                      110,
+                      160,
+                      place['color'] as Color)),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(10)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, color: Colors.yellow, size: 10),
+                          const SizedBox(width: 2),
+                          Text(
+                            place['rating'] as String,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9)),
+                        ]))),
+                ]),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        place['title'] as String,
+                        style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,color: Colors.black87),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 3),
+                      Text(
+                        place['subtitle'] as String,
+                        style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                          fontSize: 11,
+                          color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    ]))),
+            ]))));
   }
 
   Widget _buildNearbyCard(BuildContext context, int index) {
     final places = [
-      {'title': 'Coffee Shop District 1', 'subtitle': 'Traditional Coffee', 'image': 'images/hcmc_food_tour.jpg', 'color': Colors.brown[300]!, 'distance': '0.5 km'},
-      {'title': 'Nguyen Hue Walking Street', 'subtitle': 'City Center', 'image': 'images/hcmc_skyline.jpg', 'color': Colors.blue[300]!, 'distance': '0.8 km'},
-      {'title': 'Saigon Central Post Office', 'subtitle': 'Historic Building', 'image': 'images/hcmc_bus_tour.jpg', 'color': Colors.green[300]!, 'distance': '1.2 km'},
-      {'title': 'Ben Thanh Night Market', 'subtitle': 'Local Market', 'image': 'images/hcmc_food_tour.jpg', 'color': Colors.orange[300]!, 'distance': '0.3 km'},
+      {
+        'title': 'Coffee Shop District 1',
+        'subtitle': 'Traditional Coffee',
+        'image': 'images/hcmc_food_tour.jpg',
+        'color': Colors.brown[300]!,
+        'distance': '0.5 km',
+      },
+      {
+        'title': 'Nguyen Hue Walking Street',
+        'subtitle': 'City Center',
+        'image': 'images/hcmc_skyline.jpg',
+        'color': Colors.blue[300]!,
+        'distance': '0.8 km',
+      },
+      {
+        'title': 'Saigon Central Post Office',
+        'subtitle': 'Historic Building',
+        'image': 'images/hcmc_bus_tour.jpg',
+        'color': Colors.green[300]!,
+        'distance': '1.2 km',
+      },
+      {
+        'title': 'Ben Thanh Night Market',
+        'subtitle': 'Local Market',
+        'image': 'images/hcmc_food_tour.jpg',
+        'color': Colors.orange[300]!,
+        'distance': '0.3 km',
+      },
     ];
     final place = places[index % places.length];
 
-    return Container(width: 160, height: 200, margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))]),
-      child: Material(color: Colors.transparent,
-        child: InkWell(borderRadius: BorderRadius.circular(12),
+    return Container(
+      width: 160,
+      height: 200,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4)),
+        ]),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
           splashColor: (place['color'] as Color).withValues(alpha: 0.2),
           hoverColor: (place['color'] as Color).withValues(alpha: 0.05),
           onTap: () => _onNearbyTap(context, place['title'] as String),
-          child: Column(children: [
-            Stack(children: [
-              ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: _buildImageWithAnimation(place['image'] as String, 110, 160, place['color'] as Color)),
-              Positioned(top: 6, right: 6,
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(10)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.location_on, color: Colors.white, size: 10),
-                    const SizedBox(width: 2),
-                    Text(place['distance'] as String, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600)),
-                  ]))),
-            ]),
-            Expanded(
-              child: Padding(padding: const EdgeInsets.all(10),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(place['title'] as String, style: GoogleFonts.quattrocento(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
-                       maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 3),
-                  Text(place['subtitle'] as String, style: GoogleFonts.quattrocento(fontSize: 11, color: Colors.grey[600]),
-                       maxLines: 1, overflow: TextOverflow.ellipsis),
-                ])),
-            ),
-          ]))));
+          child: Column(
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12)),
+                    child: _buildImageWithAnimation(
+                      place['image'] as String,
+                      110,
+                      160,
+                      place['color'] as Color)),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(10)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: Colors.white,
+                            size: 10),
+                          const SizedBox(width: 2),
+                          Text(
+                            place['distance'] as String,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9)),
+                        ]))),
+                ]),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        place['title'] as String,
+                        style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,color: Colors.black87),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 3),
+                      Text(
+                        place['subtitle'] as String,
+                        style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                          fontSize: 11,
+                          color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    ]))),
+            ]))));
   }
 
-  Widget _buildImageWithAnimation(String imagePath, double height, double width, Color fallbackColor) {
-    return SizedBox(height: height, width: width,
-      child: Image.asset(imagePath, height: height, width: width, fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(height: height, width: width, color: fallbackColor,
-          child: Center(child: Icon(Icons.image_not_supported_outlined, color: Colors.white, size: height * 0.3)))));
+  Widget _buildImageWithAnimation(
+    String imagePath,
+    double height,
+    double width,
+    Color fallbackColor) {
+    return SizedBox(
+      height: height,
+      width: width,
+      child: Image.asset(
+        imagePath,
+        height: height,
+        width: width,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          height: height,
+          width: width,
+          color: fallbackColor,
+          child: Center(
+            child: Icon(
+              Icons.image_not_supported_outlined,
+              color: Colors.white,
+              size: height * 0.3)))));
   }
 
   // Handler methods
   void _onCategoryTap(BuildContext context, String categoryName) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exploring $categoryName...'), backgroundColor: const Color(0xFF7B61FF)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Exploring $categoryName...'),
+        backgroundColor: const Color(0xFF7B61FF)));
   }
 
   void _showSearchDialog(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search feature coming soon!')));
+    ScaffoldMessenger.of(
+      context).showSnackBar(SnackBar(content: Text('Search feature coming soon!')));
   }
 
   void _onPlanTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Opening plan...'), backgroundColor: Colors.blue));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Opening plan...'), backgroundColor: Colors.blue));
   }
 
   void _onNotificationTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('You have 3 new notifications'), backgroundColor: Colors.orange));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('You have 3 new notifications'),
+        backgroundColor: Colors.orange));
   }
 
   void _onNearbyGemsSeMoreTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loading more nearby gems...'), backgroundColor: const Color(0xFF7B61FF)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Loading more nearby gems...'),
+        backgroundColor: const Color(0xFF7B61FF)));
   }
 
-
   void _onRecentlyViewedTap(BuildContext context, String tourName) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Opening $tourName...'), backgroundColor: Colors.blueAccent));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Opening $tourName...'),
+        backgroundColor: Colors.blueAccent));
   }
 
   void _onRecentlyViewedSeeMoreTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loading more recently viewed items...'), backgroundColor: Colors.blueAccent));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Loading more recently viewed items...'),
+        backgroundColor: Colors.blueAccent));
   }
 
   void _onWhereToNextTap(BuildContext context, String destination) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exploring $destination...'), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Exploring $destination...'),
+        backgroundColor: Colors.green));
   }
 
   void _onWhereToNextSeeMoreTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loading more destinations...'), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Loading more destinations...'),
+        backgroundColor: Colors.green));
   }
 
   void _onRecommendedTap(BuildContext context, String placeName) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exploring $placeName...'), backgroundColor: const Color(0xFF7B61FF)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Exploring $placeName...'),
+        backgroundColor: const Color(0xFF7B61FF)));
   }
 
   void _onNearbyTap(BuildContext context, String placeName) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Navigating to $placeName...'), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Navigating to $placeName...'),
+        backgroundColor: Colors.green));
   }
 
   void _onRecommendedSeeMoreTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loading more ${_recommendedTabIndex == 0 ? "recommended" : "nearby"} places...'), backgroundColor: const Color(0xFF7B61FF)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Loading more ${_recommendedTabIndex == 0 ? "recommended" : "nearby"} places...'),
+        backgroundColor: const Color(0xFF7B61FF)));
   }
 }
-

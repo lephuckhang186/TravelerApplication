@@ -201,6 +201,38 @@ class Trip {
     this.durationDays,
   });
 
+  /// Check if trip is currently active
+  bool get isActive {
+    final now = DateTime.now();
+    return now.isAfter(startDate) && now.isBefore(endDate.add(const Duration(days: 1)));
+  }
+
+  /// Get total days in trip
+  int get totalDays {
+    return endDate.difference(startDate).inDays + 1;
+  }
+
+  /// Get days remaining in trip
+  int get daysRemaining {
+    final now = DateTime.now();
+    if (endDate.isAfter(now)) {
+      return endDate.difference(now).inDays;
+    }
+    return 0;
+  }
+
+  /// Get days elapsed in trip
+  int get daysElapsed {
+    final now = DateTime.now();
+    if (now.isBefore(startDate)) {
+      return 0;
+    } else if (now.isAfter(endDate)) {
+      return totalDays;
+    } else {
+      return now.difference(startDate).inDays + 1;
+    }
+  }
+
   factory Trip.fromJson(Map<String, dynamic> json) {
     return Trip(
       startDate: DateTime.parse(json['start_date'] as String),

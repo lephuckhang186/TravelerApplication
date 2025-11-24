@@ -4,6 +4,7 @@ class ApiConfig {
   
   // Expense endpoints
   static const String expensesEndpoint = '/expenses';
+  static const String currentTripEndpoint = '/expenses/trip/current';
   static const String createTripEndpoint = '/expenses/trip/create';
   static const String createBudgetEndpoint = '/expenses/budget/create';
   static const String budgetStatusEndpoint = '/expenses/budget/status';

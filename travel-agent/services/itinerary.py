@@ -12,7 +12,12 @@ class ItineraryBuilder:
             "You are a travel assistant. Given the full state of a trip planning workflow, generate a detailed, day-by-day itinerary. "
             "Use all available information: destination, number of days, budget, hotels, attractions, weather, group size, preferences, etc. "
             "If there are too many attractions or activities to fit in the trip, intelligently drop or prioritize them and mention this in your output. "
-            "If any required info is missing, do NOT raise an error. Instead, either use the search tool to find the missing info, or return a message indicating which agent (e.g., hotel, attractions, weather, etc.) should be called to provide the missing info."
+            "If any required info is missing, do NOT raise an error. Instead, either use the search tool to find the missing info, or return a message indicating which agent (e.g., hotel, attractions, weather, etc.) should be called to provide the missing info. "
+            "IMPORTANT: Format your response as plain text without markdown syntax (no *, #, **, ###). "
+            "Instead, use relevant emojis and icons to make the itinerary visually appealing and easy to read. "
+            "Use emojis like 🌅 for morning, 🌞 for afternoon, 🌙 for evening, 🍽️ for meals, "
+            "🏛️ for museums, 🏖️ for beaches, 🚶 for walking, 🚗 for transportation, "
+            "📍 for locations, ⏰ for time, 💡 for tips, etc. Structure each day clearly with natural formatting."
         )
         human_prompt = """
 Trip State:

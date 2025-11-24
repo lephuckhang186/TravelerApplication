@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/user_service.dart';
-import 'ai_assistant_screen.dart';
+import '../widgets/ai_assistant_panel.dart';
+import 'create_planner_screen.dart';
+import 'planner_detail_screen.dart';
 
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key});
@@ -13,6 +15,10 @@ class PlanScreen extends StatefulWidget {
 class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMixin {
   // String _currentUsername = 'User'; // Removed unused field
   String _displayName = 'User';
+  List<Map<String, dynamic>> _privatePlanners = [
+    {'name': 'Da Nang Planner', 'destination': 'Da Nang', 'type': 'Private'},
+    {'name': 'Ho Chi Minh Planner', 'destination': 'Ho Chi Minh City', 'type': 'Private'},
+  ];
   
   @override
   bool get wantKeepAlive => false; // Don't keep alive so it refreshes
@@ -329,17 +335,18 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
           ],
         ),
         const SizedBox(height: 16),
-        _buildPrivateItem('Da Nang Planner', Icons.calendar_today),
-        const SizedBox(height: 12),
-        _buildPrivateItem('Ho Chi Minh Planner', Icons.calendar_today),
+        ..._privatePlanners.map((planner) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildPrivateItem(planner['name'], Icons.calendar_today, planner),
+        )).toList(),
       ],
     );
   }
 
   /// Private item with tap effects
-  Widget _buildPrivateItem(String title, IconData icon) {
+  Widget _buildPrivateItem(String title, IconData icon, Map<String, dynamic> plannerData) {
     return GestureDetector(
-      onTap: () => _onPrivateItemTapWithAnimation(title),
+      onTap: () => _onPrivateItemTapWithAnimation(title, plannerData),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -561,21 +568,44 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
     Future.delayed(const Duration(milliseconds: 100), onTap);
   }
 
-  void _onPrivateItemTapWithAnimation(String title) {
+  void _onPrivateItemTapWithAnimation(String title, Map<String, dynamic> plannerData) {
     setState(() {});
     Future.delayed(const Duration(milliseconds: 100), () {
-      _showMessage('Opening $title...');
+      _openPlannerDetail(plannerData);
     });
+  }
+
+  void _openPlannerDetail(Map<String, dynamic> plannerData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PlannerDetailScreen(plannerData: plannerData),
+      ),
+    );
   }
 
   void _onAIChatTapWithAnimation() {
     setState(() {});
     Future.delayed(const Duration(milliseconds: 100), () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AiAssistantScreen()),
-      );
+      _showAIAssistantPanel();
     });
+  }
+
+  void _showAIAssistantPanel() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: AiAssistantPanel(
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
   }
 
   // Event handlers with bottom sheet animations
@@ -737,8 +767,39 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
     _showMessage('Opening $plannerName planner...');
   }
 
-  void _onAddPrivatePlanner() {
-    _showMessage('Adding new private planner...');
+  void _onAddPrivatePlanner() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreatePlannerScreen(),
+      ),
+    );
+    
+    if (result != null && result is Map<String, dynamic>) {
+      // Debug print
+      print('Adding planner: ${result['name']}');
+      
+      // Add the new planner to the list
+      setState(() {
+        _privatePlanners.add({
+          'name': result['name'] ?? 'Untitled Planner',
+          'destination': result['destination'] ?? '',
+          'startDate': result['startDate'],
+          'endDate': result['endDate'],
+          'type': result['type'] ?? 'Private',
+        });
+      });
+      
+      // Debug print current list
+      print('Total planners: ${_privatePlanners.length}');
+      
+      _showMessage('Planner "${result['name']}" has been created and added!');
+      
+      // Force rebuild
+      setState(() {});
+    } else {
+      print('No result or invalid result from CreatePlannerScreen');
+    }
   }
 
   void _addToPrivateItem(String title) {

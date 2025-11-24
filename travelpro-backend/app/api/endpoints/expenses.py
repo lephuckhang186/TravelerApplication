@@ -9,11 +9,20 @@ import os
 # Add parent directories to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from services.annalytics_service import (
-    ExpenseManager, ExpenseCategory, Expense, Budget, Trip
-)
-from core.dependencies import get_current_user
-from models.user import User
+try:
+    from services.annalytics_service import (
+        ExpenseManager, ExpenseCategory, Expense, Budget, Trip
+    )
+except ImportError:
+    from app.services.annalytics_service import (
+        ExpenseManager, ExpenseCategory, Expense, Budget, Trip
+    )
+try:
+    from core.dependencies import get_current_user
+    from models.user import User
+except ImportError:
+    from app.core.dependencies import get_current_user
+    from app.models.user import User
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 
@@ -53,11 +62,27 @@ class TripCreateRequest(BaseModel):
             date: lambda v: v.isoformat()
         }
 
+class TripResponse(BaseModel):
+    start_date: date
+    end_date: date
+    total_days: int
+    days_remaining: int
+    days_elapsed: int
+    is_active: bool
+    
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            date: lambda v: v.isoformat()
+        }
+
 class BudgetStatusResponse(BaseModel):
     total_budget: float
     total_spent: float
     percentage_used: float
     remaining_budget: float
+    start_date: date
+    end_date: date
     days_remaining: int
     days_total: int
     recommended_daily_spending: float
@@ -85,6 +110,34 @@ def get_expense_manager(user_id: str) -> ExpenseManager:
     return expense_managers[user_id]
 
 # Trip Management Endpoints
+@router.get("/trip/current", response_model=TripResponse)
+async def get_current_trip(
+    current_user: User = Depends(get_current_user)
+):
+    """Get the current trip for the user"""
+    try:
+        manager = get_expense_manager(current_user.id)
+        
+        if not manager.trip:
+            raise HTTPException(
+                status_code=404, 
+                detail="No active trip found. Please create a trip first."
+            )
+        
+        trip = manager.trip
+        return TripResponse(
+            start_date=trip.start_date,
+            end_date=trip.end_date,
+            total_days=trip.total_days,
+            days_remaining=trip.days_remaining,
+            days_elapsed=trip.days_elapsed,
+            is_active=trip.is_active
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/trip/create")
 async def create_trip(
     trip_request: TripCreateRequest,
