@@ -43,3 +43,33 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase credentials and sensitive files
+firebase-service-account.json
+*-service-account.json
+service-account-*.json
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Python backend specific
+travelpro-backend/__pycache__/
+travelpro-backend/*.pyc
+travelpro-backend/*.pyo
+travelpro-backend/*.pyd
+travelpro-backend/.Python
+travelpro-backend/env/
+travelpro-backend/venv/
+travelpro-backend/.venv/
+travelpro-backend/pip-log.txt
+travelpro-backend/*.egg-info/
+travelpro-backend/dist/
+travelpro-backend/build/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
