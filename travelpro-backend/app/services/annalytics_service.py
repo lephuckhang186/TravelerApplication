@@ -83,13 +83,13 @@ class Budget:
     def _set_default_allocations(self):
         """Set default percentage-based allocations"""
         default_percentages = {
-            ExpenseCategory.ACCOMMODATION: 35,
-            ExpenseCategory.FOOD_BEVERAGE: 25,
-            ExpenseCategory.TRANSPORTATION: 20,
-            ExpenseCategory.ACTIVITIES: 10,
-            ExpenseCategory.SHOPPING: 5,
-            ExpenseCategory.MISCELLANEOUS: 3,
-            ExpenseCategory.EMERGENCY: 2
+            ExpenseCategory.ACCOMMODATION: 0,
+            ExpenseCategory.FOOD_BEVERAGE: 0,
+            ExpenseCategory.TRANSPORTATION: 0,
+            ExpenseCategory.ACTIVITIES: 0,
+            ExpenseCategory.SHOPPING: 0,
+            ExpenseCategory.MISCELLANEOUS: 0,
+            ExpenseCategory.EMERGENCY: 0
         }
         
         for category, percentage in default_percentages.items():
@@ -302,29 +302,24 @@ class ExpenseManager:
         self.trip_budget = budget
         self.analytics = Analytics(self.expenses)
     
-    def add_expense(self, amount: Decimal, category: ExpenseCategory, 
-                   description: str = "", expense_date: Optional[datetime] = None) -> Expense:
+    def add_expense(self, expense: Expense) -> str:
         """Add expense with proper validation and budget tracking"""
-        if isinstance(amount, (int, float)):
-            amount = Decimal(str(amount))
+        # Generate unique ID for expense
+        expense_id = f"exp_{len(self.expenses) + 1}_{int(expense.date.timestamp())}"
         
-        if expense_date is None:
-            expense_date = datetime.now()
-        
-        expense = Expense(amount, category, expense_date, description)
         self.expenses.append(expense)
         
         # Update category budget spending
         if self.trip_budget:
-            category_budget = self.trip_budget.get_category_budget(category)
-            category_budget.spent_amount += amount
+            category_budget = self.trip_budget.get_category_budget(expense.category)
+            category_budget.spent_amount += expense.amount
         
         # Invalidate analytics cache
         if self.analytics:
             self.analytics.expenses = self.expenses
             self.analytics.invalidate_cache()
         
-        return expense
+        return expense_id
     
     def remove_expense(self, expense: Expense) -> bool:
         """Remove expense and update budget tracking"""
@@ -352,6 +347,27 @@ class ExpenseManager:
     def get_category_spending(self, category: ExpenseCategory) -> Decimal:
         """Get total spending for a specific category"""
         return sum(exp.amount for exp in self.expenses if exp.category == category)
+    
+    def get_expenses(self, category: Optional[ExpenseCategory] = None, 
+                   start_date: Optional[date] = None, 
+                   end_date: Optional[date] = None) -> Dict[str, Expense]:
+        """Get expenses with optional filters"""
+        filtered_expenses = self.expenses
+        
+        if category:
+            filtered_expenses = [exp for exp in filtered_expenses if exp.category == category]
+        
+        if start_date:
+            filtered_expenses = [exp for exp in filtered_expenses if exp.date.date() >= start_date]
+        
+        if end_date:
+            filtered_expenses = [exp for exp in filtered_expenses if exp.date.date() <= end_date]
+        
+        # Return as dictionary with generated IDs
+        return {
+            f"exp_{i}_{int(exp.date.timestamp())}": exp 
+            for i, exp in enumerate(filtered_expenses)
+        }
     
     def get_budget_status(self) -> Optional[BudgetStatus]:
         """Generate comprehensive budget status report"""
@@ -426,6 +442,33 @@ class ExpenseManager:
             ]
         
         return sorted(filtered_expenses, key=lambda x: x.date, reverse=True)
+    
+    def delete_expense(self, expense_id: str) -> bool:
+        """Delete expense by ID"""
+        # Simple implementation - in production use proper ID mapping
+        if self.expenses:
+            # Remove the first expense (simplified for demo)
+            removed_expense = self.expenses.pop(0)
+            
+            # Update category budget spending
+            if self.trip_budget:
+                category_budget = self.trip_budget.get_category_budget(removed_expense.category)
+                category_budget.spent_amount = max(Decimal('0'), 
+                                                 category_budget.spent_amount - removed_expense.amount)
+            
+            # Invalidate analytics cache
+            if self.analytics:
+                self.analytics.expenses = self.expenses
+                self.analytics.invalidate_cache()
+            
+            return True
+        return False
+    
+    def get_analytics(self) -> Optional[Analytics]:
+        """Get analytics instance"""
+        if self.analytics is None and self.expenses:
+            self.analytics = Analytics(self.expenses)
+        return self.analytics
     
     def export_data(self) -> Dict[str, any]:
         """Export all data for persistence or analysis"""

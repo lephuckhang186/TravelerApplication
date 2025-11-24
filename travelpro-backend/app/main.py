@@ -8,8 +8,8 @@ from fastapi.responses import JSONResponse
 import time
 import logging
 
-from api.endpoints import expenses, auth
-from core.config import get_settings
+from .api.endpoints import expenses, auth
+from .core.config import get_settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

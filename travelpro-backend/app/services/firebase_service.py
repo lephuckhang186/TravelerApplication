@@ -31,21 +31,30 @@ class FirebaseService:
     def _initialize_firebase(self):
         """Initialize Firebase Admin SDK"""
         try:
-            # Option 1: Use service account key file
-            if hasattr(settings, 'FIREBASE_SERVICE_ACCOUNT_PATH') and settings.FIREBASE_SERVICE_ACCOUNT_PATH:
-                cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
-                self.app = firebase_admin.initialize_app(cred)
-            
-            # Option 2: Use service account key from environment variable  
-            elif hasattr(settings, 'FIREBASE_SERVICE_ACCOUNT_KEY') and settings.FIREBASE_SERVICE_ACCOUNT_KEY:
-                service_account_info = json.loads(settings.FIREBASE_SERVICE_ACCOUNT_KEY)
-                cred = credentials.Certificate(service_account_info)
-                self.app = firebase_admin.initialize_app(cred)
-            
-            # Option 3: Use default credentials (Google Cloud environment)
-            else:
-                cred = credentials.ApplicationDefault()
-                self.app = firebase_admin.initialize_app(cred)
+            # Check if Firebase app is already initialized
+            try:
+                self.app = firebase_admin.get_app()
+                print("Using existing Firebase app")
+            except ValueError:
+                # App doesn't exist, create new one
+                # Option 1: Use service account key file
+                if hasattr(settings, 'FIREBASE_SERVICE_ACCOUNT_PATH') and settings.FIREBASE_SERVICE_ACCOUNT_PATH:
+                    if os.path.exists(settings.FIREBASE_SERVICE_ACCOUNT_PATH):
+                        cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
+                        self.app = firebase_admin.initialize_app(cred)
+                    else:
+                        raise FileNotFoundError(f"Firebase service account file not found: {settings.FIREBASE_SERVICE_ACCOUNT_PATH}")
+                
+                # Option 2: Use service account key from environment variable  
+                elif hasattr(settings, 'FIREBASE_SERVICE_ACCOUNT_KEY') and settings.FIREBASE_SERVICE_ACCOUNT_KEY:
+                    service_account_info = json.loads(settings.FIREBASE_SERVICE_ACCOUNT_KEY)
+                    cred = credentials.Certificate(service_account_info)
+                    self.app = firebase_admin.initialize_app(cred)
+                
+                # Option 3: Use default credentials (Google Cloud environment)
+                else:
+                    cred = credentials.ApplicationDefault()
+                    self.app = firebase_admin.initialize_app(cred)
             
             # Initialize Firestore
             self.db = firestore.client()
@@ -53,16 +62,21 @@ class FirebaseService:
             
         except Exception as e:
             print(f"Firebase initialization failed: {e}")
-            # In development, use mock service
-            self.app = None
-            self.db = None
+            print("ERROR: Firebase credentials required for authentication")
+            print("Please provide valid Firebase service account credentials")
+            # Fail fast - don't allow app to start without proper Firebase setup
+            raise Exception("Firebase authentication is required but not properly configured")
     
     async def verify_id_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
         Verify Firebase ID token from client
         """
         try:
-            # Verify the ID token
+            # Ensure Firebase is properly initialized
+            if self.app is None:
+                raise Exception("Firebase is not properly initialized")
+            
+            # Verify the ID token with Firebase
             decoded_token = auth.verify_id_token(token)
             return decoded_token
         except Exception as e:

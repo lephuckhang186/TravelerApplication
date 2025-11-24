@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
     FIREBASE_SERVICE_ACCOUNT_KEY: Optional[str] = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY")
     FIREBASE_PROJECT_ID: Optional[str] = os.getenv("FIREBASE_PROJECT_ID")
+    FIREBASE_PROJECT_NUMBER: Optional[str] = os.getenv("FIREBASE_PROJECT_NUMBER")
+    FIREBASE_STORAGE_BUCKET: Optional[str] = os.getenv("FIREBASE_STORAGE_BUCKET")
+    FIREBASE_API_KEY: Optional[str] = os.getenv("FIREBASE_API_KEY")
     
     # Google OAuth Configuration  
     GOOGLE_CLIENT_ID: Optional[str] = os.getenv("GOOGLE_CLIENT_ID")
@@ -55,6 +58,9 @@ class Settings(BaseSettings):
     
     # Redis settings (for caching)
     REDIS_URL: Optional[str] = os.getenv("REDIS_URL", "redis://localhost:6379")
+    
+    # Development flags
+    ENABLE_DOCS: bool = os.getenv("ENABLE_DOCS", "true").lower() == "true"
     
     class Config:
         env_file = ".env"
