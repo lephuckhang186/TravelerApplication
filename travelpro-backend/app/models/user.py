@@ -41,8 +41,8 @@ class User(UserBase):
     is_active: bool = True
     is_admin: bool = False
     is_verified: bool = False
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
     last_login: Optional[datetime] = None
     
     # Travel-specific fields
