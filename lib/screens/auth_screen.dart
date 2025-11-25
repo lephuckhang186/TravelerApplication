@@ -49,7 +49,7 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -57,18 +57,43 @@ class WelcomeScreen extends StatelessWidget {
             children: [
               const Spacer(flex: 3),
               
-              // Logo Spotify
+              // Logo
               Container(
-                width: 80,
-                height: 80,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.graphic_eq,
-                  size: 40,
-                  color: Colors.black,
+                child: ClipOval(
+                  child: Image.asset(
+                    'images/logo.png',
+                    width: 160,
+                    height: 160,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 160,
+                        height: 160,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF40E0D0),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.travel_explore,
+                          size: 80,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               
@@ -78,7 +103,7 @@ class WelcomeScreen extends StatelessWidget {
               const Text(
                 'Chuyến đi của bạn,',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF40E0D0), // Turquoise text
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),
@@ -87,7 +112,7 @@ class WelcomeScreen extends StatelessWidget {
               const Text(
                 'kế hoạch của TripWise',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF40E0D0), // Turquoise text
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),
@@ -97,7 +122,7 @@ class WelcomeScreen extends StatelessWidget {
               const Text(
                 'Không chỉ là du lịch, là hành trình của chúng ta',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF2E8B8B), // Darker turquoise for subtitle
                   fontSize: 18,
                   fontWeight: FontWeight.w400,
                 ),
@@ -113,15 +138,17 @@ class WelcomeScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onSignUp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1ED760), // Spotify green
+                    backgroundColor: const Color(0xFF40E0D0), // Turquoise
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
+                    elevation: 3,
+                    shadowColor: const Color(0xFF40E0D0).withOpacity(0.3),
                   ),
                   child: const Text(
                     'Bắt đầu hành trình',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -138,15 +165,16 @@ class WelcomeScreen extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: onLogin,
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.8)),
+                    side: const BorderSide(color: Color(0xFF40E0D0), width: 2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
+                    backgroundColor: Colors.transparent,
                   ),
                   child: const Text(
                     'Đăng nhập',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF40E0D0),
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -208,7 +236,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF1ED760),
+        backgroundColor: const Color(0xFF40E0D0),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -239,11 +267,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF40E0D0)),
           onPressed: widget.onBack,
         ),
         elevation: 0,
@@ -257,16 +285,41 @@ class _SignUpScreenState extends State<SignUpScreen> {
               
               // Logo
               Container(
-                width: 60,
-                height: 60,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.graphic_eq,
-                  size: 30,
-                  color: Colors.black,
+                child: ClipOval(
+                  child: Image.asset(
+                    'images/logo.png',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 120,
+                        height: 120,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF40E0D0),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.travel_explore,
+                          size: 60,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               
@@ -276,7 +329,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const Text(
                 'Tạo tài khoản',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF40E0D0),
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -285,7 +338,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const Text(
                 'TripWise',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF40E0D0),
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -298,8 +351,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               _buildSignUpButton(
                 'Tiếp tục bằng email',
                 Icons.email_outlined,
-                const Color(0xFF1ED760),
-                Colors.black,
+                const Color(0xFF40E0D0),
+                Colors.white,
                 onPressed: _navigateToEmailSignUp,
               ),
               
@@ -311,8 +364,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 'Tiếp tục bằng Google',
                 Icons.g_mobiledata_rounded,
                 Colors.transparent,
-                Colors.white,
-                borderColor: Colors.white.withOpacity(0.8),
+                const Color(0xFF40E0D0),
+                borderColor: const Color(0xFF40E0D0),
                 onPressed: () => _handleSocialAuth('Google'),
               ),
               
@@ -328,7 +381,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Text(
                     'Bạn đã có tài khoản? ',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: const Color(0xFF2E8B8B).withOpacity(0.8),
                       fontSize: 14,
                     ),
                   ),
@@ -341,7 +394,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: const Text(
                       'Đăng nhập',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF40E0D0),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         decoration: TextDecoration.underline,
@@ -459,7 +512,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF1ED760),
+        backgroundColor: const Color(0xFF40E0D0),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -500,11 +553,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF40E0D0)),
           onPressed: widget.onBack,
         ),
         elevation: 0,
@@ -518,16 +571,41 @@ class _LoginScreenState extends State<LoginScreen> {
               
               // Logo
               Container(
-                width: 60,
-                height: 60,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.graphic_eq,
-                  size: 30,
-                  color: Colors.black,
+                child: ClipOval(
+                  child: Image.asset(
+                    'images/logo.png',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 120,
+                        height: 120,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF40E0D0),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.travel_explore,
+                          size: 60,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               
@@ -537,7 +615,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'Đăng nhập',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF40E0D0),
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -546,7 +624,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'TripWise',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF40E0D0),
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -559,8 +637,8 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildLoginButton(
                 'Tiếp tục bằng email',
                 Icons.email_outlined,
-                const Color(0xFF1ED760),
-                Colors.black,
+                const Color(0xFF40E0D0),
+                Colors.white,
                 onPressed: _navigateToEmailLogin,
               ),
               
@@ -572,8 +650,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Tiếp tục bằng Google',
                 Icons.g_mobiledata_rounded,
                 Colors.transparent,
-                Colors.white,
-                borderColor: Colors.white.withOpacity(0.8),
+                const Color(0xFF40E0D0),
+                borderColor: const Color(0xFF40E0D0),
                 onPressed: () => _handleSocialAuth('Google'),
               ),
               
@@ -589,7 +667,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Bạn chưa có tài khoản? ',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: const Color(0xFF2E8B8B).withOpacity(0.8),
                       fontSize: 14,
                     ),
                   ),
@@ -602,7 +680,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       'Đăng ký',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF40E0D0),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         decoration: TextDecoration.underline,
