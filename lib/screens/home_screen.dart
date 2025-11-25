@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'settings_screen.dart';
 import 'plan_screen.dart';
-import 'analysis_screen.dart';
+import '../features/expense_management/analysis_screen.dart';
 import '../core/theme/app_theme.dart';
 
 /// Home Screen - Travel & Tourism Dashboard
