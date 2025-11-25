@@ -442,12 +442,123 @@ GET /api/expenses/analytics    # Expense analytics
 
 ## Development Setup
 
-### Backend Setup (Python)
+### 🚀 Hướng dẫn chạy dự án (Quick Start)
+
+#### Bước 1: Clone repository
+
+```bash
+git clone https://github.com/lephuckhang186/TravelerApplication.git
+cd TravelerApplication
+```
+
+#### Bước 2: Setup Backend (Python FastAPI)
+
+```bash
+# 1. Di chuyển vào thư mục Backend
+cd Backend
+
+# 2. Tạo virtual environment
+python -m venv venv
+# Windows PowerShell:
+venv\Scripts\Activate.ps1
+# Windows CMD:
+venv\Scripts\activate.bat
+# macOS/Linux:
+source venv/bin/activate
+
+# 3. Cài đặt dependencies
+pip install -r requirements.txt
+
+# 4. Thiết lập Firebase (cần thiết)
+# Tạo file firebase-service-account.json trong thư mục Backend/
+# Tải từ Firebase Console -> Project Settings -> Service Accounts
+
+# 5. Thiết lập biến môi trường
+# Tạo file .env trong Backend/ với nội dung:
+echo 'FIREBASE_SERVICE_ACCOUNT_PATH="./firebase-service-account.json"' > .env
+
+# 6. Chạy server
+python run_server.py
+# Hoặc:
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Server sẽ chạy tại: http://localhost:8000
+# API Documentation: http://localhost:8000/docs
+```
+
+#### Bước 3: Setup Frontend (Flutter)
+
+```bash
+# 1. Di chuyển về thư mục root
+cd ..
+
+# 2. Kiểm tra Flutter đã được cài đặt
+flutter doctor
+
+# 3. Cài đặt dependencies
+flutter pub get
+
+# 4. Chạy ứng dụng Flutter
+flutter run
+
+# Hoặc chạy trên emulator/device cụ thể:
+flutter run -d chrome        # Web browser
+flutter run -d android      # Android emulator
+flutter run -d ios          # iOS simulator
+```
+
+#### Bước 4: Kiểm tra kết nối
+
+```bash
+# Test API backend
+curl http://localhost:8000/health
+
+# Kết quả mong đợi:
+# {"status": "healthy", "message": "TravelPro Backend API", ...}
+```
+
+### 🛠️ Troubleshooting thường gặp
+
+#### Backend Issues
+
+```bash
+# Lỗi Firebase credentials:
+# 1. Đảm bảo firebase-service-account.json tồn tại
+# 2. Kiểm tra đường dẫn trong .env file
+# 3. Kiểm tra quyền file
+
+# Lỗi import modules:
+# 1. Đảm bảo đang trong virtual environment: venv\Scripts\activate
+# 2. Cài lại dependencies: pip install -r requirements.txt
+# 3. Kiểm tra Python version: python --version (cần >= 3.8)
+
+# Lỗi port đã được sử dụng:
+# Thay đổi port: uvicorn app.main:app --port 8001
+```
+
+#### Frontend Issues
+
+```bash
+# Lỗi Flutter dependencies:
+flutter clean
+flutter pub get
+
+# Lỗi kết nối API:
+# Kiểm tra baseUrl trong lib/core/config/api_config.dart
+# Đảm bảo backend đang chạy trên đúng port
+
+# Lỗi build:
+flutter clean
+flutter pub get
+flutter run --debug
+```
+
+### Backend Setup (Chi tiết)
 
 ```bash
 # 1. Clone và setup backend
-git clone https://github.com/lephuckhang186/travelpro-backend
-cd travelpro-backend
+git clone https://github.com/lephuckhang186/TravelerApplication.git
+cd TravelerApplication/Backend
 
 # 2. Create virtual environment
 python -m venv venv
@@ -458,16 +569,16 @@ pip install -r requirements.txt
 
 # 4. Setup environment variables
 cp .env.example .env
-# Cập nhật DATABASE_URL, OPENAI_API_KEY, etc.
+# Cập nhật DATABASE_URL, FIREBASE_SERVICE_ACCOUNT_PATH, etc.
 
-# 5. Setup database
-alembic upgrade head
+# 5. Setup database (nếu sử dụng)
+# alembic upgrade head
 
 # 6. Run development server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend Setup (Flutter)
+### Frontend Setup (Chi tiết)
 
 ```bash
 # 1. Setup Flutter project
@@ -475,7 +586,7 @@ cd TravelerApplication
 flutter pub get
 
 # 2. Configure API endpoints
-# Cập nhật base URL trong lib/core/constants/api_constants.dart
+# Cập nhật base URL trong lib/core/config/api_config.dart
 
 # 3. Run Flutter app
 flutter run

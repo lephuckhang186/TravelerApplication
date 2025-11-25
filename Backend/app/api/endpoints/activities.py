@@ -1,5 +1,5 @@
 """
-Activities Management API Endpoints
+Activities Management API Endpoints with Integrated Expense Tracking
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from typing import List, Optional, Dict, Any
@@ -9,10 +9,13 @@ from pydantic import BaseModel, Field, validator
 
 # Import dependencies and services
 try:
-    from ...core.dependencies import get_current_user, get_firebase_user
+    from ...core.dependencies import get_current_user
     from ...services.activities_management import (
-        ActivityManager, Activity, ActivityType, ActivityStatus, Priority,
+        Activity, ActivityType, ActivityStatus, Priority,
         Location, Budget, Contact
+    )
+    from ...services.annalytics_service import (
+        IntegratedTravelManager, ExpenseCategory
     )
     from ...models.user import User
 except ImportError:
@@ -20,18 +23,21 @@ except ImportError:
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    from core.dependencies import get_current_user, get_firebase_user
+    from core.dependencies import get_current_user
     from services.activities_management import (
-        ActivityManager, Activity, ActivityType, ActivityStatus, Priority,
+        Activity, ActivityType, ActivityStatus, Priority,
         Location, Budget, Contact
+    )
+    from services.annalytics_service import (
+        IntegratedTravelManager, ExpenseCategory
     )
     from models.user import User
 
 # Create router
-router = APIRouter(prefix="/activities", tags=["Activities Management"])
+router = APIRouter(prefix="/activities", tags=["Activities & Expense Management"])
 
-# Global activity manager instance (in production, use database)
-activity_manager = ActivityManager()
+# Global integrated travel manager instance (in production, use database)
+travel_manager = IntegratedTravelManager()
 
 
 # ============= PYDANTIC MODELS =============
@@ -136,8 +142,15 @@ class ActivityUpdate(BaseModel):
     is_booked: Optional[bool] = None
 
 
+class ExpenseInfo(BaseModel):
+    """Expense information for activity"""
+    expense_id: Optional[str] = None
+    has_expense: bool = False
+    expense_category: Optional[str] = None
+    auto_synced: bool = False
+
 class ActivityResponse(BaseModel):
-    """Activity response model"""
+    """Activity response model with expense integration"""
     id: str
     title: str
     description: Optional[str]
@@ -160,6 +173,7 @@ class ActivityResponse(BaseModel):
     booking_reference: Optional[str]
     booking_url: Optional[str]
     is_booked: bool
+    expense_info: ExpenseInfo
 
 
 class ActivityListResponse(BaseModel):
@@ -185,11 +199,60 @@ class ConflictCheckRequest(BaseModel):
     trip_id: Optional[str] = None
     exclude_activity_id: Optional[str] = None
 
+class TripBudgetSetup(BaseModel):
+    """Trip budget setup request"""
+    trip_id: Optional[str] = None
+    start_date: date
+    end_date: date
+    total_budget: float = Field(..., gt=0)
+    currency: str = Field(default="VND", max_length=3)
+    category_allocations: Optional[Dict[str, float]] = None
+
+class ActivityCostUpdate(BaseModel):
+    """Update activity actual cost"""
+    actual_cost: float = Field(..., ge=0)
+    currency: str = Field(default="VND", max_length=3)
+
+class ExpenseSummaryResponse(BaseModel):
+    """Expense summary response"""
+    total_activities: int
+    synced_activities: int
+    unsynced_activities: int
+    total_estimated_cost: float
+    total_actual_cost: float
+    budget_variance: float
+    budget_status: Optional[Dict[str, Any]] = None
+    category_status: Optional[Dict[str, Any]] = None
+
+class ActivityExpenseDetail(BaseModel):
+    """Activity expense detail"""
+    activity_id: str
+    title: str
+    type: str
+    status: str
+    estimated_cost: Optional[float]
+    actual_cost: Optional[float]
+    has_expense: bool
+    expense_category: Optional[str]
+
 
 # ============= HELPER FUNCTIONS =============
 
 def activity_to_response(activity: Activity) -> ActivityResponse:
-    """Convert Activity to ActivityResponse"""
+    """Convert Activity to ActivityResponse with expense info"""
+    # Get expense info
+    expense_info = ExpenseInfo()
+    if activity.id in travel_manager.expense_manager._activity_expense_map:
+        expense_info.has_expense = True
+        expense_info.expense_id = travel_manager.expense_manager._activity_expense_map[activity.id]
+        expense_info.auto_synced = True
+        # Get expense category
+        category = travel_manager.expense_manager._map_activity_type_to_expense_category(activity.activity_type)
+        expense_info.expense_category = category.value
+    elif activity.budget and activity.budget.actual_cost:
+        expense_info.has_expense = False
+        expense_info.auto_synced = False
+    
     return ActivityResponse(
         id=activity.id,
         title=activity.title,
@@ -217,7 +280,8 @@ def activity_to_response(activity: Activity) -> ActivityResponse:
         trip_id=activity.trip_id,
         booking_reference=activity.booking_reference,
         booking_url=activity.booking_url,
-        is_booked=activity.is_booked
+        is_booked=activity.is_booked,
+        expense_info=expense_info
     )
 
 
@@ -228,45 +292,53 @@ async def create_activity(
     activity_data: ActivityCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new activity"""
+    """Create a new activity with automatic expense tracking"""
     try:
-        # Convert budget to Decimal if provided
-        budget_dict = None
-        if activity_data.budget:
-            budget_dict = activity_data.budget.dict()
-            budget_dict['estimated_cost'] = Decimal(str(budget_dict['estimated_cost']))
-            if budget_dict['actual_cost'] is not None:
-                budget_dict['actual_cost'] = Decimal(str(budget_dict['actual_cost']))
-
-        # Convert location to dict if provided
-        location_dict = activity_data.location.dict() if activity_data.location else None
+        # Extract budget info
+        estimated_cost = None
+        actual_cost = None
+        currency = "VND"
         
-        # Convert contact to dict if provided
-        contact_dict = activity_data.contact.dict() if activity_data.contact else None
+        if activity_data.budget:
+            estimated_cost = Decimal(str(activity_data.budget.estimated_cost))
+            if activity_data.budget.actual_cost is not None:
+                actual_cost = Decimal(str(activity_data.budget.actual_cost))
+            currency = activity_data.budget.currency
 
-        activity = activity_manager.create_activity(
+        # Prepare additional kwargs
+        kwargs = {
+            'description': activity_data.description,
+            'status': activity_data.status,
+            'priority': activity_data.priority,
+            'start_date': activity_data.start_date,
+            'end_date': activity_data.end_date,
+            'duration_minutes': activity_data.duration_minutes,
+            'trip_id': activity_data.trip_id,
+            'notes': activity_data.notes,
+            'tags': activity_data.tags,
+            'booking_reference': activity_data.booking_reference,
+            'booking_url': activity_data.booking_url,
+            'is_booked': activity_data.is_booked,
+            'currency': currency
+        }
+
+        # Add location if provided
+        if activity_data.location:
+            kwargs['location'] = activity_data.location.dict()
+            
+        # Add contact if provided
+        if activity_data.contact:
+            kwargs['contact'] = activity_data.contact.dict()
+
+        # Use integrated manager to create activity with automatic expense sync
+        activity = travel_manager.create_activity_with_expense(
             title=activity_data.title,
             activity_type=activity_data.activity_type,
             created_by=current_user.id,
-            description=activity_data.description,
-            status=activity_data.status,
-            priority=activity_data.priority,
-            start_date=activity_data.start_date,
-            end_date=activity_data.end_date,
-            duration_minutes=activity_data.duration_minutes,
-            location=location_dict,
-            budget=budget_dict,
-            trip_id=activity_data.trip_id,
-            notes=activity_data.notes,
-            tags=activity_data.tags,
-            booking_reference=activity_data.booking_reference,
-            booking_url=activity_data.booking_url,
-            is_booked=activity_data.is_booked
+            estimated_cost=estimated_cost,
+            actual_cost=actual_cost,
+            **kwargs
         )
-
-        # Set contact if provided
-        if contact_dict:
-            activity.contact = Contact(**contact_dict)
 
         return activity_to_response(activity)
 
@@ -290,10 +362,10 @@ async def get_activities(
     end_date: Optional[date] = Query(None, description="Filter by end date (to)"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get activities with filtering and pagination"""
+    """Get activities with expense tracking information"""
     try:
         # Start with all user's activities
-        activities = activity_manager.get_activities_by_user(current_user.id)
+        activities = travel_manager.activity_manager.get_activities_by_user(current_user.id)
 
         # Apply filters
         if trip_id:
@@ -353,8 +425,8 @@ async def get_activity(
     activity_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get activity by ID"""
-    activity = activity_manager.get_activity(activity_id)
+    """Get activity by ID with expense information"""
+    activity = travel_manager.activity_manager.get_activity(activity_id)
     
     if not activity:
         raise HTTPException(
@@ -378,8 +450,8 @@ async def update_activity(
     activity_data: ActivityUpdate,
     current_user: User = Depends(get_current_user)
 ):
-    """Update an existing activity"""
-    activity = activity_manager.get_activity(activity_id)
+    """Update an existing activity with automatic expense sync"""
+    activity = travel_manager.activity_manager.get_activity(activity_id)
     
     if not activity:
         raise HTTPException(
@@ -399,20 +471,28 @@ async def update_activity(
         updates = {}
         for field, value in activity_data.dict(exclude_unset=True).items():
             if field == "budget" and value:
-                # Convert to Decimal
+                # Convert to Decimal and prepare budget dict
                 budget_dict = value
                 budget_dict['estimated_cost'] = Decimal(str(budget_dict['estimated_cost']))
                 if budget_dict['actual_cost'] is not None:
                     budget_dict['actual_cost'] = Decimal(str(budget_dict['actual_cost']))
-                updates[field] = Budget(**budget_dict)
+                updates[field] = budget_dict
             elif field == "location" and value:
-                updates[field] = Location(**value)
+                updates[field] = value
             elif field == "contact" and value:
-                updates[field] = Contact(**value)
+                updates[field] = value
             else:
                 updates[field] = value
 
-        updated_activity = activity_manager.update_activity(activity_id, **updates)
+        # Use integrated manager for automatic expense sync
+        updated_activity = travel_manager.update_activity_with_expense_sync(activity_id, **updates)
+        
+        if not updated_activity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update activity"
+            )
+            
         return activity_to_response(updated_activity)
 
     except Exception as e:
@@ -427,8 +507,8 @@ async def delete_activity(
     activity_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete an activity"""
-    activity = activity_manager.get_activity(activity_id)
+    """Delete an activity with automatic expense removal"""
+    activity = travel_manager.activity_manager.get_activity(activity_id)
     
     if not activity:
         raise HTTPException(
@@ -443,7 +523,8 @@ async def delete_activity(
             detail="Not authorized to delete this activity"
         )
 
-    success = activity_manager.delete_activity(activity_id)
+    # Use integrated manager for automatic expense removal
+    success = travel_manager.delete_activity_with_expense_sync(activity_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -458,7 +539,7 @@ async def schedule_activity(
     current_user: User = Depends(get_current_user)
 ):
     """Schedule an activity with specific timing"""
-    activity = activity_manager.get_activity(activity_id)
+    activity = travel_manager.activity_manager.get_activity(activity_id)
     
     if not activity:
         raise HTTPException(
@@ -474,7 +555,7 @@ async def schedule_activity(
         )
 
     try:
-        updated_activity = activity_manager.schedule_activity(
+        updated_activity = travel_manager.activity_manager.schedule_activity(
             activity_id,
             schedule_data.start_date,
             schedule_data.end_date,
@@ -496,6 +577,179 @@ async def schedule_activity(
         )
 
 
+@router.post("/{activity_id}/cost", response_model=ActivityResponse)
+async def update_activity_cost(
+    activity_id: str,
+    cost_data: ActivityCostUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update activity actual cost with automatic expense sync"""
+    activity = travel_manager.activity_manager.get_activity(activity_id)
+    
+    if not activity:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Activity not found"
+        )
+    
+    # Check ownership
+    if activity.created_by != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this activity"
+        )
+
+    try:
+        # Use integrated manager to set actual cost and auto-sync expense
+        success = travel_manager.set_activity_actual_cost(
+            activity_id,
+            Decimal(str(cost_data.actual_cost)),
+            cost_data.currency
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to update activity cost"
+            )
+        
+        # Get updated activity
+        updated_activity = travel_manager.activity_manager.get_activity(activity_id)
+        return activity_to_response(updated_activity)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to update activity cost: {str(e)}"
+        )
+
+
+@router.post("/trip/budget/setup", status_code=status.HTTP_201_CREATED)
+async def setup_trip_budget(
+    budget_data: TripBudgetSetup,
+    current_user: User = Depends(get_current_user)
+):
+    """Setup trip budget for expense tracking"""
+    try:
+        # Convert category allocations if provided
+        category_allocations = None
+        if budget_data.category_allocations:
+            category_allocations = {}
+            for category_str, amount in budget_data.category_allocations.items():
+                try:
+                    category = ExpenseCategory(category_str.lower())
+                    category_allocations[category] = Decimal(str(amount))
+                except ValueError:
+                    # Skip invalid categories
+                    continue
+        
+        # Setup trip and budget
+        travel_manager.setup_trip_with_budget(
+            start_date=budget_data.start_date,
+            end_date=budget_data.end_date,
+            total_budget=Decimal(str(budget_data.total_budget)),
+            category_allocations=category_allocations
+        )
+        
+        return {
+            "message": "Trip budget setup successfully",
+            "trip_period": f"{budget_data.start_date} to {budget_data.end_date}",
+            "total_budget": budget_data.total_budget,
+            "currency": budget_data.currency
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to setup trip budget: {str(e)}"
+        )
+
+
+@router.get("/expenses/summary", response_model=ExpenseSummaryResponse)
+async def get_expense_summary(
+    trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
+    current_user: User = Depends(get_current_user)
+):
+    """Get comprehensive activity-expense summary"""
+    try:
+        # Filter activities by user
+        if trip_id:
+            user_activities = [
+                activity for activity in travel_manager.activity_manager.get_activities_by_trip(trip_id)
+                if activity.created_by == current_user.id
+            ]
+        else:
+            user_activities = travel_manager.activity_manager.get_activities_by_user(current_user.id)
+        
+        # Create temporary manager with user's activities only
+        temp_manager = IntegratedTravelManager()
+        temp_manager.activity_manager.activities = {a.id: a for a in user_activities}
+        
+        # Copy expense mappings for user's activities
+        for activity_id in temp_manager.activity_manager.activities.keys():
+            if activity_id in travel_manager.expense_manager._activity_expense_map:
+                temp_manager.expense_manager._activity_expense_map[activity_id] = \
+                    travel_manager.expense_manager._activity_expense_map[activity_id]
+        
+        # Copy relevant expenses
+        temp_manager.expense_manager.expenses = [
+            expense for expense in travel_manager.expense_manager.expenses
+            if any(expense_id == f"exp_{i+1}_{int(expense.date.timestamp())}" 
+                   for i, e in enumerate(travel_manager.expense_manager.expenses) 
+                   if e == expense)
+        ]
+        
+        # Copy budget info
+        temp_manager.expense_manager.trip_budget = travel_manager.expense_manager.trip_budget
+        temp_manager.expense_manager.trip = travel_manager.expense_manager.trip
+        
+        summary = temp_manager.get_activity_expense_summary(trip_id)
+        
+        return ExpenseSummaryResponse(**summary['summary'])
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get expense summary: {str(e)}"
+        )
+
+
+@router.post("/expenses/sync", status_code=status.HTTP_200_OK)
+async def sync_activities_with_expenses(
+    trip_id: Optional[str] = Query(None, description="Sync specific trip or all activities"),
+    current_user: User = Depends(get_current_user)
+):
+    """Force sync all activities with expenses"""
+    try:
+        # Get user's activities
+        if trip_id:
+            user_activities = [
+                activity for activity in travel_manager.activity_manager.get_activities_by_trip(trip_id)
+                if activity.created_by == current_user.id
+            ]
+        else:
+            user_activities = travel_manager.activity_manager.get_activities_by_user(current_user.id)
+        
+        synced_count = 0
+        for activity in user_activities:
+            if activity.budget and activity.budget.actual_cost:
+                expense_id = travel_manager.expense_manager.sync_activity_to_expense(activity)
+                if expense_id:
+                    synced_count += 1
+        
+        return {
+            "message": f"Successfully synced {synced_count} activities with expenses",
+            "total_activities": len(user_activities),
+            "synced_activities": synced_count
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to sync activities with expenses: {str(e)}"
+        )
+
+
 @router.post("/conflicts/check", response_model=List[ActivityResponse])
 async def check_schedule_conflicts(
     conflict_data: ConflictCheckRequest,
@@ -503,7 +757,7 @@ async def check_schedule_conflicts(
 ):
     """Check for scheduling conflicts"""
     try:
-        conflicts = activity_manager.check_schedule_conflicts(
+        conflicts = travel_manager.activity_manager.check_schedule_conflicts(
             conflict_data.start_date,
             conflict_data.end_date,
             conflict_data.trip_id,
@@ -530,22 +784,49 @@ async def get_activity_statistics(
     trip_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get activity statistics"""
+    """Get activity statistics with expense information"""
     try:
         # Get user's activities for the trip
         if trip_id:
             user_activities = [
-                activity for activity in activity_manager.get_activities_by_trip(trip_id)
+                activity for activity in travel_manager.activity_manager.get_activities_by_trip(trip_id)
                 if activity.created_by == current_user.id
             ]
         else:
-            user_activities = activity_manager.get_activities_by_user(current_user.id)
+            user_activities = travel_manager.activity_manager.get_activities_by_user(current_user.id)
 
         # Create temporary manager with user's activities
+        from services.activities_management import ActivityManager
         temp_manager = ActivityManager()
         temp_manager.activities = {a.id: a for a in user_activities}
         
+        # Get basic stats
         stats = temp_manager.get_activity_statistics()
+        
+        # Add expense information
+        total_estimated_cost = sum(
+            float(a.budget.estimated_cost) for a in user_activities 
+            if a.budget and a.budget.estimated_cost
+        )
+        total_actual_cost = sum(
+            float(a.budget.actual_cost) for a in user_activities 
+            if a.budget and a.budget.actual_cost
+        )
+        synced_activities = len([
+            a for a in user_activities 
+            if a.id in travel_manager.expense_manager._activity_expense_map
+        ])
+        
+        stats.update({
+            'expense_info': {
+                'total_estimated_cost': total_estimated_cost,
+                'total_actual_cost': total_actual_cost,
+                'budget_variance': total_actual_cost - total_estimated_cost,
+                'synced_activities': synced_activities,
+                'total_activities': len(user_activities)
+            }
+        })
+        
         return stats
 
     except Exception as e:
@@ -560,22 +841,30 @@ async def export_activities(
     trip_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Export activities to JSON format"""
+    """Export activities with expense information to JSON format"""
     try:
         # Get user's activities
         if trip_id:
             user_activities = [
-                activity for activity in activity_manager.get_activities_by_trip(trip_id)
+                activity for activity in travel_manager.activity_manager.get_activities_by_trip(trip_id)
                 if activity.created_by == current_user.id
             ]
         else:
-            user_activities = activity_manager.get_activities_by_user(current_user.id)
+            user_activities = travel_manager.activity_manager.get_activities_by_user(current_user.id)
 
         # Create temporary manager with user's activities
+        from services.activities_management import ActivityManager
         temp_manager = ActivityManager()
         temp_manager.activities = {a.id: a for a in user_activities}
         
+        # Get basic export data
         export_data = temp_manager.export_activities(trip_id)
+        
+        # Add expense information
+        expense_summary = travel_manager.get_activity_expense_summary(trip_id)
+        export_data['expense_summary'] = expense_summary['summary']
+        export_data['expense_details'] = expense_summary['activities']
+        
         return export_data
 
     except Exception as e:

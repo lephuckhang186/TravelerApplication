@@ -132,3 +132,12 @@ async def get_active_user(current_user: User = Depends(get_current_user)) -> Use
             detail="User account is disabled"
         )
     return current_user
+
+# Alias for Firebase user (same as current user)
+async def get_firebase_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> User:
+    """
+    Get Firebase authenticated user (alias for get_current_user)
+    """
+    return await get_current_user(credentials)
