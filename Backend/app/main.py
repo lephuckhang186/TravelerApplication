@@ -14,14 +14,14 @@ from dotenv import load_dotenv
 
 # Handle both relative and absolute imports
 try:
-    from .api.endpoints import expenses, auth
+    from .api.endpoints import expenses, auth, activities
     from .core.config import get_settings
 except ImportError:
     # Fallback for direct execution or ASGI
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from api.endpoints import expenses, auth
+    from api.endpoints import expenses, auth, activities
     from core.config import get_settings
 
 # Import travel_agent
@@ -139,6 +139,7 @@ async def internal_error_handler(request: Request, exc):
 # Include API routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(expenses.router, prefix=settings.API_V1_STR)
+app.include_router(activities.router, prefix=settings.API_V1_STR)
 if travel_agent:
     app.include_router(travel_agent.router, prefix=settings.API_V1_STR)
     logger.info("Travel agent endpoints enabled")
@@ -158,6 +159,7 @@ async def root():
             "Firebase Authentication",
             "Google OAuth Integration", 
             "Expense Management",
+            "Activities Management",
             "Budget Analytics",
             "Multi-currency Support",
             "AI Travel Agent"
@@ -166,6 +168,7 @@ async def root():
             "docs": "/docs" if settings.DEBUG else "disabled",
             "auth": f"{settings.API_V1_STR}/auth",
             "expenses": f"{settings.API_V1_STR}/expenses",
+            "activities": f"{settings.API_V1_STR}/activities",
             "travel-agent": f"{settings.API_V1_STR}/travel-agent"
         }
     }
