@@ -20,6 +20,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   int _currentYear = DateTime.now().year;
   int _chartTypeIndex = 0; // 0: Pie chart, 1: Bar chart
   int _categoryTabIndex = 0; // 0: Subcategory, 1: Category
+  int? _selectedBarIndex; // Index of selected bar in chart
 
   late TabController _mainTabController;
   late TabController _categoryTabController;
@@ -936,57 +937,69 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     final trendColor = maxAmount > minAmount ? Colors.green[600] : Colors.red[600];
     
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Xu hướng chi tiêu 6 tháng',
-              style: GoogleFonts.quattrocento(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Xu hướng chi tiêu 6 tháng',
+                style: GoogleFonts.quattrocento(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
               ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(trendIcon, size: 16, color: trendColor),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      'Xu hướng $trend',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 12,
+                        color: trendColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          flex: 2,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.blue[200]!),
             ),
-            const SizedBox(height: 4),
-            Row(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(trendIcon, size: 16, color: trendColor),
+                Icon(Icons.insights, size: 14, color: Colors.blue[600]),
                 const SizedBox(width: 4),
-                Text(
-                  'Xu hướng $trend',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 12,
-                    color: trendColor,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    'Cao nhất: ${_formatMoney(maxAmount)}₫',
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 11,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.blue[200]!),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.insights, size: 14, color: Colors.blue[600]),
-              const SizedBox(width: 4),
-              Text(
-                'Cao nhất: ${_formatMoney(maxAmount)}₫',
-                style: GoogleFonts.quattrocento(
-                  fontSize: 11,
-                  color: Colors.blue[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
           ),
         ),
       ],
@@ -1042,7 +1055,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
               children: data.asMap().entries.map((entry) {
                 final index = entry.key;
                 final item = entry.value;
-                return _buildAnimatedBar(item, maxAmount, index);
+                return Expanded(
+                  child: _buildAnimatedBar(item, maxAmount, index),
+                );
               }).toList(),
             ),
           ),
@@ -1054,9 +1069,16 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   /// Build individual animated bar with hover effect
   Widget _buildAnimatedBar(Map<String, dynamic> item, double maxAmount, int index) {
     final amount = item['amount'] as double;
-    final color = item['color'] as Color;
-    final isCurrentMonth = item['isCurrentMonth'] as bool;
+    final isSelected = _selectedBarIndex == index;
     final percentage = amount / maxAmount;
+    
+    // Determine colors based on selection state
+    final Color barColor;
+    if (isSelected) {
+      barColor = Colors.blue[600]!; // Blue when selected
+    } else {
+      barColor = Colors.grey[400]!; // Grey when not selected
+    }
     
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 800 + (index * 100)),
@@ -1065,51 +1087,41 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       builder: (context, value, child) {
         return MouseRegion(
           onEnter: (_) => _showBarTooltip(item),
-          child: Container(
-            width: 40,
-            height: 200 * value,
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  color,
-                  color.withValues(alpha: 0.7),
-                ],
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(8),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-              border: isCurrentMonth 
-                ? Border.all(color: Colors.orange[600]!, width: 2)
-                : null,
-            ),
-            child: isCurrentMonth
-              ? Container(
-                  margin: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.orange[400]!,
-                        Colors.orange[300]!,
+          child: GestureDetector(
+            onTap: () => _onBarTap(index),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Container(
+                    width: constraints.maxWidth,
+                    height: 200 * value,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          barColor,
+                          barColor.withValues(alpha: 0.7),
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(8),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: barColor.withValues(alpha: 0.3),
+                          blurRadius: isSelected ? 12 : 8,
+                          offset: const Offset(0, 4),
+                        ),
                       ],
+                      border: null,
                     ),
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(6),
-                    ),
-                  ),
-                )
-              : null,
+                    child: null,
+                  );
+                },
+              ),
+            ),
           ),
         );
       },
@@ -1246,6 +1258,17 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     final amount = item['amount'] as double;
     final month = item['month'] as String;
     _showMessage('$month: ${_formatMoney(amount)}₫');
+  }
+
+  /// Handle bar tap to select/deselect
+  void _onBarTap(int index) {
+    setState(() {
+      if (_selectedBarIndex == index) {
+        _selectedBarIndex = null; // Deselect if already selected
+      } else {
+        _selectedBarIndex = index; // Select the tapped bar
+      }
+    });
   }
 
   /// Category tabs
