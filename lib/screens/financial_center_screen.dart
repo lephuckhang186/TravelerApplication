@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../features/expense_management/presentation/providers/expense_provider.dart';
+import '../features/expense_management/data/models/expense_models.dart';
 
 /// Financial Center Screen - Màn hình Trung Tâm Tài Chính
 class FinancialCenterScreen extends StatefulWidget {
@@ -12,6 +14,7 @@ class FinancialCenterScreen extends StatefulWidget {
 class _FinancialCenterScreenState extends State<FinancialCenterScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late ExpenseProvider _expenseProvider;
   bool _isAmountVisible = true;
   final String _selectedPeriod = '7 ngày'; // Mặc định hiển thị 7 ngày
 
@@ -37,11 +40,20 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 1, vsync: this);
+    _expenseProvider = ExpenseProvider();
+    _loadData();
+  }
+
+  void _loadData() {
+    _expenseProvider.fetchBudgetStatus();
+    _expenseProvider.fetchExpenseSummary();
+    _expenseProvider.refreshAllData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _expenseProvider.dispose();
     super.dispose();
   }
 
@@ -210,13 +222,28 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _isAmountVisible ? '16.883₫' : '•••••',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                    AnimatedBuilder(
+                      animation: _expenseProvider,
+                      builder: (context, child) {
+                        if (_expenseProvider.isSummaryLoading) {
+                          return const SizedBox(
+                            height: 32,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        
+                        final summary = _expenseProvider.expenseSummary;
+                        final totalAssets = summary != null ? summary.totalAmount : 0.0;
+                        
+                        return Text(
+                          _isAmountVisible ? '${_formatMoney(totalAssets)}₫' : '•••••',
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
                     const Row(
@@ -275,11 +302,42 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
 
   /// Card hạn mức chi
   Widget _buildSpendingLimitCard() {
-    const double monthlyLimit = 15000.0; // Hạn mức tháng
-    const double currentSpent = 8500.0;   // Đã chi trong tháng
-    const double remainingLimit = monthlyLimit - currentSpent;
-    final double progressPercentage = (currentSpent / monthlyLimit) * 100;
-    
+    return AnimatedBuilder(
+      animation: _expenseProvider,
+      builder: (context, child) {
+        if (_expenseProvider.isBudgetLoading) {
+          return Container(
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final budgetStatus = _expenseProvider.budgetStatus;
+        
+        // Default values if no budget data
+        final double monthlyLimit = budgetStatus?.totalBudget ?? 15000.0;
+        final double currentSpent = budgetStatus?.totalSpent ?? 0.0;
+        final double remainingLimit = budgetStatus?.remainingBudget ?? monthlyLimit;
+        final double progressPercentage = budgetStatus?.percentageUsed ?? 0.0;
+        
+        return _buildSpendingLimitContent(monthlyLimit, currentSpent, remainingLimit, progressPercentage);
+      },
+    );
+  }
+
+  Widget _buildSpendingLimitContent(double monthlyLimit, double currentSpent, double remainingLimit, double progressPercentage) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -760,9 +818,14 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
+          // Use real data from backend
+          final summary = _expenseProvider.expenseSummary;
+          final spendingTrends = _expenseProvider.spendingTrends;
+          
+          // For now, use mock data structure but with real totals
           final data = dialogPeriod == '7 ngày' ? _weeklyData : _monthlyData;
-          final totalIncome = data.fold<double>(0, (sum, item) => sum + item['income']);
-          final totalExpense = data.fold<double>(0, (sum, item) => sum + item['expense']);
+          final totalExpense = summary?.totalAmount ?? 0.0;
+          final totalIncome = totalExpense * 1.2; // Mock income as 20% more than expenses
           final balance = totalIncome - totalExpense;
 
           return Dialog(
@@ -1000,6 +1063,17 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
 
   /// Danh sách categories cho dialog
   Widget _buildCategoryList(double totalIncome, double totalExpense, double balance) {
+    final summary = _expenseProvider.expenseSummary;
+    final categoryBreakdown = summary?.categoryBreakdown ?? <String, double>{};
+    
+    // Convert backend category data to display format
+    final expenseSubcategories = categoryBreakdown.entries.map((entry) {
+      return {
+        'name': _getCategoryDisplayName(entry.key),
+        'amount': entry.value,
+      };
+    }).toList();
+    
     final categories = [
       {
         'title': 'Tổng Thu Nhập',
@@ -1017,11 +1091,8 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
         'amount': totalExpense,
         'color': const Color(0xFFE91E63),
         'icon': Icons.arrow_upward,
-        'subcategories': [
-          {'name': 'Ăn uống', 'amount': totalExpense * 0.4},
-          {'name': 'Di chuyển', 'amount': totalExpense * 0.3},
-          {'name': 'Mua sắm', 'amount': totalExpense * 0.2},
-          {'name': 'Khác', 'amount': totalExpense * 0.1},
+        'subcategories': expenseSubcategories.isNotEmpty ? expenseSubcategories : [
+          {'name': 'Chưa có dữ liệu', 'amount': 0.0},
         ]
       },
       {
@@ -1158,5 +1229,14 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
     );
   }
 
+  /// Get category display name from string key
+  String _getCategoryDisplayName(String categoryKey) {
+    try {
+      final category = ExpenseCategoryExtension.fromString(categoryKey);
+      return category.displayName;
+    } catch (e) {
+      return categoryKey;
+    }
+  }
 }
 

@@ -8,8 +8,17 @@ from fastapi.responses import JSONResponse
 import time
 import logging
 
-from api.endpoints import expenses, auth
-from core.config import get_settings
+# Handle both relative and absolute imports
+try:
+    from .api.endpoints import expenses, auth
+    from .core.config import get_settings
+except ImportError:
+    # Fallback for direct execution or ASGI
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from api.endpoints import expenses, auth
+    from core.config import get_settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,13 +37,27 @@ app = FastAPI(
 
 # ============= MIDDLEWARE =============
 
-# CORS middleware
+# CORS middleware - Enhanced configuration for Flutter/Web app support
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.CORS_ORIGINS if not settings.DEBUG else ["*"],  # Allow all origins in debug mode
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language", 
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "X-CSRFToken",
+        "X-Process-Time",
+        "Origin",
+        "Cache-Control",
+        "Pragma"
+    ],
+    expose_headers=["X-Process-Time"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 # Trusted host middleware (security)
@@ -42,6 +65,24 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=settings.ALLOWED_HOSTS
 )
+
+# CORS preflight middleware - Handle OPTIONS requests before authentication
+@app.middleware("http") 
+async def cors_preflight_handler(request: Request, call_next):
+    """Handle CORS preflight OPTIONS requests"""
+    if request.method == "OPTIONS":
+        response = JSONResponse(content={}, status_code=200)
+        # Set CORS headers for preflight response
+        origin = request.headers.get("origin")
+        if settings.DEBUG or not origin or origin in settings.CORS_ORIGINS:
+            response.headers["Access-Control-Allow-Origin"] = origin or "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+            response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, X-CSRFToken, Origin, Cache-Control, Pragma"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = "3600"
+        return response
+    
+    return await call_next(request)
 
 # Request timing middleware
 @app.middleware("http")
@@ -176,7 +217,7 @@ if __name__ == "__main__":
     import uvicorn
     
     uvicorn.run(
-        "app.main:app",
+        app,  # Pass the app directly instead of string reference
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG,

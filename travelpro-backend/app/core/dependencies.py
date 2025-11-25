@@ -23,10 +23,10 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """
-    Get the current authenticated user from the JWT token.
+    Get the current authenticated user from Firebase ID token.
     
     Args:
-        credentials: HTTP authorization credentials containing the JWT token
+        credentials: HTTP authorization credentials containing Firebase ID token
         
     Returns:
         User: The authenticated user object
@@ -36,8 +36,6 @@ async def get_current_user(
     """
     token = credentials.credentials
     
-    # TODO: Implement JWT token verification
-    # For now, return a mock user for development
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -45,23 +43,40 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Mock user for development - replace with actual JWT verification
-    from datetime import datetime
-    mock_user = User(
-        id="user_123",
-        email="user@example.com",
-        username="testuser",
-        is_active=True,
-        is_admin=False,
-        is_verified=True,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        preferred_currency="VND",
-        preferred_language="en",
-        time_zone="UTC"
-    )
-    
-    return mock_user
+    try:
+        # Verify Firebase ID token
+        decoded_token = await firebase_service.verify_id_token(token)
+        
+        if not decoded_token:
+                raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Firebase token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Get or create user from Firebase data
+        user = await firebase_service.get_or_create_user(decoded_token)
+        
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is inactive"
+            )
+        
+        # Update last login timestamp
+        await firebase_service.update_user_login(user.id)
+        
+        return user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Authentication error: {e}")
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed"
+        )
 
 async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(
