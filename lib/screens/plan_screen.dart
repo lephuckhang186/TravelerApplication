@@ -13,7 +13,8 @@ class PlanScreen extends StatefulWidget {
   State<PlanScreen> createState() => _PlanScreenState();
 }
 
-class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMixin {
+class _PlanScreenState extends State<PlanScreen>
+    with AutomaticKeepAliveClientMixin {
   String _displayName = 'User';
   List<Map<String, dynamic>> _trips = [
     {
@@ -21,42 +22,42 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
       'date': 'Tue, 25 Nov (1 day)',
       'status': 'Ends today',
       'image': 'images/danang.jpg',
-      'destination': 'Da Nang'
+      'destination': 'Da Nang',
     },
     {
-      'name': 'Ho Chi Minh City Trip', 
+      'name': 'Ho Chi Minh City Trip',
       'date': 'Mon, 2 Dec (3 days)',
       'status': 'Upcoming',
       'image': 'images/hcmc_skyline.jpg',
-      'destination': 'Ho Chi Minh City'
+      'destination': 'Ho Chi Minh City',
     },
   ];
-  
+
   @override
   bool get wantKeepAlive => false;
-  
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
-  
+
   void _loadUserData() async {
     final userService = UserService();
     final profile = userService.getUserProfile();
     final username = await userService.getDisplayName();
-    
+
     setState(() {
-      _displayName = profile['fullName']?.isNotEmpty == true 
-          ? profile['fullName']! 
+      _displayName = profile['fullName']?.isNotEmpty == true
+          ? profile['fullName']!
           : username;
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -84,10 +85,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.more_horiz,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.more_horiz, color: Colors.white),
               ),
               onPressed: () => _showOptionsMenu(context),
             ),
@@ -111,10 +109,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                     color: Colors.grey.shade600,
                     fontSize: 16,
                   ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Colors.grey.shade600,
-                  ),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -124,7 +119,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
               ),
             ),
           ),
-          
+
           // Trip Cards
           Expanded(
             child: Padding(
@@ -138,13 +133,17 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
               ),
             ),
           ),
-          
+
           // Spacer để đẩy AI chat box xuống dưới
           const Spacer(),
-          
+
           // AI Chat Box với góc tròn ở 2 đầu - thu nhỏ chiều rộng
           Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              bottom: 16.0,
+            ),
             child: Center(
               child: GestureDetector(
                 onTap: () {
@@ -163,7 +162,10 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(30), // Góc tròn ở 2 đầu
@@ -201,15 +203,13 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80), // Đẩy nút + lên cao hơn để tránh dính chat box
+        padding: const EdgeInsets.only(
+          bottom: 80,
+        ), // Đẩy nút + lên cao hơn để tránh dính chat box
         child: FloatingActionButton(
           onPressed: () => _showCreateTripModal(context),
           backgroundColor: AppColors.primary,
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 28,
-          ),
+          child: const Icon(Icons.add, color: Colors.white, size: 28),
         ),
       ),
     );
@@ -249,7 +249,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Trip Info
               Expanded(
                 child: Column(
@@ -314,9 +314,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
   void _showCreateTripModal(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CreatePlannerScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const CreatePlannerScreen()),
     );
   }
 

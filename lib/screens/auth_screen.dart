@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'email_auth_screen.dart';
-import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -56,7 +55,7 @@ class WelcomeScreen extends StatelessWidget {
           child: Column(
             children: [
               const Spacer(flex: 3),
-              
+
               // Logo
               Container(
                 width: 160,
@@ -96,9 +95,9 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const Spacer(flex: 2),
-              
+
               // Slogan
               const Text(
                 'Chuyến đi của bạn,',
@@ -128,9 +127,9 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const Spacer(flex: 3),
-              
+
               // Nút Đăng ký miễn phí
               SizedBox(
                 width: double.infinity,
@@ -155,9 +154,9 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Nút Đăng nhập
               SizedBox(
                 width: double.infinity,
@@ -181,7 +180,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const Spacer(),
             ],
           ),
@@ -195,11 +194,7 @@ class SignUpScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onLogin;
 
-  const SignUpScreen({
-    super.key,
-    required this.onBack,
-    required this.onLogin,
-  });
+  const SignUpScreen({super.key, required this.onBack, required this.onLogin});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -211,14 +206,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _handleSocialAuth(String provider) async {
     setState(() => _isLoading = true);
-    
+
     try {
       switch (provider) {
         case 'Google':
           await _authService.signInWithGoogle();
           break;
       }
-      
+
       if (mounted) {
         _showSuccessMessage('Đăng ký thành công!');
         Navigator.of(context).pushReplacementNamed('/home');
@@ -282,7 +277,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Column(
             children: [
               const SizedBox(height: 60),
-              
+
               // Logo
               Container(
                 width: 120,
@@ -322,9 +317,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 60),
-              
+
               // Tiêu đề
               const Text(
                 'Tạo tài khoản',
@@ -344,9 +339,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 60),
-              
+
               // Nút đăng ký bằng email
               _buildSignUpButton(
                 'Tiếp tục bằng email',
@@ -355,10 +350,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Colors.white,
                 onPressed: _navigateToEmailSignUp,
               ),
-              
+
               const SizedBox(height: 16),
-              
-              
+
               // Nút đăng ký bằng Google
               _buildSignUpButton(
                 'Tiếp tục bằng Google',
@@ -368,12 +362,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 borderColor: const Color(0xFF40E0D0),
                 onPressed: () => _handleSocialAuth('Google'),
               ),
-              
+
               const SizedBox(height: 16),
-              
-              
+
               const Spacer(),
-              
+
               // Text "Bạn đã có tài khoản?"
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -403,21 +396,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 20),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showComingSoonMessage(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature sẽ được cập nhật sớm!'),
-        backgroundColor: Colors.orange,
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -435,16 +418,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       height: 50,
       child: ElevatedButton.icon(
         onPressed: _isLoading ? null : onPressed,
-        icon: _isLoading 
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : Icon(icon, color: textColor, size: 20),
+        icon: _isLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(icon, color: textColor, size: 20),
         label: Text(
           text,
           style: TextStyle(
@@ -471,11 +454,7 @@ class LoginScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onSignUp;
 
-  const LoginScreen({
-    super.key,
-    required this.onBack,
-    required this.onSignUp,
-  });
+  const LoginScreen({super.key, required this.onBack, required this.onSignUp});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -487,14 +466,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleSocialAuth(String provider) async {
     setState(() => _isLoading = true);
-    
+
     try {
       switch (provider) {
         case 'Google':
           await _authService.signInWithGoogle();
           break;
       }
-      
+
       if (mounted) {
         _showSuccessMessage('Đăng nhập thành công!');
         Navigator.of(context).pushReplacementNamed('/home');
@@ -523,16 +502,6 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _showComingSoonMessage(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature sẽ được cập nhật sớm!'),
-        backgroundColor: Colors.orange,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -568,7 +537,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               const SizedBox(height: 60),
-              
+
               // Logo
               Container(
                 width: 120,
@@ -608,9 +577,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 60),
-              
+
               // Tiêu đề
               const Text(
                 'Đăng nhập',
@@ -630,9 +599,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 60),
-              
+
               // Nút đăng nhập bằng email
               _buildLoginButton(
                 'Tiếp tục bằng email',
@@ -641,10 +610,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Colors.white,
                 onPressed: _navigateToEmailLogin,
               ),
-              
+
               const SizedBox(height: 16),
-              
-              
+
               // Nút đăng nhập bằng Google
               _buildLoginButton(
                 'Tiếp tục bằng Google',
@@ -654,12 +622,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderColor: const Color(0xFF40E0D0),
                 onPressed: () => _handleSocialAuth('Google'),
               ),
-              
+
               const SizedBox(height: 16),
-              
-              
+
               const Spacer(),
-              
+
               // Text "Bạn chưa có tài khoản?"
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -689,7 +656,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 20),
             ],
           ),
@@ -711,16 +678,16 @@ class _LoginScreenState extends State<LoginScreen> {
       height: 50,
       child: ElevatedButton.icon(
         onPressed: _isLoading ? null : onPressed,
-        icon: _isLoading 
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : Icon(icon, color: textColor, size: 20),
+        icon: _isLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(icon, color: textColor, size: 20),
         label: Text(
           text,
           style: TextStyle(

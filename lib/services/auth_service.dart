@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
-import 'dart:convert';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -11,7 +10,8 @@ class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '522424214900-dalkqs7t7kba0r25doeg66j1bcms6jku.apps.googleusercontent.com',
+    clientId:
+        '522424214900-dalkqs7t7kba0r25doeg66j1bcms6jku.apps.googleusercontent.com',
   );
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final Dio _dio = Dio();
@@ -33,10 +33,10 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       // Gửi thông tin user lên backend
       await _syncUserWithBackend(credential.user!);
-      
+
       return credential;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
@@ -50,10 +50,10 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       // Đồng bộ với backend
       await _syncUserWithBackend(credential.user!);
-      
+
       return credential;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
@@ -64,52 +64,52 @@ class AuthService {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       print('Bắt đầu đăng nhập Google...');
-      
+
       // Đăng xuất trước để đảm bảo prompt chọn tài khoản
       await _googleSignIn.signOut();
-      
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         print('Người dùng đã hủy đăng nhập Google');
         throw Exception('Đăng nhập Google đã bị hủy');
       }
 
       print('Đăng nhập Google thành công cho: ${googleUser.email}');
-      
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // DEBUG: In ra thông tin token
       print('Access Token: ${googleAuth.accessToken}');
       print('ID Token: ${googleAuth.idToken}');
-      
+
       // CHỈ CẦN accessToken là đủ, idToken có thể null trên web
       if (googleAuth.accessToken == null) {
         throw Exception('Không thể lấy token từ Google');
       }
       print('Đã lấy token từ Google');
-      
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
-      
+
       print('Đăng nhập Firebase thành công cho: ${userCredential.user?.email}');
-      
+
       // Đồng bộ với backend
       await _syncUserWithBackend(userCredential.user!);
-      
+
       print('Đồng bộ với backend hoàn tất');
-      
+
       return userCredential;
     } catch (e) {
       print('Lỗi đăng nhập Google: ${e.toString()}');
       throw Exception('Lỗi đăng nhập Google: ${e.toString()}');
     }
   }
-
 
   // Đăng xuất
   Future<void> signOut() async {
@@ -135,11 +135,11 @@ class AuthService {
   Future<void> _syncUserWithBackend(User user) async {
     try {
       final idToken = await user.getIdToken();
-      
+
       // Lưu token vào secure storage
       await _storage.write(key: 'firebase_token', value: idToken);
       await _storage.write(key: 'user_id', value: user.uid);
-      
+
       // Gửi thông tin user lên backend travelpro
       await _dio.post(
         '$_baseUrl/auth/sync-user',
@@ -166,7 +166,7 @@ class AuthService {
     try {
       final user = currentUser;
       if (user == null) return null;
-      
+
       return await user.getIdToken();
     } catch (e) {
       print('Lỗi lấy token: $e');
@@ -175,16 +175,16 @@ class AuthService {
   }
 
   // Gọi API travel agent
-  Future<Map<String, dynamic>> callTravelAgent(String input, List<Map<String, String>> history) async {
+  Future<Map<String, dynamic>> callTravelAgent(
+    String input,
+    List<Map<String, String>> history,
+  ) async {
     try {
       final token = await getIdToken();
-      
+
       final response = await _dio.post(
         '$_travelAgentUrl/invoke',
-        data: {
-          'input': input,
-          'history': history,
-        },
+        data: {'input': input, 'history': history},
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -192,7 +192,7 @@ class AuthService {
           },
         ),
       );
-      
+
       return response.data;
     } catch (e) {
       throw Exception('Lỗi gọi API travel agent: ${e.toString()}');
