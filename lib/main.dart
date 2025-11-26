@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'screens/loading_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/user_service.dart';
 import 'services/auth_service.dart';
 import 'core/theme/app_theme.dart';
@@ -41,11 +41,11 @@ class MyApp extends StatelessWidget {
       },
       locale: DevicePreview.locale(context),
       theme: AppTheme.lightTheme,
-      home: const LoadingScreen(),
+      home: const SplashScreen(),
       routes: {
-        '/auth': (context) => const AuthScreen(),
+        '/splash': (context) => const SplashScreen(),
+        '/auth': (context) => const AuthWrapper(),
         '/home': (context) => const HomeScreen(),
-        '/loading': (context) => const LoadingScreen(),
       },
     );
   }
@@ -77,7 +77,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
       builder: (context, snapshot) {
         // Hiển thị loading screen khi đang kết nối
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const LoadingScreen();
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
 
         // Kiểm tra lỗi

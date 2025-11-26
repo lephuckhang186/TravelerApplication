@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'settings_screen.dart';
 import 'plan_screen.dart';
 import '../features/expense_management/analysis_screen.dart';
@@ -32,20 +31,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: _buildBottomNavBar());
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
   }
 
   /// Bottom Navigation Bar
   Widget _buildBottomNavBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: const Offset(0, -2)),
-        ]),
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: SafeArea(
         top: false,
         child: Container(
@@ -58,23 +60,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 iconPath: 'images/home.png',
                 label: 'Home',
                 index: 0,
-                isSelected: _currentIndex == 0),
+                isSelected: _currentIndex == 0,
+              ),
               _buildNavItem(
                 iconPath: 'images/blueprint.png',
                 label: 'Plan',
                 index: 1,
-                isSelected: _currentIndex == 1),
+                isSelected: _currentIndex == 1,
+              ),
               _buildNavItem(
                 iconPath: 'images/analytics.png',
                 label: 'Analysis',
                 index: 2,
-                isSelected: _currentIndex == 2),
+                isSelected: _currentIndex == 2,
+              ),
               _buildNavItem(
                 iconPath: 'images/account.png',
                 label: 'Me',
                 index: 3,
-                isSelected: _currentIndex == 3),
-            ]))));
+                isSelected: _currentIndex == 3,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildNavItem({
@@ -99,16 +109,22 @@ class _HomeScreenState extends State<HomeScreen> {
               iconPath,
               width: 24,
               height: 24,
-              color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600]),
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 11,
-                color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600],
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
-          ])));
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -172,8 +188,14 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     _buildRecommendedSection(),
 
                     const SizedBox(height: 100), // Space for bottom nav
-                  ]))),
-          ])));
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Search Bar với icons
@@ -195,23 +217,32 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 8,
-                      offset: const Offset(0, 2)),
-                  ]),
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: Row(
                   children: [
                     const SizedBox(width: 12),
                     Icon(
                       Icons.search,
                       color: AppColors.textSecondary,
-                      size: 20),
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Vietnam tradition places',
                       style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
+                        fontFamily: 'Urbanist-Regular',
                         color: AppColors.textSecondary,
-                        fontSize: 14)),
-                  ])))),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           const SizedBox(width: 12),
           Container(
             width: 48,
@@ -224,8 +255,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
-                  offset: const Offset(0, 2)),
-              ]),
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -238,7 +271,12 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: Center(
                   child: Icon(
                     Icons.event_note_outlined,
-                    color: AppColors.textSecondary))))),
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(width: 8),
           Container(
             width: 48,
@@ -251,8 +289,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
-                  offset: const Offset(0, 2)),
-              ]),
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -265,8 +305,15 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: Center(
                   child: Icon(
                     Icons.notifications_outlined,
-                    color: AppColors.textSecondary))))),
-        ]));
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // Category Icons Row
@@ -302,38 +349,54 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   decoration: BoxDecoration(
                     color: AppColors.background,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                    border: Border.all(color: AppColors.support, width: 1.5),
                     boxShadow: [
                       BoxShadow(
                         color: (category['color'] as Color).withValues(
-                          alpha: 0.2),
+                          alpha: 0.2,
+                        ),
                         blurRadius: 8,
-                        offset: const Offset(0, 3)),
-                    ]),
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(28),
                       splashColor: (category['color'] as Color).withValues(
-                        alpha: 0.3),
+                        alpha: 0.3,
+                      ),
                       onTap: () =>
                           _onCategoryTap(context, category['label'] as String),
                       child: Center(
                         child: Icon(
                           category['icon'] as IconData,
                           color: Colors.grey[700],
-                          size: 24))))),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   category['label'] as String,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                    fontSize: 11,color: Colors.grey[700]),
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 11,
+                    color: Colors.grey[700],
+                  ),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-              ]));
-        }).toList()));
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   // Nearby gems Section
@@ -349,10 +412,14 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: Text(
                   'Nearby gems in Ho Chi Minh',
                   style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                    fontSize: 20,color: AppColors.textPrimary),
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 20,
+                    color: AppColors.textPrimary,
+                  ),
                   overflow: TextOverflow.ellipsis,
-                  maxLines: 1)),
+                  maxLines: 1,
+                ),
+              ),
               MouseRegion(
                 onEnter: (_) => setState(() => _isHoveringNearbyHeader = true),
                 onExit: (_) => setState(() => _isHoveringNearbyHeader = false),
@@ -363,19 +430,28 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     transform: Matrix4.diagonal3Values(
                       _isHoveringNearbyHeader ? 1.05 : 1.0,
                       _isHoveringNearbyHeader ? 1.05 : 1.0,
-                      1.0),
+                      1.0,
+                    ),
                     child: Text(
                       'See more',
                       style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
+                        fontFamily: 'Urbanist-Regular',
                         color: _isHoveringNearbyHeader
                             ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),fontSize: 14,
+                            : const Color(0xFF7B61FF),
+                        fontSize: 14,
                         decoration: TextDecoration.underline,
                         decorationColor: _isHoveringNearbyHeader
                             ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF)))))),
-            ])),
+                            : const Color(0xFF7B61FF),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 16),
         SizedBox(
           height: 280,
@@ -383,8 +459,11 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: 4,
-            itemBuilder: (context, index) => _buildTourCard(index))),
-      ]);
+            itemBuilder: (context, index) => _buildTourCard(index),
+          ),
+        ),
+      ],
+    );
   }
 
   // Tour Card
@@ -427,8 +506,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 12,
-            offset: const Offset(0, 6)),
-        ]),
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -438,22 +519,27 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12)),
+                    top: Radius.circular(12),
+                  ),
                   child: _buildImageWithAnimation(
                     tour['image'] as String,
                     140,
                     double.infinity,
-                    tour['imageColor'] as Color)),
+                    tour['imageColor'] as Color,
+                  ),
+                ),
                 Positioned(
                   top: 8,
                   left: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
-                      vertical: 4),
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.amber[700],
-                      borderRadius: BorderRadius.circular(4)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -463,9 +549,16 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                           tour['badge'] as String,
                           style: const TextStyle(
                             fontSize: 9,
-                            color: Colors.white)),
-                      ]))),
-              ])),
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -475,9 +568,12 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   Text(
                     tour['title'] as String,
                     style: const TextStyle(
-                      fontSize: 14,color: AppColors.textPrimary),
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
@@ -488,14 +584,23 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                         foregroundColor: AppColors.textOnAccent,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                        elevation: 0),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
                       child: const Text(
                         'Add to plan',
-                        style: TextStyle(
-                          fontSize: 13)))),
-                ]))),
-        ]));
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildRecentlyViewedSection() {
@@ -509,8 +614,12 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: Text(
                   'Recently Viewed',
                   style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                    fontSize: 18,color: AppColors.textPrimary))),
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 18,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
               MouseRegion(
                 onEnter: (_) =>
                     setState(() => _isHoveringRecentlyViewedHeader = true),
@@ -523,19 +632,28 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     transform: Matrix4.diagonal3Values(
                       _isHoveringRecentlyViewedHeader ? 1.05 : 1.0,
                       _isHoveringRecentlyViewedHeader ? 1.05 : 1.0,
-                      1.0),
+                      1.0,
+                    ),
                     child: Text(
                       'See more',
                       style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
+                        fontFamily: 'Urbanist-Regular',
                         color: _isHoveringRecentlyViewedHeader
                             ? AppColors.accentHover
-                            : AppColors.accent,fontSize: 14,
+                            : AppColors.accent,
+                        fontSize: 14,
                         decoration: TextDecoration.underline,
                         decorationColor: _isHoveringRecentlyViewedHeader
                             ? AppColors.accentHover
-                            : AppColors.accent))))),
-            ])),
+                            : AppColors.accent,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
           height: 140,
@@ -544,8 +662,11 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: 2,
             itemBuilder: (context, index) =>
-                _buildCompactRecentCard(context, index))),
-      ]);
+                _buildCompactRecentCard(context, index),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCompactRecentCard(BuildContext context, int index) {
@@ -574,19 +695,24 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
-            offset: const Offset(0, 4)),
-        ]),
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           splashColor: (recentTours[index]['color'] as Color).withValues(
-            alpha: 0.2),
+            alpha: 0.2,
+          ),
           hoverColor: (recentTours[index]['color'] as Color).withValues(
-            alpha: 0.05),
+            alpha: 0.05,
+          ),
           onTap: () => _onRecentlyViewedTap(
             context,
-            recentTours[index]['title'] as String),
+            recentTours[index]['title'] as String,
+          ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Stack(
@@ -595,7 +721,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   recentTours[index]['image'] as String,
                   140,
                   180,
-                  recentTours[index]['color'] as Color),
+                  recentTours[index]['color'] as Color,
+                ),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -604,7 +731,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       colors: [
                         Colors.transparent,
                         Colors.black.withValues(alpha: 0.7),
-                      ]))),
+                      ],
+                    ),
+                  ),
+                ),
                 Positioned(
                   bottom: 12,
                   left: 12,
@@ -615,12 +745,22 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       Text(
                         recentTours[index]['title'] as String,
                         style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                          fontSize: 13,color: Colors.white),
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,
+                          color: Colors.white,
+                        ),
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
-                    ])),
-              ])))));
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildWhereToNextSection() {
@@ -634,8 +774,12 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: Text(
                   'Where to next?',
                   style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                    fontSize: 18,color: AppColors.textPrimary))),
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 18,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
               MouseRegion(
                 onEnter: (_) =>
                     setState(() => _isHoveringWhereToNextHeader = true),
@@ -648,19 +792,28 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     transform: Matrix4.diagonal3Values(
                       _isHoveringWhereToNextHeader ? 1.05 : 1.0,
                       _isHoveringWhereToNextHeader ? 1.05 : 1.0,
-                      1.0),
+                      1.0,
+                    ),
                     child: Text(
                       'See more',
                       style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
+                        fontFamily: 'Urbanist-Regular',
                         color: _isHoveringWhereToNextHeader
                             ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),fontSize: 14,
+                            : const Color(0xFF7B61FF),
+                        fontSize: 14,
                         decoration: TextDecoration.underline,
                         decorationColor: _isHoveringWhereToNextHeader
                             ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF)))))),
-            ])),
+                            : const Color(0xFF7B61FF),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
           height: 80,
@@ -669,8 +822,11 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: 3,
             itemBuilder: (context, index) =>
-                _buildCompactDestinationCard(context, index))),
-      ]);
+                _buildCompactDestinationCard(context, index),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCompactDestinationCard(BuildContext context, int index) {
@@ -703,8 +859,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 6,
-            offset: const Offset(0, 3)),
-        ]),
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -721,7 +879,9 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   destination['image'] as String,
                   80,
                   100,
-                  destination['color'] as Color)),
+                  destination['color'] as Color,
+                ),
+              ),
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
@@ -731,7 +891,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     colors: [
                       Colors.transparent,
                       Colors.black.withValues(alpha: 0.6),
-                    ]))),
+                    ],
+                  ),
+                ),
+              ),
               Positioned(
                 bottom: 8,
                 left: 8,
@@ -739,12 +902,20 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 child: Text(
                   destination['title'] as String,
                   style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                    fontSize: 12,color: Colors.white),
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 12,
+                    color: Colors.white,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis)),
-            ]))));
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildRecommendedSection() {
@@ -760,7 +931,9 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     _buildTabButton('Recommended', 0),
                     const SizedBox(width: 16),
                     _buildTabButton('Nearby', 1),
-                  ])),
+                  ],
+                ),
+              ),
               MouseRegion(
                 onEnter: (_) =>
                     setState(() => _isHoveringRecommendedHeader = true),
@@ -773,19 +946,29 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     transform: Matrix4.diagonal3Values(
                       _isHoveringRecommendedHeader ? 1.05 : 1.0,
                       _isHoveringRecommendedHeader ? 1.05 : 1.0,
-                      1.0),
+                      1.0,
+                    ),
                     child: Text(
                       'See more',
                       style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
+                        fontFamily: 'Urbanist-Regular',
                         color: _isHoveringRecommendedHeader
                             ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),fontSize: 14,
-                        decoration: TextDecoration.underline))))),
-            ])),
+                            : const Color(0xFF7B61FF),
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 16),
         _buildTabContent(),
-      ]);
+      ],
+    );
   }
 
   Widget _buildTabButton(String title, int index) {
@@ -799,12 +982,19 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           color: isSelected ? const Color(0xFF7B61FF) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[300]!)),
+            color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[300]!,
+          ),
+        ),
         child: Text(
           title,
           style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-            fontSize: 14,color: isSelected ? Colors.white : Colors.grey[700]))));
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 14,
+            color: isSelected ? Colors.white : Colors.grey[700],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildTabContent() {
@@ -816,7 +1006,9 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
         itemCount: _recommendedTabIndex == 0 ? 4 : 4,
         itemBuilder: (context, index) => _recommendedTabIndex == 0
             ? _buildRecommendedCard(context, index)
-            : _buildNearbyCard(context, index)));
+            : _buildNearbyCard(context, index),
+      ),
+    );
   }
 
   Widget _buildRecommendedCard(BuildContext context, int index) {
@@ -863,8 +1055,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
-            offset: const Offset(0, 4)),
-        ]),
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -876,22 +1070,27 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12)),
+                      top: Radius.circular(12),
+                    ),
                     child: _buildImageWithAnimation(
                       place['image'] as String,
                       110,
                       160,
-                      place['color'] as Color)),
+                      place['color'] as Color,
+                    ),
+                  ),
                   Positioned(
                     top: 6,
                     right: 6,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
-                        vertical: 3),
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -901,9 +1100,15 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                             place['rating'] as String,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 9)),
-                        ]))),
-                ]),
+                              fontSize: 9,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(10),
@@ -914,21 +1119,33 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       Text(
                         place['title'] as String,
                         style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                          fontSize: 13,color: Colors.black87),
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 3),
                       Text(
                         place['subtitle'] as String,
                         style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 11,
-                          color: Colors.grey[600]),
+                          color: Colors.grey[600],
+                        ),
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    ]))),
-            ]))));
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildNearbyCard(BuildContext context, int index) {
@@ -975,8 +1192,10 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
-            offset: const Offset(0, 4)),
-        ]),
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -990,37 +1209,49 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12)),
+                      top: Radius.circular(12),
+                    ),
                     child: _buildImageWithAnimation(
                       place['image'] as String,
                       110,
                       160,
-                      place['color'] as Color)),
+                      place['color'] as Color,
+                    ),
+                  ),
                   Positioned(
                     top: 6,
                     right: 6,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
-                        vertical: 3),
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.location_on,
                             color: Colors.white,
-                            size: 10),
+                            size: 10,
+                          ),
                           const SizedBox(width: 2),
                           Text(
                             place['distance'] as String,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 9)),
-                        ]))),
-                ]),
+                              fontSize: 9,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(10),
@@ -1031,28 +1262,41 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       Text(
                         place['title'] as String,
                         style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                          fontSize: 13,color: Colors.black87),
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 3),
                       Text(
                         place['subtitle'] as String,
                         style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 11,
-                          color: Colors.grey[600]),
+                          color: Colors.grey[600],
+                        ),
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    ]))),
-            ]))));
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildImageWithAnimation(
     String imagePath,
     double height,
     double width,
-    Color fallbackColor) {
+    Color fallbackColor,
+  ) {
     return SizedBox(
       height: height,
       width: width,
@@ -1069,7 +1313,12 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             child: Icon(
               Icons.image_not_supported_outlined,
               color: Colors.white,
-              size: height * 0.3)))));
+              size: height * 0.3,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // Handler methods
@@ -1077,80 +1326,103 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Exploring $categoryName...'),
-        backgroundColor: const Color(0xFF7B61FF)));
+        backgroundColor: const Color(0xFF7B61FF),
+      ),
+    );
   }
 
   void _showSearchDialog(BuildContext context) {
     ScaffoldMessenger.of(
-      context).showSnackBar(SnackBar(content: Text('Search feature coming soon!')));
+      context,
+    ).showSnackBar(SnackBar(content: Text('Search feature coming soon!')));
   }
 
   void _onPlanTap(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Opening plan...'), backgroundColor: Colors.blue));
+      SnackBar(content: Text('Opening plan...'), backgroundColor: Colors.blue),
+    );
   }
 
   void _onNotificationTap(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('You have 3 new notifications'),
-        backgroundColor: Colors.orange));
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 
   void _onNearbyGemsSeMoreTap(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Loading more nearby gems...'),
-        backgroundColor: const Color(0xFF7B61FF)));
+        backgroundColor: const Color(0xFF7B61FF),
+      ),
+    );
   }
 
   void _onRecentlyViewedTap(BuildContext context, String tourName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Opening $tourName...'),
-        backgroundColor: Colors.blueAccent));
+        backgroundColor: Colors.blueAccent,
+      ),
+    );
   }
 
   void _onRecentlyViewedSeeMoreTap(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Loading more recently viewed items...'),
-        backgroundColor: Colors.blueAccent));
+        backgroundColor: Colors.blueAccent,
+      ),
+    );
   }
 
   void _onWhereToNextTap(BuildContext context, String destination) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Exploring $destination...'),
-        backgroundColor: Colors.green));
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _onWhereToNextSeeMoreTap(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Loading more destinations...'),
-        backgroundColor: Colors.green));
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _onRecommendedTap(BuildContext context, String placeName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Exploring $placeName...'),
-        backgroundColor: const Color(0xFF7B61FF)));
+        backgroundColor: const Color(0xFF7B61FF),
+      ),
+    );
   }
 
   void _onNearbyTap(BuildContext context, String placeName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Navigating to $placeName...'),
-        backgroundColor: Colors.green));
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _onRecommendedSeeMoreTap(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Loading more ${_recommendedTabIndex == 0 ? "recommended" : "nearby"} places...'),
-        backgroundColor: const Color(0xFF7B61FF)));
+          'Loading more ${_recommendedTabIndex == 0 ? "recommended" : "nearby"} places...',
+        ),
+        backgroundColor: const Color(0xFF7B61FF),
+      ),
+    );
   }
 }
