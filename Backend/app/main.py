@@ -193,6 +193,14 @@ async def get_version():
         "api_version": settings.API_V1_STR
     }
 
+@app.post("/invoke")
+async def invoke_travel_agent():
+    """Legacy endpoint - redirect to travel-agent invoke"""
+    from fastapi.responses import RedirectResponse
+    
+    # Redirect to the proper travel-agent endpoint
+    return RedirectResponse(url=f"{settings.API_V1_STR}/travel-agent/invoke", status_code=307)
+
 # ============= STARTUP/SHUTDOWN EVENTS =============
 
 @app.on_event("startup")

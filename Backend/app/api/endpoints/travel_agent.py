@@ -2,12 +2,21 @@
 Travel Agent API endpoints for AI-powered trip planning
 """
 import logging
+import sys
+import os
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-import subprocess
-import json
-import os
+
+# Add travel-agent path to sys.path
+travel_agent_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'travel-agent')
+if os.path.exists(travel_agent_path):
+    sys.path.insert(0, travel_agent_path)
+    # Load travel-agent environment
+    from dotenv import load_dotenv
+    travel_agent_env = os.path.join(travel_agent_path, '.env')
+    if os.path.exists(travel_agent_env):
+        load_dotenv(travel_agent_env)
 
 # Set up logging
 logger = logging.getLogger(__name__)

@@ -126,7 +126,7 @@ async def firebase_sign_in(request: FirebaseSignInRequest):
         )
 
 @router.post("/sync-user")
-async def sync_user(request: SyncUserRequest, current_user: User = Depends(get_current_user)):
+async def sync_user(request: SyncUserRequest):
     """
     Sync user data with backend (called from Flutter app)
     """
