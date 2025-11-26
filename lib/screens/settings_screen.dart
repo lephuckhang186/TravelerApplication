@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
+import '../core/theme/app_theme.dart';
 import '../services/user_service.dart';
 import 'auth_screen.dart';
 
@@ -79,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Stack(
           children: [

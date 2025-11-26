@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNavBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -99,14 +99,14 @@ class _HomeScreenState extends State<HomeScreen> {
               iconPath,
               width: 24,
               height: 24,
-              color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600]),
+              color: isSelected ? AppColors.primary : AppColors.textSecondary),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 11,
-                color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600],
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
           ])));
   }
@@ -302,7 +302,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   decoration: BoxDecoration(
                     color: AppColors.background,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                    border: Border.all(color: AppColors.support, width: 1.5),
                     boxShadow: [
                       BoxShadow(
                         color: (category['color'] as Color).withValues(

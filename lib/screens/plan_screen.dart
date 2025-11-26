@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/theme/app_theme.dart';
 import '../services/user_service.dart';
 import '../widgets/ai_assistant_panel.dart';
 import 'create_planner_screen.dart';
@@ -57,16 +58,16 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
     super.build(context);
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: null,
         automaticallyImplyLeading: false,
         title: Text(
           'Trips',
-          style: GoogleFonts.inter(
-            color: Colors.black,
+          style: GoogleFonts.quattrocento(
+            color: AppColors.textPrimary,
             fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
@@ -80,7 +81,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF40E0D0),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -100,7 +101,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
             padding: const EdgeInsets.all(16.0),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: TextField(
@@ -164,9 +165,9 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(30), // Góc tròn ở 2 đầu
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: AppColors.support),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min, // Thu nhỏ theo nội dung
@@ -174,7 +175,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF40E0D0),
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -187,7 +188,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
                       Text(
                         'Ask, chat, plan trip with AI...',
                         style: GoogleFonts.inter(
-                          color: Colors.grey.shade600,
+                          color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
                       ),
@@ -203,7 +204,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
         padding: const EdgeInsets.only(bottom: 80), // Đẩy nút + lên cao hơn để tránh dính chat box
         child: FloatingActionButton(
           onPressed: () => _showCreateTripModal(context),
-          backgroundColor: const Color(0xFF1976D2),
+          backgroundColor: AppColors.primary,
           child: const Icon(
             Icons.add,
             color: Colors.white,
@@ -218,7 +219,7 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/theme/app_theme.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   final String plannerName;
@@ -80,12 +81,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF40E0D0)),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -120,7 +121,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           // Header với thông tin trip
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
+            color: AppColors.background,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -218,7 +219,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddActivityModal(),
-        backgroundColor: const Color(0xFF1976D2),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -265,7 +266,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               if (!isLast) Container(
                 width: 2,
                 height: 60,
-                color: const Color(0xFF40E0D0),
+                color: AppColors.primary,
               ),
             ],
           ),
@@ -350,7 +351,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 child: Text(
                   'Cancel',
                   style: GoogleFonts.inter(
-                    color: const Color(0xFF1976D2),
+                    color: AppColors.primary,
                     fontSize: 16,
                   ),
                 ),
@@ -440,7 +441,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         width: 40,
         height: 40,
         decoration: const BoxDecoration(
-          color: Color(0xFF2196F3),
+          color: AppColors.primary,
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 20),
@@ -468,7 +469,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         'title': 'New $type',
         'subtitle': 'Tap to add details...',
         'icon': icon,
-        'color': const Color(0xFF2196F3),
+        'color': AppColors.primary,
       });
     });
   }
