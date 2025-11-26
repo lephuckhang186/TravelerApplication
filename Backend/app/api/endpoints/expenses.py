@@ -11,15 +11,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 try:
     from services.annalytics_service import (
-        ExpenseManager, ExpenseCategory, Expense, Budget, Trip
+        ExpenseManager, Expense, Budget, Trip
+    )
+    from services.activities_management import (
+        ActivityManager, Activity, ActivityType
     )
 except ImportError:
     from app.services.annalytics_service import (
-        ExpenseManager, ExpenseCategory, Expense, Budget, Trip
+        ExpenseManager, Expense, Budget, Trip
     )
 try:
     from core.dependencies import get_current_user
     from models.user import User
+    
 except ImportError:
     from app.core.dependencies import get_current_user
     from app.models.user import User
@@ -29,7 +33,7 @@ router = APIRouter(prefix="/expenses", tags=["expenses"])
 # Pydantic Models for Request/Response
 class ExpenseCreateRequest(BaseModel):
     amount: float = Field(..., gt=0, description="Expense amount (must be positive)")
-    category: ExpenseCategory = Field(..., description="Expense category")
+    category: ActivityType  = Field(..., description="Expense category")
     description: str = Field("", max_length=500, description="Optional expense description")
     expense_date: Optional[datetime] = Field(None, description="Expense date (defaults to now)")
 
@@ -232,7 +236,7 @@ async def create_expense(
 
 @router.get("/", response_model=List[ExpenseResponse])
 async def get_expenses(
-    category: Optional[ExpenseCategory] = Query(None, description="Filter by category"),
+    category: Optional[ActivityType] = Query(None, description="Filter by category"),
     start_date: Optional[date] = Query(None, description="Filter from date"),
     end_date: Optional[date] = Query(None, description="Filter to date"),
     current_user: User = Depends(get_current_user)
@@ -541,7 +545,7 @@ async def get_monthly_analytics(
 
 @router.get("/analytics/category/{category}")
 async def get_category_analytics(
-    category: ExpenseCategory,
+    category: ActivityType,
     current_user: User = Depends(get_current_user)
 ):
     """Get analytics for a specific category"""

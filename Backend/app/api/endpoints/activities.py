@@ -15,7 +15,7 @@ try:
         Location, Budget, Contact
     )
     from ...services.annalytics_service import (
-        IntegratedTravelManager, ExpenseCategory
+        IntegratedTravelManager
     )
     from ...models.user import User
 except ImportError:
@@ -26,10 +26,10 @@ except ImportError:
     from core.dependencies import get_current_user
     from services.activities_management import (
         Activity, ActivityType, ActivityStatus, Priority,
-        Location, Budget, Contact
+        Location, Budget, Contact, ActivityManager
     )
     from services.annalytics_service import (
-        IntegratedTravelManager, ExpenseCategory
+        IntegratedTravelManager
     )
     from models.user import User
 
@@ -100,9 +100,7 @@ class ActivityCreate(BaseModel):
     notes: Optional[str] = Field(None, max_length=2000)
     tags: List[str] = Field(default_factory=list, max_items=20)
     trip_id: Optional[str] = Field(None, max_length=50)
-    booking_reference: Optional[str] = Field(None, max_length=100)
-    booking_url: Optional[str] = Field(None, max_length=500)
-    is_booked: bool = False
+    check_in: bool = False
 
     @validator('tags')
     def validate_tags(cls, v):
@@ -137,9 +135,7 @@ class ActivityUpdate(BaseModel):
     notes: Optional[str] = Field(None, max_length=2000)
     tags: Optional[List[str]] = Field(None, max_items=20)
     trip_id: Optional[str] = Field(None, max_length=50)
-    booking_reference: Optional[str] = Field(None, max_length=100)
-    booking_url: Optional[str] = Field(None, max_length=500)
-    is_booked: Optional[bool] = None
+    check_in: Optional[bool] = None
 
 
 class ExpenseInfo(BaseModel):
@@ -170,9 +166,7 @@ class ActivityResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     trip_id: Optional[str]
-    booking_reference: Optional[str]
-    booking_url: Optional[str]
-    is_booked: bool
+    check_in: bool
     expense_info: ExpenseInfo
 
 
@@ -255,14 +249,14 @@ def activity_to_response(activity: Activity) -> ActivityResponse:
     
     return ActivityResponse(
         id=activity.id,
-        title=activity.title,
-        description=activity.description,
+        title=activity.name,
+        description=activity.details,
         activity_type=activity.activity_type,
         status=activity.status,
         priority=activity.priority,
-        start_date=activity.start_date,
-        end_date=activity.end_date,
-        duration_minutes=activity.duration_minutes,
+        start_date=activity.start_time,
+        end_date=activity.end_time,
+        duration_minutes=None,
         location=LocationResponse(**activity.location.__dict__) if activity.location else None,
         budget=BudgetResponse(
             estimated_cost=float(activity.budget.estimated_cost),
@@ -272,15 +266,13 @@ def activity_to_response(activity: Activity) -> ActivityResponse:
         ) if activity.budget else None,
         contact=ContactResponse(**activity.contact.__dict__) if activity.contact else None,
         notes=activity.notes,
-        tags=activity.tags,
-        attachments=activity.attachments,
+        tags=activity.tags or [],
+        attachments=[],
         created_by=activity.created_by,
         created_at=activity.created_at,
         updated_at=activity.updated_at,
         trip_id=activity.trip_id,
-        booking_reference=activity.booking_reference,
-        booking_url=activity.booking_url,
-        is_booked=activity.is_booked,
+        check_in=activity.check_in,
         expense_info=expense_info
     )
 
@@ -307,19 +299,18 @@ async def create_activity(
 
         # Prepare additional kwargs
         kwargs = {
-            'description': activity_data.description,
+            'details': activity_data.description,
             'status': activity_data.status,
             'priority': activity_data.priority,
-            'start_date': activity_data.start_date,
-            'end_date': activity_data.end_date,
-            'duration_minutes': activity_data.duration_minutes,
+            'start_time': activity_data.start_date,
+            'end_time': activity_data.end_date,
             'trip_id': activity_data.trip_id,
             'notes': activity_data.notes,
             'tags': activity_data.tags,
-            'booking_reference': activity_data.booking_reference,
-            'booking_url': activity_data.booking_url,
-            'is_booked': activity_data.is_booked,
-            'currency': currency
+            'currency': currency,
+            'check_in': activity_data.check_in,
+            'expected_cost': estimated_cost,
+            'real_cost': actual_cost
         }
 
         # Add location if provided
@@ -637,7 +628,7 @@ async def setup_trip_budget(
             category_allocations = {}
             for category_str, amount in budget_data.category_allocations.items():
                 try:
-                    category = ExpenseCategory(category_str.lower())
+                    category = ActivityType(category_str.lower())
                     category_allocations[category] = Decimal(str(amount))
                 except ValueError:
                     # Skip invalid categories
@@ -691,12 +682,13 @@ async def get_expense_summary(
                 temp_manager.expense_manager._activity_expense_map[activity_id] = \
                     travel_manager.expense_manager._activity_expense_map[activity_id]
         
-        # Copy relevant expenses
+        # Copy relevant expenses (expenses linked to user's activities)
+        user_activity_ids = set(temp_manager.activity_manager.activities.keys())
         temp_manager.expense_manager.expenses = [
             expense for expense in travel_manager.expense_manager.expenses
-            if any(expense_id == f"exp_{i+1}_{int(expense.date.timestamp())}" 
-                   for i, e in enumerate(travel_manager.expense_manager.expenses) 
-                   if e == expense)
+            if any(activity_id in user_activity_ids 
+                   for activity_id in travel_manager.expense_manager._activity_expense_map
+                   if expense in travel_manager.expense_manager._activity_expense_map.get(activity_id, []))
         ]
         
         # Copy budget info
