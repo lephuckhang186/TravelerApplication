@@ -65,13 +65,26 @@ class _PlanScreenState extends State<PlanScreen>
         elevation: 0,
         leading: null,
         automaticallyImplyLeading: false,
-        title: Text(
-          'Trips',
-          style: GoogleFonts.quattrocento(
-            color: AppColors.textPrimary,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hello, $_displayName',
+              style: GoogleFonts.inter(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            Text(
+              'Trips',
+              style: GoogleFonts.quattrocento(
+                color: AppColors.textPrimary,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         centerTitle: false,
         actions: [
