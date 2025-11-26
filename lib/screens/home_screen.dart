@@ -248,9 +248,9 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.background,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: AppColors.support),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -263,8 +263,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                splashColor: AppColors.accent.withValues(alpha: 0.2),
-                highlightColor: AppColors.accent.withValues(alpha: 0.1),
+                splashColor: AppColors.primary.withValues(alpha: 0.2),
+                highlightColor: AppColors.primary.withValues(alpha: 0.1),
                 onTap: () {
                   _onPlanTap(context);
                 },
@@ -282,9 +282,9 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.background,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: AppColors.support),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -297,8 +297,8 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                splashColor: AppColors.accent.withValues(alpha: 0.2),
-                highlightColor: AppColors.accent.withValues(alpha: 0.1),
+                splashColor: AppColors.primary.withValues(alpha: 0.2),
+                highlightColor: AppColors.primary.withValues(alpha: 0.1),
                 onTap: () {
                   _onNotificationTap(context);
                 },
@@ -386,8 +386,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 11,
-                    color: Colors.grey[700],
-                  ),
+                    color: Colors.grey[700]),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -437,21 +436,14 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         color: _isHoveringNearbyHeader
-                            ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),
+                            ? AppColors.accentHover
+                            : AppColors.primary,
                         fontSize: 14,
                         decoration: TextDecoration.underline,
                         decorationColor: _isHoveringNearbyHeader
-                            ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+                            ? AppColors.accentHover
+                            : AppColors.primary))))),
+            ])),
         const SizedBox(height: 16),
         SizedBox(
           height: 280,
@@ -500,7 +492,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
       width: 200,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -568,9 +560,9 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   Text(
                     tour['title'] as String,
                     style: const TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 14,
-                      color: AppColors.textPrimary,
-                    ),
+                      color: AppColors.textPrimary),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -580,27 +572,20 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                     child: ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: AppColors.textOnAccent,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
+                          borderRadius: BorderRadius.circular(8)),
+                        elevation: 0),
+                      child: Text(
                         'Add to plan',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                        style: const TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500)))),
+                ]))),
+        ]));
   }
 
   Widget _buildRecentlyViewedSection() {
@@ -616,10 +601,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
+                    color: AppColors.textPrimary))),
               MouseRegion(
                 onEnter: (_) =>
                     setState(() => _isHoveringRecentlyViewedHeader = true),
@@ -689,7 +671,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
       width: 180,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -747,8 +729,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 13,
-                          color: Colors.white,
-                        ),
+                          color: Colors.white),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -776,10 +757,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
+                    color: AppColors.textPrimary))),
               MouseRegion(
                 onEnter: (_) =>
                     setState(() => _isHoveringWhereToNextHeader = true),
@@ -799,21 +777,14 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         color: _isHoveringWhereToNextHeader
-                            ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),
+                            ? AppColors.accentHover
+                            : AppColors.primary,
                         fontSize: 14,
                         decoration: TextDecoration.underline,
                         decorationColor: _isHoveringWhereToNextHeader
-                            ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+                            ? AppColors.accentHover
+                            : AppColors.primary))))),
+            ])),
         const SizedBox(height: 12),
         SizedBox(
           height: 80,
@@ -904,8 +875,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 12,
-                    color: Colors.white,
-                  ),
+                    color: Colors.white),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -953,18 +923,14 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         color: _isHoveringRecommendedHeader
-                            ? const Color(0xFF5B41FF)
-                            : const Color(0xFF7B61FF),
+                            ? AppColors.accentHover
+                            : AppColors.primary,
                         fontSize: 14,
                         decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+                        decorationColor: _isHoveringRecommendedHeader
+                            ? AppColors.accentHover
+                            : AppColors.primary))))),
+            ])),
         const SizedBox(height: 16),
         _buildTabContent(),
       ],
@@ -979,22 +945,16 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF7B61FF) : Colors.transparent,
+          color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[300]!,
-          ),
-        ),
+            color: isSelected ? AppColors.primary : AppColors.support)),
         child: Text(
           title,
           style: TextStyle(
             fontFamily: 'Urbanist-Regular',
             fontSize: 14,
-            color: isSelected ? Colors.white : Colors.grey[700],
-          ),
-        ),
-      ),
-    );
+            color: isSelected ? Colors.white : Colors.grey[700]))));
   }
 
   Widget _buildTabContent() {
@@ -1049,7 +1009,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
       height: 200,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -1186,7 +1146,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
       height: 200,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -1326,9 +1286,7 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Exploring $categoryName...'),
-        backgroundColor: const Color(0xFF7B61FF),
-      ),
-    );
+        backgroundColor: AppColors.primary));
   }
 
   void _showSearchDialog(BuildContext context) {
