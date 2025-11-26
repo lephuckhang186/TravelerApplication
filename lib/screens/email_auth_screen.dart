@@ -75,7 +75,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF1ED760),
+        backgroundColor: const Color(0xFF40E0D0),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -94,11 +94,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF40E0D0)),
           onPressed: widget.onBack,
         ),
         elevation: 0,
@@ -111,32 +111,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
-                
-                // Logo
-                Center(
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.graphic_eq,
-                      size: 30,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 40),
+                const SizedBox(height: 60),
                 
                 // Title
                 Text(
                   widget.isSignUp ? 'Tạo tài khoản của bạn' : 'Đăng nhập vào tài khoản của bạn',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF40E0D0),
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
@@ -247,11 +228,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleSubmit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1ED760),
+                      backgroundColor: const Color(0xFF40E0D0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      disabledBackgroundColor: Colors.grey.shade700,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      elevation: 3,
+                      shadowColor: const Color(0xFF40E0D0).withOpacity(0.3),
                     ),
                     child: _isLoading
                         ? const SizedBox(
@@ -265,7 +248,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                         : Text(
                             widget.isSignUp ? 'Tạo tài khoản' : 'Đăng nhập',
                             style: const TextStyle(
-                              color: Colors.black,
+                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -282,7 +265,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                       child: const Text(
                         'Quên mật khẩu?',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF40E0D0),
                           fontSize: 14,
                           decoration: TextDecoration.underline,
                         ),
@@ -304,7 +287,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     return Text(
       text,
       style: const TextStyle(
-        color: Colors.white,
+        color: Color(0xFF40E0D0),
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),
@@ -323,25 +306,25 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Color(0xFF2E8B8B)),
       validator: validator,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.grey.shade600),
+        hintStyle: TextStyle(color: Colors.grey.shade500),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: const Color(0xFF121212),
+        fillColor: const Color(0xFFF8F9FA),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade700),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade700),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.white),
+          borderSide: const BorderSide(color: Color(0xFF40E0D0), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -359,30 +342,34 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: Colors.white,
         title: const Text(
           'Quên mật khẩu',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Color(0xFF40E0D0)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Nhập email để nhận link đặt lại mật khẩu:',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: Color(0xFF2E8B8B)),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _emailController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Color(0xFF2E8B8B)),
               decoration: InputDecoration(
                 hintText: 'Email của bạn',
-                hintStyle: TextStyle(color: Colors.grey.shade600),
+                hintStyle: TextStyle(color: Colors.grey.shade500),
                 filled: true,
-                fillColor: const Color(0xFF1a1a1a),
+                fillColor: const Color(0xFFF8F9FA),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFF40E0D0), width: 2),
                 ),
               ),
             ),
@@ -410,7 +397,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
             },
             child: const Text(
               'Gửi',
-              style: TextStyle(color: Color(0xFF1ED760)),
+              style: TextStyle(color: Color(0xFF40E0D0)),
             ),
           ),
         ],

@@ -9,16 +9,17 @@ class CreatePlannerScreen extends StatefulWidget {
 }
 
 class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
-  final _plannerNameController = TextEditingController();
+  final _tripNameController = TextEditingController();
   final _destinationController = TextEditingController();
-  DateTime? _startDate;
-  DateTime? _endDate;
-  String _plannerType = 'Private';
+  final _descriptionController = TextEditingController();
+  DateTime _startDate = DateTime.now();
+  DateTime _endDate = DateTime.now();
 
   @override
   void dispose() {
-    _plannerNameController.dispose();
+    _tripNameController.dispose();
     _destinationController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -29,337 +30,286 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.close, color: Colors.grey[700]),
+        leading: TextButton(
           onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Cancel',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF1976D2),
+              fontSize: 16,
+            ),
+          ),
         ),
+        leadingWidth: 80,
         title: Text(
-          'Create New Planner',
-          style: GoogleFonts.quattrocento(
+          'Create Trip',
+          style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Colors.black,
           ),
         ),
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: _createPlanner,
+            onPressed: _canSave() ? _saveTrip : null,
             child: Text(
-              'Create',
-              style: GoogleFonts.quattrocento(
+              'Save',
+              style: GoogleFonts.inter(
+                color: _canSave() ? const Color(0xFF1976D2) : Colors.grey.shade400,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF7B61FF),
               ),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Planner Name
-            _buildSectionTitle('Planner Name'),
-            const SizedBox(height: 8),
-            _buildTextField(
-              controller: _plannerNameController,
-              hintText: 'Enter planner name (e.g., Da Nang Trip)',
-              icon: Icons.edit,
+            const SizedBox(height: 20),
+            
+            // Trip Name Field
+            _buildInputField(
+              label: 'Trip Name',
+              controller: _tripNameController,
+              hintText: 'Enter trip name',
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 30),
             
-            // Destination
-            _buildSectionTitle('Destination'),
-            const SizedBox(height: 8),
-            _buildTextField(
+            // Destination Field
+            _buildInputField(
+              label: 'Destination City*',
               controller: _destinationController,
-              hintText: 'Enter destination (e.g., Da Nang, Vietnam)',
-              icon: Icons.location_on,
+              hintText: 'Where are you going?',
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 30),
             
-            // Travel Dates
-            _buildSectionTitle('Travel Dates'),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDateSelector(
-                    title: 'Start Date',
-                    date: _startDate,
-                    onTap: () => _selectDate(context, true),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildDateSelector(
-                    title: 'End Date',
-                    date: _endDate,
-                    onTap: () => _selectDate(context, false),
-                  ),
-                ),
-              ],
+            // Start Date
+            _buildDateField(
+              label: 'Start Date*',
+              date: _startDate,
+              onTap: () => _selectStartDate(),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 30),
             
-            // Planner Type
-            _buildSectionTitle('Planner Type'),
-            const SizedBox(height: 12),
-            _buildPlannerTypeSelector(),
-            
-            const SizedBox(height: 32),
-            
-            // Create Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _createPlanner,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7B61FF),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: Text(
-                  'Create Planner',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+            // End Date
+            _buildDateField(
+              label: 'End Date*',
+              date: _endDate,
+              onTap: () => _selectEndDate(),
             ),
+            
+            const SizedBox(height: 30),
+            
+            // Description Field
+            _buildInputField(
+              label: 'Description',
+              controller: _descriptionController,
+              hintText: 'Add trip description (optional)',
+              maxLines: 4,
+            ),
+            
+            const Spacer(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.quattrocento(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
+  Widget _buildInputField({
+    required String label,
     required TextEditingController controller,
     required String hintText,
-    required IconData icon,
+    int maxLines = 1,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: TextField(
-        controller: controller,
-        style: GoogleFonts.quattrocento(
-          fontSize: 14,
-          color: Colors.black87,
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: GoogleFonts.quattrocento(
-            fontSize: 14,
-            color: Colors.grey[500],
-          ),
-          prefixIcon: Icon(icon, color: Colors.grey[600], size: 20),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateSelector({
-    required String title,
-    required DateTime? date,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.quattrocento(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.calendar_today, color: Colors.grey[600], size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  date != null 
-                      ? '${date!.day}/${date!.month}/${date!.year}'
-                      : 'Select date',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 14,
-                    color: date != null ? Colors.black87 : Colors.grey[500],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlannerTypeSelector() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _buildTypeOption('Private', Icons.lock_outline),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildTypeOption('Shared', Icons.share_outlined),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: Colors.black,
+          ),
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: GoogleFonts.inter(
+              fontSize: 18,
+              color: Colors.grey.shade400,
+            ),
+            border: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            enabledBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Color(0xFF1976D2), width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          onChanged: (value) => setState(() {}),
         ),
       ],
     );
   }
 
-  Widget _buildTypeOption(String type, IconData icon) {
-    final isSelected = _plannerType == type;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _plannerType = type;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF7B61FF).withOpacity(0.1) : Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[200]!,
-            width: isSelected ? 2 : 1,
+  Widget _buildDateField({
+    required String label,
+    required DateTime date,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
           ),
         ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[600],
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              type,
-              style: GoogleFonts.quattrocento(
-                fontSize: 14,
-                color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[700],
-                fontWeight: FontWeight.w600,
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Colors.grey),
               ),
             ),
-          ],
+            child: Text(
+              _formatDate(date),
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+  String _formatDate(DateTime date) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    String dayName = days[date.weekday - 1];
+    String day = date.day.toString();
+    String month = months[date.month - 1];
+    String year = date.year.toString();
+    
+    return '$dayName, $day $month $year';
+  }
+
+  bool _canSave() {
+    return _destinationController.text.isNotEmpty;
+  }
+
+  void _selectStartDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _startDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF7B61FF),
+              primary: Color(0xFF1976D2),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
             ),
           ),
           child: child!,
         );
       },
     );
-
-    if (picked != null) {
+    
+    if (picked != null && picked != _startDate) {
       setState(() {
-        if (isStartDate) {
-          _startDate = picked;
-          // Reset end date if it's before start date
-          if (_endDate != null && _endDate!.isBefore(picked)) {
-            _endDate = null;
-          }
-        } else {
-          _endDate = picked;
+        _startDate = picked;
+        // If end date is before start date, set end date to start date
+        if (_endDate.isBefore(_startDate)) {
+          _endDate = _startDate;
         }
       });
     }
   }
 
-  void _createPlanner() {
-    if (_plannerNameController.text.isEmpty) {
-      _showMessage('Please enter a planner name');
-      return;
+  void _selectEndDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate.isBefore(_startDate) ? _startDate : _endDate,
+      firstDate: _startDate,
+      lastDate: _startDate.add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1976D2),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
+      });
     }
+  }
 
-    if (_destinationController.text.isEmpty) {
-      _showMessage('Please enter a destination');
-      return;
-    }
-
-    // Create the planner data
-    final plannerData = {
-      'name': _plannerNameController.text,
+  void _saveTrip() {
+    if (!_canSave()) return;
+    
+    // Create trip logic
+    final tripData = {
+      'name': _tripNameController.text.isNotEmpty 
+          ? _tripNameController.text 
+          : _destinationController.text,
       'destination': _destinationController.text,
       'startDate': _startDate,
       'endDate': _endDate,
-      'type': _plannerType,
+      'description': _descriptionController.text,
     };
-
-    // Debug print
-    print('Creating planner with data: $plannerData');
-
-    // Show success message and immediately go back with data
-    _showMessage('Planner "${_plannerNameController.text}" created successfully!');
     
-    // Return immediately with the data
-    Navigator.pop(context, plannerData);
-  }
-
-  void _showMessage(String message) {
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF7B61FF),
-        duration: const Duration(seconds: 2),
+        content: Text('Trip "${tripData['name']}" created successfully!'),
+        backgroundColor: const Color(0xFF4CAF50),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
+    
+    // Navigate back
+    Navigator.pop(context, tripData);
   }
 }
