@@ -13,26 +13,31 @@ class PlanScreen extends StatefulWidget {
 }
 
 class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMixin {
-  // String _currentUsername = 'User'; // Removed unused field
   String _displayName = 'User';
-  List<Map<String, dynamic>> _privatePlanners = [
-    {'name': 'Da Nang Planner', 'destination': 'Da Nang', 'type': 'Private'},
-    {'name': 'Ho Chi Minh Planner', 'destination': 'Ho Chi Minh City', 'type': 'Private'},
+  List<Map<String, dynamic>> _trips = [
+    {
+      'name': 'Da Nang Trip',
+      'date': 'Tue, 25 Nov (1 day)',
+      'status': 'Ends today',
+      'image': 'images/danang.jpg',
+      'destination': 'Da Nang'
+    },
+    {
+      'name': 'Ho Chi Minh City Trip', 
+      'date': 'Mon, 2 Dec (3 days)',
+      'status': 'Upcoming',
+      'image': 'images/hcmc_skyline.jpg',
+      'destination': 'Ho Chi Minh City'
+    },
   ];
   
   @override
-  bool get wantKeepAlive => false; // Don't keep alive so it refreshes
+  bool get wantKeepAlive => false;
   
   @override
   void initState() {
     super.initState();
     _loadUserData();
-  }
-  
-  @override
-  void didUpdateWidget(PlanScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _loadUserData(); // Refresh when widget updates
   }
   
   void _loadUserData() async {
@@ -41,7 +46,6 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
     final username = await userService.getDisplayName();
     
     setState(() {
-      // _currentUsername = username; // Removed unused field
       _displayName = profile['fullName']?.isNotEmpty == true 
           ? profile['fullName']! 
           : username;
@@ -50,774 +54,373 @@ class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMi
   
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
+    
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section
-            _buildHeader(),
-            
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Jump back in section
-                    _buildJumpBackInSection(),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Private section
-                    _buildPrivateSection(),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Collaborations section
-                    _buildCollaborationsSection(),
-                    
-                    const SizedBox(height: 100), // Space for bottom nav and chat
-                  ],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: null,
+        automaticallyImplyLeading: false,
+        title: Text(
+          'Trips',
+          style: GoogleFonts.inter(
+            color: Colors.black,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF40E0D0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.more_horiz,
+                  color: Colors.white,
                 ),
               ),
+              onPressed: () => _showOptionsMenu(context),
             ),
-            
-            // AI Chat button
-            _buildAIChatButton(),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-
-  /// Header with user dropdown and menu
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+      body: Column(
         children: [
-          // User dropdown - Extended
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _showUserMenu(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // User avatar with heart icon
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(
-                        color: Colors.black,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.favorite,
-                          color: Colors.red,
-                          size: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _displayName,
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Colors.grey[600],
-                      size: 20,
-                    ),
-                  ],
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Places, dates, travel plans...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 16,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.grey.shade600,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
               ),
             ),
           ),
           
+          // Trip Cards
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ListView.builder(
+                itemCount: _trips.length,
+                itemBuilder: (context, index) {
+                  final trip = _trips[index];
+                  return _buildTripCard(trip, index);
+                },
+              ),
+            ),
+          ),
+          
+          // Spacer để đẩy AI chat box xuống dưới
           const Spacer(),
           
-          // Menu button
-          GestureDetector(
-            onTap: () => _showMenuOptions(),
-            child: AnimatedScale(
-              scale: 1.0,
-              duration: const Duration(milliseconds: 150),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  Icons.more_horiz,
-                  color: Colors.grey[600],
-                  size: 24,
+          // AI Chat Box với góc tròn ở 2 đầu - thu nhỏ chiều rộng
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
+            child: Center(
+              child: GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (BuildContext context) {
+                      return Container(
+                        height: MediaQuery.of(context).size.height * 0.9,
+                        child: AiAssistantPanel(
+                          onClose: () => Navigator.of(context).pop(),
+                        ),
+                      );
+                    },
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(30), // Góc tròn ở 2 đầu
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min, // Thu nhỏ theo nội dung
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF40E0D0),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.smart_toy_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Ask, chat, plan trip with AI...',
+                        style: GoogleFonts.inter(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  /// Jump back in section
-  Widget _buildJumpBackInSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Jump back in',
-          style: GoogleFonts.quattrocento(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80), // Đẩy nút + lên cao hơn để tránh dính chat box
+        child: FloatingActionButton(
+          onPressed: () => _showCreateTripModal(context),
+          backgroundColor: const Color(0xFF1976D2),
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 28,
           ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildPlannerCard(
-                'Da Nang Planner',
-                'images/danang.jpg',
-                Colors.teal,
-                () => _onPlannerTap('Da Nang'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildPlannerCard(
-                'Ho Chi Minh Planner',
-                'images/hcmc_skyline.jpg',
-                Colors.blue,
-                () => _onPlannerTap('Ho Chi Minh'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// Planner Card with hover effects - Redesigned with 3/4 image and 1/4 white text area
-  Widget _buildPlannerCard(String title, String imagePath, Color fallbackColor, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () {
-        // Add haptic feedback
-        _onPlannerTapWithAnimation(onTap);
-      },
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 1.0, end: 1.0),
-        duration: const Duration(milliseconds: 200),
-        builder: (context, scale, child) {
-          return Transform.scale(
-            scale: scale,
-            child: Container(
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Column(
-                  children: [
-                    // Image area (3/4 of height = 90px)
-                    SizedBox(
-                      height: 90,
-                      width: double.infinity,
-                      child: Image.asset(
-                        imagePath,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  fallbackColor,
-                                  fallbackColor.withValues(alpha: 0.8),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    
-                    // Text area (1/4 of height = 30px) with white background
-                    Container(
-                      height: 30,
-                      width: double.infinity,
-                      color: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Center(
-                        child: Text(
-                          title,
-                          style: GoogleFonts.quattrocento(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
       ),
     );
   }
 
-  /// Private section
-  Widget _buildPrivateSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Private',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _showPrivateOptions(),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(Icons.more_horiz, color: Colors.grey[600], size: 20),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _onAddPrivatePlanner(),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(Icons.add, color: Colors.grey[600], size: 20),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ..._privatePlanners.map((planner) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildPrivateItem(planner['name'], Icons.calendar_today, planner),
-        )).toList(),
-      ],
-    );
-  }
-
-  /// Private item with tap effects
-  Widget _buildPrivateItem(String title, IconData icon, Map<String, dynamic> plannerData) {
-    return GestureDetector(
-      onTap: () => _onPrivateItemTapWithAnimation(title, plannerData),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.chevron_right,
-              color: Colors.grey[600],
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Icon(
-              icon,
-              color: Colors.grey[700],
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.quattrocento(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _showPrivateItemOptions(title),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(Icons.more_horiz, color: Colors.grey[600], size: 20),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _addToPrivateItem(title),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(Icons.add, color: Colors.grey[600], size: 20),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+  Widget _buildTripCard(Map<String, dynamic> trip, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-    );
-  }
-
-  /// Collaborations section
-  Widget _buildCollaborationsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Collaborations',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _showCollaborationOptions(),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(Icons.more_horiz, color: Colors.grey[600], size: 20),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _onAddCollaboration(),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(Icons.add, color: Colors.grey[600], size: 20),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        
-        // Empty state
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(32),
-          child: Column(
+      child: InkWell(
+        onTap: () => _navigateToTripDetail(trip),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
             children: [
-              // Calendar icon with "01"
+              // Trip Image
               Container(
-                width: 80,
-                height: 80,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: AssetImage(trip['image']),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                child: Stack(
+              ),
+              const SizedBox(width: 16),
+              
+              // Trip Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Icon(
-                        Icons.calendar_today_outlined,
-                        size: 40,
-                        color: Colors.grey[400],
+                    Text(
+                      trip['name'],
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
                     ),
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(4),
+                    const SizedBox(height: 4),
+                    Text(
+                      trip['date'],
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: Colors.grey.shade500,
                         ),
-                        child: Text(
-                          '01',
-                          style: GoogleFonts.quattrocento(
+                        const SizedBox(width: 4),
+                        Text(
+                          trip['status'],
+                          style: GoogleFonts.inter(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[600],
+                            color: Colors.grey.shade500,
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Uh oh! There is not anyone yet!',
-                style: GoogleFonts.quattrocento(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  /// AI Chat button with animation - Extended width and better text positioning
-  Widget _buildAIChatButton() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: GestureDetector(
-        onTap: () => _onAIChatTapWithAnimation(),
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 1.0, end: 1.0),
-          duration: const Duration(milliseconds: 200),
-          builder: (context, scale, child) {
-            return Transform.scale(
-              scale: scale,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: Colors.grey[300]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.smart_toy_outlined,
-                      color: Colors.grey[600],
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Ask, chat, plan trip with AI...',
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
       ),
     );
   }
 
-  // Animated event handlers
-  void _onPlannerTapWithAnimation(VoidCallback onTap) {
-    // Add ripple effect
-    setState(() {});
-    Future.delayed(const Duration(milliseconds: 100), onTap);
-  }
-
-  void _onPrivateItemTapWithAnimation(String title, Map<String, dynamic> plannerData) {
-    setState(() {});
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _openPlannerDetail(plannerData);
-    });
-  }
-
-  void _openPlannerDetail(Map<String, dynamic> plannerData) {
+  void _navigateToTripDetail(Map<String, dynamic> trip) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PlannerDetailScreen(plannerData: plannerData),
-      ),
-    );
-  }
-
-  void _onAIChatTapWithAnimation() {
-    setState(() {});
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _showAIAssistantPanel();
-    });
-  }
-
-  void _showAIAssistantPanel() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.3),
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        child: AiAssistantPanel(
-          onClose: () {
-            Navigator.of(context).pop();
-          },
+        builder: (context) => PlannerDetailScreen(
+          plannerName: trip['name'],
+          destination: trip['destination'],
         ),
       ),
     );
   }
 
-  // Event handlers with bottom sheet animations
-  void _showUserMenu() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Opening profile...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Logging out...');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMenuOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Opening settings...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.share),
-              title: const Text('Share'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Sharing...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.help_outline),
-              title: const Text('Help'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Opening help...');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPrivateOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.sort),
-              title: const Text('Sort by'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Sorting options...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.filter_list),
-              title: const Text('Filter'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Filter options...');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPrivateItemOptions(String title) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Editing $title...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.share),
-              title: const Text('Share'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Sharing $title...');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Delete'),
-              textColor: Colors.red,
-              iconColor: Colors.red,
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage('Deleting $title...');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCollaborationOptions() {
-    _showMessage('Collaboration options...');
-  }
-
-  void _onPlannerTap(String plannerName) {
-    _showMessage('Opening $plannerName planner...');
-  }
-
-  void _onAddPrivatePlanner() async {
-    final result = await Navigator.push(
+  void _showCreateTripModal(BuildContext context) {
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const CreatePlannerScreen(),
       ),
     );
-    
-    if (result != null && result is Map<String, dynamic>) {
-      // Debug print
-      print('Adding planner: ${result['name']}');
-      
-      // Add the new planner to the list
-      setState(() {
-        _privatePlanners.add({
-          'name': result['name'] ?? 'Untitled Planner',
-          'destination': result['destination'] ?? '',
-          'startDate': result['startDate'],
-          'endDate': result['endDate'],
-          'type': result['type'] ?? 'Private',
-        });
-      });
-      
-      // Debug print current list
-      print('Total planners: ${_privatePlanners.length}');
-      
-      _showMessage('Planner "${result['name']}" has been created and added!');
-      
-      // Force rebuild
-      setState(() {});
-    } else {
-      print('No result or invalid result from CreatePlannerScreen');
-    }
   }
 
-  void _addToPrivateItem(String title) {
-    _showMessage('Adding to $title...');
+  void _showOptionsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('Create New Trip'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCreateTripModal(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_outlined),
+              title: const Text('Collaborations'),
+              subtitle: const Text('Uh oh! There is not anyone yet!'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCollaborationsDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle settings
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  void _onAddCollaboration() {
-    _showMessage('Adding new collaboration...');
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF7B61FF),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  void _showCollaborationsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.group_outlined),
+            const SizedBox(width: 12),
+            const Text('Collaborations'),
+          ],
+        ),
+        content: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 48,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Uh oh! There is not anyone yet!',
+                style: GoogleFonts.inter(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Handle invite collaborators
+            },
+            child: const Text('Invite'),
+          ),
+        ],
       ),
     );
   }
