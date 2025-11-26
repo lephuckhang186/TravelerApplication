@@ -326,7 +326,8 @@ async def get_category_status(
         category_status = manager.get_category_status()
         
         if not category_status:
-            raise HTTPException(status_code=404, detail="No budget or trip data found")
+            # Return empty list instead of 404 when no budget data exists
+            return []
         
         return [
             CategoryStatusResponse(
