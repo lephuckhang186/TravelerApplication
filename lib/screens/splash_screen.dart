@@ -68,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen>
               opacity: _fadeAnimation.value,
               child: Container(
                 // Overlay mờ để text dễ đọc
-                decoration: BoxDecoration(color: Colors.black.withOpacity(0.3)),
+                // Loại bỏ overlay đen để giữ hình ảnh sáng
                 child: Positioned.fill(
                   child: Align(
                     alignment: Alignment(0.0, 0.4),
