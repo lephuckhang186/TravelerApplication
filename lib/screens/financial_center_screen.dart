@@ -679,14 +679,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Đã cập nhật hạn mức: ${_formatMoney(currentLimit)}₫',
-                                  ),
-                                  backgroundColor: const Color(0xFF4CAF50),
-                                ),
-                              );
+                              // Update spending limit functionality
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE91E63),

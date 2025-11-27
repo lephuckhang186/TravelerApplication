@@ -148,11 +148,6 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   children: [
                     const SizedBox(height: 20),
 
-                    // Category Icons Row
-                    _buildCategoryIcons(),
-
-                    const SizedBox(height: 24),
-
                     // Nearby gems Section
                     _buildNearbyGemsSection(),
 
@@ -176,15 +171,16 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
           ])));
   }
 
-  /// Search Bar với icons
+  /// Search Bar với 3 nút chính
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
+          // Search Button - Mở rộng để hiển thị địa điểm đề cử
           Expanded(
             child: GestureDetector(
-              onTap: () => _showSearchDialog(context),
+              onTap: () => _showSearchSuggestionsDialog(context),
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
@@ -201,18 +197,36 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                   children: [
                     const SizedBox(width: 12),
                     Icon(
-                      Icons.search,
+                      Icons.search_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tìm kiếm địa điểm...',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
                       color: AppColors.textSecondary,
-                      size: 20),
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
-                    Text(
-                      'Vietnam tradition places',
-                      style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                        color: AppColors.textSecondary,
-                        fontSize: 14)),
-                  ])))),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
           const SizedBox(width: 12),
+          
+          // Plan Button - Hiển thị plan hiện tại
           Container(
             width: 48,
             height: 48,
@@ -233,13 +247,49 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 splashColor: AppColors.accent.withValues(alpha: 0.2),
                 highlightColor: AppColors.accent.withValues(alpha: 0.1),
                 onTap: () {
-                  _onPlanTap(context);
+                  _showCurrentPlansDialog(context);
                 },
-                child: Center(
-                  child: Icon(
-                    Icons.event_note_outlined,
-                    color: AppColors.textSecondary))))),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        Icons.map_outlined,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
+                    ),
+                    // Badge hiển thị số lượng plan
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '2',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
           const SizedBox(width: 8),
+          
+          // Notification Button
           Container(
             width: 48,
             height: 48,
@@ -260,81 +310,40 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
                 splashColor: AppColors.accent.withValues(alpha: 0.2),
                 highlightColor: AppColors.accent.withValues(alpha: 0.1),
                 onTap: () {
-                  _onNotificationTap(context);
+                  _showNotificationsDialog(context);
                 },
-                child: Center(
-                  child: Icon(
-                    Icons.notifications_outlined,
-                    color: AppColors.textSecondary))))),
-        ]));
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
+                    ),
+                    // Notification badge
+                    Positioned(
+                      top: 10,
+                      right: 12,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  // Category Icons Row
-  Widget _buildCategoryIcons() {
-    final categories = [
-      {
-        'icon': Icons.beach_access,
-        'label': 'Beachs',
-        'color': const Color(0xFF7B61FF),
-      },
-      {
-        'icon': Icons.directions_bus,
-        'label': 'Transportation',
-        'color': Colors.blue,
-      },
-      {'icon': Icons.apartment, 'label': 'Rentals', 'color': Colors.green},
-      {'icon': Icons.location_city, 'label': 'Hotels', 'color': Colors.amber},
-      {'icon': Icons.celebration, 'label': 'Concerts', 'color': Colors.pink},
-    ];
-
-    return Container(
-      height: 110,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: categories.map((category) {
-          return Expanded(
-            child: Column(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey[300]!, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (category['color'] as Color).withValues(
-                          alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3)),
-                    ]),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(28),
-                      splashColor: (category['color'] as Color).withValues(
-                        alpha: 0.3),
-                      onTap: () =>
-                          _onCategoryTap(context, category['label'] as String),
-                      child: Center(
-                        child: Icon(
-                          category['icon'] as IconData,
-                          color: Colors.grey[700],
-                          size: 24))))),
-                const SizedBox(height: 8),
-                Text(
-                  category['label'] as String,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                    fontSize: 11,color: Colors.grey[700]),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-              ]));
-        }).toList()));
-  }
 
   // Nearby gems Section
   Widget _buildNearbyGemsSection() {
@@ -1073,28 +1082,485 @@ class _TravelHomeContentState extends State<_TravelHomeContent> {
   }
 
   // Handler methods
-  void _onCategoryTap(BuildContext context, String categoryName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Exploring $categoryName...'),
-        backgroundColor: const Color(0xFF7B61FF)));
+
+  // Event handlers - Dialog implementations
+  void _showSearchSuggestionsDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Tìm kiếm địa điểm',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Search Input
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Nhập tên địa điểm...',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                autofocus: true,
+              ),
+            ),
+            
+            SizedBox(height: 20),
+            
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Địa điểm đề cử
+                    Text(
+                      'Địa điểm đề cử',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    ..._buildSuggestedPlaces(),
+                    
+                    SizedBox(height: 24),
+                    
+                    // Từng ghé qua
+                    Text(
+                      'Từng ghé qua',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    ..._buildVisitedPlaces(),
+                    
+                    SizedBox(height: 24),
+                    
+                    // Khu vực phổ biến
+                    Text(
+                      'Khu vực phổ biến',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    ..._buildPopularAreas(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  void _showSearchDialog(BuildContext context) {
-    ScaffoldMessenger.of(
-      context).showSnackBar(SnackBar(content: Text('Search feature coming soon!')));
+  List<Widget> _buildSuggestedPlaces() {
+    final suggestedPlaces = [
+      {'name': 'Chùa Ngọc Hoàng', 'location': 'Quận 1', 'icon': Icons.temple_hindu},
+      {'name': 'Bảo tàng Chứng tích Chiến tranh', 'location': 'Quận 3', 'icon': Icons.museum},
+      {'name': 'Dinh Độc Lập', 'location': 'Quận 1', 'icon': Icons.location_city},
+      {'name': 'Chợ Bến Thành', 'location': 'Quận 1', 'icon': Icons.shopping_cart},
+    ];
+    
+    return suggestedPlaces.map((place) => ListTile(
+      leading: CircleAvatar(
+        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+        child: Icon(place['icon'] as IconData, color: AppColors.primary),
+      ),
+      title: Text(place['name'] as String),
+      subtitle: Text(place['location'] as String),
+      trailing: Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: () {
+        Navigator.pop(context);
+        // TODO: Navigate to place detail
+      },
+    )).toList();
   }
 
-  void _onPlanTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Opening plan...'), backgroundColor: Colors.blue));
+  List<Widget> _buildVisitedPlaces() {
+    final visitedPlaces = [
+      {'name': 'Bitexco Financial Tower', 'location': 'Quận 1', 'date': '2 tuần trước'},
+      {'name': 'Nhà hát Thành phố', 'location': 'Quận 1', 'date': '1 tháng trước'},
+    ];
+    
+    return visitedPlaces.map((place) => ListTile(
+      leading: CircleAvatar(
+        backgroundColor: Colors.green.withValues(alpha: 0.1),
+        child: Icon(Icons.check, color: Colors.green),
+      ),
+      title: Text(place['name'] as String),
+      subtitle: Text('${place['location']} • ${place['date']}'),
+      trailing: Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: () {
+        Navigator.pop(context);
+        // TODO: Navigate to place detail
+      },
+    )).toList();
   }
 
-  void _onNotificationTap(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('You have 3 new notifications'),
-        backgroundColor: Colors.orange));
+  List<Widget> _buildPopularAreas() {
+    final popularAreas = [
+      {'name': 'Quận 1', 'description': 'Trung tâm thành phố'},
+      {'name': 'Quận 3', 'description': 'Khu văn hóa - giải trí'},
+      {'name': 'Quận 7', 'description': 'Khu đô thị mới'},
+    ];
+    
+    return popularAreas.map((area) => ListTile(
+      leading: CircleAvatar(
+        backgroundColor: Colors.orange.withValues(alpha: 0.1),
+        child: Icon(Icons.location_on, color: Colors.orange),
+      ),
+      title: Text(area['name'] as String),
+      subtitle: Text(area['description'] as String),
+      trailing: Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: () {
+        Navigator.pop(context);
+        // TODO: Navigate to area
+      },
+    )).toList();
+  }
+
+  void _showCurrentPlansDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Kế hoạch của bạn',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  // Plan đang thực hiện
+                  _buildPlanCard(
+                    'Khám phá Sài Gòn',
+                    'Đang thực hiện',
+                    '15-20 Dec',
+                    Colors.green,
+                    Icons.play_circle_fill,
+                    true,
+                  ),
+                  
+                  SizedBox(height: 12),
+                  
+                  // Plan sắp tới
+                  _buildPlanCard(
+                    'Du lịch Đà Nẵng',
+                    'Sắp tới',
+                    '25-30 Dec',
+                    Colors.orange,
+                    Icons.schedule,
+                    false,
+                  ),
+                  
+                  SizedBox(height: 20),
+                  
+                  // Button tạo plan mới
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      // TODO: Navigate to create plan
+                    },
+                    icon: Icon(Icons.add),
+                    label: Text('Tạo kế hoạch mới'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlanCard(String title, String status, String date, Color statusColor, IconData statusIcon, bool isActive) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(16),
+        leading: CircleAvatar(
+          backgroundColor: statusColor.withValues(alpha: 0.1),
+          child: Icon(statusIcon, color: statusColor),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 4),
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Text(date, style: TextStyle(color: Colors.grey[600])),
+          ],
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: () {
+          Navigator.pop(context);
+          // TODO: Navigate to plan detail
+        },
+      ),
+    );
+  }
+
+  void _showNotificationsDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Thông báo',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // TODO: Mark all as read
+                        },
+                        child: Text('Đánh dấu tất cả đã đọc'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  _buildNotificationItem(
+                    'Kế hoạch "Khám phá Sài Gòn" sắp bắt đầu',
+                    'Chuyến đi của bạn sẽ bắt đầu vào ngày mai',
+                    '2 giờ trước',
+                    Icons.calendar_today,
+                    Colors.blue,
+                    true,
+                  ),
+                  
+                  _buildNotificationItem(
+                    'Địa điểm mới được thêm',
+                    'Chùa Ngọc Hoàng đã được thêm vào danh sách yêu thích',
+                    '1 ngày trước',
+                    Icons.favorite,
+                    Colors.red,
+                    false,
+                  ),
+                  
+                  _buildNotificationItem(
+                    'Cập nhật thời tiết',
+                    'Thời tiết tại Sài Gòn: Nắng, 28°C',
+                    '2 ngày trước',
+                    Icons.wb_sunny,
+                    Colors.orange,
+                    false,
+                  ),
+                  
+                  _buildNotificationItem(
+                    'Đánh giá địa điểm',
+                    'Hãy đánh giá trải nghiệm tại Bitexco Financial Tower',
+                    '3 ngày trước',
+                    Icons.star_rate,
+                    Colors.amber,
+                    false,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationItem(String title, String message, String time, IconData icon, Color color, bool isUnread) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isUnread ? color.withValues(alpha: 0.05) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isUnread ? color.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
+        ),
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(16),
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: isUnread ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 4),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              time,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+        trailing: isUnread 
+          ? Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            )
+          : null,
+      ),
+    );
   }
 
   void _onNearbyGemsSeMoreTap(BuildContext context) {
