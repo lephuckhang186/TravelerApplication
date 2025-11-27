@@ -12,6 +12,8 @@ import 'analysis_screen.dart';
 import 'security_login_screen.dart';
 import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
+import '../features/translation/screens/translation_screen.dart';
+import '../features/currency_converter/screens/currency_converter_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -580,7 +582,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 10),
           // Synchronized scrolling for both rows
           SizedBox(
-            height: 138, // Height for 2 rows + spacing
+            height: 211, // Height for 3 rows + spacing (138 + 65 + 8)
             child: ListView(
               controller: scrollController,
               scrollDirection: Axis.horizontal,
@@ -622,6 +624,25 @@ class _SettingsScreenState extends State<SettingsScreen>
                           'Quà của tôi',
                           const Color(0xFF8BC34A), // Green
                           () => _onMoreGifts(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Third row - New utilities
+                    Row(
+                      children: [
+                        _buildRectangularUtilityItem(
+                          Icons.translate,
+                          'Dịch văn bản',
+                          const Color(0xFF9C27B0), // Purple
+                          () => _onTranslation(),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRectangularUtilityItem(
+                          Icons.currency_exchange,
+                          'Chuyển đổi tiền tệ',
+                          const Color(0xFFFF9800), // Orange
+                          () => _onCurrencyConverter(),
                         ),
                       ],
                     ),
@@ -1317,5 +1338,20 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _showMessage(String message) {
     // Message display functionality
+  }
+
+  // New utility handlers
+  void _onTranslation() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TranslationScreen()),
+    );
+  }
+
+  void _onCurrencyConverter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
   }
 }

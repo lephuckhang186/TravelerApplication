@@ -28,12 +28,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
-  void _loadUserData() {
-    // Load existing user data
-    _nameController.text = 'Nguyễn Kiều Anh Quân';
-    _emailController.text = 'quan.nguyen@email.com';
-    _phoneController.text = '0898999033';
-    _addressController.text = 'Hà Nội, Việt Nam';
+  void _loadUserData() async {
+    final userService = UserService();
+    await userService.init();
+    
+    // Load from UserService or set meaningful defaults
+    _nameController.text = await userService.getFullName() ?? 'Người dùng mới';
+    _emailController.text = await userService.getEmail() ?? '';
+    _phoneController.text = await userService.getPhone() ?? '';
+    _addressController.text = await userService.getAddress() ?? '';
+    _avatarPath = await userService.getAvatarPath();
+    
+    // If no data exists, set up default profile
+    if (_nameController.text.isEmpty || _nameController.text == 'Người dùng mới') {
+      _setDefaultUserData();
+    }
+    
+    setState(() {});
+  }
+  
+  void _setDefaultUserData() {
+    // Set meaningful default data instead of empty fields
+    _nameController.text = 'Người dùng Travel App';
+    _emailController.text = 'user@travelapp.com';
+    _phoneController.text = '';
+    _addressController.text = '';
+    _gender = 'Chưa cập nhật';
+    _birthDate = DateTime(1995, 1, 1);
+  }
+  
+  String _getHintText(String label) {
+    switch (label) {
+      case 'Họ và tên':
+        return 'Nhập họ và tên của bạn';
+      case 'Email':
+        return 'Nhập địa chỉ email';
+      case 'Số điện thoại':
+        return 'Nhập số điện thoại';
+      case 'Địa chỉ':
+        return 'Nhập địa chỉ của bạn';
+      default:
+        return 'Chưa cập nhật';
+    }
   }
 
   @override
@@ -147,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _nameController.text,
+              _nameController.text.isNotEmpty ? _nameController.text : 'Người dùng Travel App',
               style: GoogleFonts.quattrocento(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -156,10 +192,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              _emailController.text,
+              _emailController.text.isNotEmpty ? _emailController.text : 'Chưa cập nhật email',
               style: GoogleFonts.quattrocento(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: _emailController.text.isNotEmpty ? Colors.grey[600] : Colors.grey[400],
+                fontStyle: _emailController.text.isNotEmpty ? FontStyle.normal : FontStyle.italic,
               ),
             ),
             const SizedBox(height: 12),
@@ -375,6 +412,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           enabled: _isEditing,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 18, color: Colors.grey[500]),
+            hintText: _getHintText(label),
+            hintStyle: GoogleFonts.quattrocento(
+              fontSize: 14,
+              color: Colors.grey[400],
+              fontStyle: FontStyle.italic,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -425,7 +468,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Icon(Icons.person_outline, size: 18, color: Colors.grey[500]),
                 const SizedBox(width: 12),
-                Text(_gender, style: GoogleFonts.quattrocento(fontSize: 14)),
+                Text(
+                  _gender, 
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 14,
+                    color: _gender == 'Chưa cập nhật' ? Colors.grey[400] : Colors.black87,
+                    fontStyle: _gender == 'Chưa cập nhật' ? FontStyle.italic : FontStyle.normal,
+                  ),
+                ),
                 const Spacer(),
                 if (_isEditing) Icon(Icons.arrow_drop_down, color: Colors.grey[400]),
               ],
@@ -550,8 +600,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _saveProfile() {
-    // Save profile logic here
+  void _saveProfile() async {
+    final userService = UserService();
+    
+    // Save profile data using UserService
+    await userService.saveProfile(
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim(),
+      address: _addressController.text.trim(),
+      avatarPath: _avatarPath,
+    );
+    
     _showSnackBar('Đã lưu thông tin cá nhân');
   }
 
@@ -612,7 +672,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
-            ...['Nam', 'Nữ', 'Khác']
+            ...['Nam', 'Nữ', 'Khác', 'Chưa cập nhật']
                 .map((gender) => ListTile(
               title: Text(gender),
               trailing: _gender == gender ? const Icon(Icons.check, color: Colors.green) : null,

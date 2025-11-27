@@ -58,6 +58,11 @@ dependencies:
   build: ^4.0.3
   firebase_ui_auth: ^1.14.0
   provider: ^6.1.1
+  
+  # Translation and text-to-speech dependencies
+  translator: 1.0.4+1
+  flutter_tts: ^3.8.5
+  speech_to_text: ^6.6.0
 
 dev_dependencies:
   flutter_test:
