@@ -11,6 +11,7 @@ import 'general_info_screen.dart';
 import 'analysis_screen.dart';
 import 'security_login_screen.dart';
 import 'profile_screen.dart';
+import 'travel_stats_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -113,8 +114,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                   const SizedBox(height: 12),
 
-                  // Expense Management Card
-                  _buildExpenseCard(),
+                  // Travel Statistics Card
+                  _buildTravelStatsCard(),
 
                   const SizedBox(height: 12),
 
@@ -610,10 +611,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Row(
                       children: [
                         _buildRectangularUtilityItem(
-                          Icons.account_balance_wallet,
-                          'Quản lý chi tiêu',
+                          Icons.analytics,
+                          'Thống kê du lịch',
                           const Color(0xFF00BCD4), // Cyan
-                          () => _onExpenseManagement(),
+                          () => _onTravelStats(),
                         ),
                         const SizedBox(width: 8),
                         _buildRectangularUtilityItem(
@@ -696,161 +697,157 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Expense Management Card
-  Widget _buildExpenseCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // Header Row
-          Row(
-            children: [
-              Icon(Icons.account_balance_wallet, size: 20, color: Colors.blue),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Quản lý chi tiêu',
-                      style: GoogleFonts.quattrocento(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Text(
-                      'Tháng này',
-                      style: GoogleFonts.quattrocento(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+  /// Travel Statistics Card
+  Widget _buildTravelStatsCard() {
+    return GestureDetector(
+      onTap: () => _onTravelStats(),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.08),
+              spreadRadius: 1,
+              blurRadius: 6,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
+              children: [
+                Text(
+                  'Travel Stats',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
                 ),
+                const Spacer(),
+                Text(
+                  'Show All',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 14,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Total Trips Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 18),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // Expense Summary Cards
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.06),
-                        spreadRadius: 1,
-                        blurRadius: 4,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Trips',
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '0',
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Simple timeline
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Years
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Tổng chi',
+                        '2023',
                         style: GoogleFonts.quattrocento(
-                          fontSize: 10,
+                          fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
-                        '113.045đ',
+                        '2024',
                         style: GoogleFonts.quattrocento(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.arrow_downward,
-                            size: 10,
-                            color: Colors.green,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '389.955đ',
-                            style: GoogleFonts.quattrocento(
-                              fontSize: 10,
-                              color: Colors.green,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
                       Text(
-                        'Cùng kỳ tháng trước',
+                        '2025',
                         style: GoogleFonts.quattrocento(
-                          fontSize: 8,
-                          color: Colors.grey[500],
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3CD),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.06),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Xem biến động thu chi',
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 10,
-                          color: Colors.orange[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '100% Nhận xu',
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.orange[800],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '1 lần/SĐT',
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 8,
-                          color: Colors.orange[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1062,6 +1059,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AnalysisScreen()),
+    );
+  }
+
+  void _onTravelStats() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TravelStatsScreen()),
     );
   }
 
