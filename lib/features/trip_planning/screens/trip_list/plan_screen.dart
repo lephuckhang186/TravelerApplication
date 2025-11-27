@@ -32,6 +32,7 @@ class _PlanScreenState extends State<PlanScreen>
 
   List<TripModel> get _visibleTrips {
     if (_searchQuery.isEmpty) {
+      print('DEBUG: No search query, returning all ${_trips.length} trips');
       return _trips;
     }
     final query = _searchQuery.toLowerCase();
@@ -43,6 +44,7 @@ class _PlanScreenState extends State<PlanScreen>
           (trip.description ?? '').toLowerCase().contains(query);
       return nameMatch || destinationMatch || descriptionMatch;
     }).toList();
+    print('DEBUG: Search query "$_searchQuery" filtered ${_trips.length} trips to ${filtered.length}');
     return filtered;
   }
 
@@ -82,16 +84,19 @@ class _PlanScreenState extends State<PlanScreen>
     try {
       // First load from local storage for immediate display
       final cachedTrips = await _storageService.loadTrips();
+      print('DEBUG: Loaded ${cachedTrips.length} cached trips');
       if (mounted && cachedTrips.isNotEmpty) {
         setState(() {
           _trips
             ..clear()
             ..addAll(cachedTrips);
         });
+        print('DEBUG: Displaying ${_trips.length} cached trips');
       }
 
       // Then fetch from API to get latest data
       final remoteTrips = await _tripService.getTrips();
+      print('DEBUG: Fetched ${remoteTrips.length} trips from API');
       
       if (remoteTrips.isNotEmpty) {
         await _storageService.saveTrips(remoteTrips);
@@ -101,15 +106,20 @@ class _PlanScreenState extends State<PlanScreen>
               ..clear()
               ..addAll(remoteTrips);
           });
+          print('DEBUG: Updated UI with ${_trips.length} remote trips');
         }
+      } else {
+        print('DEBUG: No remote trips received, keeping cached trips');
       }
     } catch (e) {
+      print('DEBUG: Error loading trips: $e');
       // Preserve whatever list we currently have and surface no UI error
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        print('DEBUG: Final trip count: ${_trips.length}');
       }
     }
   }
@@ -232,6 +242,7 @@ class _PlanScreenState extends State<PlanScreen>
                           itemCount: _visibleTrips.length,
                           itemBuilder: (context, index) {
                             final trip = _visibleTrips[index];
+                            print('DEBUG: Building trip card ${index + 1}: ${trip.name}');
                             return _buildTripCard(trip, index);
                           },
                         ),
@@ -392,7 +403,7 @@ class _PlanScreenState extends State<PlanScreen>
                   children: [
                     Text(
                       trip.name,
-                      style: GoogleFonts.quattrocento(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -401,7 +412,7 @@ class _PlanScreenState extends State<PlanScreen>
                     const SizedBox(height: 4),
                     Text(
                       dateRange,
-                      style: GoogleFonts.quattrocento(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         color: Colors.grey.shade600,
                       ),
@@ -417,7 +428,7 @@ class _PlanScreenState extends State<PlanScreen>
                         const SizedBox(width: 4),
                         Text(
                           status,
-                          style: GoogleFonts.quattrocento(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             color: Colors.grey.shade500,
                           ),

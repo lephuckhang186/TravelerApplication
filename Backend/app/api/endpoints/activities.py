@@ -10,33 +10,16 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, validator
 
 # Import dependencies and services
-try:
-    from ...core.dependencies import get_current_user
-    from ...services.activities_management import (
-        Activity, ActivityType, ActivityStatus, Priority,
-        Location, Budget, Contact
-    )
-    from ...services.annalytics_service import (
-        IntegratedTravelManager
-    )
-    from ...models.user import User
-    from ...database import db_manager
-except ImportError:
-    # Fallback for direct execution
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    from core.dependencies import get_current_user
-    
-    from services.activities_management import (
-        Activity, ActivityType, ActivityStatus, Priority,
-        Location, Budget, Contact, ActivityManager
-    )
-    from services.annalytics_service import (
-        IntegratedTravelManager
-    )
-    from database import db_manager
-    from models.user import User
+from app.core.dependencies import get_current_user
+from app.services.activities_management import (
+    Activity, ActivityType, ActivityStatus, Priority,
+    Location, Budget, Contact, ActivityManager
+)
+from app.services.annalytics_service import (
+    IntegratedTravelManager
+)
+from app.database import db_manager
+from app.models.user import User
 
 # Create router
 router = APIRouter(prefix="/activities", tags=["Activities & Expense Management"])
