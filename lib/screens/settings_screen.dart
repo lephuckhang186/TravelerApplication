@@ -172,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       const SizedBox(width: 4),
                       Text(
                         'Đổi ảnh nền',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 12,
                           color: Colors.grey[600],
                         ),
@@ -240,7 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             _displayName,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 24,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -279,7 +279,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(width: 6),
                     Text(
                       'Trang cá nhân',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 12,
                         color: Colors.grey[700],
                       ),
@@ -375,7 +375,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 Text(
                   _displayName,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -433,7 +433,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       child: Center(
         child: Text(
           _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'N',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: size * 0.4,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -532,7 +532,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: Center(
                       child: Text(
                         badge,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -547,7 +547,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 10,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -570,7 +570,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           Text(
             'Tiện ích',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -679,7 +679,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Flexible(
               child: Text(
                 label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 10, // Slightly smaller font
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -713,7 +713,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   children: [
                     Text(
                       'Quản lý chi tiêu',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -721,7 +721,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     Text(
                       'Tháng này',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 10,
                         color: Colors.grey[600],
                       ),
@@ -757,7 +757,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     children: [
                       Text(
                         'Tổng chi',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 10,
                           color: Colors.grey[600],
                         ),
@@ -765,7 +765,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       const SizedBox(height: 2),
                       Text(
                         '113.045đ',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
@@ -782,7 +782,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           const SizedBox(width: 2),
                           Text(
                             '389.955đ',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.quattrocento(
                               fontSize: 10,
                               color: Colors.green,
                               fontWeight: FontWeight.w500,
@@ -792,7 +792,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       Text(
                         'Cùng kỳ tháng trước',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 8,
                           color: Colors.grey[500],
                         ),
@@ -821,7 +821,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     children: [
                       Text(
                         'Xem biến động thu chi',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 10,
                           color: Colors.orange[700],
                           fontWeight: FontWeight.w500,
@@ -830,7 +830,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       const SizedBox(height: 2),
                       Text(
                         '100% Nhận xu',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: Colors.orange[800],
@@ -839,7 +839,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       const SizedBox(height: 4),
                       Text(
                         '1 lần/SĐT',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 8,
                           color: Colors.orange[600],
                         ),
@@ -920,7 +920,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -946,7 +946,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Expanded(
               child: Text(
                 'Ngôn ngữ',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -964,7 +964,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 children: [
                   Text(
                     'EN',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 12,
                       color: Colors.white,
                       fontWeight: FontWeight.w500,
@@ -973,7 +973,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(width: 4),
                   Text(
                     _currentLanguage,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 12,
                       color: Colors.white,
                       fontWeight: FontWeight.w500,
@@ -1023,7 +1023,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: Text(
                     'Đăng xuất',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -1042,7 +1042,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: Text(
                     'Đổi tài khoản',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -1138,7 +1138,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           children: [
             Text(
               'Chọn ảnh nền',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1173,18 +1173,18 @@ class _SettingsScreenState extends State<SettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đổi tài khoản',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Bạn có muốn đăng nhập bằng tài khoản khác?',
-          style: GoogleFonts.inter(),
+          style: GoogleFonts.quattrocento(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: GoogleFonts.inter(color: Colors.grey[600]),
+              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
             ),
           ),
           ElevatedButton(
@@ -1196,7 +1196,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               backgroundColor: const Color(0xFF7B61FF),
               foregroundColor: Colors.white,
             ),
-            child: Text('Đồng ý', style: GoogleFonts.inter()),
+            child: Text('Đồng ý', style: GoogleFonts.quattrocento()),
           ),
         ],
       ),
@@ -1216,7 +1216,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           children: [
             Text(
               'Chọn ngôn ngữ',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1263,18 +1263,18 @@ class _SettingsScreenState extends State<SettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đăng xuất',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
-          style: GoogleFonts.inter(),
+          style: GoogleFonts.quattrocento(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: GoogleFonts.inter(color: Colors.grey[600]),
+              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
             ),
           ),
           ElevatedButton(
@@ -1306,7 +1306,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Đăng xuất', style: GoogleFonts.inter()),
+            child: Text('Đăng xuất', style: GoogleFonts.quattrocento()),
           ),
         ],
       ),
@@ -1316,7 +1316,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
+        content: Text(message, style: GoogleFonts.quattrocento(color: Colors.white)),
         backgroundColor: const Color(0xFF2E7D32),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,

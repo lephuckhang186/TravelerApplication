@@ -118,7 +118,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         title: Text(
           'Trung tâm trợ giúp',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -140,12 +140,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 onChanged: (value) => setState(() => _searchQuery = value),
                 decoration: InputDecoration(
                   hintText: 'Tìm kiếm câu hỏi...',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[500]),
+                  hintStyle: GoogleFonts.quattrocento(color: Colors.grey[500]),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                style: GoogleFonts.inter(fontSize: 14),
+                style: GoogleFonts.quattrocento(fontSize: 14),
               ),
             ),
           ),
@@ -181,7 +181,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         title: Text(
           category['title'],
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -189,7 +189,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         subtitle: Text(
           '${category['items'].length} câu hỏi',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 12,
             color: Colors.grey[600],
           ),
@@ -205,7 +205,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     return ExpansionTile(
       title: Text(
         question,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.quattrocento(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
@@ -216,7 +216,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Text(
             answer,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 13,
               color: Colors.grey[700],
               height: 1.5,

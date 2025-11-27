@@ -52,7 +52,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         ),
         title: Text(
           'Quản lý chi tiêu',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,

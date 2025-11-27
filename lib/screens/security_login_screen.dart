@@ -30,7 +30,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
         ),
         title: Text(
           'Đăng nhập và bảo mật',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -89,7 +89,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                     children: [
                       Text(
                         'Bảo mật tài khoản',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
@@ -97,7 +97,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                       ),
                       Text(
                         'Quản lý cài đặt bảo mật cho tài khoản',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -120,7 +120,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Tài khoản được bảo vệ tốt',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 14,
                       color: Colors.green[700],
                       fontWeight: FontWeight.w500,
@@ -151,7 +151,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Xác thực 2 bước',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -182,7 +182,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                     Expanded(
                       child: Text(
                         'Khuyến nghị bật xác thực 2 bước để bảo mật tốt hơn',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 12,
                           color: Colors.orange[700],
                         ),
@@ -202,7 +202,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                   ),
                   child: Text(
                     'Thiết lập xác thực 2 bước',
-                    style: GoogleFonts.inter(color: Colors.white),
+                    style: GoogleFonts.quattrocento(color: Colors.white),
                   ),
                 ),
               ),
@@ -227,7 +227,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Tự động khóa',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -257,7 +257,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Thời gian khóa:',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[700]),
+                      style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[700]),
                     ),
                     const Spacer(),
                     GestureDetector(
@@ -270,7 +270,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                         ),
                         child: Text(
                           _autoLockTime,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.quattrocento(
                             fontSize: 12,
                             color: AppColors.primary,
                             fontWeight: FontWeight.w500,
@@ -302,7 +302,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Lịch sử đăng nhập',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -328,7 +328,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                     ),
                     child: Text(
                       'Xem lịch sử',
-                      style: GoogleFonts.inter(color: AppColors.primary),
+                      style: GoogleFonts.quattrocento(color: AppColors.primary),
                     ),
                   ),
                 ),
@@ -342,7 +342,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                     ),
                     child: Text(
                       'Đăng xuất tất cả',
-                      style: GoogleFonts.inter(color: Colors.white),
+                      style: GoogleFonts.quattrocento(color: Colors.white),
                     ),
                   ),
                 ),
@@ -368,7 +368,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Mật khẩu & Khóa',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -415,7 +415,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Quyền riêng tư',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -468,7 +468,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -476,7 +476,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
               ),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 12,
                   color: Colors.grey[600],
                 ),
@@ -518,7 +518,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: isDestructive ? Colors.red : Colors.black87,
@@ -526,7 +526,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
@@ -550,7 +550,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
       children: [
         Text(
           '$label:',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 12,
             color: Colors.grey[600],
           ),
@@ -558,7 +558,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
         const SizedBox(width: 8),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -581,7 +581,7 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
           children: [
             Text(
               'Thời gian tự động khóa',
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+              style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
             ...['1 phút', '5 phút', '15 phút', '30 phút', '1 giờ']

@@ -102,7 +102,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             const SizedBox(width: 8),
             Text(
               'Riêng tư',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 color: Colors.black,
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
@@ -151,7 +151,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         children: [
                           Text(
                             'TIÊU ĐỀ',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.quattrocento(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
@@ -159,7 +159,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           ),
                           Text(
                             '25 Nov 2025 - 27 Nov 2025',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.quattrocento(
                               fontSize: 14,
                               color: Colors.grey.shade600,
                             ),
@@ -180,7 +180,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             color: Colors.grey.shade200,
             child: Text(
               'TUESDAY, 25 NOVEMBER 2025',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade700,
@@ -207,7 +207,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     child: Text(
                       'WEDNESDAY, 26 NOVEMBER 2025',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
@@ -246,7 +246,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             child: hasTime
                 ? Text(
                     activity['time'],
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
@@ -281,7 +281,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               children: [
                 Text(
                   activity['title'],
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -290,7 +290,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   activity['subtitle'],
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     color: Colors.grey.shade600,
                     height: 1.4,
@@ -379,7 +379,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Cancel',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     color: AppColors.primary,
                     fontSize: 16,
                   ),
@@ -387,7 +387,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               ),
               Text(
                 'Add a Plan',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -404,7 +404,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'PREVIOUSLY USED',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -424,7 +424,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'MOST POPULAR',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -445,7 +445,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'MORE',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -477,7 +477,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.quattrocento(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: Colors.black,

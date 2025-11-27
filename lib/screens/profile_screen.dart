@@ -49,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: Text(
           'Trang cá nhân',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -148,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             Text(
               _nameController.text,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
@@ -157,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 4),
             Text(
               _emailController.text,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 14,
                 color: Colors.grey[600],
               ),
@@ -176,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 4),
                   Text(
                     'Tài khoản đã xác thực',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 12,
                       color: Colors.green[700],
                       fontWeight: FontWeight.w500,
@@ -202,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Center(
         child: Text(
           _nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : 'N',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 40,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -226,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Thông tin cá nhân',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -260,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Thông tin liên hệ',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -294,7 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Sở thích du lịch',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -327,7 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Thống kê du lịch',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -363,7 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -393,7 +393,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
-          style: GoogleFonts.inter(fontSize: 14),
+          style: GoogleFonts.quattrocento(fontSize: 14),
         ),
       ],
     );
@@ -405,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           'Giới tính',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -425,7 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Icon(Icons.person_outline, size: 18, color: Colors.grey[500]),
                 const SizedBox(width: 12),
-                Text(_gender, style: GoogleFonts.inter(fontSize: 14)),
+                Text(_gender, style: GoogleFonts.quattrocento(fontSize: 14)),
                 const Spacer(),
                 if (_isEditing) Icon(Icons.arrow_drop_down, color: Colors.grey[400]),
               ],
@@ -442,7 +442,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           'Ngày sinh',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -464,7 +464,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Text(
                   '${_birthDate.day}/${_birthDate.month}/${_birthDate.year}',
-                  style: GoogleFonts.inter(fontSize: 14),
+                  style: GoogleFonts.quattrocento(fontSize: 14),
                 ),
                 const Spacer(),
                 if (_isEditing) Icon(Icons.arrow_drop_down, color: Colors.grey[400]),
@@ -489,14 +489,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 12,
                     color: Colors.grey[600],
                   ),
                 ),
                 Text(
                   value,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
@@ -523,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -531,7 +531,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 10,
               color: Colors.grey[600],
             ),
@@ -568,7 +568,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               'Thay đổi ảnh đại diện',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -609,7 +609,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               'Chọn giới tính',
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+              style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
             ...['Nam', 'Nữ', 'Khác']
