@@ -11,6 +11,7 @@ import 'general_info_screen.dart';
 import 'analysis_screen.dart';
 import 'security_login_screen.dart';
 import 'profile_screen.dart';
+import 'travel_stats_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -113,8 +114,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                   const SizedBox(height: 12),
 
-                  // Expense Management Card
-                  _buildExpenseCard(),
+                  // Travel Statistics Card
+                  _buildTravelStatsCard(),
 
                   const SizedBox(height: 12),
 
@@ -172,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       const SizedBox(width: 4),
                       Text(
                         'Đổi ảnh nền',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 12,
                           color: Colors.grey[600],
                         ),
@@ -240,7 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             _displayName,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 24,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -279,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(width: 6),
                     Text(
                       'Trang cá nhân',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 12,
                         color: Colors.grey[700],
                       ),
@@ -375,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 Text(
                   _displayName,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -433,7 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       child: Center(
         child: Text(
           _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'N',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: size * 0.4,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -532,7 +533,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: Center(
                       child: Text(
                         badge,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -547,7 +548,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 10,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -570,7 +571,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           Text(
             'Tiện ích',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -610,10 +611,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Row(
                       children: [
                         _buildRectangularUtilityItem(
-                          Icons.account_balance_wallet,
-                          'Quản lý chi tiêu',
+                          Icons.analytics,
+                          'Thống kê du lịch',
                           const Color(0xFF00BCD4), // Cyan
-                          () => _onExpenseManagement(),
+                          () => _onTravelStats(),
                         ),
                         const SizedBox(width: 8),
                         _buildRectangularUtilityItem(
@@ -679,7 +680,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Flexible(
               child: Text(
                 label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 10, // Slightly smaller font
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -696,161 +697,157 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Expense Management Card
-  Widget _buildExpenseCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // Header Row
-          Row(
-            children: [
-              Icon(Icons.account_balance_wallet, size: 20, color: Colors.blue),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Quản lý chi tiêu',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Text(
-                      'Tháng này',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+  /// Travel Statistics Card
+  Widget _buildTravelStatsCard() {
+    return GestureDetector(
+      onTap: () => _onTravelStats(),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.08),
+              spreadRadius: 1,
+              blurRadius: 6,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
+              children: [
+                Text(
+                  'Travel Stats',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
                 ),
+                const Spacer(),
+                Text(
+                  'Show All',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 14,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Total Trips Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 18),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // Expense Summary Cards
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.06),
-                        spreadRadius: 1,
-                        blurRadius: 4,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Trips',
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '0',
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Simple timeline
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Years
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Tổng chi',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
+                        '2023',
+                        style: GoogleFonts.quattrocento(
+                          fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
-                        '113.045đ',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
+                        '2024',
+                        style: GoogleFonts.quattrocento(
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.arrow_downward,
-                            size: 10,
-                            color: Colors.green,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '389.955đ',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              color: Colors.green,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
                       Text(
-                        'Cùng kỳ tháng trước',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          color: Colors.grey[500],
+                        '2025',
+                        style: GoogleFonts.quattrocento(
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3CD),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.06),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Xem biến động thu chi',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: Colors.orange[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '100% Nhận xu',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.orange[800],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '1 lần/SĐT',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          color: Colors.orange[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -920,7 +917,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -946,7 +943,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Expanded(
               child: Text(
                 'Ngôn ngữ',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -964,7 +961,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 children: [
                   Text(
                     'EN',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 12,
                       color: Colors.white,
                       fontWeight: FontWeight.w500,
@@ -973,7 +970,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(width: 4),
                   Text(
                     _currentLanguage,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 12,
                       color: Colors.white,
                       fontWeight: FontWeight.w500,
@@ -1023,7 +1020,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: Text(
                     'Đăng xuất',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -1042,7 +1039,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: Text(
                     'Đổi tài khoản',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.quattrocento(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -1065,8 +1062,15 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  void _onTravelStats() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TravelStatsScreen()),
+    );
+  }
+
   void _onPaymentSettings() {
-    _showMessage('Mở cài đặt thanh toán...');
+    // Payment settings functionality
   }
 
   void _onSecuritySettings() {
@@ -1106,23 +1110,23 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   // New utility handlers
   void _onCreditScore() {
-    _showMessage('Mở điểm tín cậy...');
+    // Credit score functionality
   }
 
   void _onPaymentHistory() {
-    _showMessage('Mở lịch sử thanh toán...');
+    // Payment history functionality  
   }
 
   void _onGiftCard() {
-    _showMessage('Mở quà tặng...');
+    // Gift card functionality
   }
 
   void _onMoreGifts() {
-    _showMessage('Mở thêm quà tặng...');
+    // More gifts functionality
   }
 
   void _onFinancialCenter() {
-    _showMessage('Trung tâm tài chính đang được phát triển...');
+    // Financial center functionality
   }
 
   void _onChangeBackground() {
@@ -1138,7 +1142,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           children: [
             Text(
               'Chọn ảnh nền',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1149,7 +1153,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               title: const Text('Chụp ảnh mới'),
               onTap: () {
                 Navigator.pop(context);
-                _showMessage('Đang mở camera...');
+                // Camera functionality
               },
             ),
             ListTile(
@@ -1157,7 +1161,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               title: const Text('Chọn từ thư viện'),
               onTap: () {
                 Navigator.pop(context);
-                _showMessage('Đang mở thư viện ảnh...');
+                // Photo library functionality
               },
             ),
           ],
@@ -1173,30 +1177,30 @@ class _SettingsScreenState extends State<SettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đổi tài khoản',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Bạn có muốn đăng nhập bằng tài khoản khác?',
-          style: GoogleFonts.inter(),
+          style: GoogleFonts.quattrocento(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: GoogleFonts.inter(color: Colors.grey[600]),
+              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _showMessage('Đang chuyển tài khoản...');
+              // Account switching functionality
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7B61FF),
               foregroundColor: Colors.white,
             ),
-            child: Text('Đồng ý', style: GoogleFonts.inter()),
+            child: Text('Đồng ý', style: GoogleFonts.quattrocento()),
           ),
         ],
       ),
@@ -1216,7 +1220,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           children: [
             Text(
               'Chọn ngôn ngữ',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1233,7 +1237,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _currentLanguage = 'EN';
                 });
                 Navigator.pop(context);
-                _showMessage('Đã chuyển sang tiếng Anh');
               },
             ),
             ListTile(
@@ -1247,7 +1250,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _currentLanguage = 'VI';
                 });
                 Navigator.pop(context);
-                _showMessage('Đã chuyển sang tiếng Việt');
               },
             ),
           ],
@@ -1263,18 +1265,18 @@ class _SettingsScreenState extends State<SettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đăng xuất',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
-          style: GoogleFonts.inter(),
+          style: GoogleFonts.quattrocento(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: GoogleFonts.inter(color: Colors.grey[600]),
+              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
             ),
           ),
           ElevatedButton(
@@ -1306,7 +1308,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Đăng xuất', style: GoogleFonts.inter()),
+            child: Text('Đăng xuất', style: GoogleFonts.quattrocento()),
           ),
         ],
       ),
@@ -1314,14 +1316,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
-        backgroundColor: const Color(0xFF2E7D32),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    // Message display functionality
   }
 }

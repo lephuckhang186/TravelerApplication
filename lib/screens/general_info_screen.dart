@@ -18,7 +18,7 @@ class GeneralInfoScreen extends StatelessWidget {
         ),
         title: Text(
           'Thông tin chung',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -67,7 +67,7 @@ class GeneralInfoScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Travel Planner',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
@@ -75,7 +75,7 @@ class GeneralInfoScreen extends StatelessWidget {
                       ),
                       Text(
                         'Ứng dụng lập kế hoạch du lịch thông minh',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -88,7 +88,7 @@ class GeneralInfoScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Travel Planner là ứng dụng giúp bạn khám phá, lên kế hoạch và quản lý chuyến du lịch một cách dễ dàng và thông minh. Với sự hỗ trợ của AI, chúng tôi mang đến trải nghiệm du lịch tuyệt vời nhất cho bạn.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 14,
                 color: Colors.grey[700],
                 height: 1.6,
@@ -133,7 +133,7 @@ class GeneralInfoScreen extends StatelessWidget {
           children: [
             Text(
               'Tính năng chính',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -164,7 +164,7 @@ class GeneralInfoScreen extends StatelessWidget {
                       children: [
                         Text(
                           feature['title'] as String,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.quattrocento(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
@@ -172,7 +172,7 @@ class GeneralInfoScreen extends StatelessWidget {
                         ),
                         Text(
                           feature['description'] as String,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.quattrocento(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
@@ -203,7 +203,7 @@ class GeneralInfoScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Bảo mật & Quyền riêng tư',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -227,7 +227,7 @@ class GeneralInfoScreen extends StatelessWidget {
                     ),
                     child: Text(
                       'Điều khoản',
-                      style: GoogleFonts.inter(color: AppColors.primary, fontSize: 12),
+                      style: GoogleFonts.quattrocento(color: AppColors.primary, fontSize: 12),
                     ),
                   ),
                 ),
@@ -241,7 +241,7 @@ class GeneralInfoScreen extends StatelessWidget {
                     ),
                     child: Text(
                       'Bảo mật',
-                      style: GoogleFonts.inter(color: AppColors.primary, fontSize: 12),
+                      style: GoogleFonts.quattrocento(color: AppColors.primary, fontSize: 12),
                     ),
                   ),
                 ),
@@ -267,7 +267,7 @@ class GeneralInfoScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Liên hệ & Hỗ trợ',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -296,7 +296,7 @@ class GeneralInfoScreen extends StatelessWidget {
           children: [
             Text(
               'Thông tin phiên bản',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -319,7 +319,7 @@ class GeneralInfoScreen extends StatelessWidget {
                 ),
                 child: Text(
                   'Kiểm tra cập nhật',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.quattrocento(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -342,17 +342,17 @@ class GeneralInfoScreen extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
           ),
-          Text(': ', style: GoogleFonts.inter(color: Colors.grey[600])),
+          Text(': ', style: GoogleFonts.quattrocento(color: Colors.grey[600])),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 color: Colors.black87,
                 fontWeight: FontWeight.w500,
@@ -375,17 +375,17 @@ class GeneralInfoScreen extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
           ),
-          Text(': ', style: GoogleFonts.inter(color: Colors.grey[600])),
+          Text(': ', style: GoogleFonts.quattrocento(color: Colors.grey[600])),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 12,
                 color: Colors.black87,
                 fontWeight: FontWeight.w500,

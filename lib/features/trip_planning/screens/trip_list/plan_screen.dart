@@ -140,7 +140,7 @@ class _PlanScreenState extends State<PlanScreen>
           children: [
             Text(
               'Hello, $_displayName',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 color: AppColors.textSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -257,7 +257,7 @@ class _PlanScreenState extends State<PlanScreen>
             padding: const EdgeInsets.only(
               left: 16.0,
               right: 16.0,
-              bottom: 16.0,
+              bottom: 90.0,  // Đẩy lên cao hơn tránh Dynamic Island
             ),
             child: Center(
               child: GestureDetector(
@@ -304,7 +304,7 @@ class _PlanScreenState extends State<PlanScreen>
                       const SizedBox(width: 12),
                       Text(
                         'Ask, chat, plan trip with AI...',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
@@ -319,7 +319,7 @@ class _PlanScreenState extends State<PlanScreen>
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(
-          bottom: 80,
+          bottom: 160,  // Đẩy nút + lên cao hơn để tránh Dynamic Island
         ), // Đẩy nút + lên cao hơn để tránh dính chat box
         child: FloatingActionButton(
           onPressed: () => _showCreateTripModal(context),
@@ -403,7 +403,7 @@ class _PlanScreenState extends State<PlanScreen>
                   children: [
                     Text(
                       trip.name,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -412,7 +412,7 @@ class _PlanScreenState extends State<PlanScreen>
                     const SizedBox(height: 4),
                     Text(
                       dateRange,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 14,
                         color: Colors.grey.shade600,
                       ),
@@ -428,7 +428,7 @@ class _PlanScreenState extends State<PlanScreen>
                         const SizedBox(width: 4),
                         Text(
                           status,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.quattrocento(
                             fontSize: 12,
                             color: Colors.grey.shade500,
                           ),
@@ -573,7 +573,7 @@ class _PlanScreenState extends State<PlanScreen>
               const SizedBox(height: 12),
               Text(
                 'Uh oh! There is not anyone yet!',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   color: Colors.grey.shade600,
                   fontSize: 14,
                 ),

@@ -41,7 +41,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.quattrocento(
               color: AppColors.primary,
               fontSize: 16,
             ),
@@ -50,7 +50,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         leadingWidth: 80,
         title: Text(
           'Create Trip',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black,
@@ -62,7 +62,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             onPressed: _canSave() && !_isSaving ? _saveTrip : null,
             child: Text(
               _isSaving ? 'Saving...' : 'Save',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 color: _canSave() && !_isSaving
                     ? AppColors.primary
                     : Colors.grey.shade400,
@@ -141,7 +141,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade700,
@@ -151,14 +151,14 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         TextFormField(
           controller: controller,
           maxLines: maxLines,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 18,
             fontWeight: FontWeight.w500,
             color: Colors.black,
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: GoogleFonts.quattrocento(
               fontSize: 18,
               color: Colors.grey.shade400,
             ),
@@ -189,7 +189,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade700,
@@ -208,7 +208,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             ),
             child: Text(
               _formatDate(date),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,
