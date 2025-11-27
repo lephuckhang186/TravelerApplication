@@ -24,7 +24,6 @@ class _TranslationScreenState extends State<TranslationScreen>
   bool _isLoading = false;
   bool _isListening = false;
   TranslationResult? _currentResult;
-  List<TranslationResult> _history = [];
 
   late AnimationController _swapAnimationController;
   late Animation<double> _swapAnimation;
@@ -70,10 +69,6 @@ class _TranslationScreenState extends State<TranslationScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history, color: Colors.black54),
-            onPressed: _showHistory,
-          ),
-          IconButton(
             icon: const Icon(Icons.info_outline, color: Colors.black54),
             onPressed: _showInfo,
           ),
@@ -89,8 +84,6 @@ class _TranslationScreenState extends State<TranslationScreen>
                   _buildLanguageSelector(),
                   const SizedBox(height: 16),
                   _buildTranslationCard(),
-                  const SizedBox(height: 16),
-                  _buildQuickActions(),
                   if (_currentResult != null) ...[
                     const SizedBox(height: 16),
                     _buildResultCard(),
@@ -431,77 +424,6 @@ class _TranslationScreenState extends State<TranslationScreen>
     );
   }
 
-  Widget _buildQuickActions() {
-    final quickPhrases = [
-      'Xin chào',
-      'Cảm ơn bạn',
-      'Tạm biệt',
-      'Bao nhiêu tiền?',
-      'Tôi không hiểu',
-      'Bạn có thể giúp tôi không?',
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Cụm từ thông dụng',
-            style: GoogleFonts.quattrocento(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: quickPhrases.map((phrase) => 
-              _buildQuickPhraseChip(phrase)
-            ).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickPhraseChip(String phrase) {
-    return GestureDetector(
-      onTap: () {
-        _sourceController.text = phrase;
-        _translateText();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF7B61FF).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
-        ),
-        child: Text(
-          phrase,
-          style: GoogleFonts.quattrocento(
-            fontSize: 12,
-            color: const Color(0xFF7B61FF),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildResultCard() {
     return Container(
@@ -625,7 +547,6 @@ class _TranslationScreenState extends State<TranslationScreen>
       setState(() {
         _currentResult = result;
         _targetController.text = result.translatedText;
-        _history = [result, ..._history.take(19).toList()]; // Keep last 20
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -748,16 +669,6 @@ class _TranslationScreenState extends State<TranslationScreen>
     );
   }
 
-  void _showHistory() {
-    if (_history.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chưa có lịch sử dịch')),
-      );
-      return;
-    }
-    
-    // Show history implementation
-  }
 
   void _showInfo() {
     showDialog(

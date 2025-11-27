@@ -21,9 +21,75 @@ class UserService {
   String? _currentAvatarPath;
   String? _currentEmail;
   String? _currentFullName;
+  String? _currentPhone;
+  String? _currentAddress;
   
   // Get current username
   String get currentUsername => _currentUsername ?? 'User';
+  
+  // Get user profile information
+  Future<String?> getFullName() async {
+    if (_currentFullName != null) return _currentFullName;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('${_keyFullName}_${_currentUsername ?? 'default'}');
+  }
+  
+  Future<String?> getEmail() async {
+    if (_currentEmail != null) return _currentEmail;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('${_keyEmail}_${_currentUsername ?? 'default'}');
+  }
+  
+  Future<String?> getPhone() async {
+    if (_currentPhone != null) return _currentPhone;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('phone_${_currentUsername ?? 'default'}');
+  }
+  
+  Future<String?> getAddress() async {
+    if (_currentAddress != null) return _currentAddress;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('address_${_currentUsername ?? 'default'}');
+  }
+  
+  Future<String?> getAvatarPath() async {
+    if (_currentAvatarPath != null) return _currentAvatarPath;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('${_keyAvatarPath}_${_currentUsername ?? 'default'}');
+  }
+  
+  // Save user profile information
+  Future<void> saveProfile({
+    String? fullName,
+    String? email,
+    String? phone,
+    String? address,
+    String? avatarPath,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userKey = _currentUsername ?? 'default';
+    
+    if (fullName != null) {
+      _currentFullName = fullName;
+      await prefs.setString('${_keyFullName}_$userKey', fullName);
+    }
+    if (email != null) {
+      _currentEmail = email;
+      await prefs.setString('${_keyEmail}_$userKey', email);
+    }
+    if (phone != null) {
+      _currentPhone = phone;
+      await prefs.setString('phone_$userKey', phone);
+    }
+    if (address != null) {
+      _currentAddress = address;
+      await prefs.setString('address_$userKey', address);
+    }
+    if (avatarPath != null) {
+      _currentAvatarPath = avatarPath;
+      await prefs.setString('${_keyAvatarPath}_$userKey', avatarPath);
+    }
+  }
   
   // Initialize service
   Future<void> init() async {

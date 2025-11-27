@@ -23,7 +23,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   bool _isLoading = false;
   double _convertedAmount = 0.0;
   double _exchangeRate = 0.0;
-  List<ConversionResult> _history = [];
   
   late AnimationController _swapAnimationController;
   late Animation<double> _swapAnimation;
@@ -69,10 +68,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history, color: Colors.black54),
-            onPressed: _showHistory,
-          ),
-          IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black54),
             onPressed: _loadExchangeRate,
           ),
@@ -92,13 +87,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                   _buildResultCard(),
                   const SizedBox(height: 16),
                   _buildExchangeRateInfo(),
-                  const SizedBox(height: 16),
-                  _buildQuickAmounts(),
                 ],
               ),
             ),
           ),
-          _buildBottomActions(),
         ],
       ),
     );
@@ -415,147 +407,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     );
   }
 
-  Widget _buildQuickAmounts() {
-    final quickAmounts = [100, 500, 1000, 5000, 10000, 50000];
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Số tiền thông dụng',
-            style: GoogleFonts.quattrocento(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: quickAmounts.map((amount) => 
-              _buildQuickAmountChip(amount)
-            ).toList(),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildQuickAmountChip(int amount) {
-    return GestureDetector(
-      onTap: () {
-        _amountController.text = amount.toString();
-        _convertCurrency();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF7B61FF).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.3)),
-        ),
-        child: Text(
-          '${_fromCurrency.symbol}$amount',
-          style: GoogleFonts.quattrocento(
-            fontSize: 12,
-            color: const Color(0xFF7B61FF),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomActions() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                _amountController.clear();
-                setState(() {
-                  _convertedAmount = 0.0;
-                });
-              },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.grey[300]!),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                'Xóa',
-                style: GoogleFonts.quattrocento(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _convertCurrency,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B61FF),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'Chuyển đổi',
-                      style: GoogleFonts.quattrocento(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _loadExchangeRate() async {
     setState(() {
@@ -607,7 +459,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       setState(() {
         _convertedAmount = result.convertedAmount;
         _exchangeRate = result.exchangeRate;
-        _history = [result, ..._history.take(19).toList()]; // Keep last 20
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -724,13 +575,4 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     );
   }
 
-  void _showHistory() {
-    if (_history.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chưa có lịch sử chuyển đổi')),
-      );
-      return;
-    }
-    // Show history implementation
-  }
 }
