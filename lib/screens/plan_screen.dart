@@ -70,7 +70,7 @@ class _PlanScreenState extends State<PlanScreen>
           children: [
             Text(
               'Hello, $_displayName',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 color: AppColors.textSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -202,7 +202,7 @@ class _PlanScreenState extends State<PlanScreen>
                       const SizedBox(width: 12),
                       Text(
                         'Ask, chat, plan trip with AI...',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
@@ -270,7 +270,7 @@ class _PlanScreenState extends State<PlanScreen>
                   children: [
                     Text(
                       trip['name'],
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -279,7 +279,7 @@ class _PlanScreenState extends State<PlanScreen>
                     const SizedBox(height: 4),
                     Text(
                       trip['date'],
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 14,
                         color: Colors.grey.shade600,
                       ),
@@ -295,7 +295,7 @@ class _PlanScreenState extends State<PlanScreen>
                         const SizedBox(width: 4),
                         Text(
                           trip['status'],
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.quattrocento(
                             fontSize: 12,
                             color: Colors.grey.shade500,
                           ),
@@ -412,7 +412,7 @@ class _PlanScreenState extends State<PlanScreen>
               const SizedBox(height: 12),
               Text(
                 'Uh oh! There is not anyone yet!',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   color: Colors.grey.shade600,
                   fontSize: 14,
                 ),

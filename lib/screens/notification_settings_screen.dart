@@ -33,7 +33,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         ),
         title: Text(
           'Cài đặt thông báo',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -114,7 +114,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.quattrocento(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
@@ -156,7 +156,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
@@ -165,7 +165,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 12,
                           color: Colors.grey[600],
                         ),
@@ -203,7 +203,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           const SizedBox(width: 8),
           Text(
             'Nhắc nhở trước:',
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[700]),
+            style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[700]),
           ),
           const Spacer(),
           GestureDetector(
@@ -216,7 +216,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               ),
               child: Text(
                 _reminderTime,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 12,
                   color: AppColors.primary,
                   fontWeight: FontWeight.w500,
@@ -242,7 +242,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           const SizedBox(width: 8),
           Text(
             'Cảnh báo khi chi tiêu vượt:',
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[700]),
+            style: GoogleFonts.quattrocento(fontSize: 12, color: Colors.grey[700]),
           ),
           const Spacer(),
           GestureDetector(
@@ -255,7 +255,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               ),
               child: Text(
                 _expenseLimit,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.quattrocento(
                   fontSize: 12,
                   color: Colors.orange,
                   fontWeight: FontWeight.w500,
@@ -281,7 +281,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             ),
             child: Text(
               'Bật tất cả',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
               ),
@@ -299,7 +299,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             ),
             child: Text(
               'Tắt tất cả',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 color: Colors.grey[700],
                 fontWeight: FontWeight.w500,
               ),
@@ -323,7 +323,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           children: [
             Text(
               'Nhắc nhở trước chuyến đi',
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+              style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
             ...['1 giờ trước', '6 giờ trước', '1 ngày trước', '3 ngày trước', '1 tuần trước']
@@ -354,7 +354,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           children: [
             Text(
               'Ngưỡng cảnh báo chi tiêu',
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+              style: GoogleFonts.quattrocento(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
             ...['200,000đ', '500,000đ', '1,000,000đ', '2,000,000đ', '5,000,000đ']
