@@ -844,7 +844,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     setState(() {
       _currentViewIndex = index;
     });
-    _showMessage(index == 0 ? 'Switched to Activities' : 'Switched to Statistics');
   }
 
   void _onCategoryTabChanged(int index) {
@@ -873,35 +872,27 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   }
 
   void _onFilterTap() {
-    _showMessage('Opening filters...');
+    // Filter functionality
   }
 
   void _onGridTap() {
-    _showMessage('Opening grid view...');
+    // Grid view functionality
   }
 
   void _onDayTap(int day) {
-    _showMessage('Selected day $day');
+    // Day selection functionality
   }
 
   void _onExpenseTap(String title) {
-    _showMessage('Opening expense: $title');
+    // Expense detail functionality
   }
 
   void _onCategoryTap(String category) {
-    _showMessage('Selected category: $category');
+    // Category detail functionality
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF7B61FF),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    // Message display functionality
   }
 }
 

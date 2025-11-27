@@ -1070,7 +1070,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _onPaymentSettings() {
-    _showMessage('Mở cài đặt thanh toán...');
+    // Payment settings functionality
   }
 
   void _onSecuritySettings() {
@@ -1110,23 +1110,23 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   // New utility handlers
   void _onCreditScore() {
-    _showMessage('Mở điểm tín cậy...');
+    // Credit score functionality
   }
 
   void _onPaymentHistory() {
-    _showMessage('Mở lịch sử thanh toán...');
+    // Payment history functionality  
   }
 
   void _onGiftCard() {
-    _showMessage('Mở quà tặng...');
+    // Gift card functionality
   }
 
   void _onMoreGifts() {
-    _showMessage('Mở thêm quà tặng...');
+    // More gifts functionality
   }
 
   void _onFinancialCenter() {
-    _showMessage('Trung tâm tài chính đang được phát triển...');
+    // Financial center functionality
   }
 
   void _onChangeBackground() {
@@ -1153,7 +1153,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               title: const Text('Chụp ảnh mới'),
               onTap: () {
                 Navigator.pop(context);
-                _showMessage('Đang mở camera...');
+                // Camera functionality
               },
             ),
             ListTile(
@@ -1161,7 +1161,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               title: const Text('Chọn từ thư viện'),
               onTap: () {
                 Navigator.pop(context);
-                _showMessage('Đang mở thư viện ảnh...');
+                // Photo library functionality
               },
             ),
           ],
@@ -1194,7 +1194,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _showMessage('Đang chuyển tài khoản...');
+              // Account switching functionality
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7B61FF),
@@ -1237,7 +1237,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _currentLanguage = 'EN';
                 });
                 Navigator.pop(context);
-                _showMessage('Đã chuyển sang tiếng Anh');
               },
             ),
             ListTile(
@@ -1251,7 +1250,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _currentLanguage = 'VI';
                 });
                 Navigator.pop(context);
-                _showMessage('Đã chuyển sang tiếng Việt');
               },
             ),
           ],
@@ -1318,14 +1316,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: GoogleFonts.quattrocento(color: Colors.white)),
-        backgroundColor: const Color(0xFF2E7D32),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    // Message display functionality
   }
 }
