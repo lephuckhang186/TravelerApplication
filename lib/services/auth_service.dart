@@ -17,7 +17,7 @@ class AuthService {
   final Dio _dio = Dio();
 
   // Backend URLs
-  static const String _baseUrl = 'http://localhost:8000'; // travelpro-backend
+  static const String _baseUrl = 'http://localhost:8000/api/v1'; // travelpro-backend
   static const String _travelAgentUrl = 'http://localhost:8001'; // travel-agent
 
   User? get currentUser => _auth.currentUser;

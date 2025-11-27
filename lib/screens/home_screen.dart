@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'settings_screen.dart';
-import 'plan_screen.dart';
+import '../features/trip_planning/screens/trip_list/plan_screen.dart';
 import '../features/expense_management/analysis_screen.dart';
 import '../core/theme/app_theme.dart';
 

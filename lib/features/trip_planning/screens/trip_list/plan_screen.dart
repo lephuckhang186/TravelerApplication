@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../core/theme/app_theme.dart';
-import '../services/user_service.dart';
-import '../widgets/ai_assistant_panel.dart';
-import 'create_planner_screen.dart';
-import 'planner_detail_screen.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../services/user_service.dart';
+import '../../../../widgets/ai_assistant_panel.dart';
+import '../trip_editor/create_planner_screen.dart';
+import '../trip_editor/planner_detail_screen.dart';
+import '../../models/trip_model.dart';
+import '../../services/trip_planning_service.dart';
+import '../../services/trip_storage_service.dart';
+import '../../providers/trip_planning_provider.dart';
 
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key});
@@ -16,22 +21,29 @@ class PlanScreen extends StatefulWidget {
 class _PlanScreenState extends State<PlanScreen>
     with AutomaticKeepAliveClientMixin {
   String _displayName = 'User';
-  List<Map<String, dynamic>> _trips = [
-    {
-      'name': 'Da Nang Trip',
-      'date': 'Tue, 25 Nov (1 day)',
-      'status': 'Ends today',
-      'image': 'images/danang.jpg',
-      'destination': 'Da Nang',
-    },
-    {
-      'name': 'Ho Chi Minh City Trip',
-      'date': 'Mon, 2 Dec (3 days)',
-      'status': 'Upcoming',
-      'image': 'images/hcmc_skyline.jpg',
-      'destination': 'Ho Chi Minh City',
-    },
-  ];
+  final List<TripModel> _trips = [];
+  bool _isLoading = false;
+  final TripPlanningService _tripService = TripPlanningService();
+  final TripStorageService _storageService = TripStorageService();
+  
+  // Add missing search variables
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  List<TripModel> get _visibleTrips {
+    if (_searchQuery.isEmpty) {
+      return _trips;
+    }
+    final query = _searchQuery.toLowerCase();
+    return _trips.where((trip) {
+      final nameMatch = trip.name.toLowerCase().contains(query);
+      final destinationMatch =
+          trip.destination.toLowerCase().contains(query);
+      final descriptionMatch =
+          (trip.description ?? '').toLowerCase().contains(query);
+      return nameMatch || destinationMatch || descriptionMatch;
+    }).toList();
+  }
 
   @override
   bool get wantKeepAlive => false;
@@ -40,6 +52,13 @@ class _PlanScreenState extends State<PlanScreen>
   void initState() {
     super.initState();
     _loadUserData();
+    _loadTrips();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _loadUserData() async {
@@ -52,6 +71,41 @@ class _PlanScreenState extends State<PlanScreen>
           ? profile['fullName']!
           : username;
     });
+  }
+
+  void _loadTrips() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final cachedTrips = await _storageService.loadTrips();
+      if (mounted && cachedTrips.isNotEmpty) {
+        setState(() {
+          _trips
+            ..clear()
+            ..addAll(cachedTrips);
+        });
+      }
+
+      final remoteTrips = await _tripService.getTrips();
+      await _storageService.saveTrips(remoteTrips);
+      if (mounted) {
+        setState(() {
+          _trips
+            ..clear()
+            ..addAll(remoteTrips);
+        });
+      }
+    } catch (e) {
+      // Preserve whatever list we currently have and surface no UI error
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -97,7 +151,11 @@ class _PlanScreenState extends State<PlanScreen>
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
-                ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
                 child: const Icon(Icons.more_horiz, color: Colors.white),
               ),
               onPressed: () => _showOptionsMenu(context),
@@ -116,6 +174,12 @@ class _PlanScreenState extends State<PlanScreen>
                 borderRadius: BorderRadius.circular(16),
               ),
               child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
                 decoration: InputDecoration(
                   hintText: 'Places, dates, travel plans...',
                   hintStyle: TextStyle(
@@ -123,6 +187,17 @@ class _PlanScreenState extends State<PlanScreen>
                     fontSize: 16,
                   ),
                   prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear, color: Colors.grey.shade600),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -137,13 +212,27 @@ class _PlanScreenState extends State<PlanScreen>
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ListView.builder(
-                itemCount: _trips.length,
-                itemBuilder: (context, index) {
-                  final trip = _trips[index];
-                  return _buildTripCard(trip, index);
-                },
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _visibleTrips.isEmpty
+                      ? Center(
+                          child: Text(
+                            _searchQuery.isEmpty
+                                ? 'No trips yet. Create your first trip!'
+                                : 'No trips match “$_searchQuery”.',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _visibleTrips.length,
+                          itemBuilder: (context, index) {
+                            final trip = _visibleTrips[index];
+                            return _buildTripCard(trip, index);
+                          },
+                        ),
             ),
           ),
 
@@ -165,7 +254,7 @@ class _PlanScreenState extends State<PlanScreen>
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     builder: (BuildContext context) {
-                      return Container(
+                      return SizedBox(
                         height: MediaQuery.of(context).size.height * 0.9,
                         child: AiAssistantPanel(
                           onClose: () => Navigator.of(context).pop(),
@@ -228,7 +317,21 @@ class _PlanScreenState extends State<PlanScreen>
     );
   }
 
-  Widget _buildTripCard(Map<String, dynamic> trip, int index) {
+  Widget _buildTripCard(TripModel trip, int index) {
+    // Calculate status based on dates
+    String status;
+    final now = DateTime.now();
+    if (trip.startDate.isAfter(now)) {
+      status = 'Upcoming';
+    } else if (trip.endDate.isBefore(now)) {
+      status = 'Completed';
+    } else {
+      status = 'Ongoing';
+    }
+
+    // Format date range
+    final dateRange = '${trip.startDate.day}/${trip.startDate.month}/${trip.startDate.year} - ${trip.endDate.day}/${trip.endDate.month}/${trip.endDate.year}';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -236,7 +339,7 @@ class _PlanScreenState extends State<PlanScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -255,11 +358,28 @@ class _PlanScreenState extends State<PlanScreen>
                 height: 60,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: AssetImage(trip['image']),
-                    fit: BoxFit.cover,
-                  ),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                 ),
+                child: trip.coverImage != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          trip.coverImage!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.travel_explore,
+                              color: AppColors.primary,
+                              size: 30,
+                            );
+                          },
+                        ),
+                      )
+                    : const Icon(
+                        Icons.travel_explore,
+                        color: AppColors.primary,
+                        size: 30,
+                      ),
               ),
               const SizedBox(width: 16),
 
@@ -269,7 +389,7 @@ class _PlanScreenState extends State<PlanScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      trip['name'],
+                      trip.name,
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -278,7 +398,7 @@ class _PlanScreenState extends State<PlanScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      trip['date'],
+                      dateRange,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -294,7 +414,7 @@ class _PlanScreenState extends State<PlanScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          trip['status'],
+                          status,
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             color: Colors.grey.shade500,
@@ -312,23 +432,51 @@ class _PlanScreenState extends State<PlanScreen>
     );
   }
 
-  void _navigateToTripDetail(Map<String, dynamic> trip) {
-    Navigator.push(
+  Future<void> _navigateToTripDetail(TripModel trip) async {
+    // Use Provider if available, otherwise navigate directly
+    try {
+      context.read<TripPlanningProvider>().setCurrentTrip(trip);
+    } catch (e) {
+      // Provider might not be available, continue with navigation
+    }
+    
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PlannerDetailScreen(
-          plannerName: trip['name'],
-          destination: trip['destination'],
+          trip: trip,
         ),
       ),
     );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      _loadTrips();
+    } else if (result is TripModel) {
+      final index = _trips.indexWhere((t) => t.id == result.id);
+      if (index >= 0) {
+        setState(() {
+          _trips[index] = result;
+        });
+        await _storageService.saveTrips(_trips);
+      } else {
+        _loadTrips();
+      }
+    }
   }
 
-  void _showCreateTripModal(BuildContext context) {
-    Navigator.push(
+  void _showCreateTripModal(BuildContext context) async {
+    final result = await Navigator.push<TripModel>(
       context,
       MaterialPageRoute(builder: (context) => const CreatePlannerScreen()),
     );
+    
+    // If a trip was created, refresh the list
+    if (result != null) {
+      await _storageService.saveTrip(result);
+      _loadTrips();
+    }
   }
 
   void _showOptionsMenu(BuildContext context) {
@@ -387,11 +535,11 @@ class _PlanScreenState extends State<PlanScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.group_outlined),
-            const SizedBox(width: 12),
-            const Text('Collaborations'),
+            Icon(Icons.group_outlined),
+            SizedBox(width: 12),
+            Text('Collaborations'),
           ],
         ),
         content: Container(

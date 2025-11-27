@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../models/trip_model.dart';
+import '../../providers/trip_planning_provider.dart';
+import '../../services/trip_planning_service.dart';
+import '../../services/trip_storage_service.dart';
 
 class CreatePlannerScreen extends StatefulWidget {
   const CreatePlannerScreen({super.key});
@@ -15,6 +20,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
   final _descriptionController = TextEditingController();
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -53,11 +59,13 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: _canSave() ? _saveTrip : null,
+            onPressed: _canSave() && !_isSaving ? _saveTrip : null,
             child: Text(
-              'Save',
+              _isSaving ? 'Saving...' : 'Save',
               style: GoogleFonts.inter(
-                color: _canSave() ? AppColors.primary : Colors.grey.shade400,
+                color: _canSave() && !_isSaving
+                    ? AppColors.primary
+                    : Colors.grey.shade400,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -226,7 +234,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
   }
 
   bool _canSave() {
-    return _destinationController.text.isNotEmpty;
+    return _destinationController.text.trim().isNotEmpty;
   }
 
   void _selectStartDate() async {
@@ -287,30 +295,112 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     }
   }
 
-  void _saveTrip() {
-    if (!_canSave()) return;
-    
-    // Create trip logic
-    final tripData = {
-      'name': _tripNameController.text.isNotEmpty 
-          ? _tripNameController.text 
-          : _destinationController.text,
-      'destination': _destinationController.text,
-      'startDate': _startDate,
-      'endDate': _endDate,
-      'description': _descriptionController.text,
-    };
-    
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Trip "${tripData['name']}" created successfully!'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
+  void _saveTrip() async {
+    if (!_canSave() || _isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    final navigator = Navigator.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
     
-    // Navigate back
-    Navigator.pop(context, tripData);
+    try {
+      final tripName = _tripNameController.text.trim().isNotEmpty
+          ? _tripNameController.text.trim()
+          : _destinationController.text.trim();
+
+      TripModel? createdTrip;
+      TripPlanningProvider? provider;
+      try {
+        provider = context.read<TripPlanningProvider>();
+      } catch (_) {
+        provider = null;
+      }
+
+      if (provider != null) {
+        createdTrip = await provider.createTrip(
+          name: tripName,
+          destination: _destinationController.text.trim(),
+          startDate: _startDate,
+          endDate: _endDate,
+          description: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
+              : null,
+        );
+      }
+
+      createdTrip ??= await _createTripFallback(
+        tripName: tripName,
+        destination: _destinationController.text.trim(),
+        description: _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
+            : null,
+      );
+
+      navigator.pop(); // close loading dialog
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Trip "${createdTrip.name}" created successfully!'),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      
+      Navigator.pop(context, createdTrip);
+    } catch (e) {
+      navigator.pop(); // close loading dialog
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create trip: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<TripModel> _createTripFallback({
+    required String tripName,
+    required String destination,
+    String? description,
+  }) async {
+    final trip = TripModel(
+      name: tripName,
+      destination: destination,
+      startDate: _startDate,
+      endDate: _endDate,
+      description: description,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    try {
+      final tripService = TripPlanningService();
+      final createdTrip = await tripService.createTrip(trip);
+      final storageService = TripStorageService();
+      return await storageService.saveTrip(createdTrip);
+    } catch (_) {
+      final storageService = TripStorageService();
+      return await storageService.saveTrip(
+        trip.copyWith(
+          id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        ),
+      );
+    }
   }
 }
