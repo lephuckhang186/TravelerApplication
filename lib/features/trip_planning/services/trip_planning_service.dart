@@ -6,7 +6,15 @@ import '../models/trip_model.dart';
 
 /// Service for handling API calls related to trips and activities
 class TripPlanningService {
-  static const String baseUrl = 'http://localhost:8000/api/v1'; // Match backend API version
+  // Dynamic base URL based on platform
+  static String get baseUrl {
+    // Your computer's actual IP address (based on netstat output showing 172.20.10.4)
+    return 'http://172.20.10.4:8000/api/v1';
+    
+    // Alternative URLs to try if above fails:
+    // Android emulator: 'http://10.0.2.2:8000/api/v1'
+    // iOS Simulator: 'http://localhost:8000/api/v1'
+  }
   
   // Headers for API calls with Firebase authentication
   Future<Map<String, String>> get _headers async {
@@ -41,7 +49,8 @@ class TripPlanningService {
           ? Uri.parse('$baseUrl/activities?trip_id=$tripId')
           : Uri.parse('$baseUrl/activities');
           
-      final response = await http.get(uri, headers: await _headers);
+      final headers = await _headers;
+      final response = await http.get(uri, headers: headers);
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -80,20 +89,28 @@ class TripPlanningService {
   /// Create a new activity
   Future<ActivityModel> createActivity(ActivityModel activity) async {
     try {
+      print('DEBUG: Creating activity with data: ${jsonEncode(activity.toJson())}');
+      
       final headers = await _headers;
+      print('DEBUG: Request headers: $headers');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/activities'),
         headers: headers,
         body: jsonEncode(activity.toJson()),
       );
       
+      print('DEBUG: Create activity response status: ${response.statusCode}');
+      print('DEBUG: Create activity response body: ${response.body}');
+      
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return ActivityModel.fromJson(data);
       } else {
-        throw Exception('Failed to create activity: ${response.statusCode}');
+        throw Exception('Failed to create activity: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('DEBUG: Create activity error: $e');
       throw Exception('Error creating activity: $e');
     }
   }
@@ -470,6 +487,8 @@ class TripPlanningService {
   /// Get all trips
   Future<List<TripModel>> getTrips() async {
     try {
+      print('DEBUG: TripService.getTrips() - Making API call to $baseUrl/activities/trips');
+      
       // Use real endpoint with authentication
       final headers = await _headers;
       final response = await http.get(
@@ -477,9 +496,14 @@ class TripPlanningService {
         headers: headers,
       );
       
+      print('DEBUG: TripService.getTrips() - Response status: ${response.statusCode}');
+      print('DEBUG: TripService.getTrips() - Response body: ${response.body}');
+      
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return data.map((tripJson) {
+        print('DEBUG: TripService.getTrips() - Parsed ${data.length} trips from API');
+        
+        final trips = data.map((tripJson) {
           return TripModel(
             id: tripJson['id'],
             name: tripJson['name'],
@@ -497,10 +521,18 @@ class TripPlanningService {
             updatedAt: DateTime.parse(tripJson['updated_at']),
           );
         }).toList();
+        
+        print('DEBUG: TripService.getTrips() - Returning ${trips.length} trips');
+        for (int i = 0; i < trips.length; i++) {
+          print('DEBUG: Trip ${i + 1}: ${trips[i].name} (${trips[i].id})');
+        }
+        
+        return trips;
       } else {
-        throw Exception('Failed to get trips: ${response.statusCode}');
+        throw Exception('Failed to get trips: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('DEBUG: TripService.getTrips() - Error: $e');
       throw Exception('Error getting trips: $e');
     }
   }

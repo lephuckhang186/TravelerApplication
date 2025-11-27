@@ -31,6 +31,46 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     super.initState();
     _trip = widget.trip;
     _activities = List<ActivityModel>.from(widget.trip.activities);
+    _loadActivitiesFromServer();
+  }
+
+  /// Load activities from server to ensure we have the latest data
+  Future<void> _loadActivitiesFromServer() async {
+    if (_trip.id == null) return;
+    
+    try {
+      final serverActivities = await _tripService.getActivities(tripId: _trip.id);
+      setState(() {
+        // Merge server activities with local ones, prioritizing server data
+        final Map<String, ActivityModel> activityMap = {};
+        
+        // First add local activities
+        for (final activity in _activities) {
+          if (activity.id != null) {
+            activityMap[activity.id!] = activity;
+          }
+        }
+        
+        // Then add/override with server activities
+        for (final activity in serverActivities) {
+          if (activity.id != null) {
+            activityMap[activity.id!] = activity;
+          }
+        }
+        
+        _activities = activityMap.values.toList();
+        // Sort by start date
+        _activities.sort((a, b) {
+          if (a.startDate == null && b.startDate == null) return 0;
+          if (a.startDate == null) return 1;
+          if (b.startDate == null) return -1;
+          return a.startDate!.compareTo(b.startDate!);
+        });
+      });
+    } catch (e) {
+      print('Failed to load activities from server: $e');
+      // Continue with local activities if server fails
+    }
   }
 
   Future<bool> _handleWillPop() async {
@@ -644,17 +684,78 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   Future<void> _addActivity(ActivityModel activity) async {
-    setState(() {
-      _activities.add(activity);
-    });
-    await _persistTripChanges();
+    try {
+      // First, try to create the activity on the server
+      ActivityModel createdActivity;
+      try {
+        createdActivity = await _tripService.createActivity(activity);
+      } catch (e) {
+        print('Failed to create activity on server: $e');
+        // If server fails, continue with local storage only
+        createdActivity = activity;
+      }
+      
+      setState(() {
+        _activities.add(createdActivity);
+      });
+      await _persistTripChanges();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Activity added successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add activity: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _deleteActivity(ActivityModel activity) async {
-    setState(() {
-      _activities.remove(activity);
-    });
-    await _persistTripChanges();
+    try {
+      // Try to delete from server if activity has an ID
+      if (activity.id != null && !activity.id!.startsWith('local_')) {
+        try {
+          await _tripService.deleteActivity(activity.id!);
+        } catch (e) {
+          print('Failed to delete activity from server: $e');
+        }
+      }
+      
+      setState(() {
+        _activities.remove(activity);
+      });
+      await _persistTripChanges();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Activity removed successfully'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove activity: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _persistTripChanges() async {

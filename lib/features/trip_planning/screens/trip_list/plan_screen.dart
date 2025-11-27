@@ -32,10 +32,11 @@ class _PlanScreenState extends State<PlanScreen>
 
   List<TripModel> get _visibleTrips {
     if (_searchQuery.isEmpty) {
+      print('DEBUG: No search query, returning all ${_trips.length} trips');
       return _trips;
     }
     final query = _searchQuery.toLowerCase();
-    return _trips.where((trip) {
+    final filtered = _trips.where((trip) {
       final nameMatch = trip.name.toLowerCase().contains(query);
       final destinationMatch =
           trip.destination.toLowerCase().contains(query);
@@ -43,6 +44,8 @@ class _PlanScreenState extends State<PlanScreen>
           (trip.description ?? '').toLowerCase().contains(query);
       return nameMatch || destinationMatch || descriptionMatch;
     }).toList();
+    print('DEBUG: Search query "$_searchQuery" filtered ${_trips.length} trips to ${filtered.length}');
+    return filtered;
   }
 
   @override
@@ -79,31 +82,44 @@ class _PlanScreenState extends State<PlanScreen>
     });
 
     try {
+      // First load from local storage for immediate display
       final cachedTrips = await _storageService.loadTrips();
+      print('DEBUG: Loaded ${cachedTrips.length} cached trips');
       if (mounted && cachedTrips.isNotEmpty) {
         setState(() {
           _trips
             ..clear()
             ..addAll(cachedTrips);
         });
+        print('DEBUG: Displaying ${_trips.length} cached trips');
       }
 
+      // Then fetch from API to get latest data
       final remoteTrips = await _tripService.getTrips();
-      await _storageService.saveTrips(remoteTrips);
-      if (mounted) {
-        setState(() {
-          _trips
-            ..clear()
-            ..addAll(remoteTrips);
-        });
+      print('DEBUG: Fetched ${remoteTrips.length} trips from API');
+      
+      if (remoteTrips.isNotEmpty) {
+        await _storageService.saveTrips(remoteTrips);
+        if (mounted) {
+          setState(() {
+            _trips
+              ..clear()
+              ..addAll(remoteTrips);
+          });
+          print('DEBUG: Updated UI with ${_trips.length} remote trips');
+        }
+      } else {
+        print('DEBUG: No remote trips received, keeping cached trips');
       }
     } catch (e) {
+      print('DEBUG: Error loading trips: $e');
       // Preserve whatever list we currently have and surface no UI error
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        print('DEBUG: Final trip count: ${_trips.length}');
       }
     }
   }
@@ -151,11 +167,7 @@ class _PlanScreenState extends State<PlanScreen>
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
+                ),
                 child: const Icon(Icons.more_horiz, color: Colors.white),
               ),
               onPressed: () => _showOptionsMenu(context),
@@ -230,14 +242,15 @@ class _PlanScreenState extends State<PlanScreen>
                           itemCount: _visibleTrips.length,
                           itemBuilder: (context, index) {
                             final trip = _visibleTrips[index];
+                            print('DEBUG: Building trip card ${index + 1}: ${trip.name}');
                             return _buildTripCard(trip, index);
                           },
                         ),
             ),
           ),
 
-          // Spacer để đẩy AI chat box xuống dưới
-          const Spacer(),
+          // Fixed height spacer instead of flexible Spacer to ensure ListView gets proper space
+          const SizedBox(height: 20),
 
           // AI Chat Box với góc tròn ở 2 đầu - thu nhỏ chiều rộng
           Padding(

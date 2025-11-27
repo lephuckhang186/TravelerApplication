@@ -25,7 +25,9 @@ class TripPlanningProvider extends ChangeNotifier {
   Future<void> initialize() async {
     _setLoading(true);
     try {
+      // First load from local storage for immediate display
       await _loadTripsFromStorage();
+      // Then sync with API in background
       await _syncWithAPI();
     } catch (e) {
       _setError('Failed to initialize: $e');
@@ -149,11 +151,29 @@ class TripPlanningProvider extends ChangeNotifier {
   Future<void> _syncWithAPI() async {
     try {
       final apiTrips = await _apiService.getTrips();
-      _trips = apiTrips;
+      // Merge API trips with local trips, prioritizing API data
+      final Map<String, TripModel> tripMap = {};
+      
+      // First add local trips
+      for (final trip in _trips) {
+        if (trip.id != null) {
+          tripMap[trip.id!] = trip;
+        }
+      }
+      
+      // Then add/override with API trips
+      for (final trip in apiTrips) {
+        if (trip.id != null) {
+          tripMap[trip.id!] = trip;
+        }
+      }
+      
+      _trips = tripMap.values.toList();
       await _storageService.saveTrips(_trips);
       notifyListeners();
     } catch (e) {
       debugPrint('Failed to sync with API: $e');
+      // Continue with local data if API fails
     }
   }
 
