@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../core/theme/app_theme.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   final String plannerName;
@@ -17,21 +16,20 @@ class PlannerDetailScreen extends StatefulWidget {
 }
 
 class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
+  
   // Sample data theo mẫu design
   final List<Map<String, dynamic>> _activities = [
     {
       'time': '8:00',
       'title': 'SFO - JFK',
-      'subtitle':
-          'Confirmation: DL1234\nTerminal 2, Gate C8, Seat 19B\nArrive: 11:30AM',
+      'subtitle': 'Confirmation: DL1234\nTerminal 2, Gate C8, Seat 19B\nArrive: 11:30AM',
       'icon': Icons.flight_takeoff,
       'color': const Color(0xFF4CAF50),
     },
     {
       'time': '12:00',
       'title': 'Having lunch (Ngũ Phát Lộc)',
-      'subtitle':
-          'Ăn trưa với món bún đậu mắm tôm đặc sản của người dân Hà Nội',
+      'subtitle': 'Ăn trưa với món bún đậu mắm tôm đặc sản của người dân Hà Nội',
       'icon': Icons.restaurant,
       'color': const Color(0xFF2196F3),
     },
@@ -45,40 +43,35 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     {
       'time': '',
       'title': 'Khám phá dao quanh khu phố cổ',
-      'subtitle':
-          'Khám phá các con phố nghề truyền thống (Hàng Mã, Hàng Gai, Hàng Bạc)',
+      'subtitle': 'Khám phá các con phố nghề truyền thống (Hàng Mã, Hàng Gai, Hàng Bạc)',
       'icon': Icons.explore,
       'color': const Color(0xFF9C27B0),
     },
     {
       'time': '',
       'title': 'Cà phê trứng tại Vinh',
-      'subtitle':
-          'Thưởng thức các tách cà phê nóng hổi trong bầu trời chiều Hà Nội',
+      'subtitle': 'Thưởng thức các tách cà phê nóng hổi trong bầu trời chiều Hà Nội',
       'icon': Icons.local_cafe,
       'color': const Color(0xFF795548),
     },
     {
       'time': '17:00',
       'title': 'Having dinner (Đông Xuân)',
-      'subtitle':
-          'Thưởng thức dim thác đường phố tại Chợ đêm Đông Xuân (nếu là cuối tuần) hoặc các quán ăn vặt nổi tiếng như nem chua ran, nem bò khô',
+      'subtitle': 'Thưởng thức dim thác đường phố tại Chợ đêm Đông Xuân (nếu là cuối tuần) hoặc các quán ăn vặt nổi tiếng như nem chua ran, nem bò khô',
       'icon': Icons.dinner_dining,
       'color': const Color(0xFF2196F3),
     },
     {
       'time': '',
       'title': 'Giải trí về đêm',
-      'subtitle':
-          'Xem Múa rối nước tại Nhà hát Múa rối Thăng Long (về không có 100,000 - 150,000 VND/người) để tôi nghiệm nghề thuật truyền thống',
+      'subtitle': 'Xem Múa rối nước tại Nhà hát Múa rối Thăng Long (về không có 100,000 - 150,000 VND/người) để tôi nghiệm nghề thuật truyền thống',
       'icon': Icons.theater_comedy,
       'color': const Color(0xFF9C27B0),
     },
     {
       'time': '21:00',
       'title': 'Trở về khách sạn',
-      'subtitle':
-          'Nghỉ ngơi & khách sạn hoặc đi dao gần khách sạn chuẩn bị cho chuyến đi ngày hôm sau',
+      'subtitle': 'Nghỉ ngơi & khách sạn hoặc đi dao gần khách sạn chuẩn bị cho chuyến đi ngày hôm sau',
       'icon': Icons.hotel,
       'color': const Color(0xFF607D8B),
     },
@@ -87,12 +80,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF40E0D0)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -102,7 +95,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             const SizedBox(width: 8),
             Text(
               'Riêng tư',
-              style: GoogleFonts.quattrocento(
+              style: GoogleFonts.inter(
                 color: Colors.black,
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
@@ -127,7 +120,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           // Header với thông tin trip
           Container(
             padding: const EdgeInsets.all(16),
-            color: AppColors.background,
+            color: Colors.white,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -151,7 +144,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         children: [
                           Text(
                             'TIÊU ĐỀ',
-                            style: GoogleFonts.quattrocento(
+                            style: GoogleFonts.inter(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
@@ -159,7 +152,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           ),
                           Text(
                             '25 Nov 2025 - 27 Nov 2025',
-                            style: GoogleFonts.quattrocento(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               color: Colors.grey.shade600,
                             ),
@@ -172,7 +165,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               ],
             ),
           ),
-
+          
           // Date Header
           Container(
             width: double.infinity,
@@ -180,7 +173,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             color: Colors.grey.shade200,
             child: Text(
               'TUESDAY, 25 NOVEMBER 2025',
-              style: GoogleFonts.quattrocento(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade700,
@@ -188,7 +181,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               ),
             ),
           ),
-
+          
           // Timeline Activities
           Expanded(
             child: ListView.builder(
@@ -207,7 +200,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     child: Text(
                       'WEDNESDAY, 26 NOVEMBER 2025',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.quattrocento(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
@@ -216,7 +209,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     ),
                   );
                 }
-
+                
                 return _buildTimelineItem(_activities[index], index);
               },
             ),
@@ -225,7 +218,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddActivityModal(),
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFF1976D2),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -234,7 +227,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   Widget _buildTimelineItem(Map<String, dynamic> activity, int index) {
     bool hasTime = activity['time'].isNotEmpty;
     bool isLast = index == _activities.length - 1;
-
+    
     return Container(
       margin: const EdgeInsets.only(top: 16),
       child: Row(
@@ -243,18 +236,16 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           // Time Column
           SizedBox(
             width: 60,
-            child: hasTime
-                ? Text(
-                    activity['time'],
-                    style: GoogleFonts.quattrocento(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  )
-                : const SizedBox(),
+            child: hasTime ? Text(
+              activity['time'],
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ) : const SizedBox(),
           ),
-
+          
           // Timeline Line & Icon
           Column(
             children: [
@@ -265,15 +256,22 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   color: activity['color'],
                   shape: BoxShape.circle,
                 ),
-                child: Icon(activity['icon'], color: Colors.white, size: 20),
+                child: Icon(
+                  activity['icon'],
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-              if (!isLast)
-                Container(width: 2, height: 60, color: AppColors.primary),
+              if (!isLast) Container(
+                width: 2,
+                height: 60,
+                color: const Color(0xFF40E0D0),
+              ),
             ],
           ),
-
+          
           const SizedBox(width: 16),
-
+          
           // Content
           Expanded(
             child: Column(
@@ -281,7 +279,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               children: [
                 Text(
                   activity['title'],
-                  style: GoogleFonts.quattrocento(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -290,7 +288,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   activity['subtitle'],
-                  style: GoogleFonts.quattrocento(
+                  style: GoogleFonts.inter(
                     fontSize: 14,
                     color: Colors.grey.shade600,
                     height: 1.4,
@@ -317,42 +315,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Widget _buildAddActivitySheet() {
     final categories = [
-      {
-        'title': 'Restaurant',
-        'icon': Icons.restaurant,
-        'color': const Color(0xFF2196F3),
-      },
-      {
-        'title': 'Activity',
-        'icon': Icons.local_activity,
-        'color': const Color(0xFF2196F3),
-      },
-      {
-        'title': 'Flight',
-        'icon': Icons.flight,
-        'color': const Color(0xFF2196F3),
-      },
-      {
-        'title': 'Lodging',
-        'icon': Icons.hotel,
-        'color': const Color(0xFF2196F3),
-      },
+      {'title': 'Restaurant', 'icon': Icons.restaurant, 'color': const Color(0xFF2196F3)},
+      {'title': 'Activity', 'icon': Icons.local_activity, 'color': const Color(0xFF2196F3)},
+      {'title': 'Flight', 'icon': Icons.flight, 'color': const Color(0xFF2196F3)},
+      {'title': 'Lodging', 'icon': Icons.hotel, 'color': const Color(0xFF2196F3)},
       {'title': 'Tour', 'icon': Icons.tour, 'color': const Color(0xFF2196F3)},
-      {
-        'title': 'Car Rental',
-        'icon': Icons.car_rental,
-        'color': const Color(0xFF2196F3),
-      },
-      {
-        'title': 'Concert',
-        'icon': Icons.music_note,
-        'color': const Color(0xFF2196F3),
-      },
-      {
-        'title': 'Cruise',
-        'icon': Icons.directions_boat,
-        'color': const Color(0xFF2196F3),
-      },
+      {'title': 'Car Rental', 'icon': Icons.car_rental, 'color': const Color(0xFF2196F3)},
+      {'title': 'Concert', 'icon': Icons.music_note, 'color': const Color(0xFF2196F3)},
+      {'title': 'Cruise', 'icon': Icons.directions_boat, 'color': const Color(0xFF2196F3)},
     ];
 
     return Container(
@@ -370,7 +340,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
+          
           // Title
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -379,15 +349,15 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Cancel',
-                  style: GoogleFonts.quattrocento(
-                    color: AppColors.primary,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF1976D2),
                     fontSize: 16,
                   ),
                 ),
               ),
               Text(
                 'Add a Plan',
-                style: GoogleFonts.quattrocento(
+                style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -397,14 +367,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             ],
           ),
           const SizedBox(height: 20),
-
+          
           // Previously Used Section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'PREVIOUSLY USED',
-              style: GoogleFonts.quattrocento(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -412,19 +382,19 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               ),
             ),
           ),
-
+          
           _buildCategoryItem('Restaurant', Icons.restaurant),
           _buildCategoryItem('Activity', Icons.local_activity),
-
+          
           const SizedBox(height: 20),
-
+          
           // Most Popular Section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'MOST POPULAR',
-              style: GoogleFonts.quattrocento(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -432,20 +402,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               ),
             ),
           ),
-
+          
           _buildCategoryItem('Flight', Icons.flight),
           _buildCategoryItem('Lodging', Icons.hotel),
           _buildCategoryItem('Tour', Icons.tour),
-
+          
           const SizedBox(height: 20),
-
+          
           // More Section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'MORE',
-              style: GoogleFonts.quattrocento(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -453,11 +423,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               ),
             ),
           ),
-
+          
           _buildCategoryItem('Car Rental', Icons.car_rental),
           _buildCategoryItem('Concert', Icons.music_note),
           _buildCategoryItem('Cruise', Icons.directions_boat),
-
+          
           const SizedBox(height: 20),
         ],
       ),
@@ -470,14 +440,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         width: 40,
         height: 40,
         decoration: const BoxDecoration(
-          color: AppColors.primary,
+          color: Color(0xFF2196F3),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 20),
       ),
       title: Text(
         title,
-        style: GoogleFonts.quattrocento(
+        style: GoogleFonts.inter(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: Colors.black,
@@ -498,7 +468,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         'title': 'New $type',
         'subtitle': 'Tap to add details...',
         'icon': icon,
-        'color': AppColors.primary,
+        'color': const Color(0xFF2196F3),
       });
     });
   }

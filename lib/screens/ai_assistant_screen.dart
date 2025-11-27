@@ -137,7 +137,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       appBar: AppBar(
         title: Text(
           'AI Travel Assistant',
-          style: TextStyle(fontFamily: 'Quattrocento')),
+          style: TextStyle(fontFamily: 'Urbanist-Regular')),
         elevation: 1,
         backgroundColor: Colors.white),
       drawer: Drawer(
@@ -150,7 +150,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 child: Text(
                   'Chat History',
                   style: TextStyle(
-                    fontFamily: 'Quattrocento',
+                    fontFamily: 'Urbanist-Regular',
                     color: Colors.white,
                     fontSize: 20)))),
             ListTile(
@@ -272,15 +272,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 Text(
                   'Xin chào! 👋',
                   style: TextStyle(
-                    fontFamily: 'Quattrocento',
-                    fontSize: 28,
-                    color: Colors.white)),
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 28,color: Colors.white)),
                 const SizedBox(height: 8),
                 Text(
                   'Tôi là trợ lý AI du lịch của bạn!\nSẵn sàng giúp bạn khám phá Việt Nam 🇻🇳',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: 'Quattrocento',
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     color: Colors.white.withOpacity(0.9),
                     height: 1.5)),
@@ -291,9 +290,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           Text(
             'Bạn muốn hỏi gì? 🤔',
             style: TextStyle(
-              fontFamily: 'Quattrocento',
-              fontSize: 20,
-              color: Colors.grey[700])),
+              fontFamily: 'Urbanist-Regular',
+              fontSize: 20,color: Colors.grey[700])),
 
           const SizedBox(height: 20),
 
@@ -339,9 +337,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         suggestion['text'] as String,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'Quattrocento',
-                          fontSize: 13,
-                          color: Colors.grey[700],
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 13,color: Colors.grey[700],
                           height: 1.3)),
                     ])));
             }),
@@ -351,7 +348,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           Text(
             'Hoặc nhập câu hỏi của bạn bên dưới! ✨',
             style: TextStyle(
-              fontFamily: 'Quattrocento',
+              fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               color: Colors.grey[500],
               fontStyle: FontStyle.italic)),
@@ -371,7 +368,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         child: Text(
           text,
           style: TextStyle(
-            fontFamily: 'Quattrocento',
+            fontFamily: 'Urbanist-Regular',
             color: isUser ? Colors.white : Colors.black87))));
   }
 

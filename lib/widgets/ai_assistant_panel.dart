@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -31,8 +32,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
     super.initState();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
+      vsync: this);
 
     // Check backend status when panel opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -129,9 +129,8 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
           .post(
             Uri.parse(apiUrl),
             headers: {'Content-Type': 'application/json'},
-            body: json.encode(requestBody),
-          )
-          .timeout(const Duration(seconds: 30));
+            body: json.encode(requestBody))
+          .timeout(const Duration(seconds: 300));
 
       // Update backend status
       if (mounted) {
@@ -167,8 +166,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -179,19 +177,14 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               height: 4,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+                borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
 
             Text(
               'Tùy chọn Chat',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
-                fontSize: 18,
-                color: Colors.black87,
-              ),
-            ),
+                fontSize: 18,color: Colors.black87)),
             const SizedBox(height: 20),
 
             // New Chat option
@@ -200,31 +193,25 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                  borderRadius: BorderRadius.circular(8)),
                 child: Icon(
                   Icons.add_comment,
                   color: Colors.blue.shade600,
-                  size: 20,
-                ),
-              ),
+                  size: 20)),
               title: Text(
                 'Chat mới',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 16),
-              ),
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',fontSize: 16)),
               subtitle: Text(
                 'Bắt đầu cuộc trò chuyện mới',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
+                  fontSize: 14)),
               onTap: () {
                 Navigator.pop(context);
                 _newChat();
-              },
-            ),
+              }),
 
             // Chat History option
             ListTile(
@@ -232,37 +219,28 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                  borderRadius: BorderRadius.circular(8)),
                 child: Icon(
                   Icons.history,
                   color: Colors.green.shade600,
-                  size: 20,
-                ),
-              ),
+                  size: 20)),
               title: Text(
                 'Lịch sử chat',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 16),
-              ),
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',fontSize: 16)),
               subtitle: Text(
                 '${_chatHistories.length} cuộc trò chuyện đã lưu',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
+                  fontSize: 14)),
               onTap: () {
                 Navigator.pop(context);
                 _showChatHistory();
-              },
-            ),
+              }),
 
             const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
+          ])));
   }
 
   void _newChat() {
@@ -287,8 +265,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
       backgroundColor: Colors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         padding: const EdgeInsets.all(20),
@@ -299,9 +276,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               height: 4,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+                borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
 
             Row(
@@ -312,12 +287,8 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                   'Lịch sử Chat',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
-                    fontSize: 18,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
+                    fontSize: 18,color: Colors.black87)),
+              ]),
             const SizedBox(height: 20),
 
             if (_chatHistories.isEmpty)
@@ -329,21 +300,15 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                       Icon(
                         Icons.chat_bubble_outline,
                         size: 64,
-                        color: Colors.grey[300],
-                      ),
+                        color: Colors.grey[300]),
                       const SizedBox(height: 16),
                       Text(
                         'Chưa có lịch sử chat',
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 16,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
+                          color: Colors.grey[500])),
+                    ])))
             else
               Expanded(
                 child: ListView.builder(
@@ -366,54 +331,38 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                             '${index + 1}',
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
-                              color: Colors.blue.shade600,
-                            ),
-                          ),
-                        ),
+                              color: Colors.blue.shade600))),
                         title: Text(
                           'Chat ${index + 1}',
-                          style: TextStyle(fontFamily: 'Urbanist-Regular'),
-                        ),
+                          style: TextStyle(
+                fontFamily: 'Urbanist-Regular')),
                         subtitle: Text(
                           preview.isEmpty ? 'Chat trống' : preview,
                           style: TextStyle(
-                            fontFamily: 'Urbanist-Regular',
+                fontFamily: 'Urbanist-Regular',
                             color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
+                            fontSize: 14)),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               '${chatHistory.length}',
                               style: TextStyle(
-                                fontFamily: 'Urbanist-Regular',
+                fontFamily: 'Urbanist-Regular',
                                 color: Colors.grey[500],
-                                fontSize: 12,
-                              ),
-                            ),
+                                fontSize: 12)),
                             const SizedBox(width: 4),
                             Icon(
                               Icons.message,
                               color: Colors.grey[400],
-                              size: 16,
-                            ),
-                          ],
-                        ),
+                              size: 16),
+                          ]),
                         onTap: () {
                           Navigator.pop(context);
                           _loadChatHistory(index);
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
+                        }));
+                  })),
+          ])));
   }
 
   void _loadChatHistory(int index) {
@@ -434,9 +383,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
           color: Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
+            topRight: Radius.circular(20))),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -444,10 +391,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
             Expanded(child: _buildMainContent()),
             if (_isLoading) _buildLoadingIndicator(),
             _buildInputField(),
-          ],
-        ),
-      ),
-    );
+          ])));
   }
 
   Widget _buildMainContent() {
@@ -462,21 +406,17 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
         gradient: LinearGradient(
           colors: [Colors.blue.shade400, Colors.blue.shade600],
           begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+          end: Alignment.bottomRight),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+          topRight: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
             color: Colors.blue.withOpacity(0.2),
             spreadRadius: 1,
             blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+            offset: const Offset(0, 2)),
+        ]),
       child: Row(
         children: [
           Icon(Icons.travel_explore, color: Colors.white, size: 24),
@@ -490,9 +430,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
-                    color: Colors.white,
-                  ),
-                ),
+                    color: Colors.white)),
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -503,23 +441,16 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                         color: _isBackendOnline
                             ? Colors.greenAccent
                             : Colors.redAccent,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                        shape: BoxShape.circle)),
                     const SizedBox(width: 6),
                     Text(
                       _isBackendOnline ? 'Đang hoạt động' : 'Không thể kết nối',
                       style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
+                fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+                        color: Colors.white.withOpacity(0.9))),
+                  ]),
+              ])),
           // Menu button
           GestureDetector(
             onTap: _showMenuOptions,
@@ -527,11 +458,8 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(Icons.menu, size: 20, color: Colors.white),
-            ),
-          ),
+                borderRadius: BorderRadius.circular(20)),
+              child: Icon(Icons.menu, size: 20, color: Colors.white))),
           const SizedBox(width: 8),
           GestureDetector(
             onTap: _close,
@@ -539,14 +467,9 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(Icons.close, size: 20, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
+                borderRadius: BorderRadius.circular(20)),
+              child: const Icon(Icons.close, size: 20, color: Colors.white))),
+        ]));
   }
 
   Widget _buildWelcomeView() {
@@ -599,10 +522,8 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               gradient: LinearGradient(
                 colors: [Colors.blue.shade400, Colors.blue.shade600],
                 begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
+                end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 Icon(Icons.travel_explore, size: 36, color: Colors.white),
@@ -610,35 +531,25 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 Text(
                   'Xin chào! 👋',
                   style: TextStyle(
-                    fontFamily: 'Urbanist-Regular',
-                    fontSize: 20,
-                    color: Colors.white,
-                  ),
-                ),
+                fontFamily: 'Urbanist-Regular',
+                    fontSize: 20,color: Colors.white)),
                 const SizedBox(height: 4),
                 Text(
                   'Tôi là trợ lý AI du lịch của bạn!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: 'Urbanist-Regular',
+                fontFamily: 'Urbanist-Regular',
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                    color: Colors.white.withOpacity(0.9))),
+              ])),
 
           const SizedBox(height: 16),
 
           Text(
             'Bạn muốn hỏi gì? 🤔',
             style: TextStyle(
-              fontFamily: 'Urbanist-Regular',
-              fontSize: 16,
-              color: Colors.grey[700],
-            ),
-          ),
+                fontFamily: 'Urbanist-Regular',
+              fontSize: 16,color: Colors.grey[700])),
 
           const SizedBox(height: 12),
 
@@ -650,8 +561,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               crossAxisCount: 3,
               crossAxisSpacing: 6,
               mainAxisSpacing: 6,
-              childAspectRatio: 2.5,
-            ),
+              childAspectRatio: 2.5),
             itemCount: suggestions.length,
             itemBuilder: (context, index) {
               final suggestion = suggestions[index];
@@ -659,14 +569,12 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 onTap: () {
                   _handleSuggestionTap(
                     suggestion['text'] as String,
-                    suggestion['query'] as String,
-                  );
+                    suggestion['query'] as String);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 6,
-                  ),
+                    vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -676,36 +584,25 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                         color: Colors.grey.withOpacity(0.1),
                         spreadRadius: 1,
                         blurRadius: 3,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
+                        offset: const Offset(0, 1)),
+                    ]),
                   child: Row(
                     children: [
                       Icon(
                         suggestion['icon'] as IconData,
                         size: 16,
-                        color: Colors.blue.shade600,
-                      ),
+                        color: Colors.blue.shade600),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           suggestion['text'] as String,
                           style: TextStyle(
-                            fontFamily: 'Urbanist-Regular',
-                            fontSize: 10,
-                            color: Colors.grey[700],
-                          ),
+                fontFamily: 'Urbanist-Regular',
+                            fontSize: 10,color: Colors.grey[700]),
                           maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+                          overflow: TextOverflow.ellipsis)),
+                    ])));
+            }),
 
           // Show selected suggestion text - BELOW the grid
           if (_selectedSuggestion != null) ...[
@@ -716,8 +613,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
+                border: Border.all(color: Colors.blue.shade200)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -726,29 +622,22 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                       Icon(
                         Icons.chat_bubble_outline,
                         size: 16,
-                        color: Colors.blue.shade600,
-                      ),
+                        color: Colors.blue.shade600),
                       const SizedBox(width: 8),
                       Text(
                         'Câu hỏi của bạn:',
                         style: TextStyle(
-                          fontFamily: 'Urbanist-Regular',
-                          fontSize: 14,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
+                fontFamily: 'Urbanist-Regular',
+                          fontSize: 14,color: Colors.blue.shade700)),
+                    ]),
                   const SizedBox(height: 8),
                   Text(
                     _selectedSuggestion!,
                     style: TextStyle(
-                      fontFamily: 'Urbanist-Regular',
+                fontFamily: 'Urbanist-Regular',
                       fontSize: 14,
                       color: Colors.blue.shade800,
-                      height: 1.4,
-                    ),
-                  ),
+                      height: 1.4)),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -761,9 +650,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                         },
                         child: Text(
                           'Hủy',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ),
+                          style: TextStyle(color: Colors.grey[600]))),
                       ElevatedButton(
                         onPressed: () {
                           _controller.text = _selectedSuggestion!;
@@ -773,20 +660,13 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                           backgroundColor: Colors.blue.shade600,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                            borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
-                            vertical: 10,
-                          ),
-                        ),
-                        child: const Text('Gửi câu hỏi'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                            vertical: 10)),
+                        child: const Text('Gửi câu hỏi')),
+                    ]),
+                ])),
           ],
 
           const SizedBox(height: 20),
@@ -798,9 +678,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.grey[500],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
+                fontStyle: FontStyle.italic)),
 
           // Chat messages section - appears below suggestions
           if (_messages.isNotEmpty) ...[
@@ -812,14 +690,9 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _buildMessageBubble(
                   message['content'] as String,
-                  message['role'] as String,
-                ),
-              ),
-            )),
+                  message['role'] as String)))),
           ],
-        ],
-      ),
-    );
+        ]));
   }
 
   Widget _buildMessageBubble(String text, String role) {
@@ -831,39 +704,31 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
         padding: const EdgeInsets.all(12.0),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.8,
-          minWidth: 80,
-        ),
+          minWidth: 80),
         decoration: BoxDecoration(
           color: isUser ? Colors.blue[600] : Colors.grey[100],
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
             bottomLeft: Radius.circular(isUser ? 16 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 16),
-          ),
+            bottomRight: Radius.circular(isUser ? 4 : 16)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
+              offset: const Offset(0, 1)),
+          ]),
         child: SelectableText(
           text,
           style: TextStyle(
-            fontFamily: 'Urbanist-Regular',
+                fontFamily: 'Urbanist-Regular',
             color: isUser ? Colors.white : Colors.black87,
             fontSize: 14,
-            height: 1.4,
-          ),
+            height: 1.4),
           // Enable text selection and copying
           enableInteractiveSelection: true,
-          textAlign: TextAlign.left,
-        ),
-      ),
-    );
+          textAlign: TextAlign.left)));
   }
 
   Widget _buildLoadingIndicator() {
@@ -874,20 +739,13 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
           const SizedBox(
             width: 20,
             height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+            child: CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(width: 12),
           Text(
             'AI đang suy nghĩ...',
             style: TextStyle(
-              fontFamily: 'Urbanist-Regular',
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
+                fontFamily: 'Urbanist-Regular',color: Colors.grey[600], fontSize: 14)),
+        ]));
   }
 
   Widget _buildInputField() {
@@ -895,8 +753,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-      ),
+        border: Border(top: BorderSide(color: Colors.grey.shade200))),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -910,41 +767,29 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               decoration: InputDecoration(
                 hintText: 'Nhập câu hỏi của bạn...',
                 hintStyle: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  color: Colors.grey[500],
-                ),
+                fontFamily: 'Urbanist-Regular',color: Colors.grey[500]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
+                  borderSide: BorderSide(color: Colors.grey.shade300)),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
+                  borderSide: BorderSide(color: Colors.grey.shade300)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.blue.shade400),
-                ),
+                  borderSide: BorderSide(color: Colors.blue.shade400)),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 12,
-                ),
+                  vertical: 12),
                 filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
+                fillColor: Colors.grey.shade50),
               style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                fontSize: 14,
-                height: 1.4,
-              ),
+                fontFamily: 'Urbanist-Regular',fontSize: 14, height: 1.4),
               onSubmitted: (text) {
                 // Only send if Shift+Enter is not pressed (single line submit)
                 if (!text.contains('\n')) {
                   _sendMessage();
                 }
-              },
-            ),
-          ),
+              })),
           const SizedBox(width: 8),
           GestureDetector(
             onTap: _sendMessage,
@@ -958,15 +803,9 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                     color: Colors.blue.withOpacity(0.3),
                     spreadRadius: 1,
                     blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.send, color: Colors.white, size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
+                    offset: const Offset(0, 1)),
+                ]),
+              child: const Icon(Icons.send, color: Colors.white, size: 20))),
+        ]));
   }
 }
