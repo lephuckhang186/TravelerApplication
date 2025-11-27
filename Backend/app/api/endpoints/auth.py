@@ -8,13 +8,13 @@ from typing import Optional
 import secrets
 import string
 
-from models.user import (
+from app.models.user import (
     User, LoginRequest, LoginResponse, RefreshTokenRequest,
     PasswordResetRequest, EmailVerificationRequest
 )
-from services.firebase_service import firebase_service
-from core.dependencies import get_current_user, get_active_user
-from core.config import get_settings
+from app.services.firebase_service import firebase_service
+from app.core.dependencies import get_current_user, get_active_user
+from app.core.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 settings = get_settings()

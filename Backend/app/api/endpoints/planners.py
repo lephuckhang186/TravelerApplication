@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core import dependencies
 from app.models import planner as planner_model
-from app.services import planner as planner_service
+from app.models.user import User
+from app.services.planner_service import planner as planner_service
 
 router = APIRouter()
 
@@ -16,7 +17,7 @@ def create_planner(
     *,
     db: Session = Depends(dependencies.get_db),
     planner_in: planner_model.PlannerCreate,
-    current_user: planner_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> planner_model.Planner:
     """
     Create new planner.
@@ -32,7 +33,7 @@ def read_planners(
     db: Session = Depends(dependencies.get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: planner_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> List[planner_model.Planner]:
     """
     Retrieve planners.
@@ -48,7 +49,7 @@ def read_planner(
     *,
     db: Session = Depends(dependencies.get_db),
     id: int,
-    current_user: planner_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> planner_model.Planner:
     """
     Get planner by ID.
@@ -67,7 +68,7 @@ def update_planner(
     db: Session = Depends(dependencies.get_db),
     id: int,
     planner_in: planner_model.PlannerUpdate,
-    current_user: planner_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> planner_model.Planner:
     """
     Update a planner.
@@ -86,7 +87,7 @@ def delete_planner(
     *,
     db: Session = Depends(dependencies.get_db),
     id: int,
-    current_user: planner_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> planner_model.Planner:
     """
     Delete a planner.

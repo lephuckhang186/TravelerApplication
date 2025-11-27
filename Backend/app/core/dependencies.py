@@ -7,12 +7,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import sys
 import os
 
-# Add parent directories to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from models.user import User
-from services.firebase_service import firebase_service
-from core.config import get_settings
+from sqlalchemy.orm import Session
+from app.models.user import User
+from app.services.firebase_service import firebase_service
+from app.core.config import get_settings
+from app.database import db_manager
 
 settings = get_settings()
 
@@ -141,3 +140,19 @@ async def get_firebase_user(
     Get Firebase authenticated user (alias for get_current_user)
     """
     return await get_current_user(credentials)
+
+
+def get_db() -> Session:
+    """
+    Database dependency for SQLAlchemy sessions
+    Note: This is a placeholder. In a real app, you'd create a proper SQLAlchemy session.
+    For now, we'll return None as the database operations use Firebase and db_manager.
+    """
+    return None
+
+
+async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Get current active user (alias for get_active_user for compatibility)
+    """
+    return await get_active_user(current_user)

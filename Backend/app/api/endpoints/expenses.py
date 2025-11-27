@@ -6,27 +6,14 @@ from pydantic import BaseModel, Field
 import sys
 import os
 
-# Add parent directories to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-
-try:
-    from services.annalytics_service import (
-        ExpenseManager, Expense, Budget, Trip
-    )
-    from services.activities_management import (
-        ActivityManager, Activity, ActivityType
-    )
-except ImportError:
-    from app.services.annalytics_service import (
-        ExpenseManager, Expense, Budget, Trip
-    )
-try:
-    from core.dependencies import get_current_user
-    from models.user import User
-    
-except ImportError:
-    from app.core.dependencies import get_current_user
-    from app.models.user import User
+from app.services.annalytics_service import (
+    ExpenseManager, Expense, Budget, Trip
+)
+from app.services.activities_management import (
+    ActivityManager, Activity, ActivityType
+)
+from app.core.dependencies import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 
@@ -597,6 +584,44 @@ async def get_category_analytics(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/", response_model=List[ExpenseResponse])
+async def get_expenses(
+    start_date: Optional[date] = Query(None, description="Filter expenses from this date"),
+    end_date: Optional[date] = Query(None, description="Filter expenses until this date"),
+    category: Optional[ActivityType] = Query(None, description="Filter by expense category"),
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's expenses with optional date and category filtering"""
+    try:
+        user_id = current_user.id
+        manager = get_expense_manager(user_id)
+        expenses = manager.get_all_expenses()
+        
+        # Apply filters
+        if start_date:
+            expenses = [e for e in expenses if e.expense_date.date() >= start_date]
+        if end_date:
+            expenses = [e for e in expenses if e.expense_date.date() <= end_date]
+        if category:
+            expenses = [e for e in expenses if e.category == category]
+        
+        return [
+            ExpenseResponse(
+                id=expense.id,
+                amount=expense.amount,
+                category=expense.category,
+                description=expense.description,
+                expense_date=expense.expense_date,
+                created_at=expense.created_at
+            ) for expense in expenses
+        ]
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve expenses: {str(e)}"
+        )
 
 # Health check endpoint
 @router.get("/health")

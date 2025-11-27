@@ -2,6 +2,10 @@ class ApiConfig {
   // Base URL for the backend API
   static const String baseUrl = 'http://localhost:8000/api/v1';
   
+  // Trip planning endpoints
+  static const String activitiesEndpoint = '/activities';
+  static const String tripBudgetSetupEndpoint = '/activities/trip/budget/setup';
+  
   // Expense endpoints
   static const String expensesEndpoint = '/expenses';
   static const String currentTripEndpoint = '/expenses/trip/current';

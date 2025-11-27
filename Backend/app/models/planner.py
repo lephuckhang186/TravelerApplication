@@ -43,6 +43,14 @@ class PlannerCreate(PlannerBase):
     pass
 
 
+class PlannerUpdate(BaseModel):
+    """Planner update model - all fields optional."""
+    name: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+
 class Planner(PlannerBase):
     """Complete planner model with database fields."""
     id: str

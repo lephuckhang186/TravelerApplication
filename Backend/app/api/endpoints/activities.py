@@ -1,6 +1,8 @@
 """
 Activities Management API Endpoints with Integrated Expense Tracking
 """
+from __future__ import annotations
+
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
@@ -8,30 +10,16 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, validator
 
 # Import dependencies and services
-try:
-    from ...core.dependencies import get_current_user
-    from ...services.activities_management import (
-        Activity, ActivityType, ActivityStatus, Priority,
-        Location, Budget, Contact
-    )
-    from ...services.annalytics_service import (
-        IntegratedTravelManager
-    )
-    from ...models.user import User
-except ImportError:
-    # Fallback for direct execution
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    from core.dependencies import get_current_user
-    from services.activities_management import (
-        Activity, ActivityType, ActivityStatus, Priority,
-        Location, Budget, Contact, ActivityManager
-    )
-    from services.annalytics_service import (
-        IntegratedTravelManager
-    )
-    from models.user import User
+from app.core.dependencies import get_current_user
+from app.services.activities_management import (
+    Activity, ActivityType, ActivityStatus, Priority,
+    Location, Budget, Contact, ActivityManager
+)
+from app.services.annalytics_service import (
+    IntegratedTravelManager
+)
+from app.database import db_manager
+from app.models.user import User
 
 # Create router
 router = APIRouter(prefix="/activities", tags=["Activities & Expense Management"])
@@ -120,7 +108,7 @@ class ActivityCreate(BaseModel):
 
 
 class ActivityUpdate(BaseModel):
-    """Activity update model"""
+    """Activity update model with all optional fields for flexibility"""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=2000)
     activity_type: Optional[ActivityType] = None
@@ -136,6 +124,22 @@ class ActivityUpdate(BaseModel):
     tags: Optional[List[str]] = Field(None, max_items=20)
     trip_id: Optional[str] = Field(None, max_length=50)
     check_in: Optional[bool] = None
+
+    @validator('tags')
+    def validate_tags(cls, v):
+        """Validate tags if provided"""
+        if v:
+            for tag in v:
+                if not isinstance(tag, str) or len(tag) > 50:
+                    raise ValueError("Each tag must be a string with max length 50")
+        return v
+
+    @validator('end_date')
+    def validate_dates(cls, v, values):
+        """Validate that end_date is after start_date if both provided"""
+        if v and values.get('start_date') and v <= values['start_date']:
+            raise ValueError("End date must be after start date")
+        return v
 
 
 class ExpenseInfo(BaseModel):
@@ -192,6 +196,71 @@ class ConflictCheckRequest(BaseModel):
     end_date: datetime
     trip_id: Optional[str] = None
     exclude_activity_id: Optional[str] = None
+
+class TripCreate(BaseModel):
+    """Trip creation model"""
+    name: str = Field(..., min_length=1, max_length=200)
+    destination: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
+    start_date: date
+    end_date: date
+    total_budget: Optional[float] = Field(None, gt=0)
+    currency: str = Field(default="VND", max_length=3)
+
+class TripResponse(BaseModel):
+    """Trip response model"""
+    id: str
+    name: str
+    destination: str
+    description: Optional[str]
+    start_date: date
+    end_date: date
+    total_budget: Optional[float]
+    currency: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    created_by: str
+
+
+# ============= HELPER UTILITIES =============
+
+def _ensure_user_record(user: User) -> None:
+    """Ensure the current user exists inside the local SQLite store."""
+    try:
+        if not db_manager.get_user(user.id):
+            full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+            display_name = full_name or user.username or user.email.split("@")[0]
+            db_manager.create_user(
+                user_id=user.id,
+                email=user.email,
+                display_name=display_name,
+                photo_url=user.profile_picture
+            )
+    except Exception as exc:
+        # Surface a clearer error if we cannot sync user data
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to sync user profile: {exc}"
+        ) from exc
+
+
+def _trip_row_to_response(trip_row: Dict[str, Any]) -> TripResponse:
+    """Convert a raw SQLite trip row into API response model."""
+    return TripResponse(
+        id=trip_row["id"],
+        name=trip_row["name"],
+        destination=trip_row["destination"],
+        description=trip_row.get("description"),
+        start_date=date.fromisoformat(trip_row["start_date"]),
+        end_date=date.fromisoformat(trip_row["end_date"]),
+        total_budget=trip_row.get("total_budget"),
+        currency=trip_row.get("currency", "VND"),
+        is_active=bool(trip_row.get("is_active", True)),
+        created_at=datetime.fromisoformat(trip_row["created_at"]),
+        updated_at=datetime.fromisoformat(trip_row["updated_at"]),
+        created_by=trip_row["user_id"]
+    )
 
 class TripBudgetSetup(BaseModel):
     """Trip budget setup request"""
@@ -286,6 +355,12 @@ async def create_activity(
 ):
     """Create a new activity with automatic expense tracking"""
     try:
+        # Validate required fields
+        if not activity_data.title or activity_data.title.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Activity title is required"
+            )
         # Extract budget info
         estimated_cost = None
         actual_cost = None
@@ -410,6 +485,127 @@ async def get_activities(
             detail=f"Failed to get activities: {str(e)}"
         )
 
+
+# ============= TRIP MANAGEMENT ENDPOINTS =============
+
+
+@router.post("/trips", response_model=TripResponse, status_code=status.HTTP_201_CREATED)
+async def create_trip(
+    trip_data: TripCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new trip with real data storage"""
+    try:
+        _ensure_user_record(current_user)
+
+        # Create trip data for storage
+        trip_data_dict = {
+            "name": trip_data.name,
+            "destination": trip_data.destination,
+            "description": trip_data.description,
+            "start_date": trip_data.start_date.isoformat(),
+            "end_date": trip_data.end_date.isoformat(),
+            "total_budget": trip_data.total_budget,
+            "currency": trip_data.currency,
+        }
+        
+        # Store trip in database
+        stored_trip = db_manager.create_trip(current_user.id, trip_data_dict)
+        
+        # Setup budget if provided
+        if trip_data.total_budget:
+            travel_manager.setup_trip_with_budget(
+                start_date=trip_data.start_date,
+                end_date=trip_data.end_date,
+                total_budget=Decimal(str(trip_data.total_budget))
+            )
+        
+        # Convert stored trip to response model
+        return _trip_row_to_response(stored_trip)
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to create trip: {str(e)}"
+        )
+
+
+
+@router.get("/trips", response_model=List[TripResponse])
+async def get_trips(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all trips for the current user"""
+    try:
+        _ensure_user_record(current_user)
+
+        # Get user's trips from database
+        stored_trips = db_manager.get_user_trips(current_user.id)
+        
+        # Convert to response models
+        trips = [_trip_row_to_response(stored_trip) for stored_trip in stored_trips]
+        return trips
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get trips: {str(e)}"
+        )
+
+
+@router.get("/trips/{trip_id}", response_model=TripResponse)
+async def get_trip(
+    trip_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific trip by ID"""
+    try:
+        _ensure_user_record(current_user)
+
+        stored_trip = db_manager.get_trip(trip_id, current_user.id)
+        if stored_trip:
+            return _trip_row_to_response(stored_trip)
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get trip: {str(e)}"
+        )
+
+
+
+@router.delete("/trips/{trip_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_trip(
+    trip_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a trip"""
+    try:
+        _ensure_user_record(current_user)
+
+        # Delete trip from database
+        success = db_manager.delete_trip(trip_id, current_user.id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Trip not found or unauthorized"
+            )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete trip: {str(e)}"
+        )
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
 async def get_activity(

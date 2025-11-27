@@ -5,8 +5,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core import dependencies
-from app.models import collaborator as collaborator_model
-from app.services import collaborator as collaborator_service
+from app.models import collaboration as collaborator_model
+from app.models.user import User
+from app.services.collaborator_service import collaborator as collaborator_service
 
 router = APIRouter()
 
@@ -16,7 +17,7 @@ def add_collaborator(
     *,
     db: Session = Depends(dependencies.get_db),
     collaborator_in: collaborator_model.CollaboratorCreate,
-    current_user: collaborator_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> collaborator_model.Collaborator:
     """
     Add a collaborator to a planner.
@@ -33,7 +34,7 @@ def read_collaborators(
     *,
     db: Session = Depends(dependencies.get_db),
     planner_id: int,
-    current_user: collaborator_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> List[collaborator_model.Collaborator]:
     """
     Get collaborators for a planner.
@@ -50,7 +51,7 @@ def remove_collaborator(
     *,
     db: Session = Depends(dependencies.get_db),
     collaborator_in: collaborator_model.CollaboratorCreate,
-    current_user: collaborator_model.User = Depends(dependencies.get_current_active_user),
+    current_user: User = Depends(dependencies.get_current_active_user),
 ) -> None:
     """
     Remove a collaborator from a planner.
