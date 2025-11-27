@@ -97,18 +97,23 @@ hotel_agent = create_agent(
   tools=[hotel_finder.find_hotels],
   system_prompt=(
     f"""
-    You are a hotel search expert. Your job is to find hotels and estimate costs. Today is {_today}. Do not use dates in the past.
-    Always return a list of hotels in the following strict JSON format (no text, no summary):
-    [
-      {{
-        \"name\": \"...\",
-        \"price_per_night\": ..., 
-        \"review_count\": ..., 
-        \"rating\": ..., 
-        \"url\": \"...\"
-      }}
-    ]
-    Do not include photos. Do not return any text or explanation, only the JSON list.
+    You are a hotel search expert. Your job is to find and list specific hotels with their exact names and prices.
+    
+    IMPORTANT: Return ONLY a simple list of hotels in Vietnamese like this format:
+    
+    Khách sạn có sẵn tại [destination]:
+    1. [Hotel Name] - [price] VND/đêm
+    2. [Hotel Name] - [price] VND/đêm
+    3. [Hotel Name] - [price] VND/đêm
+    
+    Example:
+    Khách sạn có sẵn tại Hà Nội:
+    1. Hanoi La Siesta Hotel & Spa - 1.200.000 VND/đêm
+    2. Oriental Central Hotel - 950.000 VND/đêm
+    3. May De Ville Old Quarter - 800.000 VND/đêm
+    
+    Do NOT provide full travel plans, descriptions, or other information. Only hotel names and prices.
+    Today is {_today}. Do not use dates in the past.
     """
   )
 )
@@ -116,13 +121,52 @@ hotel_agent = create_agent(
 weather_agent = create_agent(
   model=get_llm(),
   tools=[weather_service.get_weather],
-  system_prompt=(f"You are a weather expert. Your job is to fetch weather forecasts for the trip destination. Today is {_today}. Do not use dates in the past.")
+  system_prompt=(f"""
+You are a weather expert. Your job is to provide ONLY weather information, not full travel plans.
+
+IMPORTANT: Return ONLY weather information in Vietnamese like this format:
+
+Thời tiết tại [destination] từ [start_date] đến [end_date]:
+- [date]: [condition], nhiệt độ [min]°C - [max]°C
+- [date]: [condition], nhiệt độ [min]°C - [max]°C
+- [date]: [condition], nhiệt độ [min]°C - [max]°C
+
+Example:
+Thời tiết tại Hà Nội từ 25/11/2025 đến 27/11/2025:
+- 25/11: Nhiều mây, nhiệt độ 19°C - 24°C
+- 26/11: Trời quang đãng, nhiệt độ 15°C - 24°C  
+- 27/11: Mây rải rác, nhiệt độ 15°C - 24°C
+
+Do NOT provide travel recommendations, itineraries, or other information. Only weather data.
+Today is {_today}. Do not use dates in the past.
+""")
 )
 
 attractions_agent = create_agent(
   model=get_llm(),
   tools=[attraction_finder.find_attractions, attraction_finder.estimate_attractions_cost, search_tool],
-  system_prompt=(f"You are an attractions expert. Your job is to find attractions and estimate their costs. If you are routed back by the supervisor, you may use the search tool to look up the latest information. Today is {_today}. Do not use dates in the past.")
+  system_prompt=(f"""
+You are an attractions expert. Your job is to provide ONLY a list of attractions and their ticket prices.
+
+IMPORTANT: Return ONLY attractions information in Vietnamese like this format:
+
+Các điểm tham quan tại [destination]:
+1. [Attraction Name] - Vé vào cửa: [price] VND/người (hoặc Miễn phí)
+2. [Attraction Name] - Vé vào cửa: [price] VND/người  
+3. [Attraction Name] - Vé vào cửa: [price] VND/người
+
+Example:
+Các điểm tham quan tại Hà Nội:
+1. Đền Ngọc Sơn - Vé vào cửa: 30.000 VND/người
+2. Văn Miếu - Quốc Tử Giám - Vé vào cửa: 30.000 VND/người
+3. Lăng Chủ tịch Hồ Chí Minh - Vé vào cửa: Miễn phí
+4. Hoàng Thành Thăng Long - Vé vào cửa: 30.000 VND/người
+5. Nhà tù Hỏa Lò - Vé vào cửa: 30.000 VND/người
+
+Do NOT provide full travel plans, descriptions, or recommendations. Only attraction names and ticket prices.
+If you are routed back by the supervisor, you may use the search tool to look up the latest information.
+Today is {_today}. Do not use dates in the past.
+""")
 )
 
 calculator_agent = create_agent(
@@ -156,6 +200,45 @@ def router_travel_evaluator(state: WorkflowState) -> dict:
     raise ValueError(f"Invalid travel evaluator output: {response}")
   return response
 
+def node_missing_fields_handler(state: WorkflowState) -> Command:
+  """Handle missing fields by asking user for clarification."""
+  print("\n---- MISSING FIELDS HANDLER ----")
+  
+  if not state.missing_fields:
+    return Command(goto="hotel_agent", update=state)
+  
+  # Generate appropriate questions based on missing fields
+  questions = []
+  
+  for field in state.missing_fields:
+    if field == 'destination':
+      questions.append("Bạn muốn du lịch đến đâu?")
+    elif field == 'budget':
+      questions.append("Ngân sách dự kiến của bạn là bao nhiêu? (ví dụ: 10 triệu VND)")
+    elif field == 'start_date' and 'end_date' in state.missing_fields:
+      questions.append("Bạn muốn du lịch từ ngày nào đến ngày nào? (ví dụ: từ 25/11/2025 đến 27/11/2025)")
+      # Skip end_date since we handle both together
+      continue
+    elif field == 'end_date' and 'start_date' not in state.missing_fields:
+      questions.append("Bạn muốn du lịch đến ngày nào? (ví dụ: 27/11/2025)")
+    elif field == 'start_date' and 'end_date' not in state.missing_fields:
+      # This shouldn't happen due to our logic, but handle it
+      questions.append("Bạn muốn bắt đầu du lịch từ ngày nào? (ví dụ: 25/11/2025)")
+  
+  if questions:
+    response_text = "Tôi cần thêm một số thông tin để lập kế hoạch tốt hơn:\\n\\n" + "\\n".join(f"• {q}" for q in questions)
+    response_text += "\\n\\nVui lòng cung cấp thông tin còn thiếu."
+    
+    # Add AI response to messages
+    state.messages.append(AIMessage(content=response_text))
+    print(f"Asking for missing fields: {state.missing_fields}")
+    print(f"Response: {response_text}")
+    
+    # Return END to wait for user response - this will be handled by a conversational flow
+    return Command(goto=END, update=state)
+  
+  return Command(goto="hotel_agent", update=state)
+
 def node_query_analyzer(state: WorkflowState) -> Command:
   """Analyze the user message and extract trip info."""
   print("\n---- QUERY ANALYZER ----")
@@ -167,6 +250,13 @@ def node_query_analyzer(state: WorkflowState) -> Command:
     setattr(state, k, v)
   
   print(f"Analysis result: {result.model_dump()}")
+  
+  # Check if critical fields are missing
+  if result.missing_fields:
+    critical_missing = [f for f in result.missing_fields if f in ['destination', 'budget', 'start_date', 'end_date']]
+    if critical_missing:
+      return Command(goto="missing_fields_handler", update=state)
+  
   return Command(goto="hotel_agent", update=state)
 
 def node_hotel_agent(state: WorkflowState) -> Command:
@@ -177,21 +267,15 @@ def node_hotel_agent(state: WorkflowState) -> Command:
   # Clean the output to remove signatures and tool calls
   clean_content = clean_agent_output(raw_content)
   
-  try:
-    if not clean_content or clean_content.strip() == "":
-      print("Hotel agent returned empty content")
-      state.hotels = []
-    else:
-      # Try to parse as JSON
-      hotels_data = json.loads(clean_content.strip())
-      hotels = [HotelInfo(**h) for h in hotels_data]
-      state.hotels = hotels
-      print("Hotels:")
-      pprint.pprint(hotels)
-  except (json.JSONDecodeError, ValidationError, TypeError) as e:
-    print(f"Hotel agent error: {e}")
-    print(f"Clean content received: {repr(clean_content)}")
-    state.hotels = []
+  # Store the hotels text directly instead of trying to parse JSON
+  if clean_content and clean_content.strip():
+    state.hotels = clean_content.strip()
+    print("Hotels:")
+    print(state.hotels)
+  else:
+    print("Hotel agent returned empty content")
+    state.hotels = "Không tìm thấy khách sạn phù hợp"
+  
   return Command(goto="weather_agent", update=state)
 
 def node_weather_agent(state: WorkflowState) -> Command:
@@ -281,6 +365,7 @@ def summary_supervisor_router(state: WorkflowState) -> str:
 # Build the simplified graph
 workflow = StateGraph(WorkflowState)
 workflow.add_node("query_analyzer", node_query_analyzer)
+workflow.add_node("missing_fields_handler", node_missing_fields_handler)
 workflow.add_node("hotel_agent", node_hotel_agent)
 workflow.add_node("weather_agent", node_weather_agent)
 workflow.add_node("attractions_agent", node_attractions_agent)
@@ -295,7 +380,7 @@ workflow.add_conditional_edges(
     {"TRAVEL": "query_analyzer", "NOT_TRAVEL": END}
 )
 
-workflow.add_edge("query_analyzer", "hotel_agent")
+workflow.add_edge("missing_fields_handler", "hotel_agent")
 workflow.add_edge("hotel_agent", "weather_agent")
 workflow.add_edge("weather_agent", "attractions_agent")
 workflow.add_edge("attractions_agent", "calculator_agent")

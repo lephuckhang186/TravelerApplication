@@ -114,10 +114,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
           const SizedBox(height: 8),
           Text(
             'Quản lý tài chính cá nhân hiệu quả',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -158,9 +155,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
           fontWeight: FontWeight.normal,
           fontSize: 16,
         ),
-        tabs: const [
-          Tab(text: 'Tài sản'),
-        ],
+        tabs: const [Tab(text: 'Tài sản')],
       ),
     );
   }
@@ -231,12 +226,16 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                             child: Center(child: CircularProgressIndicator()),
                           );
                         }
-                        
+
                         final summary = _expenseProvider.expenseSummary;
-                        final totalAssets = summary != null ? summary.totalAmount : 0.0;
-                        
+                        final totalAssets = summary != null
+                            ? summary.totalAmount
+                            : 0.0;
+
                         return Text(
-                          _isAmountVisible ? '${_formatMoney(totalAssets)}₫' : '•••••',
+                          _isAmountVisible
+                              ? '${_formatMoney(totalAssets)}₫'
+                              : '•••••',
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -292,7 +291,9 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
               const SizedBox(height: 16),
               // Card du lịch thông minh AI
               _buildSmartTravelCard(),
-              const SizedBox(height: 24), // Thêm đệm dưới để tránh bị che bởi navbar
+              const SizedBox(
+                height: 24,
+              ), // Thêm đệm dưới để tránh bị che bởi navbar
             ],
           ),
         ),
@@ -325,19 +326,30 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
         }
 
         final budgetStatus = _expenseProvider.budgetStatus;
-        
+
         // Default values if no budget data
         final double monthlyLimit = budgetStatus?.totalBudget ?? 15000.0;
         final double currentSpent = budgetStatus?.totalSpent ?? 0.0;
-        final double remainingLimit = budgetStatus?.remainingBudget ?? monthlyLimit;
+        final double remainingLimit =
+            budgetStatus?.remainingBudget ?? monthlyLimit;
         final double progressPercentage = budgetStatus?.percentageUsed ?? 0.0;
-        
-        return _buildSpendingLimitContent(monthlyLimit, currentSpent, remainingLimit, progressPercentage);
+
+        return _buildSpendingLimitContent(
+          monthlyLimit,
+          currentSpent,
+          remainingLimit,
+          progressPercentage,
+        );
       },
     );
   }
 
-  Widget _buildSpendingLimitContent(double monthlyLimit, double currentSpent, double remainingLimit, double progressPercentage) {
+  Widget _buildSpendingLimitContent(
+    double monthlyLimit,
+    double currentSpent,
+    double remainingLimit,
+    double progressPercentage,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -367,16 +379,12 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              Icon(
-                Icons.credit_card,
-                color: Colors.grey[400],
-                size: 20,
-              ),
+              Icon(Icons.credit_card, color: Colors.grey[400], size: 20),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Progress bar
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,19 +393,23 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _isAmountVisible ? '${_formatMoney(currentSpent)}₫' : '•••••',
+                    _isAmountVisible
+                        ? '${_formatMoney(currentSpent)}₫'
+                        : '•••••',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: progressPercentage > 80 
-                          ? const Color(0xFFE91E63) 
+                      color: progressPercentage > 80
+                          ? const Color(0xFFE91E63)
                           : progressPercentage > 60
-                              ? const Color(0xFFFF9800)
-                              : const Color(0xFF4CAF50),
+                          ? const Color(0xFFFF9800)
+                          : const Color(0xFF4CAF50),
                     ),
                   ),
                   Text(
-                    _isAmountVisible ? '/ ${_formatMoney(monthlyLimit)}₫' : '/ •••••',
+                    _isAmountVisible
+                        ? '/ ${_formatMoney(monthlyLimit)}₫'
+                        : '/ •••••',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -406,9 +418,9 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Progress bar
               Container(
                 height: 8,
@@ -429,14 +441,31 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 800),
                       height: 8,
-                      width: (MediaQuery.of(context).size.width - 72) * (currentSpent / monthlyLimit),
+                      width:
+                          (MediaQuery.of(context).size.width - 72) *
+                          (currentSpent / monthlyLimit),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: progressPercentage > 80
-                              ? [const Color(0xFFE91E63), const Color(0xFFE91E63).withValues(alpha: 0.8)]
+                              ? [
+                                  const Color(0xFFE91E63),
+                                  const Color(
+                                    0xFFE91E63,
+                                  ).withValues(alpha: 0.8),
+                                ]
                               : progressPercentage > 60
-                                  ? [const Color(0xFFFF9800), const Color(0xFFFF9800).withValues(alpha: 0.8)]
-                                  : [const Color(0xFF4CAF50), const Color(0xFF4CAF50).withValues(alpha: 0.8)],
+                              ? [
+                                  const Color(0xFFFF9800),
+                                  const Color(
+                                    0xFFFF9800,
+                                  ).withValues(alpha: 0.8),
+                                ]
+                              : [
+                                  const Color(0xFF4CAF50),
+                                  const Color(
+                                    0xFF4CAF50,
+                                  ).withValues(alpha: 0.8),
+                                ],
                         ),
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -444,27 +473,24 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '${progressPercentage.toStringAsFixed(1)}% đã sử dụng',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
-                    _isAmountVisible 
+                    _isAmountVisible
                         ? 'Còn lại: ${_formatMoney(remainingLimit)}₫'
                         : 'Còn lại: •••••',
                     style: TextStyle(
                       fontSize: 12,
-                      color: remainingLimit > 0 
-                          ? const Color(0xFF4CAF50) 
+                      color: remainingLimit > 0
+                          ? const Color(0xFF4CAF50)
                           : const Color(0xFFE91E63),
                       fontWeight: FontWeight.w600,
                     ),
@@ -473,9 +499,9 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Action button
           GestureDetector(
             onTap: () {
@@ -492,11 +518,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(
-                  Icons.settings,
-                  color: Color(0xFFE91E63),
-                  size: 16,
-                ),
+                const Icon(Icons.settings, color: Color(0xFFE91E63), size: 16),
               ],
             ),
           ),
@@ -591,40 +613,51 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: [5000.0, 10000.0, 15000.0, 20000.0, 30000.0, 50000.0]
-                          .map((amount) {
-                        final bool selected = currentLimit == amount;
-                        return GestureDetector(
-                          onTap: () {
-                            setDialogState(() {
-                              currentLimit = amount;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: selected ? const Color(0xFFE91E63) : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: selected
-                                    ? const Color(0xFFE91E63)
-                                    : Colors.grey[300]!,
+                      children:
+                          [
+                            5000.0,
+                            10000.0,
+                            15000.0,
+                            20000.0,
+                            30000.0,
+                            50000.0,
+                          ].map((amount) {
+                            final bool selected = currentLimit == amount;
+                            return GestureDetector(
+                              onTap: () {
+                                setDialogState(() {
+                                  currentLimit = amount;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? const Color(0xFFE91E63)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: selected
+                                        ? const Color(0xFFE91E63)
+                                        : Colors.grey[300]!,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${_formatMoney(amount)}₫',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: selected
+                                        ? Colors.white
+                                        : Colors.grey[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              '${_formatMoney(amount)}₫',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: selected ? Colors.white : Colors.grey[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                            );
+                          }).toList(),
                     ),
                     const SizedBox(height: 20),
                     const Text(
@@ -651,7 +684,9 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
-                        final amount = double.tryParse(value.replaceAll(',', ''));
+                        final amount = double.tryParse(
+                          value.replaceAll(',', ''),
+                        );
                         if (amount != null) {
                           setDialogState(() {
                             currentLimit = amount;
@@ -716,10 +751,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFF7A00),
-            Color(0xFFFF9E00),
-          ],
+          colors: [Color(0xFFFF7A00), Color(0xFFFF9E00)],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -744,9 +776,9 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
               color: Colors.white,
             ),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -762,26 +794,17 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                 SizedBox(height: 4),
                 Text(
                   'Hỏi chatbot để lên kế hoạch du lịch thông minh',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
               ],
             ),
           ),
-          
-          const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: Colors.white70,
-          ),
+
+          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white70),
         ],
       ),
     );
   }
-
-
 
   /// Format tiền tệ
   String _formatMoney(double amount) {
@@ -806,23 +829,25 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
   /// Dialog hiển thị tình hình thu chi chi tiết
   void _showIncomeExpenseDialog() {
     String dialogPeriod = _selectedPeriod;
-    
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           // Use real data from backend
           final summary = _expenseProvider.expenseSummary;
-          final spendingTrends = _expenseProvider.spendingTrends;
-          
+
           // For now, use mock data structure but with real totals
           final data = dialogPeriod == '7 ngày' ? _weeklyData : _monthlyData;
           final totalExpense = summary?.totalAmount ?? 0.0;
-          final totalIncome = totalExpense * 1.2; // Mock income as 20% more than expenses
+          final totalIncome =
+              totalExpense * 1.2; // Mock income as 20% more than expenses
           final balance = totalIncome - totalExpense;
 
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Container(
               width: MediaQuery.of(context).size.width * 0.9,
               constraints: BoxConstraints(
@@ -846,7 +871,10 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey[300]!),
                           borderRadius: BorderRadius.circular(8),
@@ -880,26 +908,27 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Content layout: Chart bên trái, Categories bên phải
                   Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Biểu đồ cột bên trái (nhỏ hơn)
-                        Expanded(
-                          flex: 2,
-                          child: _buildCompactChart(data),
-                        ),
-                        
+                        Expanded(flex: 2, child: _buildCompactChart(data)),
+
                         const SizedBox(width: 16),
-                        
+
                         // Categories bên phải
                         Expanded(
                           flex: 3,
-                          child: _buildCategoryList(totalIncome, totalExpense, balance),
+                          child: _buildCategoryList(
+                            totalIncome,
+                            totalExpense,
+                            balance,
+                          ),
                         ),
                       ],
                     ),
@@ -937,7 +966,13 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: data.map((e) => [e['income'], e['expense']]).expand((e) => e).reduce((a, b) => a > b ? a : b).toDouble() * 1.2,
+                maxY:
+                    data
+                        .map((e) => [e['income'], e['expense']])
+                        .expand((e) => e)
+                        .reduce((a, b) => a > b ? a : b)
+                        .toDouble() *
+                    1.2,
                 barTouchData: BarTouchData(enabled: false),
                 titlesData: FlTitlesData(
                   show: true,
@@ -977,17 +1012,18 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: Colors.grey[300],
-                      strokeWidth: 0.5,
-                    );
+                    return FlLine(color: Colors.grey[300], strokeWidth: 0.5);
                   },
                 ),
                 borderData: FlBorderData(show: false),
@@ -1001,13 +1037,17 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                         toY: item['income'].toDouble(),
                         color: const Color(0xFF4CAF50),
                         width: 8,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(2),
+                        ),
                       ),
                       BarChartRodData(
                         toY: item['expense'].toDouble(),
                         color: const Color(0xFFE91E63),
                         width: 8,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(2),
+                        ),
                       ),
                     ],
                     barsSpace: 2,
@@ -1043,22 +1083,20 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
           ),
         ),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
   }
 
   /// Danh sách categories cho dialog
-  Widget _buildCategoryList(double totalIncome, double totalExpense, double balance) {
+  Widget _buildCategoryList(
+    double totalIncome,
+    double totalExpense,
+    double balance,
+  ) {
     final summary = _expenseProvider.expenseSummary;
     final categoryBreakdown = summary?.categoryBreakdown ?? <String, double>{};
-    
+
     // Convert backend category data to display format
     final expenseSubcategories = categoryBreakdown.entries.map((entry) {
       return {
@@ -1066,7 +1104,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
         'amount': entry.value,
       };
     }).toList();
-    
+
     final categories = [
       {
         'title': 'Tổng Thu Nhập',
@@ -1077,23 +1115,27 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
           {'name': 'Lương cơ bản', 'amount': totalIncome * 0.7},
           {'name': 'Thu nhập phụ', 'amount': totalIncome * 0.2},
           {'name': 'Đầu tư', 'amount': totalIncome * 0.1},
-        ]
+        ],
       },
       {
         'title': 'Tổng Chi Phí',
         'amount': totalExpense,
         'color': const Color(0xFFE91E63),
         'icon': Icons.arrow_upward,
-        'subcategories': expenseSubcategories.isNotEmpty ? expenseSubcategories : [
-          {'name': 'Chưa có dữ liệu', 'amount': 0.0},
-        ]
+        'subcategories': expenseSubcategories.isNotEmpty
+            ? expenseSubcategories
+            : [
+                {'name': 'Chưa có dữ liệu', 'amount': 0.0},
+              ],
       },
       {
         'title': 'Tích Lũy',
         'amount': balance,
-        'color': balance >= 0 ? const Color(0xFF2196F3) : const Color(0xFFFF9800),
+        'color': balance >= 0
+            ? const Color(0xFF2196F3)
+            : const Color(0xFFFF9800),
         'icon': balance >= 0 ? Icons.trending_up : Icons.trending_down,
-        'subcategories': []
+        'subcategories': [],
       },
     ];
 
@@ -1177,7 +1219,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
               ),
             ],
           ),
-          
+
           // Subcategories nếu có
           if ((category['subcategories'] as List).isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -1198,10 +1240,7 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
                     Expanded(
                       child: Text(
                         sub['name'] as String,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ),
                     Text(
@@ -1232,4 +1271,3 @@ class _FinancialCenterScreenState extends State<FinancialCenterScreen>
     }
   }
 }
-

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/theme/app_theme.dart';
 
 class CreatePlannerScreen extends StatefulWidget {
   const CreatePlannerScreen({super.key});
@@ -26,16 +27,16 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
-            style: GoogleFonts.inter(
-              color: const Color(0xFF1976D2),
+            style: GoogleFonts.quattrocento(
+              color: AppColors.primary,
               fontSize: 16,
             ),
           ),
@@ -43,7 +44,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         leadingWidth: 80,
         title: Text(
           'Create Trip',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black,
@@ -55,8 +56,8 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             onPressed: _canSave() ? _saveTrip : null,
             child: Text(
               'Save',
-              style: GoogleFonts.inter(
-                color: _canSave() ? const Color(0xFF1976D2) : Colors.grey.shade400,
+              style: GoogleFonts.quattrocento(
+                color: _canSave() ? AppColors.primary : Colors.grey.shade400,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -132,7 +133,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade700,
@@ -142,14 +143,14 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         TextFormField(
           controller: controller,
           maxLines: maxLines,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 18,
             fontWeight: FontWeight.w500,
             color: Colors.black,
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: GoogleFonts.quattrocento(
               fontSize: 18,
               color: Colors.grey.shade400,
             ),
@@ -160,7 +161,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
               borderSide: BorderSide(color: Colors.grey),
             ),
             focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFF1976D2), width: 2),
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(vertical: 12),
           ),
@@ -180,7 +181,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.quattrocento(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade700,
@@ -199,7 +200,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             ),
             child: Text(
               _formatDate(date),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.quattrocento(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,
@@ -304,7 +305,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Trip "${tripData['name']}" created successfully!'),
-        backgroundColor: const Color(0xFF4CAF50),
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );

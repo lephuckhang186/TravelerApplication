@@ -1,46 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// TripWise App Theme - Palette 3: Minimalist & Modern
+/// TripWise App Theme - Palette: Trắng & Xanh Ngọc Bích
 ///
 /// Color Palette:
-/// - Primary (Text/Lines): #36454F (Charcoal Gray)
-/// - Accent (Buttons/Links): #0047AB (Cobalt Blue)
-/// - Support (Borders/Dividers): #E0E0E0 (Light Gray)
-/// - Background: #FFFFFF (White)
-/// - Text: #36454F (Charcoal Gray) & #7F8C8D (Neutral Gray for secondary text)
-/// - Success: #27AE60 (Green for positive values)
-/// - Warning/Error: #E74C3C (Red Orange for negative values)
+/// - Primary (Main Brand): #40E0D0 (Turquoise - Xanh ngọc bích)
+/// - Secondary: #2E8B8B (Dark Turquoise - Xanh ngọc bích đậm)  
+/// - Support (Borders/Dividers): #B0E0E6 (Powder Blue - Xanh nhạt)
+/// - Background: #FFFFFF (White - Trắng)
+/// - Surface: #F8FFFF (Ghost White - Trắng kem nhẹ)
+/// - Text Primary: #2E8B8B (Dark Turquoise cho text chính)
+/// - Text Secondary: #5F9EA0 (Cadet Blue cho text phụ)
+/// - Success: #20B2AA (Light Sea Green)
+/// - Warning/Error: #FF6B6B (Light Coral)
 
 class AppColors {
-  // Primary Colors
-  static const Color primary = Color(0xFF36454F); // Charcoal Gray
-  static const Color accent = Color(0xFF0047AB); // Cobalt Blue
-  static const Color support = Color(0xFFE0E0E0); // Light Gray
-  static const Color background = Color(0xFFFFFFFF); // White
+  // Primary Colors - Màu chủ đạo
+  static const Color primary = Color(0xFF40E0D0); // Turquoise - Xanh ngọc bích
+  static const Color secondary = Color(0xFF2E8B8B); // Dark Turquoise - Xanh ngọc bích đậm
+  static const Color accent = Color(0xFF40E0D0); // Turquoise - Accent giống primary
+  static const Color support = Color(0xFFB0E0E6); // Powder Blue - Xanh nhạt cho borders
+  static const Color background = Color(0xFFFFFFFF); // White - Trắng
+  static const Color surface = Color(0xFFF8FFFF); // Ghost White - Trắng kem nhẹ
 
-  // Text Colors
-  static const Color textPrimary = Color(0xFF36454F); // Charcoal Gray
-  static const Color textSecondary = Color(0xFF7F8C8D); // Neutral Gray
-  static const Color textOnAccent = Color(0xFFFFFFFF); // White text on accent
+  // Text Colors - Màu chữ
+  static const Color textPrimary = Color(0xFF2E8B8B); // Dark Turquoise cho text chính
+  static const Color textSecondary = Color(0xFF5F9EA0); // Cadet Blue cho text phụ
+  static const Color textOnAccent = Color(0xFFFFFFFF); // White text trên accent
 
-  // Status Colors
-  static const Color success = Color(0xFF27AE60); // Green
-  static const Color warning = Color(0xFFE74C3C); // Red Orange
+  // Status Colors - Màu trạng thái
+  static const Color success = Color(0xFF20B2AA); // Light Sea Green
+  static const Color warning = Color(0xFFFF6B6B); // Light Coral
 
-  // Interactive States
-  static const Color accentHover = Color(0xFF003B8E); // Darker cobalt for hover
-  static const Color accentPressed = Color(
-    0xFF002F73,
-  ); // Even darker for pressed
+  // Interactive States - Trạng thái tương tác
+  static const Color accentHover = Color(0xFF3CCCC0); // Darker turquoise for hover
+  static const Color accentPressed = Color(0xFF2EB8B8); // Even darker for pressed
 
-  // Chart Colors (harmonious with the palette)
+  // Chart Colors - Màu biểu đồ (hài hòa với palette)
   static const List<Color> chartColors = [
-    accent, // #0047AB
-    success, // #27AE60
-    warning, // #E74C3C
-    Color(0xFF5A6C7D), // Muted blue-gray
-    Color(0xFF34495E), // Dark blue-gray
+    primary, // #40E0D0 - Turquoise
+    secondary, // #2E8B8B - Dark Turquoise  
+    success, // #20B2AA - Light Sea Green
+    Color(0xFF48D1CC), // Medium Turquoise
+    Color(0xFF00CED1), // Dark Turquoise
+    warning, // #FF6B6B - Light Coral
   ];
 }
 
@@ -52,12 +55,12 @@ class AppTheme {
       
       // Color Scheme
       colorScheme: const ColorScheme.light(
-        primary: AppColors.accent,
+        primary: AppColors.primary,
         onPrimary: AppColors.textOnAccent,
-        secondary: AppColors.primary,
+        secondary: AppColors.secondary,
         onSecondary: AppColors.textOnAccent,
         tertiary: AppColors.support,
-        surface: AppColors.background,
+        surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
         error: AppColors.warning,
         onError: AppColors.textOnAccent,
@@ -170,16 +173,17 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style:
             ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
+              backgroundColor: AppColors.primary,
               foregroundColor: AppColors.textOnAccent,
-              elevation: 0,
+              elevation: 3,
+              shadowColor: AppColors.primary.withOpacity(0.3),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(25),
               ),
-              textStyle: GoogleFonts.inter(
+              textStyle: GoogleFonts.quattrocento(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 16,
               ),
             ).copyWith(
               // Hover state
@@ -190,7 +194,7 @@ class AppTheme {
                 if (states.contains(WidgetState.pressed)) {
                   return AppColors.accentPressed;
                 }
-                return AppColors.accent;
+                return AppColors.primary;
               }),
             ),
       ),
@@ -198,8 +202,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style:
             TextButton.styleFrom(
-              foregroundColor: AppColors.accent,
-              textStyle: GoogleFonts.inter(
+              foregroundColor: AppColors.primary,
+              textStyle: GoogleFonts.quattrocento(
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
               ),
@@ -208,22 +212,22 @@ class AppTheme {
                 if (states.contains(WidgetState.hovered)) {
                   return AppColors.accentHover;
                 }
-                return AppColors.accent;
+                return AppColors.primary;
               }),
             ),
       ),
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.accent,
-          side: const BorderSide(color: AppColors.accent),
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary, width: 2),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(25),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.quattrocento(
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: 16,
           ),
         ),
       ),
@@ -240,25 +244,25 @@ class AppTheme {
       // Input Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.background,
+        fillColor: AppColors.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(color: AppColors.support),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(color: AppColors.support),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.accent, width: 2),
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(color: AppColors.warning),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(color: AppColors.warning, width: 2),
         ),
         labelStyle: GoogleFonts.quattrocento(
@@ -278,10 +282,10 @@ class AppTheme {
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.background,
-        selectedItemColor: AppColors.accent,
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
         type: BottomNavigationBarType.fixed,
-        elevation: 0,
+        elevation: 8,
       ),
 
       // Divider Theme
