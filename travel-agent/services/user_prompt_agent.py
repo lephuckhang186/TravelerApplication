@@ -15,10 +15,16 @@ def extract_user_fields_from_messages(state: WorkflowState) -> Tuple[Dict[str, A
     user_msg = next((m for m in reversed(state.messages) if isinstance(m, HumanMessage)), None)
     user_input = user_msg.content if user_msg else ""
     system_prompt = (
-        f"You are a travel agent. Here is a list of missing items: {missing_items}. "
-        f"Here is an answer from the user which should fill in these items: '{user_input}'. "
-        "Update the state by analyzing what the user provided and reformatting it to the state format. "
-        "Return a JSON object with the updated fields."
+        f"Bạn là một tư vấn viên du lịch thông minh. "
+        f"Danh sách thông tin còn thiếu: {missing_items}. "
+        f"Câu trả lời từ người dùng: '{user_input}'. "
+        f"Hãy phân tích thông tin người dùng cung cấp và cập nhật các trường thích hợp. "
+        f"Trích xuất thông tin chính xác và trả về JSON object với các trường đã cập nhật. "
+        f"Lưu ý: "
+        f"- Ngày tháng phải ở định dạng YYYY-MM-DD "
+        f"- Ngân sách phải là số cụ thể "
+        f"- Điểm đến phải là tên địa danh rõ ràng "
+        f"- Chỉ trả về các trường có thông tin hợp lệ"
     )
     prompt_messages = [
         SystemMessagePromptTemplate.from_template(system_prompt),
