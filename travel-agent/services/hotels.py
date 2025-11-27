@@ -50,8 +50,20 @@ class HotelFinder:
       location_data = json.loads(data.decode("utf-8"))
       
       if not location_data.get("data"):
-        raise ValueError(f"No location found for destination: {destination}")
-      
+        # If no location is found, try to simplify the destination
+        simplified_destination = destination.split(",")[0].strip()
+        if simplified_destination != destination:
+          encoded_simplified_destination = quote(simplified_destination)
+          conn.request("GET", f"/stays/auto-complete?query={encoded_simplified_destination}", headers=headers)
+          res = conn.getresponse()
+          data = res.read()
+          location_data = json.loads(data.decode("utf-8"))
+          
+          if not location_data.get("data"):
+            raise ValueError(f"No location found for destination: {destination}")
+        else:
+          raise ValueError(f"No location found for destination: {destination}")
+
       location_id = location_data["data"][0]["id"]
       
       # Step 2: Add delay to respect rate limits

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../core/theme/app_theme.dart';
 import '../services/user_service.dart';
 import '../widgets/ai_assistant_panel.dart';
 import 'create_planner_screen.dart';
@@ -13,8 +12,7 @@ class PlanScreen extends StatefulWidget {
   State<PlanScreen> createState() => _PlanScreenState();
 }
 
-class _PlanScreenState extends State<PlanScreen>
-    with AutomaticKeepAliveClientMixin {
+class _PlanScreenState extends State<PlanScreen> with AutomaticKeepAliveClientMixin {
   String _displayName = 'User';
   List<Map<String, dynamic>> _trips = [
     {
@@ -22,69 +20,56 @@ class _PlanScreenState extends State<PlanScreen>
       'date': 'Tue, 25 Nov (1 day)',
       'status': 'Ends today',
       'image': 'images/danang.jpg',
-      'destination': 'Da Nang',
+      'destination': 'Da Nang'
     },
     {
-      'name': 'Ho Chi Minh City Trip',
+      'name': 'Ho Chi Minh City Trip', 
       'date': 'Mon, 2 Dec (3 days)',
       'status': 'Upcoming',
       'image': 'images/hcmc_skyline.jpg',
-      'destination': 'Ho Chi Minh City',
+      'destination': 'Ho Chi Minh City'
     },
   ];
-
+  
   @override
   bool get wantKeepAlive => false;
-
+  
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
-
+  
   void _loadUserData() async {
     final userService = UserService();
     final profile = userService.getUserProfile();
     final username = await userService.getDisplayName();
-
+    
     setState(() {
-      _displayName = profile['fullName']?.isNotEmpty == true
-          ? profile['fullName']!
+      _displayName = profile['fullName']?.isNotEmpty == true 
+          ? profile['fullName']! 
           : username;
     });
   }
-
+  
   @override
   Widget build(BuildContext context) {
     super.build(context);
-
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: null,
         automaticallyImplyLeading: false,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hello, $_displayName',
-              style: GoogleFonts.quattrocento(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            Text(
-              'Trips',
-              style: GoogleFonts.quattrocento(
-                color: AppColors.textPrimary,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        title: Text(
+          'Trips',
+          style: GoogleFonts.inter(
+            color: Colors.black,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -95,10 +80,13 @@ class _PlanScreenState extends State<PlanScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: const Color(0xFF40E0D0),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.more_horiz, color: Colors.white),
+                child: const Icon(
+                  Icons.more_horiz,
+                  color: Colors.white,
+                ),
               ),
               onPressed: () => _showOptionsMenu(context),
             ),
@@ -112,7 +100,7 @@ class _PlanScreenState extends State<PlanScreen>
             padding: const EdgeInsets.all(16.0),
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: TextField(
@@ -122,7 +110,10 @@ class _PlanScreenState extends State<PlanScreen>
                     color: Colors.grey.shade600,
                     fontSize: 16,
                   ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.grey.shade600,
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -132,7 +123,7 @@ class _PlanScreenState extends State<PlanScreen>
               ),
             ),
           ),
-
+          
           // Trip Cards
           Expanded(
             child: Padding(
@@ -146,17 +137,13 @@ class _PlanScreenState extends State<PlanScreen>
               ),
             ),
           ),
-
+          
           // Spacer để đẩy AI chat box xuống dưới
           const Spacer(),
-
+          
           // AI Chat Box với góc tròn ở 2 đầu - thu nhỏ chiều rộng
           Padding(
-            padding: const EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
-              bottom: 90.0,  // Đẩy lên cao hơn tránh Dynamic Island
-            ),
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
             child: Center(
               child: GestureDetector(
                 onTap: () {
@@ -175,14 +162,11 @@ class _PlanScreenState extends State<PlanScreen>
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(30), // Góc tròn ở 2 đầu
-                    border: Border.all(color: AppColors.support),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min, // Thu nhỏ theo nội dung
@@ -190,7 +174,7 @@ class _PlanScreenState extends State<PlanScreen>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: const Color(0xFF40E0D0),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -202,8 +186,8 @@ class _PlanScreenState extends State<PlanScreen>
                       const SizedBox(width: 12),
                       Text(
                         'Ask, chat, plan trip with AI...',
-                        style: GoogleFonts.quattrocento(
-                          color: AppColors.textSecondary,
+                        style: GoogleFonts.inter(
+                          color: Colors.grey.shade600,
                           fontSize: 14,
                         ),
                       ),
@@ -216,13 +200,15 @@ class _PlanScreenState extends State<PlanScreen>
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: 160,  // Đẩy nút + lên cao hơn để tránh Dynamic Island
-        ), // Đẩy nút + lên cao hơn để tránh dính chat box
+        padding: const EdgeInsets.only(bottom: 80), // Đẩy nút + lên cao hơn để tránh dính chat box
         child: FloatingActionButton(
           onPressed: () => _showCreateTripModal(context),
-          backgroundColor: AppColors.primary,
-          child: const Icon(Icons.add, color: Colors.white, size: 28),
+          backgroundColor: const Color(0xFF1976D2),
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 28,
+          ),
         ),
       ),
     );
@@ -232,7 +218,7 @@ class _PlanScreenState extends State<PlanScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -262,7 +248,7 @@ class _PlanScreenState extends State<PlanScreen>
                 ),
               ),
               const SizedBox(width: 16),
-
+              
               // Trip Info
               Expanded(
                 child: Column(
@@ -270,7 +256,7 @@ class _PlanScreenState extends State<PlanScreen>
                   children: [
                     Text(
                       trip['name'],
-                      style: GoogleFonts.quattrocento(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -279,7 +265,7 @@ class _PlanScreenState extends State<PlanScreen>
                     const SizedBox(height: 4),
                     Text(
                       trip['date'],
-                      style: GoogleFonts.quattrocento(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         color: Colors.grey.shade600,
                       ),
@@ -295,7 +281,7 @@ class _PlanScreenState extends State<PlanScreen>
                         const SizedBox(width: 4),
                         Text(
                           trip['status'],
-                          style: GoogleFonts.quattrocento(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             color: Colors.grey.shade500,
                           ),
@@ -327,7 +313,9 @@ class _PlanScreenState extends State<PlanScreen>
   void _showCreateTripModal(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const CreatePlannerScreen()),
+      MaterialPageRoute(
+        builder: (context) => const CreatePlannerScreen(),
+      ),
     );
   }
 
@@ -412,7 +400,7 @@ class _PlanScreenState extends State<PlanScreen>
               const SizedBox(height: 12),
               Text(
                 'Uh oh! There is not anyone yet!',
-                style: GoogleFonts.quattrocento(
+                style: GoogleFonts.inter(
                   color: Colors.grey.shade600,
                   fontSize: 14,
                 ),

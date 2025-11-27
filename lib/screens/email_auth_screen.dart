@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'home_screen.dart';
 
 class EmailAuthScreen extends StatefulWidget {
   final bool isSignUp;
@@ -21,7 +22,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
-
+  
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -56,7 +57,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
         );
         _showSuccessMessage('Đăng nhập thành công!');
       }
-
+      
       // Navigate to home screen
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
@@ -111,21 +112,19 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 60),
-
+                
                 // Title
                 Text(
-                  widget.isSignUp
-                      ? 'Tạo tài khoản của bạn'
-                      : 'Đăng nhập vào tài khoản của bạn',
+                  widget.isSignUp ? 'Tạo tài khoản của bạn' : 'Đăng nhập vào tài khoản của bạn',
                   style: const TextStyle(
                     color: Color(0xFF40E0D0),
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
+                
                 const SizedBox(height: 40),
-
+                
                 // Name field (chỉ hiện khi đăng ký)
                 if (widget.isSignUp) ...[
                   _buildLabel('Họ và tên'),
@@ -142,7 +141,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
-
+                
                 // Email field
                 _buildLabel('Email'),
                 const SizedBox(height: 8),
@@ -154,17 +153,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     if (value?.isEmpty ?? true) {
                       return 'Vui lòng nhập email';
                     }
-                    if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    ).hasMatch(value!)) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
                       return 'Email không hợp lệ';
                     }
                     return null;
                   },
                 ),
-
+                
                 const SizedBox(height: 20),
-
+                
                 // Password field
                 _buildLabel('Mật khẩu'),
                 const SizedBox(height: 8),
@@ -174,9 +171,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   obscureText: _obscurePassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
                       color: Colors.grey,
                     ),
                     onPressed: () {
@@ -193,7 +188,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     return null;
                   },
                 ),
-
+                
                 // Confirm password field (chỉ hiện khi đăng ký)
                 if (widget.isSignUp) ...[
                   const SizedBox(height: 20),
@@ -205,16 +200,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     obscureText: _obscureConfirmPassword,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
                         color: Colors.grey,
                       ),
                       onPressed: () {
-                        setState(
-                          () => _obscureConfirmPassword =
-                              !_obscureConfirmPassword,
-                        );
+                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
                       },
                     ),
                     validator: (value) {
@@ -228,9 +218,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     },
                   ),
                 ],
-
+                
                 const SizedBox(height: 40),
-
+                
                 // Submit button
                 SizedBox(
                   width: double.infinity,
@@ -252,9 +242,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -267,7 +255,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                           ),
                   ),
                 ),
-
+                
                 // Forgot password (chỉ hiện khi đăng nhập)
                 if (!widget.isSignUp) ...[
                   const SizedBox(height: 20),
@@ -285,7 +273,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     ),
                   ),
                 ],
-
+                
                 const SizedBox(height: 40),
               ],
             ),
@@ -381,10 +369,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF40E0D0),
-                    width: 2,
-                  ),
+                  borderSide: const BorderSide(color: Color(0xFF40E0D0), width: 2),
                 ),
               ),
             ),
@@ -393,15 +378,16 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () async {
               if (_emailController.text.isNotEmpty) {
                 try {
-                  await _authService.sendPasswordResetEmail(
-                    _emailController.text.trim(),
-                  );
+                  await _authService.sendPasswordResetEmail(_emailController.text.trim());
                   Navigator.pop(context);
                   _showSuccessMessage('Email đặt lại mật khẩu đã được gửi!');
                 } catch (e) {

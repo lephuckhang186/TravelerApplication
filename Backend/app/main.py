@@ -14,14 +14,14 @@ from dotenv import load_dotenv
 
 # Handle both relative and absolute imports
 try:
-    from .api.endpoints import expenses, auth, activities
+    from .api.endpoints import expenses, auth, planners, collaborators
     from .core.config import get_settings
 except ImportError:
     # Fallback for direct execution or ASGI
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from api.endpoints import expenses, auth, activities
+    from api.endpoints import expenses, auth, planners, collaborators
     from core.config import get_settings
 
 # Import travel_agent
@@ -138,8 +138,9 @@ async def internal_error_handler(request: Request, exc):
 
 # Include API routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(expenses.router, prefix=settings.API_V1_STR)
-app.include_router(activities.router, prefix=settings.API_V1_STR)
+app.include_router(expenses.router, prefix=f"{settings.API_V1_STR}/expenses")
+app.include_router(planners.router, prefix=f"{settings.API_V1_STR}/planners")
+app.include_router(collaborators.router, prefix=f"{settings.API_V1_STR}/collaborators")
 if travel_agent:
     app.include_router(travel_agent.router, prefix=settings.API_V1_STR)
     logger.info("Travel agent endpoints enabled")
