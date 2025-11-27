@@ -155,7 +155,7 @@ class _PlanScreenState extends State<PlanScreen>
             padding: const EdgeInsets.only(
               left: 16.0,
               right: 16.0,
-              bottom: 16.0,
+              bottom: 90.0,  // Đẩy lên cao hơn tránh Dynamic Island
             ),
             child: Center(
               child: GestureDetector(
@@ -217,7 +217,7 @@ class _PlanScreenState extends State<PlanScreen>
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(
-          bottom: 80,
+          bottom: 160,  // Đẩy nút + lên cao hơn để tránh Dynamic Island
         ), // Đẩy nút + lên cao hơn để tránh dính chat box
         child: FloatingActionButton(
           onPressed: () => _showCreateTripModal(context),
