@@ -125,7 +125,7 @@ class ActivityCreate(BaseModel):
 
 
 class ActivityUpdate(BaseModel):
-    """Activity update model"""
+    """Activity update model with all optional fields for flexibility"""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=2000)
     activity_type: Optional[ActivityType] = None
@@ -141,6 +141,22 @@ class ActivityUpdate(BaseModel):
     tags: Optional[List[str]] = Field(None, max_items=20)
     trip_id: Optional[str] = Field(None, max_length=50)
     check_in: Optional[bool] = None
+
+    @validator('tags')
+    def validate_tags(cls, v):
+        """Validate tags if provided"""
+        if v:
+            for tag in v:
+                if not isinstance(tag, str) or len(tag) > 50:
+                    raise ValueError("Each tag must be a string with max length 50")
+        return v
+
+    @validator('end_date')
+    def validate_dates(cls, v, values):
+        """Validate that end_date is after start_date if both provided"""
+        if v and values.get('start_date') and v <= values['start_date']:
+            raise ValueError("End date must be after start date")
+        return v
 
 
 class ExpenseInfo(BaseModel):
@@ -356,6 +372,12 @@ async def create_activity(
 ):
     """Create a new activity with automatic expense tracking"""
     try:
+        # Validate required fields
+        if not activity_data.title or activity_data.title.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Activity title is required"
+            )
         # Extract budget info
         estimated_cost = None
         actual_cost = None
