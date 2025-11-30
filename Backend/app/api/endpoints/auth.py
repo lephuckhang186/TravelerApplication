@@ -231,6 +231,24 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """
     return current_user
 
+@router.get("/profile", response_model=User)
+async def get_user_profile(current_user: User = Depends(get_current_user)):
+    """
+    Get detailed user profile information from Firestore
+    """
+    try:
+        # Get fresh user data from Firestore
+        user_profile = await firebase_service.get_user_by_id(current_user.id)
+        
+        if user_profile:
+            return user_profile
+        else:
+            return current_user
+            
+    except Exception as e:
+        print(f"Error getting user profile: {e}")
+        return current_user
+
 @router.put("/me")
 async def update_current_user(
     update_data: dict,
@@ -242,7 +260,8 @@ async def update_current_user(
     try:
         # Remove sensitive fields
         allowed_fields = {
-            'first_name', 'last_name', 'phone', 'profile_picture',
+            'first_name', 'last_name', 'full_name', 'phone', 'address', 
+            'gender', 'date_of_birth', 'profile_picture',
             'preferred_currency', 'preferred_language', 'time_zone',
             'travel_preferences'
         }
@@ -265,6 +284,67 @@ async def update_current_user(
         
         if success:
             return {"message": "Profile updated successfully"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update profile"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Profile update error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Profile update failed"
+        )
+
+@router.put("/profile")
+async def update_user_profile(
+    profile_data: UserUpdate,
+    current_user: User = Depends(get_active_user)
+):
+    """
+    Update user profile with comprehensive validation
+    """
+    try:
+        # Convert Pydantic model to dict and filter out None values
+        update_data = {
+            k: v for k, v in profile_data.dict().items() 
+            if v is not None
+        }
+        
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No valid fields to update"
+            )
+        
+        # Handle date_of_birth conversion if present
+        if 'date_of_birth' in update_data and update_data['date_of_birth']:
+            # Ensure date_of_birth is properly formatted
+            if isinstance(update_data['date_of_birth'], str):
+                try:
+                    from datetime import datetime
+                    update_data['date_of_birth'] = datetime.fromisoformat(update_data['date_of_birth'].replace('Z', '+00:00'))
+                except ValueError:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid date format for date_of_birth"
+                    )
+        
+        success = await firebase_service.update_user_profile(
+            current_user.id,
+            update_data
+        )
+        
+        if success:
+            # Get updated user profile
+            updated_user = await firebase_service.get_user_by_id(current_user.id)
+            return {
+                "message": "Profile updated successfully",
+                "user": updated_user
+            }
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

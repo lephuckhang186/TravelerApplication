@@ -89,17 +89,27 @@ class FirestoreUserService {
   Future<void> updateUserProfile({
     required String uid,
     String? fullName,
+    String? firstName,
+    String? lastName,
     DateTime? dateOfBirth,
+    String? phone,
+    String? address,
+    String? gender,
+    String? profilePicture,
   }) async {
     try {
       final updates = <String, dynamic>{
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
 
-      if (fullName != null) {
-        updates['fullName'] = fullName;
-      }
-
+      if (fullName != null) updates['fullName'] = fullName;
+      if (firstName != null) updates['firstName'] = firstName;
+      if (lastName != null) updates['lastName'] = lastName;
+      if (phone != null) updates['phone'] = phone;
+      if (address != null) updates['address'] = address;
+      if (gender != null) updates['gender'] = gender;
+      if (profilePicture != null) updates['profilePicture'] = profilePicture;
+      
       if (dateOfBirth != null) {
         updates['dateOfBirth'] = Timestamp.fromDate(dateOfBirth);
       }
@@ -110,6 +120,27 @@ class FirestoreUserService {
           .update(updates);
     } catch (e) {
       throw Exception('Lỗi khi cập nhật thông tin người dùng: $e');
+    }
+  }
+
+  // Cập nhật một trường cụ thể
+  Future<void> updateUserField({
+    required String uid,
+    required String field,
+    required dynamic value,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        field: value,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      };
+
+      await _firestore
+          .collection(_collection)
+          .doc(uid)
+          .update(updates);
+    } catch (e) {
+      throw Exception('Lỗi khi cập nhật trường $field: $e');
     }
   }
 

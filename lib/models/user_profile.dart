@@ -4,17 +4,29 @@ class UserProfile {
   final String uid;
   final String email;
   final String fullName;
-  final DateTime dateOfBirth;
+  final DateTime? dateOfBirth;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? phone;
+  final String? address;
+  final String? gender;
+  final String? profilePicture;
+  final String? firstName;
+  final String? lastName;
 
   UserProfile({
     required this.uid,
     required this.email,
     required this.fullName,
-    required this.dateOfBirth,
+    this.dateOfBirth,
     required this.createdAt,
     required this.updatedAt,
+    this.phone,
+    this.address,
+    this.gender,
+    this.profilePicture,
+    this.firstName,
+    this.lastName,
   });
 
   // Convert UserProfile to Map for Firestore
@@ -23,9 +35,15 @@ class UserProfile {
       'uid': uid,
       'email': email,
       'fullName': fullName,
-      'dateOfBirth': Timestamp.fromDate(dateOfBirth),
+      'dateOfBirth': dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'phone': phone,
+      'address': address,
+      'gender': gender,
+      'profilePicture': profilePicture,
+      'firstName': firstName,
+      'lastName': lastName,
     };
   }
 
@@ -35,9 +53,17 @@ class UserProfile {
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
       fullName: map['fullName'] ?? '',
-      dateOfBirth: (map['dateOfBirth'] as Timestamp).toDate(),
+      dateOfBirth: map['dateOfBirth'] != null 
+          ? (map['dateOfBirth'] as Timestamp).toDate() 
+          : null,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      phone: map['phone'],
+      address: map['address'],
+      gender: map['gender'],
+      profilePicture: map['profilePicture'],
+      firstName: map['firstName'],
+      lastName: map['lastName'],
     );
   }
 
@@ -55,6 +81,12 @@ class UserProfile {
     DateTime? dateOfBirth,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? phone,
+    String? address,
+    String? gender,
+    String? profilePicture,
+    String? firstName,
+    String? lastName,
   }) {
     return UserProfile(
       uid: uid ?? this.uid,
@@ -63,6 +95,12 @@ class UserProfile {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      phone: phone ?? this.phone,
+      address: address ?? this.address,
+      gender: gender ?? this.gender,
+      profilePicture: profilePicture ?? this.profilePicture,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
     );
   }
 }

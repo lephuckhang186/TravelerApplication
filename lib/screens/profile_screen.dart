@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import '../core/theme/app_theme.dart';
 import '../services/user_service.dart';
+import '../services/firestore_user_service.dart';
+import '../services/auth_service.dart';
+import '../models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -17,10 +20,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   
+  final FirestoreUserService _firestoreService = FirestoreUserService();
+  final AuthService _authService = AuthService();
+  
   String? _avatarPath;
-  String _gender = 'Nam';
+  String _gender = 'Chưa cập nhật';
   DateTime _birthDate = DateTime(1990, 1, 1);
   bool _isEditing = false;
+  bool _isLoading = true;
+  UserProfile? _userProfile;
 
   @override
   void initState() {
@@ -29,22 +37,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _loadUserData() async {
-    final userService = UserService();
-    await userService.init();
-    
-    // Load from UserService or set meaningful defaults
-    _nameController.text = await userService.getFullName() ?? 'Người dùng mới';
-    _emailController.text = await userService.getEmail() ?? '';
-    _phoneController.text = await userService.getPhone() ?? '';
-    _addressController.text = await userService.getAddress() ?? '';
-    _avatarPath = await userService.getAvatarPath();
-    
-    // If no data exists, set up default profile
-    if (_nameController.text.isEmpty || _nameController.text == 'Người dùng mới') {
+    try {
+      setState(() => _isLoading = true);
+      
+      // Get current user from Firebase Auth
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        _setDefaultUserData();
+        return;
+      }
+
+      // Try to get user profile from Firestore
+      _userProfile = await _firestoreService.getUserProfile(currentUser.uid);
+      
+      if (_userProfile != null) {
+        // Load data from Firestore
+        _nameController.text = _userProfile!.fullName.isNotEmpty ? _userProfile!.fullName : 'Người dùng mới';
+        _emailController.text = _userProfile!.email;
+        _phoneController.text = _userProfile!.phone ?? '';
+        _addressController.text = _userProfile!.address ?? '';
+        _gender = _userProfile!.gender ?? 'Chưa cập nhật';
+        _birthDate = _userProfile!.dateOfBirth ?? DateTime(1990, 1, 1);
+        _avatarPath = _userProfile!.profilePicture;
+      } else {
+        // Fallback to creating a basic profile
+        _nameController.text = currentUser.displayName ?? 'Người dùng mới';
+        _emailController.text = currentUser.email ?? '';
+        _phoneController.text = '';
+        _addressController.text = '';
+        _gender = 'Chưa cập nhật';
+        _birthDate = DateTime(1990, 1, 1);
+        _avatarPath = currentUser.photoURL;
+        
+        // Create initial profile in Firestore
+        await _createInitialProfile(currentUser.uid, currentUser.email ?? '', currentUser.displayName ?? '');
+      }
+      
+    } catch (e) {
+      print('Error loading user data: $e');
       _setDefaultUserData();
+    } finally {
+      setState(() => _isLoading = false);
     }
-    
-    setState(() {});
+  }
+  
+  Future<void> _createInitialProfile(String uid, String email, String displayName) async {
+    try {
+      final now = DateTime.now();
+      final userProfile = UserProfile(
+        uid: uid,
+        email: email,
+        fullName: displayName.isNotEmpty ? displayName : 'Người dùng mới',
+        createdAt: now,
+        updatedAt: now,
+      );
+      await _firestoreService.createOrUpdateUser(userProfile);
+      _userProfile = userProfile;
+    } catch (e) {
+      print('Error creating initial profile: $e');
+    }
   }
   
   void _setDefaultUserData() {
@@ -92,29 +143,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              _isEditing ? Icons.save : Icons.edit,
-              color: Colors.white,
+          if (!_isLoading)
+            IconButton(
+              icon: Icon(
+                _isEditing ? Icons.save : Icons.edit,
+                color: Colors.white,
+              ),
+              onPressed: _toggleEditMode,
             ),
-            onPressed: _toggleEditMode,
-          ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildProfileHeader(),
-          const SizedBox(height: 24),
-          _buildPersonalInfoSection(),
-          const SizedBox(height: 16),
-          _buildContactInfoSection(),
-          const SizedBox(height: 16),
-          _buildPreferencesSection(),
-          const SizedBox(height: 16),
-          _buildStatsSection(),
-        ],
-      ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildProfileHeader(),
+                const SizedBox(height: 24),
+                _buildPersonalInfoSection(),
+                const SizedBox(height: 16),
+                _buildContactInfoSection(),
+                const SizedBox(height: 16),
+                _buildPreferencesSection(),
+                const SizedBox(height: 16),
+                _buildStatsSection(),
+              ],
+            ),
     );
   }
 
@@ -601,18 +657,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _saveProfile() async {
-    final userService = UserService();
-    
-    // Save profile data using UserService
-    await userService.saveProfile(
-      fullName: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      phone: _phoneController.text.trim(),
-      address: _addressController.text.trim(),
-      avatarPath: _avatarPath,
-    );
-    
-    _showSnackBar('Đã lưu thông tin cá nhân');
+    try {
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        _showSnackBar('Lỗi: Người dùng chưa đăng nhập');
+        return;
+      }
+
+      // Update Firestore with new data
+      await _firestoreService.updateUserProfile(
+        uid: currentUser.uid,
+        fullName: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        address: _addressController.text.trim(),
+        gender: _gender,
+        dateOfBirth: _birthDate,
+        profilePicture: _avatarPath,
+      );
+
+      // Also save to local UserService for backward compatibility
+      final userService = UserService();
+      await userService.saveProfile(
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        address: _addressController.text.trim(),
+        avatarPath: _avatarPath,
+      );
+      
+      _showSnackBar('Đã lưu thông tin cá nhân');
+      
+    } catch (e) {
+      print('Error saving profile: $e');
+      _showSnackBar('Lỗi khi lưu thông tin: $e');
+    }
   }
 
   void _changeAvatar() {
