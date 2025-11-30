@@ -1126,14 +1126,15 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Action Buttons - Combined logout and switch account with vertical divider
+  /// Action Button - Logout only
   Widget _buildActionButtons() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey[300]!),
           boxShadow: [
             BoxShadow(
@@ -1143,45 +1144,20 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _onLogout(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Text(
-                    'Đăng xuất',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.quattrocento(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
+        child: GestureDetector(
+          onTap: () => _onLogout(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'Đăng xuất',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.quattrocento(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.red[600],
               ),
             ),
-            // Vertical divider
-            Container(width: 1, height: 24, color: Colors.grey[300]),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _onSwitchAccount(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Text(
-                    'Đổi tài khoản',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.quattrocento(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
