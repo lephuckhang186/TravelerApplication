@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'screens/splash_screen.dart';
 import 'screens/loading_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
@@ -13,19 +14,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Initialize UserService
   await UserService().init();
-  
-  runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const MyApp(),
-    ),
-  );
+
+  runApp(DevicePreview(enabled: true, builder: (context) => const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -41,7 +35,7 @@ class MyApp extends StatelessWidget {
       },
       locale: DevicePreview.locale(context),
       theme: AppTheme.lightTheme,
-      home: const LoadingScreen(),
+      home: const SplashScreen(),
       routes: {
         '/auth': (context) => const AuthScreen(),
         '/home': (context) => const HomeScreen(),
@@ -67,7 +61,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void initState() {
     super.initState();
     // Tạo stream một lần để tránh rebuild không cần thiết
-    _authStateStream = _authService.authStateChanges.map((user) => user != null);
+    _authStateStream = _authService.authStateChanges.map(
+      (user) => user != null,
+    );
   }
 
   @override

@@ -26,11 +26,30 @@ class AuthService {
   // Stream để theo dõi trạng thái đăng nhập
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Đăng ký bằng email và password
+  // Đăng ký bằng email và password với validation chi tiết
   Future<UserCredential?> signUpWithEmail(String email, String password) async {
     try {
+      // Kiểm tra email có tồn tại trước không
+      final methods = await _auth.fetchSignInMethodsForEmail(email.trim());
+      if (methods.isNotEmpty) {
+        final providers = methods.map((method) {
+          switch (method) {
+            case 'password':
+              return 'email/mật khẩu';
+            case 'google.com':
+              return 'Google';
+            case 'facebook.com':
+              return 'Facebook';
+            default:
+              return method;
+          }
+        }).join(', ');
+        
+        throw Exception('Email này đã được đăng ký bằng: $providers');
+      }
+
       final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
       
@@ -38,6 +57,41 @@ class AuthService {
       await _syncUserWithBackend(credential.user!);
       
       return credential;
+    } on FirebaseAuthException catch (e) {
+      throw _handleFirebaseAuthException(e);
+    }
+  }
+
+  // Kiểm tra email có tồn tại không
+  Future<Map<String, dynamic>> checkEmailExists(String email) async {
+    try {
+      final methods = await _auth.fetchSignInMethodsForEmail(email.trim());
+      
+      if (methods.isEmpty) {
+        return {
+          'exists': false,
+          'message': 'Email này chưa được đăng ký'
+        };
+      }
+
+      final providers = methods.map((method) {
+        switch (method) {
+          case 'password':
+            return 'email/mật khẩu';
+          case 'google.com':
+            return 'Google';
+          case 'facebook.com':
+            return 'Facebook';
+          default:
+            return method;
+        }
+      }).join(', ');
+      
+      return {
+        'exists': true,
+        'providers': methods,
+        'message': 'Email này đã được đăng ký bằng: $providers'
+      };
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     }

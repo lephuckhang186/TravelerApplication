@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_user_service.dart';
 import 'email_auth_screen.dart';
+import 'google_signup_completion_screen.dart';
 import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -119,15 +121,15 @@ class WelcomeScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Không chỉ là du lịch, là hành trình của chúng ta',
-                style: TextStyle(
-                  color: Color(0xFF2E8B8B), // Darker turquoise for subtitle
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              // const Text(
+              //   'Không chỉ là du lịch, là hành trình của chúng ta',
+              //   style: TextStyle(
+              //     color: Color(0xFF2E8B8B), // Darker turquoise for subtitle
+              //     fontSize: 18,
+              //     fontWeight: FontWeight.w400,
+              //   ),
+              //   textAlign: TextAlign.center,
+              // ),
               
               const Spacer(flex: 3),
               
@@ -207,6 +209,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final AuthService _authService = AuthService();
+  final FirestoreUserService _firestoreService = FirestoreUserService();
   bool _isLoading = false;
 
   Future<void> _handleSocialAuth(String provider) async {
@@ -215,13 +218,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       switch (provider) {
         case 'Google':
-          await _authService.signInWithGoogle();
+          final userCredential = await _authService.signInWithGoogle();
+          if (userCredential?.user != null) {
+            // Kiểm tra xem người dùng đã có profile trong Firestore chưa
+            final hasProfile = await _firestoreService.hasUserProfile(userCredential!.user!.uid);
+            
+            if (mounted) {
+              if (!hasProfile) {
+                // Người dùng mới - chuyển đến màn hình bổ sung
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => GoogleSignupCompletionScreen(user: userCredential.user!),
+                  ),
+                );
+              } else {
+                // Người dùng cũ - chuyển trực tiếp đến home
+                _showSuccessMessage('Đăng nhập thành công!');
+                Navigator.of(context).pushReplacementNamed('/home');
+              }
+            }
+          }
           break;
-      }
-      
-      if (mounted) {
-        _showSuccessMessage('Đăng ký thành công!');
-        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
       _showErrorMessage(e.toString());
@@ -483,6 +500,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
+  final FirestoreUserService _firestoreService = FirestoreUserService();
   bool _isLoading = false;
 
   Future<void> _handleSocialAuth(String provider) async {
@@ -491,13 +509,27 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       switch (provider) {
         case 'Google':
-          await _authService.signInWithGoogle();
+          final userCredential = await _authService.signInWithGoogle();
+          if (userCredential?.user != null) {
+            // Kiểm tra xem người dùng đã có profile trong Firestore chưa
+            final hasProfile = await _firestoreService.hasUserProfile(userCredential!.user!.uid);
+            
+            if (mounted) {
+              if (!hasProfile) {
+                // Người dùng mới - chuyển đến màn hình bổ sung
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => GoogleSignupCompletionScreen(user: userCredential.user!),
+                  ),
+                );
+              } else {
+                // Người dùng cũ - chuyển trực tiếp đến home
+                _showSuccessMessage('Đăng nhập thành công!');
+                Navigator.of(context).pushReplacementNamed('/home');
+              }
+            }
+          }
           break;
-      }
-      
-      if (mounted) {
-        _showSuccessMessage('Đăng nhập thành công!');
-        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
       _showErrorMessage(e.toString());
