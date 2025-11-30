@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import '../core/theme/app_theme.dart';
 import '../services/user_service.dart';
+import '../services/user_profile_service.dart';
+import '../services/auth_service.dart';
+import '../models/user_profile.dart';
 import 'auth_screen.dart';
 import 'help_center_screen.dart';
 import 'notification_settings_screen.dart';
@@ -24,12 +27,17 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen>
     with AutomaticKeepAliveClientMixin {
-  String _currentUsername = 'Nguyễn Kiều Anh Quân';
+  String _currentUsername = 'Người dùng';
   String? _currentAvatarPath;
-  String _displayName = 'Nguyễn Kiều Anh Quân';
-  String _phoneNumber = '0898999033';
+  String _displayName = 'Đang tải...';
+  String _phoneNumber = '';
   String _currentLanguage = 'VI';
   bool _isVerified = true;
+  bool _isLoading = true;
+  
+  final UserProfileService _profileService = UserProfileService();
+  final AuthService _authService = AuthService();
+  UserProfile? _userProfile;
 
   ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
@@ -42,6 +50,39 @@ class _SettingsScreenState extends State<SettingsScreen>
     super.initState();
     _loadUserData();
     _scrollController.addListener(_onScroll);
+    
+    // Set up real-time listener for profile changes
+    _profileService.getUserProfileStream().listen((profile) {
+      if (mounted && profile != null) {
+        _updateDisplayData(profile);
+      }
+    });
+  }
+
+  void _updateDisplayData(UserProfile profile) {
+    final fullName = profile.fullName.trim();
+    final firstName = profile.firstName?.trim() ?? '';
+    final lastName = profile.lastName?.trim() ?? '';
+    
+    // Determine best display name
+    String displayName = '';
+    if (fullName.isNotEmpty) {
+      displayName = fullName;
+    } else if (firstName.isNotEmpty || lastName.isNotEmpty) {
+      displayName = '$firstName $lastName'.trim();
+    } else {
+      displayName = 'Người dùng';
+    }
+
+    if (mounted) {
+      setState(() {
+        _displayName = displayName;
+        _currentUsername = displayName;
+        _phoneNumber = profile.phone ?? '';
+        _currentAvatarPath = profile.profilePicture;
+        _userProfile = profile;
+      });
+    }
   }
 
   @override
@@ -71,18 +112,72 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _loadUserData() async {
-    final userService = UserService();
-    final profile = userService.getUserProfile();
-    final username = await userService.getDisplayName();
+    try {
+      setState(() => _isLoading = true);
+      
+      // Get current user from Firebase Auth
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        _setDefaultUserData();
+        return;
+      }
 
+      // Get user profile from our integrated service
+      _userProfile = await _profileService.getUserProfile();
+      
+      if (_userProfile != null) {
+        // Load real data from Firestore
+        final fullName = _userProfile!.fullName.trim();
+        final firstName = _userProfile!.firstName?.trim() ?? '';
+        final lastName = _userProfile!.lastName?.trim() ?? '';
+        
+        // Determine best display name
+        String displayName = '';
+        if (fullName.isNotEmpty) {
+          displayName = fullName;
+        } else if (firstName.isNotEmpty || lastName.isNotEmpty) {
+          displayName = '$firstName $lastName'.trim();
+        } else if (currentUser.displayName?.isNotEmpty == true) {
+          displayName = currentUser.displayName!;
+        } else {
+          displayName = 'Người dùng';
+        }
+
+        setState(() {
+          _displayName = displayName;
+          _currentUsername = displayName;
+          _phoneNumber = _userProfile!.phone ?? '';
+          _currentAvatarPath = _userProfile!.profilePicture ?? currentUser.photoURL;
+          _isVerified = currentUser.emailVerified;
+        });
+        
+      } else {
+        // Fallback to Firebase Auth data
+        setState(() {
+          _displayName = currentUser.displayName ?? 'Người dùng';
+          _currentUsername = currentUser.displayName ?? 'Người dùng';
+          _phoneNumber = '';
+          _currentAvatarPath = currentUser.photoURL;
+          _isVerified = currentUser.emailVerified;
+        });
+      }
+      
+    } catch (e) {
+      print('Error loading user data: $e');
+      _setDefaultUserData();
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _setDefaultUserData() {
     setState(() {
-      _currentUsername = username.isNotEmpty
-          ? username
-          : 'Nguyễn Kiều Anh Quân';
-      _displayName = profile['fullName']?.isNotEmpty == true
-          ? profile['fullName']!
-          : _currentUsername;
-      _currentAvatarPath = profile['avatarPath'];
+      _displayName = 'Người dùng';
+      _currentUsername = 'Người dùng';
+      _phoneNumber = '';
+      _currentAvatarPath = null;
+      _isVerified = false;
+      _isLoading = false;
     });
   }
 
@@ -92,52 +187,69 @@ class _SettingsScreenState extends State<SettingsScreen>
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
-        child: Stack(
-          children: [
-            // Main scroll content
-            SingleChildScrollView(
-              controller: _scrollController,
+        child: _isLoading 
+          ? Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Header section (shows when not scrolled)
-                  if (!_isScrolled) _buildFullHeaderSection(),
-                  if (_isScrolled)
-                    const SizedBox(height: 56), // Space for pinned header
-
-                  const SizedBox(height: 12),
-
-                  // Quick Actions (4 icons)
-                  _buildQuickActions(),
-
-                  const SizedBox(height: 12),
-
-                  // Utilities Section
-                  _buildUtilitiesSection(),
-
-                  const SizedBox(height: 12),
-
-                  // Travel Statistics Card
-                  _buildTravelStatsCard(),
-
-                  const SizedBox(height: 12),
-
-                  // Settings Menu
-                  _buildSettingsMenu(),
-
-                  const SizedBox(height: 12),
-
-                  // Action Buttons
-                  _buildActionButtons(),
-
-                  const SizedBox(height: 40),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Đang tải thông tin...',
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
                 ],
               ),
-            ),
+            )
+          : Stack(
+              children: [
+                // Main scroll content
+                SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      // Header section (shows when not scrolled)
+                      if (!_isScrolled) _buildFullHeaderSection(),
+                      if (_isScrolled)
+                        const SizedBox(height: 56), // Space for pinned header
 
-            // Pinned header when scrolled
-            if (_isScrolled) _buildCompactHeader(),
-          ],
-        ),
+                      const SizedBox(height: 12),
+
+                      // Quick Actions (4 icons)
+                      _buildQuickActions(),
+
+                      const SizedBox(height: 12),
+
+                      // Utilities Section
+                      _buildUtilitiesSection(),
+
+                      const SizedBox(height: 12),
+
+                      // Travel Statistics Card
+                      _buildTravelStatsCard(),
+
+                      const SizedBox(height: 12),
+
+                      // Settings Menu
+                      _buildSettingsMenu(),
+
+                      const SizedBox(height: 12),
+
+                      // Action Buttons
+                      _buildActionButtons(),
+
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+
+                // Pinned header when scrolled
+                if (_isScrolled) _buildCompactHeader(),
+              ],
+            ),
       ),
     );
   }
@@ -1315,6 +1427,9 @@ class _SettingsScreenState extends State<SettingsScreen>
               // Logout user
               final userService = UserService();
               await userService.logout();
+              
+              // Clear profile service cache
+              _profileService.clearCache();
 
               // Close loading dialog
               Navigator.pop(context);
