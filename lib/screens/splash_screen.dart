@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../main.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -40,7 +41,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToMain() {
-    Navigator.of(context).pushReplacementNamed('/auth');
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const AuthWrapper()),
+    );
   }
 
   @override
@@ -52,39 +55,38 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('images/loading.png'),
-            fit: BoxFit.cover,
+      body: Stack(
+        children: [
+          // Background image
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('images/loading.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-        ),
-        child: AnimatedBuilder(
-          animation: _fadeAnimation,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeAnimation.value,
-              child: Container(
-                // Overlay mờ để text dễ đọc
-                // Loại bỏ overlay đen để giữ hình ảnh sáng
-                child: Positioned.fill(
-                  child: Align(
-                    alignment: Alignment(0.0, 0.4),
-                    child: Transform.scale(
-                      scale: 1.5, // Tăng kích thước lên 1.5 lần
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 4, // Cũng tăng độ dày của vòng tròn
-                      ),
+          // Loading indicator with animation
+          AnimatedBuilder(
+            animation: _fadeAnimation,
+            builder: (context, child) {
+              return Opacity(
+                opacity: _fadeAnimation.value,
+                child: Center(
+                  child: Transform.scale(
+                    scale: 1.5, // Tăng kích thước lên 1.5 lần
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 4, // Cũng tăng độ dày của vòng tròn
                     ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
