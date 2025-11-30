@@ -190,11 +190,11 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
             const SizedBox(height: 16),
             DropdownButtonFormField<ActivityType>(
               value: _selectedType,
-              decoration: const InputDecoration(labelText: 'Activity Type *'),
+              decoration: const InputDecoration(labelText: 'Loại hoạt động *'),
               items: ActivityType.values.map((type) {
                 return DropdownMenuItem(
                   value: type,
-                  child: Text(type.value.replaceAll('_', ' ').toUpperCase()),
+                  child: Text(_getActivityTypeDisplayName(type)),
                 );
               }).toList(),
               onChanged: (value) {
@@ -614,6 +614,47 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
         ),
       ),
     );
+  }
+
+  String _getActivityTypeDisplayName(ActivityType type) {
+    switch (type) {
+      case ActivityType.flight:
+        return '✈️ Chuyến bay';
+      case ActivityType.activity:
+        return '🎯 Hoạt động';
+      case ActivityType.lodging:
+        return '🏨 Lưu trú';
+      case ActivityType.carRental:
+        return '🚗 Thuê xe';
+      case ActivityType.concert:
+        return '🎵 Hòa nhạc';
+      case ActivityType.cruising:
+        return '🛳️ Du thuyền';
+      case ActivityType.direction:
+        return '🧭 Chỉ đường';
+      case ActivityType.ferry:
+        return '⛴️ Phà';
+      case ActivityType.groundTransportation:
+        return '🚌 Di chuyển mặt đất';
+      case ActivityType.map:
+        return '🗺️ Bản đồ';
+      case ActivityType.meeting:
+        return '🤝 Cuộc họp';
+      case ActivityType.note:
+        return '📝 Ghi chú';
+      case ActivityType.parking:
+        return '🅿️ Đỗ xe';
+      case ActivityType.rail:
+        return '🚂 Tàu hỏa';
+      case ActivityType.restaurant:
+        return '🍽️ Nhà hàng';
+      case ActivityType.theater:
+        return '🎭 Rạp hát';
+      case ActivityType.tour:
+        return '🎫 Tour du lịch';
+      case ActivityType.transportation:
+        return '🚇 Di chuyển';
+    }
   }
 
   void _saveActivity() {

@@ -1,10 +1,21 @@
 ///Định nghĩa các data models cho expense management
 /// Expense category enumeration matching backend
 enum ExpenseCategory {
+  // Core categories matching backend ActivityType
+  flight,
+  activity,
+  lodging,
+  carRental,
+  concert,
+  cruising,
+  ferry,
+  groundTransportation,
+  rail,
+  restaurant,
+  theater,
+  tour,
   transportation,
-  accommodation,
-  foodBeverage,
-  activities,
+  // Additional expense categories
   shopping,
   miscellaneous,
   emergency
@@ -14,14 +25,32 @@ enum ExpenseCategory {
 extension ExpenseCategoryExtension on ExpenseCategory {
   String get value {
     switch (this) {
+      case ExpenseCategory.flight:
+        return 'flight';
+      case ExpenseCategory.activity:
+        return 'activity';
+      case ExpenseCategory.lodging:
+        return 'lodging';
+      case ExpenseCategory.carRental:
+        return 'car_rental';
+      case ExpenseCategory.concert:
+        return 'concert';
+      case ExpenseCategory.cruising:
+        return 'cruising';
+      case ExpenseCategory.ferry:
+        return 'ferry';
+      case ExpenseCategory.groundTransportation:
+        return 'ground_transportation';
+      case ExpenseCategory.rail:
+        return 'rail';
+      case ExpenseCategory.restaurant:
+        return 'restaurant';
+      case ExpenseCategory.theater:
+        return 'theater';
+      case ExpenseCategory.tour:
+        return 'tour';
       case ExpenseCategory.transportation:
         return 'transportation';
-      case ExpenseCategory.accommodation:
-        return 'accommodation';
-      case ExpenseCategory.foodBeverage:
-        return 'food_beverage';
-      case ExpenseCategory.activities:
-        return 'activities';
       case ExpenseCategory.shopping:
         return 'shopping';
       case ExpenseCategory.miscellaneous:
@@ -33,14 +62,32 @@ extension ExpenseCategoryExtension on ExpenseCategory {
 
   String get displayName {
     switch (this) {
+      case ExpenseCategory.flight:
+        return 'Chuyến bay';
+      case ExpenseCategory.activity:
+        return 'Hoạt động';
+      case ExpenseCategory.lodging:
+        return 'Lưu trú';
+      case ExpenseCategory.carRental:
+        return 'Thuê xe';
+      case ExpenseCategory.concert:
+        return 'Hòa nhạc';
+      case ExpenseCategory.cruising:
+        return 'Du thuyền';
+      case ExpenseCategory.ferry:
+        return 'Phà';
+      case ExpenseCategory.groundTransportation:
+        return 'Di chuyển mặt đất';
+      case ExpenseCategory.rail:
+        return 'Tàu hỏa';
+      case ExpenseCategory.restaurant:
+        return 'Nhà hàng';
+      case ExpenseCategory.theater:
+        return 'Rạp hát';
+      case ExpenseCategory.tour:
+        return 'Tour du lịch';
       case ExpenseCategory.transportation:
         return 'Di chuyển';
-      case ExpenseCategory.accommodation:
-        return 'Lưu trú';
-      case ExpenseCategory.foodBeverage:
-        return 'Ăn uống';
-      case ExpenseCategory.activities:
-        return 'Hoạt động';
       case ExpenseCategory.shopping:
         return 'Mua sắm';
       case ExpenseCategory.miscellaneous:
@@ -52,14 +99,32 @@ extension ExpenseCategoryExtension on ExpenseCategory {
 
   static ExpenseCategory fromString(String value) {
     switch (value.toLowerCase()) {
+      case 'flight':
+        return ExpenseCategory.flight;
+      case 'activity':
+        return ExpenseCategory.activity;
+      case 'lodging':
+        return ExpenseCategory.lodging;
+      case 'car_rental':
+        return ExpenseCategory.carRental;
+      case 'concert':
+        return ExpenseCategory.concert;
+      case 'cruising':
+        return ExpenseCategory.cruising;
+      case 'ferry':
+        return ExpenseCategory.ferry;
+      case 'ground_transportation':
+        return ExpenseCategory.groundTransportation;
+      case 'rail':
+        return ExpenseCategory.rail;
+      case 'restaurant':
+        return ExpenseCategory.restaurant;
+      case 'theater':
+        return ExpenseCategory.theater;
+      case 'tour':
+        return ExpenseCategory.tour;
       case 'transportation':
         return ExpenseCategory.transportation;
-      case 'accommodation':
-        return ExpenseCategory.accommodation;
-      case 'food_beverage':
-        return ExpenseCategory.foodBeverage;
-      case 'activities':
-        return ExpenseCategory.activities;
       case 'shopping':
         return ExpenseCategory.shopping;
       case 'miscellaneous':

@@ -14,7 +14,8 @@ class AnalysisScreen extends StatefulWidget {
   State<AnalysisScreen> createState() => _AnalysisScreenState();
 }
 
-class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStateMixin {
+class _AnalysisScreenState extends State<AnalysisScreen>
+    with TickerProviderStateMixin {
   int _currentViewIndex = 0; // 0: Activities, 1: Statistic
   int _currentMonthIndex = DateTime.now().month - 1; // Current month (0-based)
   int _currentYear = DateTime.now().year;
@@ -27,8 +28,18 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   late ExpenseProvider _expenseProvider;
 
   final List<String> _months = [
-    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+    'Tháng 1',
+    'Tháng 2',
+    'Tháng 3',
+    'Tháng 4',
+    'Tháng 5',
+    'Tháng 6',
+    'Tháng 7',
+    'Tháng 8',
+    'Tháng 9',
+    'Tháng 10',
+    'Tháng 11',
+    'Tháng 12',
   ];
 
   @override
@@ -45,7 +56,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     try {
       final authService = AuthService();
       final token = await authService.getIdToken();
-      
+
       if (token != null) {
         _expenseProvider.setAuthToken(token);
         await _loadData();
@@ -56,7 +67,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         }
       }
     } catch (e) {
-      print('Error initializing with auth: $e');
+      debugPrint('Error initializing with auth: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -67,19 +78,16 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       }
     }
   }
-  
+
   /// Load data from backend
   Future<void> _loadData() async {
     // Get current month date range
     final currentDate = DateTime(_currentYear, _currentMonthIndex + 1, 1);
     final startDate = DateTime(currentDate.year, currentDate.month, 1);
     final endDate = DateTime(currentDate.year, currentDate.month + 1, 0);
-    
+
     await Future.wait([
-      _expenseProvider.fetchExpenses(
-        startDate: startDate,
-        endDate: endDate,
-      ),
+      _expenseProvider.fetchExpenses(startDate: startDate, endDate: endDate),
       _expenseProvider.fetchExpenseSummary(),
       _expenseProvider.fetchCategoryStatus(),
       _expenseProvider.fetchSpendingTrends(),
@@ -103,14 +111,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           children: [
             // Header với search và buttons
             _buildHeader(),
-            
+
             // Main tabs (Activities/Statistic)
             _buildMainTabs(),
-            
+
             // Content
-            Expanded(
-              child: _buildContent(),
-            ),
+            Expanded(child: _buildContent()),
           ],
         ),
       ),
@@ -135,7 +141,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
               child: Row(
                 children: [
                   const SizedBox(width: 12),
-                  Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+                  const Icon(
+                    Icons.search,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -151,7 +161,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Filter button
           MouseRegion(
             onEnter: (_) => setState(() {}),
@@ -185,7 +195,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
             ),
           ),
           const SizedBox(width: 8),
-          
+
           // Grid button (4 squares)
           MouseRegion(
             onEnter: (_) => setState(() {}),
@@ -291,7 +301,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           // Month selector
           _buildMonthSelector(),
           const SizedBox(height: 16),
-          
+
           // Calendar or list view
           Expanded(
             child: Container(
@@ -304,19 +314,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
               child: Column(
                 children: [
                   // Calendar grid - expanded to show full calendar
-                  Expanded(
-                    flex: 3,
-                    child: _buildCalendarView(),
-                  ),
-                  
+                  Expanded(flex: 3, child: _buildCalendarView()),
+
                   const SizedBox(height: 16),
-                  
+
                   // Expense list - takes remaining space
                   Expanded(
                     flex: 2,
-                    child: SingleChildScrollView(
-                      child: _buildExpenseList(),
-                    ),
+                    child: SingleChildScrollView(child: _buildExpenseList()),
                   ),
                 ],
               ),
@@ -336,7 +341,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           // Month selector
           _buildMonthSelector(),
           const SizedBox(height: 16),
-          
+
           // Chart container
           Expanded(
             child: Container(
@@ -351,22 +356,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                   // Chart area
                   Expanded(
                     flex: _chartTypeIndex == 0 ? 2 : 3,
-                    child: _chartTypeIndex == 0 ? _buildPieChart() : _buildBarChart(),
+                    child: _chartTypeIndex == 0
+                        ? _buildPieChart()
+                        : _buildBarChart(),
                   ),
-                  
+
                   // Only show category tabs and list for pie chart
                   if (_chartTypeIndex == 0) ...[
                     const SizedBox(height: 16),
-                    
+
                     // Category tabs
                     _buildCategoryTabs(),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Category list
-                    Expanded(
-                      child: _buildCategoryList(),
-                    ),
+                    Expanded(child: _buildCategoryList()),
                   ],
                 ],
               ),
@@ -393,7 +398,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           ),
         ),
         const SizedBox(width: 8),
-        
+
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -417,7 +422,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
             ),
           ),
         ),
-        
+
         const SizedBox(width: 8),
         GestureDetector(
           onTap: () => _changeMonth(1),
@@ -475,9 +480,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       animation: _expenseProvider,
       builder: (context, child) {
         if (_expenseProvider.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (_expenseProvider.error != null) {
@@ -529,7 +532,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         return Column(
           children: expenses.map((expense) {
             return GestureDetector(
-              onTap: () => _onExpenseTap(expense.description.isNotEmpty ? expense.description : expense.category.displayName),
+              onTap: () => _onExpenseTap(
+                expense.description.isNotEmpty
+                    ? expense.description
+                    : expense.category.displayName,
+              ),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
@@ -558,7 +565,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            expense.description.isNotEmpty ? expense.description : expense.category.displayName,
+                            expense.description.isNotEmpty
+                                ? _extractActivityTitle(expense.description)
+                                : expense.category.displayName,
                             style: GoogleFonts.quattrocento(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -592,6 +601,19 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     );
   }
 
+  /// Extract clean activity title from expense description
+  String _extractActivityTitle(String description) {
+    if (description.isEmpty) return description;
+    
+    // Check if description contains the format "[Activity: xxx] [Trip: xxx]"
+    final activityMatch = RegExp(r'^(.+?)\s*\[Activity:').firstMatch(description);
+    if (activityMatch != null) {
+      return activityMatch.group(1)?.trim() ?? description;
+    }
+    
+    return description;
+  }
+
   /// Pie chart
   Widget _buildPieChart() {
     return AnimatedBuilder(
@@ -611,15 +633,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.bar_chart, size: 16, color: Colors.grey[600]),
+                    child: Icon(
+                      Icons.bar_chart,
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            
+
             Expanded(
-              child: _buildPieChartContent(),
+              child: Transform.translate(
+                offset: const Offset(0, -20), // Dịch pie chart lên trên 20px
+                child: _buildPieChartContent(),
+              ),
             ),
           ],
         );
@@ -632,8 +661,28 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       return const Center(child: CircularProgressIndicator());
     }
 
-    final summary = _expenseProvider.expenseSummary;
-    if (summary == null || summary.categoryBreakdown.isEmpty) {
+    // Get data based on selected tab
+    Map<String, double> chartData;
+
+    if (_categoryTabIndex == 0) {
+      // Subcategory tab - group by expense description (activity title)
+      final subcategoryBreakdown = <String, double>{};
+      for (final expense in _expenseProvider.expenses) {
+        final rawDescription = expense.description.isNotEmpty
+            ? expense.description
+            : expense.category.displayName;
+        final subcategoryName = _extractActivityTitle(rawDescription);
+        subcategoryBreakdown[subcategoryName] =
+            (subcategoryBreakdown[subcategoryName] ?? 0) + expense.amount;
+      }
+      chartData = subcategoryBreakdown;
+    } else {
+      // Category tab - use existing category breakdown
+      final summary = _expenseProvider.expenseSummary;
+      chartData = summary?.categoryBreakdown ?? {};
+    }
+
+    if (chartData.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -652,9 +701,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       );
     }
 
-    final categoryData = summary.categoryBreakdown;
-    final total = categoryData.values.fold<double>(0, (sum, value) => sum + value);
-    
+    final categoryData = chartData;
+    final total = categoryData.values.fold<double>(
+      0,
+      (sum, value) => sum + value,
+    );
+
     if (total == 0) {
       return Center(
         child: Text(
@@ -683,26 +735,75 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       final index = entry.key;
       final categoryEntry = entry.value;
       final percentage = (categoryEntry.value / total * 100);
-      
+
+      // Get display name based on current tab
+      String displayName;
+      if (_categoryTabIndex == 0) {
+        // Subcategory tab - use the key as is (activity title)
+        displayName = categoryEntry.key;
+      } else {
+        // Category tab - use category display name
+        displayName = _getCategoryDisplayName(categoryEntry.key);
+      }
+
       return PieChartSectionData(
         value: categoryEntry.value,
-        title: '${percentage.toStringAsFixed(1)}%\n${_getCategoryDisplayName(categoryEntry.key)}',
-        radius: 50 + (percentage / 100 * 20), // Dynamic radius based on percentage
+        title: '${percentage.toStringAsFixed(0)}%', // Chỉ hiển thị % thôi
+        radius: 80, // Tăng radius lên 100 để pie chart to hơn
         color: colors[index % colors.length],
         titleStyle: GoogleFonts.quattrocento(
-          fontSize: 10, 
+          fontSize: 10,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
       );
     }).toList();
 
-    return PieChart(
-      PieChartData(
-        sectionsSpace: 2,
-        centerSpaceRadius: 50,
-        sections: sections,
-      ),
+    return Stack(
+      children: [
+        PieChart(
+          PieChartData(
+            sectionsSpace: 2,
+            centerSpaceRadius: 50,
+            sections: sections,
+          ),
+        ),
+        // Text ở giữa pie chart
+        Positioned.fill(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Tổng chi tiêu',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatMoney(total),
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  'VND',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -728,13 +829,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           ],
         ),
         const SizedBox(height: 16),
-        
-        Expanded(
-          child: _buildCustomHorizontalBarChart(),
-        ),
-        
+
+        Expanded(child: _buildCustomHorizontalBarChart()),
+
         const SizedBox(height: 16),
-        
+
         // Spend info button
         Container(
           width: double.infinity,
@@ -745,7 +844,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           ),
           child: Center(
             child: Text(
-              'CHI TIÊU THÁNG NÀY\n ${_formatMoney(_expenseProvider.expenseSummary?.totalAmount ?? 0)}₫',
+              '${_formatMoney(_expenseProvider.expenseSummary?.totalAmount ?? 0)}₫',
               textAlign: TextAlign.center,
               style: GoogleFonts.quattrocento(
                 fontSize: 14,
@@ -755,9 +854,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
             ),
           ),
         ),
-        
+
         const SizedBox(height: 8),
-        
       ],
     );
   }
@@ -769,65 +867,65 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
       builder: (context, child) {
         // Get real data from spending trends or create mock data based on current month
         List<Map<String, dynamic>> chartData = _generateChartData();
-        
+
         if (chartData.isEmpty) {
           return _buildEmptyBarChart();
         }
-        
+
         return _buildAnimatedBarChart(chartData);
       },
     );
   }
 
-  /// Generate chart data from real backend data or create realistic mock data
+  /// Generate chart data from real expense data
   List<Map<String, dynamic>> _generateChartData() {
-    final spendingTrends = _expenseProvider.spendingTrends;
-    
-    if (spendingTrends != null && spendingTrends.dailyTotals.isNotEmpty) {
-      // Use real data from backend - aggregate daily totals by month
-      final monthlyData = <int, double>{};
-      for (final entry in spendingTrends.dailyTotals.entries) {
-        final month = entry.key.month;
-        monthlyData[month] = (monthlyData[month] ?? 0) + entry.value;
-      }
-      
-      final maxAmount = monthlyData.values.isNotEmpty 
-        ? monthlyData.values.reduce((a, b) => a > b ? a : b) 
-        : spendingTrends.recentAverage;
-        
-      return monthlyData.entries.map((entry) {
-        return {
-          'month': _getShortMonthName(entry.key),
-          'amount': entry.value,
-          'color': _getGradientColor(entry.value, maxAmount),
-          'isCurrentMonth': entry.key == _currentMonthIndex + 1,
-        };
-      }).toList();
-    } else {
-      // Generate realistic data based on current expenses
-      final currentTotal = _expenseProvider.expenseSummary?.totalAmount ?? 0.0;
-      return _generateRealisticChartData(currentTotal);
-    }
-  }
+    // Use real expense data from provider
+    final expenses = _expenseProvider.expenses;
 
-  /// Generate realistic chart data for demonstration
-  List<Map<String, dynamic>> _generateRealisticChartData(double currentTotal) {
-    final Random random = Random();
-    final baseAmount = currentTotal > 0 ? currentTotal : 500000.0;
-    
-    return List.generate(6, (index) {
-      final monthIndex = (_currentMonthIndex - 5 + index) % 12;
-      final isCurrentMonth = monthIndex == _currentMonthIndex;
-      final variation = 0.3 + (random.nextDouble() * 0.4); // 30-70% variation
-      final amount = baseAmount * variation;
-      
+    if (expenses.isEmpty) {
+      return [];
+    }
+
+    // Group expenses by month
+    final monthlyData = <int, double>{};
+    for (final expense in expenses) {
+      final month = expense.date.month;
+      monthlyData[month] = (monthlyData[month] ?? 0) + expense.amount;
+    }
+
+    // If no monthly data, just return current month total
+    if (monthlyData.isEmpty) {
+      final currentTotal = _expenseProvider.expenseSummary?.totalAmount ?? 0.0;
+      if (currentTotal > 0) {
+        return [
+          {
+            'month': _getShortMonthName(DateTime.now().month),
+            'amount': currentTotal,
+            'color': _getGradientColor(currentTotal, currentTotal),
+            'isCurrentMonth': true,
+          },
+        ];
+      }
+      return [];
+    }
+
+    final maxAmount = monthlyData.values.isNotEmpty
+        ? monthlyData.values.reduce((a, b) => a > b ? a : b)
+        : 1000000.0;
+
+    // Convert to chart data
+    return monthlyData.entries.map((entry) {
       return {
-        'month': _getShortMonthName(monthIndex + 1),
-        'amount': amount,
-        'color': _getGradientColor(amount, baseAmount * 1.2),
-        'isCurrentMonth': isCurrentMonth,
+        'month': _getShortMonthName(entry.key),
+        'amount': entry.value,
+        'color': _getGradientColor(entry.value, maxAmount),
+        'isCurrentMonth': entry.key == DateTime.now().month,
       };
-    });
+    }).toList()..sort(
+      (a, b) => _getMonthNumber(
+        a['month'] as String,
+      ).compareTo(_getMonthNumber(b['month'] as String)),
+    );
   }
 
   /// Build empty state for bar chart
@@ -843,11 +941,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(
-              Icons.bar_chart,
-              size: 48,
-              color: Colors.grey[400],
-            ),
+            child: Icon(Icons.bar_chart, size: 48, color: Colors.grey[400]),
           ),
           const SizedBox(height: 16),
           Text(
@@ -874,19 +968,20 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
 
   /// Build animated bar chart with beautiful decorations
   Widget _buildAnimatedBarChart(List<Map<String, dynamic>> data) {
-    final maxAmount = data.map((item) => item['amount'] as double).reduce((a, b) => a > b ? a : b);
-    final minAmount = data.map((item) => item['amount'] as double).reduce((a, b) => a < b ? a : b);
-    
+    final maxAmount = data
+        .map((item) => item['amount'] as double)
+        .reduce((a, b) => a > b ? a : b);
+    final minAmount = data
+        .map((item) => item['amount'] as double)
+        .reduce((a, b) => a < b ? a : b);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.grey[50]!,
-            Colors.white,
-          ],
+          colors: [Colors.grey[50]!, Colors.white],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
@@ -895,34 +990,33 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         children: [
           // Chart title with trend info
           _buildChartHeader(maxAmount, minAmount),
-          
+
           const SizedBox(height: 20),
-          
+
           // Main chart area
           Expanded(
+            flex: 2,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // Y-axis with dynamic labels
                 _buildYAxis(maxAmount),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Chart bars area
-                Expanded(
-                  child: _buildBarsArea(data, maxAmount),
-                ),
+                Expanded(child: _buildBarsArea(data, maxAmount)),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // X-axis labels with enhanced styling
           _buildXAxis(data),
-          
+
           const SizedBox(height: 12),
-          
+
           // Chart legend
           _buildChartLegend(),
         ],
@@ -933,9 +1027,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   /// Build chart header with trend information
   Widget _buildChartHeader(double maxAmount, double minAmount) {
     final trend = maxAmount > minAmount ? 'tăng' : 'giảm';
-    final trendIcon = maxAmount > minAmount ? Icons.trending_up : Icons.trending_down;
-    final trendColor = maxAmount > minAmount ? Colors.green[600] : Colors.red[600];
-    
+    final trendIcon = maxAmount > minAmount
+        ? Icons.trending_up
+        : Icons.trending_down;
+    final trendColor = maxAmount > minAmount
+        ? Colors.green[600]
+        : Colors.red[600];
+
     return Row(
       children: [
         Expanded(
@@ -1009,7 +1107,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   /// Build Y-axis with dynamic scaling
   Widget _buildYAxis(double maxAmount) {
     final intervals = _calculateYAxisIntervals(maxAmount);
-    
+
     return SizedBox(
       width: 60,
       child: Column(
@@ -1045,7 +1143,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         children: [
           // Grid lines
           _buildGridLines(),
-          
+
           // Animated bars
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -1067,11 +1165,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   }
 
   /// Build individual animated bar with hover effect
-  Widget _buildAnimatedBar(Map<String, dynamic> item, double maxAmount, int index) {
+  Widget _buildAnimatedBar(
+    Map<String, dynamic> item,
+    double maxAmount,
+    int index,
+  ) {
     final amount = item['amount'] as double;
     final isSelected = _selectedBarIndex == index;
     final percentage = amount / maxAmount;
-    
+
     // Determine colors based on selection state
     final Color barColor;
     if (isSelected) {
@@ -1079,7 +1181,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     } else {
       barColor = Colors.grey[400]!; // Grey when not selected
     }
-    
+
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 800 + (index * 100)),
       tween: Tween(begin: 0.0, end: percentage),
@@ -1100,10 +1202,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
-                        colors: [
-                          barColor,
-                          barColor.withValues(alpha: 0.7),
-                        ],
+                        colors: [barColor, barColor.withValues(alpha: 0.7)],
                       ),
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(8),
@@ -1136,10 +1235,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           child: Container(
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: Colors.grey[200]!,
-                  width: 0.8,
-                ),
+                top: BorderSide(color: Colors.grey[200]!, width: 0.8),
               ),
             ),
           ),
@@ -1159,12 +1255,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: isCurrentMonth
-              ? BoxDecoration(
-                  color: Colors.orange[100],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange[300]!),
-                )
-              : null,
+                ? BoxDecoration(
+                    color: Colors.orange[100],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange[300]!),
+                  )
+                : null,
             child: Text(
               item['month'] as String,
               textAlign: TextAlign.center,
@@ -1203,7 +1299,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(2),
-            border: isCurrent ? Border.all(color: Colors.orange[600]!, width: 1.5) : null,
+            border: isCurrent
+                ? Border.all(color: Colors.orange[600]!, width: 1.5)
+                : null,
           ),
         ),
         const SizedBox(width: 6),
@@ -1223,7 +1321,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   List<double> _calculateYAxisIntervals(double maxAmount) {
     final roundedMax = (maxAmount * 1.1); // Add 10% padding
     final interval = roundedMax / 4;
-    
+
     return [
       roundedMax,
       roundedMax - interval,
@@ -1236,7 +1334,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   /// Get gradient color based on amount
   Color _getGradientColor(double amount, double maxAmount) {
     final percentage = amount / maxAmount;
-    
+
     if (percentage > 0.8) return Colors.red[400]!;
     if (percentage > 0.6) return Colors.orange[400]!;
     if (percentage > 0.4) return Colors.blue[400]!;
@@ -1247,17 +1345,44 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   /// Get short month name
   String _getShortMonthName(int monthNumber) {
     const months = [
-      'T1', 'T2', 'T3', 'T4', 'T5', 'T6',
-      'T7', 'T8', 'T9', 'T10', 'T11', 'T12'
+      'T1',
+      'T2',
+      'T3',
+      'T4',
+      'T5',
+      'T6',
+      'T7',
+      'T8',
+      'T9',
+      'T10',
+      'T11',
+      'T12',
     ];
     return months[(monthNumber - 1) % 12];
   }
 
+  /// Get month number from short month name (T1 -> 1, T2 -> 2, etc.)
+  int _getMonthNumber(String shortName) {
+    const months = [
+      'T1',
+      'T2',
+      'T3',
+      'T4',
+      'T5',
+      'T6',
+      'T7',
+      'T8',
+      'T9',
+      'T10',
+      'T11',
+      'T12',
+    ];
+    return months.indexOf(shortName) + 1;
+  }
+
   /// Show tooltip for bar hover
   void _showBarTooltip(Map<String, dynamic> item) {
-    final amount = item['amount'] as double;
-    final month = item['month'] as String;
-    _showMessage('$month: ${_formatMoney(amount)}₫');
+    // Tooltip disabled - no more showing month amount messages
   }
 
   /// Handle bar tap to select/deselect
@@ -1317,7 +1442,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     return AnimatedBuilder(
       animation: _expenseProvider,
       builder: (context, child) {
-        if (_expenseProvider.isSummaryLoading || _expenseProvider.isCategoryLoading) {
+        if (_expenseProvider.isSummaryLoading ||
+            _expenseProvider.isCategoryLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -1327,19 +1453,105 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
         List<Map<String, dynamic>> categories = [];
 
         if (_categoryTabIndex == 0) {
-          // Show detailed categories from summary
+          // Subcategory tab - group expenses by description (activity title)
+          final subcategoryBreakdown = <String, double>{};
+          for (final expense in _expenseProvider.expenses) {
+            final rawDescription = expense.description.isNotEmpty
+                ? expense.description
+                : expense.category.displayName;
+            final subcategoryName = _extractActivityTitle(rawDescription);
+            subcategoryBreakdown[subcategoryName] =
+                (subcategoryBreakdown[subcategoryName] ?? 0) + expense.amount;
+          }
+
+          if (subcategoryBreakdown.isNotEmpty) {
+            categories =
+                subcategoryBreakdown.entries.map((entry) {
+                  // Try to find corresponding expense to get icon
+                  Expense? expense;
+                  try {
+                    expense = _expenseProvider.expenses.firstWhere(
+                      (e) => _extractActivityTitle(e.description.isNotEmpty
+                              ? e.description
+                              : e.category.displayName) ==
+                          entry.key,
+                    );
+                  } catch (e) {
+                    expense = _expenseProvider.expenses.isNotEmpty
+                        ? _expenseProvider.expenses.first
+                        : null;
+                  }
+
+                  return {
+                    'title': entry.key,
+                    'amount': entry.value,
+                    'icon': expense != null
+                        ? _getCategoryIcon(expense.category)
+                        : Icons.category,
+                    'categoryKey': entry.key,
+                  };
+                }).toList()..sort(
+                  (a, b) =>
+                      (b['amount'] as double).compareTo(a['amount'] as double),
+                );
+          }
+        } else {
+          // Category tab - show expense categories grouped
           if (summary != null && summary.categoryBreakdown.isNotEmpty) {
             categories = summary.categoryBreakdown.entries.map((entry) {
+              final displayName = _getCategoryDisplayName(entry.key);
               return {
-                'title': _getCategoryDisplayName(entry.key),
+                'title': displayName,
                 'amount': entry.value,
                 'icon': _getCategoryIconByName(entry.key),
                 'categoryKey': entry.key,
               };
             }).toList();
-            
+
             // Sort by amount descending
-            categories.sort((a, b) => (b['amount'] as double).compareTo(a['amount'] as double));
+            categories.sort(
+              (a, b) =>
+                  (b['amount'] as double).compareTo(a['amount'] as double),
+            );
+          }
+        }
+
+        if (_categoryTabIndex == 0) {
+          // Show subcategories - group expenses by description (activity title)
+          final subcategoryBreakdown = <String, double>{};
+          for (final expense in _expenseProvider.expenses) {
+            final rawDescription = expense.description.isNotEmpty
+                ? expense.description
+                : expense.category.displayName;
+            final subcategoryName = _extractActivityTitle(rawDescription);
+            subcategoryBreakdown[subcategoryName] =
+                (subcategoryBreakdown[subcategoryName] ?? 0) + expense.amount;
+          }
+
+          if (subcategoryBreakdown.isNotEmpty) {
+            categories = subcategoryBreakdown.entries.map((entry) {
+              // Try to find corresponding expense to get icon
+              final expense = _expenseProvider.expenses.firstWhere(
+                (e) => _extractActivityTitle(e.description.isNotEmpty
+                        ? e.description
+                        : e.category.displayName) ==
+                    entry.key,
+                orElse: () => _expenseProvider.expenses.first,
+              );
+
+              return {
+                'title': entry.key,
+                'amount': entry.value,
+                'icon': _getCategoryIcon(expense.category),
+                'categoryKey': entry.key,
+              };
+            }).toList();
+
+            // Sort by amount descending
+            categories.sort(
+              (a, b) =>
+                  (b['amount'] as double).compareTo(a['amount'] as double),
+            );
           }
         } else {
           // Show category status from backend
@@ -1375,12 +1587,27 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
           );
         }
 
+        // Định nghĩa màu sắc giống như pie chart
+        final colors = [
+          Colors.orange[400]!,
+          Colors.blue[400]!,
+          Colors.green[400]!,
+          Colors.purple[400]!,
+          Colors.red[400]!,
+          Colors.teal[400]!,
+          Colors.amber[400]!,
+          Colors.pink[400]!,
+          Colors.indigo[400]!,
+        ];
+
         return ListView.builder(
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final category = categories[index];
             final amount = category['amount'] as double;
-            
+            final categoryColor =
+                colors[index % colors.length]; // Màu tương ứng với pie chart
+
             return GestureDetector(
               onTap: () => _onCategoryTap(category['title'] as String),
               child: Container(
@@ -1389,13 +1616,27 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: categoryColor.withOpacity(0.3), // Border màu nhẹ
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
+                    // Dot màu tương ứng với pie chart
+                    Container(
+                      width: 12,
+                      height: 12,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: categoryColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     Icon(
                       category['icon'] as IconData,
                       size: 20,
-                      color: Colors.grey[700],
+                      color: Colors.grey[700], // Icon màu xám mặc định
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -1404,18 +1645,23 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                         children: [
                           Text(
                             category['title'] as String,
-                            style: GoogleFonts.quattrocento(
-                              fontSize: 14,
+                            style: const TextStyle(
+                              fontFamily: 'Urbanist-Regular',
                               fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: Colors.black87, // Chữ màu đen mặc định
                             ),
                           ),
-                          if (_categoryTabIndex == 1 && category['status'] != null) ...[
+                          if (_categoryTabIndex == 1 &&
+                              category['status'] != null) ...[
                             const SizedBox(height: 2),
                             Text(
                               'Budget: ${_formatMoney((category['status'] as CategoryStatus).allocated)}₫',
-                              style: GoogleFonts.quattrocento(
+                              style: const TextStyle(
+                                fontFamily: 'Urbanist-Regular',
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color:
+                                    Colors.grey, // Màu xám mặc định cho budget
                               ),
                             ),
                           ],
@@ -1427,20 +1673,27 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
                       children: [
                         Text(
                           '${_formatMoney(amount)}₫',
-                          style: GoogleFonts.quattrocento(
+                          style: const TextStyle(
+                            fontFamily: 'Urbanist-Regular',
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black87, // Số tiền màu đen mặc định
                           ),
                         ),
-                        if (_categoryTabIndex == 1 && category['status'] != null) ...[
+                        if (_categoryTabIndex == 1 &&
+                            category['status'] != null) ...[
                           const SizedBox(height: 2),
                           Text(
                             '${((category['status'] as CategoryStatus).percentageUsed).toStringAsFixed(1)}%',
-                            style: GoogleFonts.quattrocento(
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
                               fontSize: 12,
-                              color: (category['status'] as CategoryStatus).isOverBudget 
-                                  ? Colors.red[600] 
-                                  : Colors.green[600],
+                              color:
+                                  (category['status'] as CategoryStatus)
+                                      .isOverBudget
+                                  ? Colors.red[600]
+                                  : Colors
+                                        .grey[600], // Màu xám mặc định hoặc đỏ nếu over budget
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1462,7 +1715,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     setState(() {
       _currentViewIndex = index;
     });
-    _showMessage(index == 0 ? 'Switched to Activities' : 'Switched to Statistics');
+    _showMessage(
+      index == 0 ? 'Switched to Activities' : 'Switched to Statistics',
+    );
   }
 
   void _onCategoryTabChanged(int index) {
@@ -1526,14 +1781,32 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
   /// Get icon for expense category
   IconData _getCategoryIcon(ExpenseCategory category) {
     switch (category) {
-      case ExpenseCategory.foodBeverage:
+      case ExpenseCategory.flight:
+        return Icons.flight;
+      case ExpenseCategory.activity:
+        return Icons.local_activity;
+      case ExpenseCategory.lodging:
+        return Icons.hotel;
+      case ExpenseCategory.carRental:
+        return Icons.car_rental;
+      case ExpenseCategory.concert:
+        return Icons.music_note;
+      case ExpenseCategory.cruising:
+        return Icons.directions_boat;
+      case ExpenseCategory.ferry:
+        return Icons.directions_ferry;
+      case ExpenseCategory.groundTransportation:
+        return Icons.directions_bus;
+      case ExpenseCategory.rail:
+        return Icons.train;
+      case ExpenseCategory.restaurant:
         return Icons.restaurant;
+      case ExpenseCategory.theater:
+        return Icons.theater_comedy;
+      case ExpenseCategory.tour:
+        return Icons.tour;
       case ExpenseCategory.transportation:
         return Icons.directions_car;
-      case ExpenseCategory.accommodation:
-        return Icons.hotel;
-      case ExpenseCategory.activities:
-        return Icons.local_activity;
       case ExpenseCategory.shopping:
         return Icons.shopping_cart;
       case ExpenseCategory.miscellaneous:
@@ -1578,4 +1851,3 @@ class _AnalysisScreenState extends State<AnalysisScreen> with TickerProviderStat
     }
   }
 }
-

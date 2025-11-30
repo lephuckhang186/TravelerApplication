@@ -7,6 +7,9 @@ import '../../models/activity_models.dart';
 import '../../providers/trip_planning_provider.dart';
 import '../../services/trip_planning_service.dart';
 import '../../services/trip_storage_service.dart';
+import '../../../expense_management/data/services/expense_service.dart';
+import '../../../expense_management/presentation/providers/expense_provider.dart';
+import '../../services/trip_expense_integration_service.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -20,6 +23,9 @@ class PlannerDetailScreen extends StatefulWidget {
 class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   final TripPlanningService _tripService = TripPlanningService();
   final TripStorageService _storageService = TripStorageService();
+  final ExpenseService _expenseService = ExpenseService();
+  final TripExpenseIntegrationService _integrationService = TripExpenseIntegrationService();
+  ExpenseProvider? _expenseProvider;
 
   late TripModel _trip;
   late List<ActivityModel> _activities;
@@ -32,6 +38,16 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     _trip = widget.trip;
     _activities = List<ActivityModel>.from(widget.trip.activities);
     _loadActivitiesFromServer();
+    // Get expense provider from context after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        _expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+        _integrationService.setExpenseProvider(_expenseProvider!);
+      } catch (e) {
+        // ExpenseProvider not available in this context
+        print('ExpenseProvider not found: $e');
+      }
+    });
   }
 
   /// Load activities from server to ensure we have the latest data
@@ -68,7 +84,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         });
       });
     } catch (e) {
-      print('Failed to load activities from server: $e');
+      debugPrint('Failed to load activities from server: $e');
       // Continue with local activities if server fails
     }
   }
@@ -249,7 +265,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   Widget _buildTimelineItem(ActivityModel activity, int index) {
     final isLast = index == _activities.length - 1;
     final icon = _iconForType(activity.activityType);
-    final color = _colorForType(activity.activityType);
+    final color = activity.checkIn 
+        ? Colors.green // Checked-in color
+        : _colorForType(activity.activityType);
     final timeLabel = activity.startDate != null
         ? _formatTime(activity.startDate!)
         : '--';
@@ -315,14 +333,28 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         ),
                       ),
                     ),
+                    // Check-in button
+                    IconButton(
+                      icon: Icon(
+                        activity.checkIn ? Icons.check_circle : Icons.check_circle_outline,
+                        color: activity.checkIn ? Colors.green : Colors.grey,
+                      ),
+                      onPressed: () => _toggleCheckIn(activity),
+                    ),
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, size: 18),
                       onSelected: (value) {
                         if (value == 'delete') {
                           _deleteActivity(activity);
+                        } else if (value == 'edit_cost') {
+                          _showRealCostInput(activity);
                         }
                       },
                       itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit_cost',
+                          child: Text('Add Real Cost'),
+                        ),
                         const PopupMenuItem(
                           value: 'delete',
                           child: Text('Remove'),
@@ -343,6 +375,100 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     ),
                   ),
                 ],
+                // Budget information - show expected cost before check-in, actual cost after
+                if (activity.budget != null) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      // Before check-in: Show expected cost only
+                      if (!activity.checkIn)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.schedule,
+                                size: 12,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Expected: ${_formatCurrency(activity.budget!.estimatedCost)}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // After check-in: Show actual cost
+                      if (activity.checkIn && activity.budget!.actualCost != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.receipt,
+                                size: 12,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Spent: ${_formatCurrency(activity.budget!.actualCost!)}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // After check-in but no actual cost recorded
+                      if (activity.checkIn && activity.budget!.actualCost == null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.warning_amber,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'No cost recorded',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -354,9 +480,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   void _showAddActivityModal() {
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
+    final expectedCostController = TextEditingController();
     ActivityType selectedType = ActivityType.activity;
     DateTime selectedDate = _trip.startDate;
     TimeOfDay selectedTime = const TimeOfDay(hour: 9, minute: 0);
+    bool checkInStatus = false;
 
     showModalBottomSheet(
       context: context,
@@ -425,6 +553,17 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: expectedCostController,
+                      label: 'Expected Cost (VND)',
+                      hint: 'Enter estimated cost (optional)',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCheckInToggle(checkInStatus, (value) {
+                      setModalState(() => checkInStatus = value);
+                    }),
+                    const SizedBox(height: 16),
                     _buildTypeSelector(selectedType, (value) {
                       setModalState(() => selectedType = value);
                     }),
@@ -481,6 +620,19 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             selectedTime.hour,
                             selectedTime.minute,
                           );
+                          final expectedCost = expectedCostController.text.trim().isEmpty 
+                              ? null 
+                              : double.tryParse(expectedCostController.text.trim());
+                          
+                          // Create budget if expected cost is provided
+                          BudgetModel? budget;
+                          if (expectedCost != null) {
+                            budget = BudgetModel(
+                              estimatedCost: expectedCost,
+                              currency: 'VND',
+                            );
+                          }
+                          
                           final newActivity = ActivityModel(
                             id:
                                 'local_act_${DateTime.now().millisecondsSinceEpoch}',
@@ -491,6 +643,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             activityType: selectedType,
                             startDate: startDate,
                             tripId: _trip.id,
+                            budget: budget,
+                            checkIn: checkInStatus,
                           );
                           Navigator.pop(context);
                           _addActivity(newActivity);
@@ -521,6 +675,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     required String label,
     required String hint,
     int maxLines = 1,
+    TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,6 +691,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
@@ -562,16 +718,29 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     );
   }
 
+  Widget _buildCheckInToggle(bool value, ValueChanged<bool> onChanged) {
+    return Row(
+      children: [
+        Text(
+          'Check-in Status',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const Spacer(),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: AppColors.primary,
+        ),
+      ],
+    );
+  }
+
   Widget _buildTypeSelector(
       ActivityType selected, ValueChanged<ActivityType> onChanged) {
-    final types = [
-      ActivityType.flight,
-      ActivityType.restaurant,
-      ActivityType.activity,
-      ActivityType.tour,
-      ActivityType.lodging,
-      ActivityType.note,
-    ];
+    final types = ActivityType.values;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -590,7 +759,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           children: types.map((type) {
             final isSelected = type == selected;
             return ChoiceChip(
-              label: Text(type.value.replaceAll('_', ' ').toUpperCase()),
+              label: Text(_getActivityTypeDisplayName(type)),
               selected: isSelected,
               onSelected: (_) => onChanged(type),
               selectedColor: AppColors.primary.withValues(alpha: 0.15),
@@ -603,6 +772,47 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         ),
       ],
     );
+  }
+
+  String _getActivityTypeDisplayName(ActivityType type) {
+    switch (type) {
+      case ActivityType.flight:
+        return '✈️ Chuyến bay';
+      case ActivityType.activity:
+        return '🎯 Hoạt động';
+      case ActivityType.lodging:
+        return '🏨 Lưu trú';
+      case ActivityType.carRental:
+        return '🚗 Thuê xe';
+      case ActivityType.concert:
+        return '🎵 Hòa nhạc';
+      case ActivityType.cruising:
+        return '🛳️ Du thuyền';
+      case ActivityType.direction:
+        return '🧭 Chỉ đường';
+      case ActivityType.ferry:
+        return '⛴️ Phà';
+      case ActivityType.groundTransportation:
+        return '🚌 Di chuyển mặt đất';
+      case ActivityType.map:
+        return '🗺️ Bản đồ';
+      case ActivityType.meeting:
+        return '🤝 Cuộc họp';
+      case ActivityType.note:
+        return '📝 Ghi chú';
+      case ActivityType.parking:
+        return '🅿️ Đỗ xe';
+      case ActivityType.rail:
+        return '🚂 Tàu hỏa';
+      case ActivityType.restaurant:
+        return '🍽️ Nhà hàng';
+      case ActivityType.theater:
+        return '🎭 Rạp hát';
+      case ActivityType.tour:
+        return '🎫 Tour du lịch';
+      case ActivityType.transportation:
+        return '🚇 Di chuyển';
+    }
   }
 
   Widget _buildPickerTile({
@@ -690,7 +900,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       try {
         createdActivity = await _tripService.createActivity(activity);
       } catch (e) {
-        print('Failed to create activity on server: $e');
+        debugPrint('Failed to create activity on server: $e');
         // If server fails, continue with local storage only
         createdActivity = activity;
       }
@@ -699,6 +909,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         _activities.add(createdActivity);
       });
       await _persistTripChanges();
+      
+      // Don't auto-create expense - only create on check-in
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -728,7 +940,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         try {
           await _tripService.deleteActivity(activity.id!);
         } catch (e) {
-          print('Failed to delete activity from server: $e');
+          debugPrint('Failed to delete activity from server: $e');
         }
       }
       
@@ -908,4 +1120,363 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             : hours;
     return '$normalizedHour:$minutes $suffix';
   }
+
+  String _formatCurrency(double amount) {
+    return '${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',')} VND';
+  }
+
+  void _toggleCheckIn(ActivityModel activity) async {
+    try {
+      if (!activity.checkIn) {
+        // Checking in - prompt for actual cost
+        await _checkInWithActualCost(activity);
+      } else {
+        // Checking out - just toggle status
+        final updatedActivity = activity.copyWith(checkIn: false);
+        await _updateActivityCheckIn(updatedActivity);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Checked out'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update check-in status: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Handle check-in with actual cost input
+  Future<void> _checkInWithActualCost(ActivityModel activity) async {
+    final TextEditingController actualCostController = TextEditingController();
+    final expectedCost = activity.budget?.estimatedCost;
+    
+    // Pre-fill with expected cost if available
+    if (expectedCost != null) {
+      actualCostController.text = expectedCost.toStringAsFixed(0);
+    }
+
+    final result = await showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Check-in: ${activity.title}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (expectedCost != null) ...[
+              Text(
+                'Expected Cost: ${_formatCurrency(expectedCost)}',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            const Text('Enter actual cost:'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: actualCostController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Actual cost (VND)',
+                border: OutlineInputBorder(),
+                prefixText: 'VND ',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final costText = actualCostController.text.trim();
+              if (costText.isNotEmpty) {
+                final cost = double.tryParse(costText);
+                if (cost != null && cost > 0) {
+                  Navigator.pop(context, cost);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid cost')),
+                  );
+                }
+              } else {
+                // Allow check-in without cost
+                Navigator.pop(context, 0.0);
+              }
+            },
+            child: const Text('Check In'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      await _performCheckIn(activity, result);
+    }
+  }
+
+  /// Perform the actual check-in with cost
+  Future<void> _performCheckIn(ActivityModel activity, double actualCost) async {
+    // Update activity with actual cost and check-in status
+    final updatedBudget = BudgetModel(
+      estimatedCost: activity.budget?.estimatedCost ?? actualCost,
+      actualCost: actualCost,
+      currency: activity.budget?.currency ?? 'VND',
+      category: activity.budget?.category,
+    );
+    
+    final updatedActivity = activity.copyWith(
+      checkIn: true,
+      budget: updatedBudget,
+    );
+
+    await _updateActivityCheckIn(updatedActivity);
+
+    // Create expense entry only after successful check-in
+    if (actualCost > 0) {
+      await _createExpenseForCheckedInActivity(updatedActivity);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Checked in! ${actualCost > 0 ? "Expense created." : ""}'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  /// Update activity check-in status
+  Future<void> _updateActivityCheckIn(ActivityModel updatedActivity) async {
+    final index = _activities.indexWhere((a) => a.id == updatedActivity.id);
+    if (index != -1) {
+      setState(() {
+        _activities[index] = updatedActivity;
+      });
+      await _persistTripChanges();
+    }
+  }
+
+  /// Create expense for checked-in activity
+  Future<void> _createExpenseForCheckedInActivity(ActivityModel activity) async {
+    try {
+      if (activity.budget?.actualCost == null || activity.budget!.actualCost! <= 0) {
+        return;
+      }
+
+      final success = await _integrationService.syncActivityExpense(activity);
+      
+      if (!success) {
+        // Fallback to direct expense service call
+        await _expenseService.createExpenseFromActivity(
+          amount: activity.budget!.actualCost!,
+          category: activity.activityType.value,
+          description: '${activity.title}',
+          activityId: activity.id,
+          tripId: _trip.id,
+        );
+      }
+
+      debugPrint('Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND)');
+    } catch (e) {
+      debugPrint('Failed to create expense for checked-in activity: $e');
+    }
+  }
+
+  void _showRealCostInput(ActivityModel activity) {
+    final costController = TextEditingController();
+    if (activity.budget?.actualCost != null) {
+      costController.text = activity.budget!.actualCost!.toString();
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Add Real Cost',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Activity: ${activity.title}',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildTextField(
+                controller: costController,
+                label: 'Actual Cost (VND)',
+                hint: 'Enter the real cost spent',
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.inter(
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _saveRealCost(activity, costController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _saveRealCost(ActivityModel activity, String costText) async {
+    final cost = double.tryParse(costText.trim());
+    if (cost == null || cost < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid cost amount'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    Navigator.pop(context);
+
+    try {
+      // Update budget with actual cost
+      final existingBudget = activity.budget ?? BudgetModel(
+        estimatedCost: 0,
+        currency: 'VND',
+      );
+      final updatedBudget = BudgetModel(
+        estimatedCost: existingBudget.estimatedCost,
+        actualCost: cost,
+        currency: existingBudget.currency,
+      );
+      final updatedActivity = activity.copyWith(budget: updatedBudget);
+      
+      // Update in memory
+      final index = _activities.indexOf(activity);
+      if (index != -1) {
+        setState(() {
+          _activities[index] = updatedActivity;
+        });
+      }
+      
+      await _persistTripChanges();
+      
+      // Sync with expense management
+      await _syncExpense(updatedActivity);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Real cost saved and synced to expenses!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save cost: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _syncExpense(ActivityModel activity) async {
+    if (activity.budget?.actualCost == null) return;
+    
+    try {
+      // Use integration service for better tracking
+      final success = await _integrationService.syncActivityExpense(activity);
+      
+      if (!success) {
+        // Fallback to direct service call if integration fails
+        await _expenseService.createExpenseFromActivity(
+          amount: activity.budget!.actualCost!,
+          category: activity.activityType.value,
+          description: '${activity.title}',
+          activityId: activity.id,
+          tripId: _trip.id,
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to sync expense: $e');
+      // Don't show error to user as this is background sync
+    }
+  }
+
 }

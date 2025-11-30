@@ -43,6 +43,7 @@ class TripPlanningProvider extends ChangeNotifier {
     required DateTime startDate,
     required DateTime endDate,
     String? description,
+    double? budget,
   }) async {
     _setLoading(true);
     try {
@@ -54,6 +55,10 @@ class TripPlanningProvider extends ChangeNotifier {
         description: description,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        budget: budget != null ? BudgetModel(
+          estimatedCost: budget,
+          currency: 'VND',
+        ) : null,
       );
 
       // Try to create on server first
@@ -86,24 +91,56 @@ class TripPlanningProvider extends ChangeNotifier {
   Future<bool> deleteTrip(String tripId) async {
     _setLoading(true);
     try {
-      // Try to delete from server
-      try {
-        await _apiService.deleteTrip(tripId);
-      } catch (e) {
-        debugPrint('Failed to delete from server: $e');
+      debugPrint('DEBUG: Attempting to delete trip: $tripId');
+      
+      // Check if trip exists locally first
+      final tripExists = _trips.any((trip) => trip.id == tripId);
+      if (!tripExists) {
+        debugPrint('DEBUG: Trip $tripId not found locally');
+        _setError('Trip not found');
+        return false;
+      }
+
+      // Try to delete from server only if it's not a local-only trip
+      bool serverDeleteSuccessful = false;
+      if (!tripId.startsWith('local_')) {
+        try {
+          debugPrint('DEBUG: Deleting from server...');
+          await _apiService.deleteTrip(tripId);
+          serverDeleteSuccessful = true;
+          debugPrint('DEBUG: Server deletion successful');
+        } catch (e) {
+          debugPrint('DEBUG: Server deletion failed: $e');
+          // For 404 errors, it's actually okay - the trip is already gone from server
+          if (e.toString().contains('404')) {
+            debugPrint('DEBUG: Trip already deleted from server (404)');
+            serverDeleteSuccessful = true;
+          } else {
+            // For other errors, we might want to show a warning but still delete locally
+            debugPrint('DEBUG: Server error: $e - proceeding with local deletion');
+          }
+        }
+      } else {
+        debugPrint('DEBUG: Local-only trip, skipping server deletion');
+        serverDeleteSuccessful = true;
       }
 
       // Remove from local list and storage
+      debugPrint('DEBUG: Removing trip from local storage');
       _trips.removeWhere((trip) => trip.id == tripId);
       await _storageService.saveTrips(_trips);
       
       if (_currentTrip?.id == tripId) {
         _currentTrip = null;
+        debugPrint('DEBUG: Cleared current trip');
       }
 
       _clearError();
+      notifyListeners();
+      debugPrint('DEBUG: Trip deletion completed successfully');
       return true;
     } catch (e) {
+      debugPrint('DEBUG: Trip deletion failed: $e');
       _setError('Failed to delete trip: $e');
       return false;
     } finally {
@@ -150,27 +187,63 @@ class TripPlanningProvider extends ChangeNotifier {
 
   Future<void> _syncWithAPI() async {
     try {
+      debugPrint('DEBUG: Fetched ${_trips.length} cached trips');
       final apiTrips = await _apiService.getTrips();
-      // Merge API trips with local trips, prioritizing API data
+      debugPrint('DEBUG: Fetched ${apiTrips.length} trips from API');
+      
+      if (apiTrips.isEmpty && _trips.isNotEmpty) {
+        debugPrint('DEBUG: No remote trips received, but have ${_trips.length} cached trips');
+        // Check if cached trips are local-only or potentially deleted from server
+        final hasLocalOnlyTrips = _trips.any((trip) => trip.id?.startsWith('local_') == true);
+        final hasServerTrips = _trips.any((trip) => trip.id?.startsWith('local_') != true);
+        
+        if (hasLocalOnlyTrips && !hasServerTrips) {
+          debugPrint('DEBUG: Only local trips found, keeping them');
+          return;
+        } else if (hasServerTrips) {
+          debugPrint('DEBUG: Warning: Server trips may have been deleted remotely');
+          // Keep trips but log the inconsistency for user awareness
+          debugPrint('DEBUG: Keeping cached trips, but they may be out of sync');
+          return;
+        }
+      }
+      
+      // Merge API trips with local trips, handling conflicts intelligently
       final Map<String, TripModel> tripMap = {};
       
-      // First add local trips
+      // First add local-only trips (those with local_ prefix)
       for (final trip in _trips) {
-        if (trip.id != null) {
+        if (trip.id != null && trip.id!.startsWith('local_')) {
+          debugPrint('DEBUG: Keeping local-only trip: ${trip.name}');
           tripMap[trip.id!] = trip;
         }
       }
       
-      // Then add/override with API trips
+      // Then add API trips (these override any server trips)
       for (final trip in apiTrips) {
         if (trip.id != null) {
+          debugPrint('DEBUG: Adding API trip: ${trip.name} (${trip.id})');
           tripMap[trip.id!] = trip;
+        }
+      }
+      
+      // If we have local trips that aren't local-only and aren't in API,
+      // they might have been deleted from server - remove them
+      for (final trip in _trips) {
+        if (trip.id != null && !trip.id!.startsWith('local_')) {
+          final existsInAPI = apiTrips.any((apiTrip) => apiTrip.id == trip.id);
+          if (!existsInAPI) {
+            debugPrint('DEBUG: Trip ${trip.name} (${trip.id}) not found in API - may have been deleted');
+            // Remove from map if it was added
+            tripMap.remove(trip.id);
+          }
         }
       }
       
       _trips = tripMap.values.toList();
       await _storageService.saveTrips(_trips);
       notifyListeners();
+      debugPrint('DEBUG: Final trip count: ${_trips.length}');
     } catch (e) {
       debugPrint('Failed to sync with API: $e');
       // Continue with local data if API fails

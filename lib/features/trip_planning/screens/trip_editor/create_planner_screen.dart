@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../models/trip_model.dart';
+import '../../models/activity_models.dart';
 import '../../providers/trip_planning_provider.dart';
 import '../../services/trip_planning_service.dart';
 import '../../services/trip_storage_service.dart';
@@ -18,6 +19,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
   final _tripNameController = TextEditingController();
   final _destinationController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _budgetController = TextEditingController();
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
   bool _isSaving = false;
@@ -27,6 +29,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     _tripNameController.dispose();
     _destinationController.dispose();
     _descriptionController.dispose();
+    _budgetController.dispose();
     super.dispose();
   }
 
@@ -73,57 +76,76 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            
-            // Trip Name Field
-            _buildInputField(
-              label: 'Trip Name',
-              controller: _tripNameController,
-              hintText: 'Enter trip name',
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    
+                    // Trip Name Field
+                    _buildInputField(
+                      label: 'Trip Name',
+                      controller: _tripNameController,
+                      hintText: 'Enter trip name',
+                    ),
+                    
+                    const SizedBox(height: 30),
+                    
+                    // Destination Field
+                    _buildInputField(
+                      label: 'Destination City*',
+                      controller: _destinationController,
+                      hintText: 'Where are you going?',
+                    ),
+                    
+                    const SizedBox(height: 30),
+                    
+                    // Start Date
+                    _buildDateField(
+                      label: 'Start Date*',
+                      date: _startDate,
+                      onTap: () => _selectStartDate(),
+                    ),
+                    
+                    const SizedBox(height: 30),
+                    
+                    // End Date
+                    _buildDateField(
+                      label: 'End Date*',
+                      date: _endDate,
+                      onTap: () => _selectEndDate(),
+                    ),
+                    
+                    const SizedBox(height: 30),
+                    
+                    // Budget Field
+                    _buildInputField(
+                      label: 'Total Budget (VND)',
+                      controller: _budgetController,
+                      hintText: 'Enter total budget (optional)',
+                      keyboardType: TextInputType.number,
+                    ),
+                    
+                    const SizedBox(height: 30),
+                    
+                    // Description Field
+                    _buildInputField(
+                      label: 'Description',
+                      controller: _descriptionController,
+                      hintText: 'Add trip description (optional)',
+                      maxLines: 4,
+                    ),
+                    
+                    const SizedBox(height: 100), // Extra space for scrolling
+                  ],
+                ),
+              ),
             ),
-            
-            const SizedBox(height: 30),
-            
-            // Destination Field
-            _buildInputField(
-              label: 'Destination City*',
-              controller: _destinationController,
-              hintText: 'Where are you going?',
-            ),
-            
-            const SizedBox(height: 30),
-            
-            // Start Date
-            _buildDateField(
-              label: 'Start Date*',
-              date: _startDate,
-              onTap: () => _selectStartDate(),
-            ),
-            
-            const SizedBox(height: 30),
-            
-            // End Date
-            _buildDateField(
-              label: 'End Date*',
-              date: _endDate,
-              onTap: () => _selectEndDate(),
-            ),
-            
-            const SizedBox(height: 30),
-            
-            // Description Field
-            _buildInputField(
-              label: 'Description',
-              controller: _descriptionController,
-              hintText: 'Add trip description (optional)',
-              maxLines: 4,
-            ),
-            
-            const Spacer(),
           ],
         ),
       ),
@@ -135,6 +157,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     required TextEditingController controller,
     required String hintText,
     int maxLines = 1,
+    TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,6 +174,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         TextFormField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: keyboardType,
           style: GoogleFonts.quattrocento(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -313,6 +337,10 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       final tripName = _tripNameController.text.trim().isNotEmpty
           ? _tripNameController.text.trim()
           : _destinationController.text.trim();
+      
+      final budgetAmount = _budgetController.text.trim().isNotEmpty
+          ? double.tryParse(_budgetController.text.trim())
+          : null;
 
       TripModel? createdTrip;
       TripPlanningProvider? provider;
@@ -331,6 +359,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           description: _descriptionController.text.trim().isNotEmpty
               ? _descriptionController.text.trim()
               : null,
+          budget: budgetAmount,
         );
       }
 
@@ -340,6 +369,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         description: _descriptionController.text.trim().isNotEmpty
             ? _descriptionController.text.trim()
             : null,
+        budget: budgetAmount,
       );
 
       navigator.pop(); // close loading dialog
@@ -378,6 +408,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     required String tripName,
     required String destination,
     String? description,
+    double? budget,
   }) async {
     final trip = TripModel(
       name: tripName,
@@ -387,6 +418,10 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       description: description,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      budget: budget != null ? BudgetModel(
+        estimatedCost: budget,
+        currency: 'VND',
+      ) : null,
     );
 
     try {
