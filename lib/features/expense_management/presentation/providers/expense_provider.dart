@@ -165,6 +165,66 @@ class ExpenseProvider with ChangeNotifier {
     }
   }
 
+  /// Create expense from activity integration
+  Future<bool> createExpenseFromActivity({
+    required double amount,
+    required String category,
+    required String description,
+    String? activityId,
+    String? tripId,
+  }) async {
+    // Map backend ActivityType directly to ExpenseCategory enum
+    ExpenseCategory expenseCategory;
+    switch (category.toLowerCase()) {
+      case 'flight':
+        expenseCategory = ExpenseCategory.flight;
+        break;
+      case 'activity':
+        expenseCategory = ExpenseCategory.activity;
+        break;
+      case 'lodging':
+        expenseCategory = ExpenseCategory.lodging;
+        break;
+      case 'car_rental':
+        expenseCategory = ExpenseCategory.carRental;
+        break;
+      case 'concert':
+        expenseCategory = ExpenseCategory.concert;
+        break;
+      case 'cruising':
+        expenseCategory = ExpenseCategory.cruising;
+        break;
+      case 'ferry':
+        expenseCategory = ExpenseCategory.ferry;
+        break;
+      case 'ground_transportation':
+        expenseCategory = ExpenseCategory.groundTransportation;
+        break;
+      case 'rail':
+        expenseCategory = ExpenseCategory.rail;
+        break;
+      case 'restaurant':
+        expenseCategory = ExpenseCategory.restaurant;
+        break;
+      case 'theater':
+        expenseCategory = ExpenseCategory.theater;
+        break;
+      case 'tour':
+        expenseCategory = ExpenseCategory.tour;
+        break;
+      case 'transportation':
+        expenseCategory = ExpenseCategory.transportation;
+        break;
+      case 'shopping':
+        expenseCategory = ExpenseCategory.shopping;
+        break;
+      default:
+        expenseCategory = ExpenseCategory.miscellaneous;
+    }
+    
+    return await createExpense(amount, expenseCategory, description: description);
+  }
+
   /// Create a new expense
   Future<bool> createExpense(
     double amount,
