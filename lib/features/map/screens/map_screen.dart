@@ -25,6 +25,12 @@ class _MapScreenState extends State<MapScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: Implement plan selection
+        },
+        child: const Icon(Icons.navigation),
+      ),
     );
   }
 }
