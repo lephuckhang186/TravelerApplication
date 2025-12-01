@@ -56,6 +56,7 @@ dependencies {
 
   // Add the dependencies for any other desired Firebase products
   // https://firebase.google.com/docs/android/setup#available-libraries
+  implementation("com.google.firebase:firebase-dynamic-links:21.1.0")
 }
 
-apply plugin: 'com.google.gms.google-services' 
+apply(plugin = "com.google.gms.google-services")
