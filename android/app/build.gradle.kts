@@ -8,8 +8,8 @@ plugins {
 
 android {
     namespace = "com.example.flutter_application_1"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -17,7 +17,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "11"
     }
 
     defaultConfig {
@@ -26,9 +26,9 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
     }
 
     buildTypes {
@@ -46,17 +46,10 @@ flutter {
 
 dependencies {
   // Import the Firebase BoM
-  implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+  implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
 
-
-  // TODO: Add the dependencies for Firebase products you want to use
-  // When using the BoM, don't specify versions in Firebase dependencies
+  // Firebase products
   implementation("com.google.firebase:firebase-analytics")
-
-
-  // Add the dependencies for any other desired Firebase products
-  // https://firebase.google.com/docs/android/setup#available-libraries
-  implementation("com.google.firebase:firebase-dynamic-links:21.1.0")
+  implementation("com.google.firebase:firebase-auth")
+  implementation("com.google.firebase:firebase-firestore")
 }
-
-apply(plugin = "com.google.gms.google-services")
