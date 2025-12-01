@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../services/plan_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -10,15 +11,42 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  final PlanService _planService = PlanService();
+  List<LatLng> _currentRoute = [];
+
+  void _showPlanSelectionDialog() async {
+    final trips = await _planService.getTrips();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select a Plan'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: trips.length,
+              itemBuilder: (context, index) {
+                final trip = trips[index];
+                return ListTile(
+                  title: Text(trip.name),
+                  onTap: () {
+                    setState(() {
+                      _currentRoute = trip.locations;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final points = <LatLng>[
-      const LatLng(10.7769, 106.7009),
-      const LatLng(10.7749, 106.7009),
-      const LatLng(10.7749, 106.7029),
-      const LatLng(10.7769, 106.7029),
-    ];
-
     return Scaffold(
       body: FlutterMap(
         options: MapOptions(
@@ -30,23 +58,22 @@ class _MapScreenState extends State<MapScreen> {
             urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             subdomains: const ['a', 'b', 'c'],
           ),
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: points,
-                color: Colors.blue,
-                strokeWidth: 4.0,
-              ),
-            ],
-          ),
+          if (_currentRoute.isNotEmpty)
+            PolylineLayer(
+              polylines: [
+                Polyline(
+                  points: _currentRoute,
+                  color: Colors.blue,
+                  strokeWidth: 4.0,
+                ),
+              ],
+            ),
         ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80.0),
         child: FloatingActionButton(
-          onPressed: () {
-            // TODO: Implement plan selection
-          },
+          onPressed: _showPlanSelectionDialog,
           child: const Icon(Icons.navigation),
         ),
       ),
