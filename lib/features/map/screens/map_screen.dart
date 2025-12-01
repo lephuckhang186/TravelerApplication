@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../services/plan_service.dart';
+import 'package:provider/provider.dart';
+import '../../trip_planning/providers/trip_planning_provider.dart';
+import '../../trip_planning/models/activity_models.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -11,13 +13,91 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  final PlanService _planService = PlanService();
-  List<LatLng> _currentRoute = [];
-  int _currentLocationIndex = 0;
   final MapController _mapController = MapController();
 
-  void _showPlanSelectionDialog() async {
-    final trips = await _planService.getTrips();
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<TripPlanningProvider>(
+      builder: (context, provider, child) {
+        final currentTrip = provider.currentTrip;
+        final activities = currentTrip?.activities ?? [];
+        final route = activities
+            .where((a) => a.location?.latitude != null && a.location?.longitude != null)
+            .map((a) => LatLng(a.location!.latitude!, a.location!.longitude!))
+            .toList();
+
+        ActivityModel? nextActivity;
+        if (currentTrip != null) {
+          nextActivity = currentTrip.activities.firstWhere(
+            (a) => a.status == ActivityStatus.planned,
+            orElse: () => currentTrip.activities.first,
+          );
+        }
+
+        return Scaffold(
+          body: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: nextActivity?.location != null
+                  ? LatLng(nextActivity!.location!.latitude!, nextActivity.location!.longitude!)
+                  : const LatLng(10.7769, 106.7009), // Ho Chi Minh City
+              initialZoom: 13.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c'],
+              ),
+              if (route.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: route,
+                      color: Colors.blue,
+                      strokeWidth: 4.0,
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          floatingActionButton: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: FloatingActionButton(
+                  onPressed: () {
+                    if (nextActivity?.location != null) {
+                      _mapController.move(
+                        LatLng(nextActivity!.location!.latitude!, nextActivity.location!.longitude!),
+                        15.0,
+                      );
+                    }
+                  },
+                  heroTag: 'nextLocation',
+                  child: const Icon(Icons.my_location),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 80.0),
+                child: FloatingActionButton(
+                  onPressed: () => _showPlanSelectionDialog(context),
+                  heroTag: 'selectPlan',
+                  child: const Icon(Icons.navigation),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPlanSelectionDialog(BuildContext context) {
+    final provider = Provider.of<TripPlanningProvider>(context, listen: false);
+    final trips = provider.trips;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -33,9 +113,7 @@ class _MapScreenState extends State<MapScreen> {
                 return ListTile(
                   title: Text(trip.name),
                   onTap: () {
-                    setState(() {
-                      _currentRoute = trip.locations;
-                    });
+                    provider.setCurrentTrip(trip);
                     Navigator.of(context).pop();
                   },
                 );
@@ -44,65 +122,6 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCenter: const LatLng(10.7769, 106.7009), // Ho Chi Minh City
-          initialZoom: 13.0,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: const ['a', 'b', 'c'],
-          ),
-          if (_currentRoute.isNotEmpty)
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: _currentRoute,
-                  color: Colors.blue,
-                  strokeWidth: 4.0,
-                ),
-              ],
-            ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: FloatingActionButton(
-              onPressed: () {
-                if (_currentRoute.isNotEmpty) {
-                  setState(() {
-                    _currentLocationIndex =
-                        (_currentLocationIndex + 1) % _currentRoute.length;
-                  });
-                  _mapController.move(
-                      _currentRoute[_currentLocationIndex], 15.0);
-                }
-              },
-              heroTag: 'nextLocation',
-              child: const Icon(Icons.my_location),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 80.0),
-            child: FloatingActionButton(
-              onPressed: _showPlanSelectionDialog,
-              heroTag: 'selectPlan',
-              child: const Icon(Icons.navigation),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

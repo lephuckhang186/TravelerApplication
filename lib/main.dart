@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'features/trip_planning/providers/trip_planning_provider.dart';
 import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/loading_screen.dart';
@@ -19,7 +21,15 @@ void main() async {
   // Initialize UserService
   await UserService().init();
 
-  runApp(DevicePreview(enabled: true, builder: (context) => const MyApp()));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => TripPlanningProvider()..initialize(),
+      child: DevicePreview(
+        enabled: true,
+        builder: (context) => const MyApp(),
+      ),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
