@@ -6,32 +6,38 @@ class ExpenseIntegration {
   static String mapActivityTypeToExpenseCategory(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.flight:
-        return 'transportation';
+        return 'flight';
       case ActivityType.carRental:
+        return 'car_rental';
       case ActivityType.groundTransportation:
+        return 'ground_transportation';
       case ActivityType.rail:
+        return 'rail';
       case ActivityType.ferry:
+        return 'ferry';
       case ActivityType.transportation:
         return 'transportation';
       case ActivityType.lodging:
-        return 'accommodation';
+        return 'lodging';
       case ActivityType.restaurant:
-        return 'food';
+        return 'restaurant';
       case ActivityType.activity:
+        return 'activity';
       case ActivityType.tour:
+        return 'tour';
       case ActivityType.concert:
+        return 'concert';
       case ActivityType.theater:
-        return 'entertainment';
+        return 'theater';
       case ActivityType.cruising:
-        return 'transportation';
+        return 'cruising';
       case ActivityType.parking:
-        return 'transportation';
       case ActivityType.meeting:
       case ActivityType.note:
       case ActivityType.direction:
       case ActivityType.map:
       default:
-        return 'other';
+        return 'miscellaneous';
     }
   }
 
@@ -45,18 +51,38 @@ class ExpenseIntegration {
   /// Get expense category display name
   static String getExpenseCategoryDisplayName(String category) {
     switch (category.toLowerCase()) {
+      case 'flight':
+        return 'Chuyến bay';
+      case 'activity':
+        return 'Hoạt động';
+      case 'lodging':
+        return 'Lưu trú';
+      case 'car_rental':
+        return 'Thuê xe';
+      case 'concert':
+        return 'Hòa nhạc';
+      case 'cruising':
+        return 'Du thuyền';
+      case 'ferry':
+        return 'Phà';
+      case 'ground_transportation':
+        return 'Di chuyển mặt đất';
+      case 'rail':
+        return 'Tàu hỏa';
+      case 'restaurant':
+        return 'Nhà hàng';
+      case 'theater':
+        return 'Rạp hát';
+      case 'tour':
+        return 'Tour du lịch';
       case 'transportation':
-        return 'Transportation';
-      case 'accommodation':
-        return 'Accommodation';
-      case 'food':
-        return 'Food & Dining';
-      case 'entertainment':
-        return 'Entertainment';
+        return 'Di chuyển';
       case 'shopping':
-        return 'Shopping';
-      case 'other':
-        return 'Other';
+        return 'Mua sắm';
+      case 'miscellaneous':
+        return 'Khác';
+      case 'emergency':
+        return 'Khẩn cấp';
       default:
         return category;
     }

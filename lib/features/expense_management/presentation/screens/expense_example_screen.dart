@@ -15,7 +15,7 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
   late ExpenseProvider _expenseProvider;
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
-  ExpenseCategory _selectedCategory = ExpenseCategory.foodBeverage;
+  ExpenseCategory _selectedCategory = ExpenseCategory.restaurant;
 
   @override
   void initState() {
@@ -47,7 +47,7 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
         }
       }
     } catch (e) {
-      print('Error setting up authentication: $e');
+      debugPrint('Error setting up authentication: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -144,7 +144,7 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
             
             // Category dropdown
             DropdownButtonFormField<ExpenseCategory>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: const InputDecoration(
                 labelText: 'Category',
                 border: OutlineInputBorder(),
@@ -456,25 +456,45 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
     if (success) {
       _amountController.clear();
       _descriptionController.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Expense added successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Expense added successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     }
   }
 
   IconData _getCategoryIcon(ExpenseCategory category) {
     switch (category) {
-      case ExpenseCategory.foodBeverage:
+      case ExpenseCategory.flight:
+        return Icons.flight;
+      case ExpenseCategory.activity:
+        return Icons.local_activity;
+      case ExpenseCategory.lodging:
+        return Icons.hotel;
+      case ExpenseCategory.carRental:
+        return Icons.car_rental;
+      case ExpenseCategory.concert:
+        return Icons.music_note;
+      case ExpenseCategory.cruising:
+        return Icons.directions_boat;
+      case ExpenseCategory.ferry:
+        return Icons.directions_ferry;
+      case ExpenseCategory.groundTransportation:
+        return Icons.directions_bus;
+      case ExpenseCategory.rail:
+        return Icons.train;
+      case ExpenseCategory.restaurant:
         return Icons.restaurant;
+      case ExpenseCategory.theater:
+        return Icons.theater_comedy;
+      case ExpenseCategory.tour:
+        return Icons.tour;
       case ExpenseCategory.transportation:
         return Icons.directions_car;
-      case ExpenseCategory.accommodation:
-        return Icons.hotel;
-      case ExpenseCategory.activities:
-        return Icons.local_activity;
       case ExpenseCategory.shopping:
         return Icons.shopping_cart;
       case ExpenseCategory.miscellaneous:
@@ -571,15 +591,18 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
           ElevatedButton(
             onPressed: () async {
               if (startDate != null && endDate != null) {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
                 Navigator.pop(context);
                 final success = await _expenseProvider.createTrip(startDate!, endDate!);
-                if (success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Trip created successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                if (mounted) {
+                  if (success) {
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Trip created successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
                 }
               }
             },
@@ -638,18 +661,21 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
                     ? double.tryParse(dailyLimitText) 
                     : null;
                   
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
                   final success = await _expenseProvider.createBudget(
                     budget,
                     dailyLimit: dailyLimit,
                   );
                   
-                  if (success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Budget created successfully!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                  if (mounted) {
+                    if (success) {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Budget created successfully!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
                   }
                 }
               }

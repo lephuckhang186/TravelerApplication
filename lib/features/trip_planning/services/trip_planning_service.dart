@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/activity_models.dart';
@@ -89,10 +90,10 @@ class TripPlanningService {
   /// Create a new activity
   Future<ActivityModel> createActivity(ActivityModel activity) async {
     try {
-      print('DEBUG: Creating activity with data: ${jsonEncode(activity.toJson())}');
+      debugPrint('DEBUG: Creating activity with data: ${jsonEncode(activity.toJson())}');
       
       final headers = await _headers;
-      print('DEBUG: Request headers: $headers');
+      debugPrint('DEBUG: Request headers: $headers');
       
       final response = await http.post(
         Uri.parse('$baseUrl/activities'),
@@ -100,8 +101,8 @@ class TripPlanningService {
         body: jsonEncode(activity.toJson()),
       );
       
-      print('DEBUG: Create activity response status: ${response.statusCode}');
-      print('DEBUG: Create activity response body: ${response.body}');
+      debugPrint('DEBUG: Create activity response status: ${response.statusCode}');
+      debugPrint('DEBUG: Create activity response body: ${response.body}');
       
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -110,7 +111,7 @@ class TripPlanningService {
         throw Exception('Failed to create activity: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('DEBUG: Create activity error: $e');
+      debugPrint('DEBUG: Create activity error: $e');
       throw Exception('Error creating activity: $e');
     }
   }
@@ -487,7 +488,7 @@ class TripPlanningService {
   /// Get all trips
   Future<List<TripModel>> getTrips() async {
     try {
-      print('DEBUG: TripService.getTrips() - Making API call to $baseUrl/activities/trips');
+      debugPrint('DEBUG: TripService.getTrips() - Making API call to $baseUrl/activities/trips');
       
       // Use real endpoint with authentication
       final headers = await _headers;
@@ -496,12 +497,12 @@ class TripPlanningService {
         headers: headers,
       );
       
-      print('DEBUG: TripService.getTrips() - Response status: ${response.statusCode}');
-      print('DEBUG: TripService.getTrips() - Response body: ${response.body}');
+      debugPrint('DEBUG: TripService.getTrips() - Response status: ${response.statusCode}');
+      debugPrint('DEBUG: TripService.getTrips() - Response body: ${response.body}');
       
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        print('DEBUG: TripService.getTrips() - Parsed ${data.length} trips from API');
+        debugPrint('DEBUG: TripService.getTrips() - Parsed ${data.length} trips from API');
         
         final trips = data.map((tripJson) {
           return TripModel(
@@ -522,9 +523,9 @@ class TripPlanningService {
           );
         }).toList();
         
-        print('DEBUG: TripService.getTrips() - Returning ${trips.length} trips');
+        debugPrint('DEBUG: TripService.getTrips() - Returning ${trips.length} trips');
         for (int i = 0; i < trips.length; i++) {
-          print('DEBUG: Trip ${i + 1}: ${trips[i].name} (${trips[i].id})');
+          debugPrint('DEBUG: Trip ${i + 1}: ${trips[i].name} (${trips[i].id})');
         }
         
         return trips;
@@ -532,7 +533,7 @@ class TripPlanningService {
         throw Exception('Failed to get trips: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('DEBUG: TripService.getTrips() - Error: $e');
+      debugPrint('DEBUG: TripService.getTrips() - Error: $e');
       throw Exception('Error getting trips: $e');
     }
   }
@@ -553,18 +554,27 @@ class TripPlanningService {
   /// Delete trip
   Future<bool> deleteTrip(String tripId) async {
     try {
+      debugPrint('DEBUG: TripService.deleteTrip() - Deleting trip: $tripId');
       final headers = await _headers;
       final response = await http.delete(
         Uri.parse('$baseUrl/activities/trips/$tripId'),
         headers: headers,
       );
       
+      debugPrint('DEBUG: TripService.deleteTrip() - Response status: ${response.statusCode}');
+      debugPrint('DEBUG: TripService.deleteTrip() - Response body: ${response.body}');
+      
       if (response.statusCode == 204) {
+        debugPrint('DEBUG: Trip deleted successfully from server');
         return true;
+      } else if (response.statusCode == 404) {
+        debugPrint('DEBUG: Trip not found on server (404) - considering as successful deletion');
+        return true; // Trip already doesn't exist, so deletion is "successful"
       } else {
-        throw Exception('Failed to delete trip: ${response.statusCode}');
+        throw Exception('Failed to delete trip: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      debugPrint('DEBUG: TripService.deleteTrip() - Error: $e');
       throw Exception('Error deleting trip: $e');
     }
   }

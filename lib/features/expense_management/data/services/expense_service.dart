@@ -1,5 +1,7 @@
 /// API Client kết nối với backend
 
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/exceptions.dart';
 import '../../../../core/config/api_config.dart';
@@ -9,7 +11,48 @@ import '../models/expense_models.dart';
 class ExpenseService {
   final ApiClient _apiClient;
 
-  ExpenseService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ExpenseService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient() {
+    _initializeAuth();
+  }
+
+  /// Initialize authentication
+  Future<void> _initializeAuth() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final token = await user.getIdToken();
+        if (token != null) {
+          _apiClient.setAuthToken(token);
+          debugPrint('DEBUG: ExpenseService - Auth token set for user: ${user.uid ?? "unknown"}');
+          debugPrint('DEBUG: ExpenseService - Token: ${token.isNotEmpty ? token.substring(0, 50) : "empty"}...');
+        } else {
+          debugPrint('DEBUG: ExpenseService - Failed to get token for user: ${user.uid ?? "unknown"}');
+        }
+      } else {
+        debugPrint('DEBUG: ExpenseService - No authenticated user found');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: ExpenseService - Failed to initialize auth: $e');
+    }
+  }
+
+  /// Ensure authentication before making API calls
+  Future<void> _ensureAuthentication() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final token = await user.getIdToken();
+        if (token != null) {
+          _apiClient.setAuthToken(token);
+          debugPrint('DEBUG: ExpenseService - Refreshed auth token for user: ${user.uid ?? "unknown"}');
+        } else {
+          debugPrint('DEBUG: ExpenseService - Failed to refresh token for user: ${user.uid ?? "unknown"}');
+        }
+      }
+    } catch (e) {
+      debugPrint('DEBUG: ExpenseService - Failed to refresh auth: $e');
+    }
+  }
 
   /// Get current trip
   Future<Trip?> getCurrentTrip() async {
@@ -57,14 +100,54 @@ class ExpenseService {
   /// Create a new expense
   Future<Expense> createExpense(ExpenseCreateRequest request) async {
     try {
+      // Ensure we have a fresh auth token before making the request
+      await _ensureAuthentication();
+      
+      debugPrint('DEBUG: ExpenseService - Creating expense with endpoint: ${ApiConfig.expensesEndpoint}');
+      debugPrint('DEBUG: ExpenseService - Request body: ${request.toJson()}');
+      
       final response = await _apiClient.post(
         ApiConfig.expensesEndpoint,
         body: request.toJson(),
       );
+      
+      debugPrint('DEBUG: ExpenseService - Expense created successfully');
       return Expense.fromJson(response as Map<String, dynamic>);
     } catch (e) {
+      debugPrint('DEBUG: ExpenseService - Create expense error: $e');
       throw _handleException(e, 'Failed to create expense');
     }
+  }
+
+  /// Convenient method to create expense with basic parameters
+  Future<Expense> createExpenseFromActivity({
+    required double amount,
+    required String category,
+    required String description,
+    String? activityId,
+    String? tripId,
+  }) async {
+    // Enhanced description to include activity and trip linking
+    String enhancedDescription = description;
+    if (activityId != null) {
+      enhancedDescription += ' [Activity: $activityId]';
+    }
+    if (tripId != null) {
+      enhancedDescription += ' [Trip: $tripId]';
+    }
+
+    final request = ExpenseCreateRequest(
+      amount: amount,
+      category: ExpenseCategory.values.firstWhere(
+        (e) => e.value == category,
+        orElse: () => ExpenseCategory.activity, // Default to activity category
+      ),
+      description: enhancedDescription,
+      expenseDate: DateTime.now(),
+    );
+    
+    debugPrint('DEBUG: Creating expense from activity with amount: $amount, category: $category, description: $enhancedDescription');
+    return await createExpense(request);
   }
 
   /// Get all expenses with optional filters
