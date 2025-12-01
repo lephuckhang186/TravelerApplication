@@ -94,7 +94,10 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
                 return ListTile(
                   title: Text(place['display_name']),
                   onTap: () {
-                    Navigator.pop(context, place);
+                    Navigator.pop(context, {
+                      'place': place,
+                      'category': _categoryController.text.trim(),
+                    });
                   },
                 );
               },

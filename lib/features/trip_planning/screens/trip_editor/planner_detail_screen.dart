@@ -579,9 +579,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
                           if (result != null) {
                             setModalState(() {
-                              selectedPlace = result;
-                              titleController.text = result['display_name'];
-                              descriptionController.text = result['display_name'];
+                              selectedPlace = result['place'];
+                              titleController.text = result['category'];
+                              descriptionController.text = result['place']['display_name'];
                             });
                           }
                         },
