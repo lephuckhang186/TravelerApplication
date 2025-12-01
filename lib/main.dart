@@ -5,7 +5,7 @@ import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/loading_screen.dart';
 import 'screens/auth_screen.dart';
-import 'screens/home_screen.dart';
+import 'features/map/screens/map_screen.dart';
 import 'services/user_service.dart';
 import 'services/auth_service.dart';
 import 'core/theme/app_theme.dart';
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/auth': (context) => const AuthScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const MapScreen(),
         '/loading': (context) => const LoadingScreen(),
       },
     );
@@ -85,7 +85,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
         // Điều hướng dựa trên trạng thái đăng nhập
         final isLoggedIn = snapshot.data ?? false;
-        return isLoggedIn ? const HomeScreen() : const AuthScreen();
+        return isLoggedIn ? const MapScreen() : const AuthScreen();
       },
     );
   }
