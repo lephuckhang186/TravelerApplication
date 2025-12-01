@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'search_place_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../models/trip_model.dart';
 import '../../models/activity_models.dart';
@@ -375,6 +376,24 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     ),
                   ),
                 ],
+                if (activity.location != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          activity.location!.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 // Budget information - show expected cost before check-in, actual cost after
                 if (activity.budget != null) ...[
                   const SizedBox(height: 8),
@@ -481,6 +500,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     final expectedCostController = TextEditingController();
+    dynamic selectedPlace;
     ActivityType selectedType = ActivityType.activity;
     DateTime selectedDate = _trip.startDate;
     TimeOfDay selectedTime = const TimeOfDay(hour: 9, minute: 0);
@@ -544,6 +564,29 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       controller: titleController,
                       label: 'Title',
                       hint: 'e.g. Morning flight to Hanoi',
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SearchPlaceScreen(),
+                            ),
+                          );
+
+                          if (result != null) {
+                            setModalState(() {
+                              selectedPlace = result;
+                              titleController.text = result['display_name'];
+                              descriptionController.text = result['display_name'];
+                            });
+                          }
+                        },
+                        child: const Text('Search for a place'),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -645,6 +688,13 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             tripId: _trip.id,
                             budget: budget,
                             checkIn: checkInStatus,
+                            location: selectedPlace != null
+                                ? LocationModel(
+                                    name: selectedPlace['display_name'],
+                                    latitude: double.parse(selectedPlace['lat']),
+                                    longitude: double.parse(selectedPlace['lon']),
+                                  )
+                                : null,
                           );
                           Navigator.pop(context);
                           _addActivity(newActivity);
