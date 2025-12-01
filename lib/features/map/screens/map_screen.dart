@@ -13,6 +13,8 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final PlanService _planService = PlanService();
   List<LatLng> _currentRoute = [];
+  int _currentLocationIndex = 0;
+  final MapController _mapController = MapController();
 
   void _showPlanSelectionDialog() async {
     final trips = await _planService.getTrips();
@@ -49,6 +51,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FlutterMap(
+        mapController: _mapController,
         options: MapOptions(
           initialCenter: const LatLng(10.7769, 106.7009), // Ho Chi Minh City
           initialZoom: 13.0,
@@ -70,12 +73,35 @@ class _MapScreenState extends State<MapScreen> {
             ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80.0),
-        child: FloatingActionButton(
-          onPressed: _showPlanSelectionDialog,
-          child: const Icon(Icons.navigation),
-        ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: FloatingActionButton(
+              onPressed: () {
+                if (_currentRoute.isNotEmpty) {
+                  setState(() {
+                    _currentLocationIndex =
+                        (_currentLocationIndex + 1) % _currentRoute.length;
+                  });
+                  _mapController.move(
+                      _currentRoute[_currentLocationIndex], 15.0);
+                }
+              },
+              heroTag: 'nextLocation',
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 80.0),
+            child: FloatingActionButton(
+              onPressed: _showPlanSelectionDialog,
+              heroTag: 'selectPlan',
+              child: const Icon(Icons.navigation),
+            ),
+          ),
+        ],
       ),
     );
   }
