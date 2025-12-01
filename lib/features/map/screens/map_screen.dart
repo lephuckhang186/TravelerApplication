@@ -12,6 +12,13 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
+    final points = <LatLng>[
+      const LatLng(10.7769, 106.7009),
+      const LatLng(10.7749, 106.7009),
+      const LatLng(10.7749, 106.7029),
+      const LatLng(10.7769, 106.7029),
+    ];
+
     return Scaffold(
       body: FlutterMap(
         options: MapOptions(
@@ -22,6 +29,15 @@ class _MapScreenState extends State<MapScreen> {
           TileLayer(
             urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             subdomains: const ['a', 'b', 'c'],
+          ),
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: points,
+                color: Colors.blue,
+                strokeWidth: 4.0,
+              ),
+            ],
           ),
         ],
       ),
