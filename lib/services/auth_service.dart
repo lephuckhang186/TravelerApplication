@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'dart:convert';
 
 class AuthService {
@@ -11,13 +11,15 @@ class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '522424214900-dalkqs7t7kba0r25doeg66j1bcms6jku.apps.googleusercontent.com',
+    clientId:
+        '522424214900-dalkqs7t7kba0r25doeg66j1bcms6jku.apps.googleusercontent.com',
   );
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  final Dio _dio = Dio();
+  final dio.Dio _dio = dio.Dio();
 
   // Backend URLs
-  static const String _baseUrl = 'http://localhost:8000/api/v1'; // travelpro-backend
+  static const String _baseUrl =
+      'http://localhost:8000/api/v1'; // travelpro-backend
   static const String _travelAgentUrl = 'http://localhost:8001'; // travel-agent
 
   User? get currentUser => _auth.currentUser;
@@ -32,19 +34,21 @@ class AuthService {
       // Kiểm tra email có tồn tại trước không
       final methods = await _auth.fetchSignInMethodsForEmail(email.trim());
       if (methods.isNotEmpty) {
-        final providers = methods.map((method) {
-          switch (method) {
-            case 'password':
-              return 'email/mật khẩu';
-            case 'google.com':
-              return 'Google';
-            case 'facebook.com':
-              return 'Facebook';
-            default:
-              return method;
-          }
-        }).join(', ');
-        
+        final providers = methods
+            .map((method) {
+              switch (method) {
+                case 'password':
+                  return 'email/mật khẩu';
+                case 'google.com':
+                  return 'Google';
+                case 'facebook.com':
+                  return 'Facebook';
+                default:
+                  return method;
+              }
+            })
+            .join(', ');
+
         throw Exception('Email này đã được đăng ký bằng: $providers');
       }
 
@@ -52,10 +56,10 @@ class AuthService {
         email: email.trim(),
         password: password,
       );
-      
+
       // Gửi thông tin user lên backend
       await _syncUserWithBackend(credential.user!);
-      
+
       return credential;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
@@ -66,31 +70,30 @@ class AuthService {
   Future<Map<String, dynamic>> checkEmailExists(String email) async {
     try {
       final methods = await _auth.fetchSignInMethodsForEmail(email.trim());
-      
+
       if (methods.isEmpty) {
-        return {
-          'exists': false,
-          'message': 'Email này chưa được đăng ký'
-        };
+        return {'exists': false, 'message': 'Email này chưa được đăng ký'};
       }
 
-      final providers = methods.map((method) {
-        switch (method) {
-          case 'password':
-            return 'email/mật khẩu';
-          case 'google.com':
-            return 'Google';
-          case 'facebook.com':
-            return 'Facebook';
-          default:
-            return method;
-        }
-      }).join(', ');
-      
+      final providers = methods
+          .map((method) {
+            switch (method) {
+              case 'password':
+                return 'email/mật khẩu';
+              case 'google.com':
+                return 'Google';
+              case 'facebook.com':
+                return 'Facebook';
+              default:
+                return method;
+            }
+          })
+          .join(', ');
+
       return {
         'exists': true,
         'providers': methods,
-        'message': 'Email này đã được đăng ký bằng: $providers'
+        'message': 'Email này đã được đăng ký bằng: $providers',
       };
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
@@ -104,10 +107,10 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       // Đồng bộ với backend
       await _syncUserWithBackend(credential.user!);
-      
+
       return credential;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
@@ -118,52 +121,52 @@ class AuthService {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       print('Bắt đầu đăng nhập Google...');
-      
+
       // Đăng xuất trước để đảm bảo prompt chọn tài khoản
       await _googleSignIn.signOut();
-      
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         print('Người dùng đã hủy đăng nhập Google');
         throw Exception('Đăng nhập Google đã bị hủy');
       }
 
       print('Đăng nhập Google thành công cho: ${googleUser.email}');
-      
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // DEBUG: In ra thông tin token
       print('Access Token: ${googleAuth.accessToken}');
       print('ID Token: ${googleAuth.idToken}');
-      
+
       // CHỈ CẦN accessToken là đủ, idToken có thể null trên web
       if (googleAuth.accessToken == null) {
         throw Exception('Không thể lấy token từ Google');
       }
       print('Đã lấy token từ Google');
-      
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
-      
+
       print('Đăng nhập Firebase thành công cho: ${userCredential.user?.email}');
-      
+
       // Đồng bộ với backend
       await _syncUserWithBackend(userCredential.user!);
-      
+
       print('Đồng bộ với backend hoàn tất');
-      
+
       return userCredential;
     } catch (e) {
       print('Lỗi đăng nhập Google: ${e.toString()}');
       throw Exception('Lỗi đăng nhập Google: ${e.toString()}');
     }
   }
-
 
   // Đăng xuất
   Future<void> signOut() async {
@@ -189,11 +192,11 @@ class AuthService {
   Future<void> _syncUserWithBackend(User user) async {
     try {
       final idToken = await user.getIdToken();
-      
+
       // Lưu token vào secure storage
       await _storage.write(key: 'firebase_token', value: idToken);
       await _storage.write(key: 'user_id', value: user.uid);
-      
+
       // Gửi thông tin user lên backend travelpro
       await _dio.post(
         '$_baseUrl/auth/sync-user',
@@ -203,7 +206,7 @@ class AuthService {
           'display_name': user.displayName,
           'photo_url': user.photoURL,
         },
-        options: Options(
+        options: dio.Options(
           headers: {
             'Authorization': 'Bearer $idToken',
             'Content-Type': 'application/json',
@@ -220,7 +223,7 @@ class AuthService {
     try {
       final user = currentUser;
       if (user == null) return null;
-      
+
       return await user.getIdToken();
     } catch (e) {
       print('Lỗi lấy token: $e');
@@ -229,24 +232,24 @@ class AuthService {
   }
 
   // Gọi API travel agent
-  Future<Map<String, dynamic>> callTravelAgent(String input, List<Map<String, String>> history) async {
+  Future<Map<String, dynamic>> callTravelAgent(
+    String input,
+    List<Map<String, String>> history,
+  ) async {
     try {
       final token = await getIdToken();
-      
+
       final response = await _dio.post(
         '$_travelAgentUrl/invoke',
-        data: {
-          'input': input,
-          'history': history,
-        },
-        options: Options(
+        data: {'input': input, 'history': history},
+        options: dio.Options(
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
           },
         ),
       );
-      
+
       return response.data;
     } catch (e) {
       throw Exception('Lỗi gọi API travel agent: ${e.toString()}');
