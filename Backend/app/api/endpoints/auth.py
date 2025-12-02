@@ -10,7 +10,7 @@ import string
 
 from app.models.user import (
     User, LoginRequest, LoginResponse, RefreshTokenRequest,
-    PasswordResetRequest, EmailVerificationRequest
+    PasswordResetRequest, EmailVerificationRequest, UserUpdate
 )
 from app.services.firebase_service import firebase_service
 from app.core.dependencies import get_current_user, get_active_user
