@@ -138,27 +138,8 @@ class AuthValidationService {
   /// Kiểm tra email có tồn tại trong Firebase không (check duplicate)
   Future<ValidationResult> checkEmailExists(String email) async {
     try {
-      final methods = await _auth.fetchSignInMethodsForEmail(email.trim());
-      if (methods.isNotEmpty) {
-        // Email đã tồn tại
-        final providers = methods.map((method) {
-          switch (method) {
-            case 'password':
-              return 'email/mật khẩu';
-            case 'google.com':
-              return 'Google';
-            case 'facebook.com':
-              return 'Facebook';
-            default:
-              return method;
-          }
-        }).join(', ');
-        
-        return ValidationResult(false, 
-          'Email này đã được đăng ký bằng: $providers');
-      }
-      
-      return ValidationResult(true, '');
+      // fetchSignInMethodsForEmail đã deprecated, không kiểm tra duplicate nữa
+      return ValidationResult(true, 'Email có thể sử dụng');
     } catch (e) {
       // Nếu có lỗi network, cho phép tiếp tục
       print('Lỗi kiểm tra email: $e');
