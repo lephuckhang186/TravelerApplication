@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'screens/splash_screen.dart';
-import 'screens/loading_screen.dart';
-import 'screens/auth_screen.dart';
-import 'screens/home_screen.dart';
-import 'services/user_service.dart';
-import 'services/auth_service.dart';
-import 'core/theme/app_theme.dart';
+import 'Login/screens/splash_screen.dart';
+import 'Login/screens/loading_screen.dart';
+import 'Login/screens/auth_screen.dart';
+import 'Home/screens/home_screen.dart';
+import 'Login/services/user_service.dart';
+import 'Login/services/auth_service.dart';
+import 'Core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize UserService
   await UserService().init();
+
+  await AuthService().signOut();
 
   // Tắt DevicePreview cho production build
   runApp(const MyApp());
@@ -45,7 +46,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Widget để kiểm tra trạng thái authentication
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -60,7 +60,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    // Tạo stream một lần để tránh rebuild không cần thiết
     _authStateStream = _authService.authStateChanges.map(
       (user) => user != null,
     );
@@ -68,31 +67,33 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<bool>(
-      stream: _authStateStream,
+    return FutureBuilder<bool>(
+      future: _checkLoginStatus(),
       builder: (context, snapshot) {
-        // Hiển thị loading screen khi đang kết nối
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const LoadingScreen();
         }
 
-        // Kiểm tra lỗi
         if (snapshot.hasError) {
-          // Có thể thêm ErrorScreen ở đây hoặc fallback về AuthScreen
           debugPrint('Authentication error: ${snapshot.error}');
           return const AuthScreen();
         }
 
-        // Điều hướng dựa trên trạng thái đăng nhập
         final isLoggedIn = snapshot.data ?? false;
         return isLoggedIn ? const HomeScreen() : const AuthScreen();
       },
     );
   }
 
+  Future<bool> _checkLoginStatus() async {
+    final firebaseUser = _authService.currentUser;
+    final userServiceLoggedIn = await UserService().isLoggedIn();
+
+    return firebaseUser != null && userServiceLoggedIn;
+  }
+
   @override
   void dispose() {
-    // Đảm bảo cleanup nếu cần
     super.dispose();
   }
 }

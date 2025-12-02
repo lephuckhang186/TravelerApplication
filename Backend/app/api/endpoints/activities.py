@@ -21,11 +21,18 @@ from app.services.annalytics_service import (
 from app.database import db_manager
 from app.models.user import User
 
-# Create router
-router = APIRouter(prefix="/activities", tags=["Activities & Expense Management"])
+# Create router - Remove prefix to avoid double prefixing
+router = APIRouter(tags=["Activities & Expense Management"])
 
-# Global integrated travel manager instance (in production, use database)
-travel_manager = IntegratedTravelManager()
+# Global integrated travel manager instance (lazy initialization to avoid import issues)
+travel_manager = None
+
+def get_travel_manager():
+    """Get or create the global travel manager instance"""
+    global travel_manager
+    if travel_manager is None:
+        travel_manager = IntegratedTravelManager()
+    return travel_manager
 
 
 # ============= PYDANTIC MODELS =============
@@ -229,13 +236,13 @@ def _ensure_user_record(user: User) -> None:
     """Ensure the current user exists inside the local SQLite store."""
     try:
         if not db_manager.get_user(user.id):
-            full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
-            display_name = full_name or user.username or user.email.split("@")[0]
             db_manager.create_user(
                 user_id=user.id,
                 email=user.email,
-                display_name=display_name,
-                photo_url=user.profile_picture
+                username=user.username,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                profile_picture=user.profile_picture
             )
     except Exception as exc:
         # Surface a clearer error if we cannot sync user data
@@ -305,12 +312,13 @@ def activity_to_response(activity: Activity) -> ActivityResponse:
     """Convert Activity to ActivityResponse with expense info"""
     # Get expense info
     expense_info = ExpenseInfo()
-    if activity.id in travel_manager.expense_manager._activity_expense_map:
+    travel_mgr = get_travel_manager()
+    if activity.id in travel_mgr.expense_manager._activity_expense_map:
         expense_info.has_expense = True
-        expense_info.expense_id = travel_manager.expense_manager._activity_expense_map[activity.id]
+        expense_info.expense_id = travel_mgr.expense_manager._activity_expense_map[activity.id]
         expense_info.auto_synced = True
         # Get expense category
-        category = travel_manager.expense_manager._map_activity_type_to_expense_category(activity.activity_type)
+        category = travel_mgr.expense_manager._map_activity_type_to_expense_category(activity.activity_type)
         expense_info.expense_category = category.value
     elif activity.budget and activity.budget.actual_cost:
         expense_info.has_expense = False
@@ -361,6 +369,13 @@ async def create_activity(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Activity title is required"
             )
+        
+        # Validate trip_id if provided - should not be mock data
+        if activity_data.trip_id and "mock" in activity_data.trip_id.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please use a valid trip ID. Mock/test trip IDs are not allowed."
+            )
         # Extract budget info
         estimated_cost = None
         actual_cost = None
@@ -397,7 +412,8 @@ async def create_activity(
             kwargs['contact'] = activity_data.contact.dict()
 
         # Use integrated manager to create activity with automatic expense sync
-        activity = travel_manager.create_activity_with_expense(
+        travel_mgr = get_travel_manager()
+        activity = travel_mgr.create_activity_with_expense(
             title=activity_data.title,
             activity_type=activity_data.activity_type,
             created_by=current_user.id,
@@ -408,7 +424,15 @@ async def create_activity(
 
         return activity_to_response(activity)
 
+    except ValueError as e:
+        # Handle validation errors more specifically
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: {str(e)}"
+        )
     except Exception as e:
+        # Log the error for debugging
+        print(f"Activity creation error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to create activity: {str(e)}"
@@ -431,7 +455,8 @@ async def get_activities(
     """Get activities with expense tracking information"""
     try:
         # Start with all user's activities
-        activities = travel_manager.activity_manager.get_activities_by_user(current_user.id)
+        travel_mgr = get_travel_manager()
+        activities = travel_mgr.activity_manager.get_activities_by_user(current_user.id)
 
         # Apply filters
         if trip_id:
@@ -514,7 +539,8 @@ async def create_trip(
         
         # Setup budget if provided
         if trip_data.total_budget:
-            travel_manager.setup_trip_with_budget(
+            travel_mgr = get_travel_manager()
+            travel_mgr.setup_trip_with_budget(
                 start_date=trip_data.start_date,
                 end_date=trip_data.end_date,
                 total_budget=Decimal(str(trip_data.total_budget))
@@ -613,7 +639,8 @@ async def get_activity(
     current_user: User = Depends(get_current_user)
 ):
     """Get activity by ID with expense information"""
-    activity = travel_manager.activity_manager.get_activity(activity_id)
+    travel_mgr = get_travel_manager()
+    activity = travel_mgr.activity_manager.get_activity(activity_id)
     
     if not activity:
         raise HTTPException(
@@ -638,7 +665,8 @@ async def update_activity(
     current_user: User = Depends(get_current_user)
 ):
     """Update an existing activity with automatic expense sync"""
-    activity = travel_manager.activity_manager.get_activity(activity_id)
+    travel_mgr = get_travel_manager()
+    activity = travel_mgr.activity_manager.get_activity(activity_id)
     
     if not activity:
         raise HTTPException(
@@ -672,7 +700,7 @@ async def update_activity(
                 updates[field] = value
 
         # Use integrated manager for automatic expense sync
-        updated_activity = travel_manager.update_activity_with_expense_sync(activity_id, **updates)
+        updated_activity = travel_mgr.update_activity_with_expense_sync(activity_id, **updates)
         
         if not updated_activity:
             raise HTTPException(
@@ -695,7 +723,8 @@ async def delete_activity(
     current_user: User = Depends(get_current_user)
 ):
     """Delete an activity with automatic expense removal"""
-    activity = travel_manager.activity_manager.get_activity(activity_id)
+    travel_mgr = get_travel_manager()
+    activity = travel_mgr.activity_manager.get_activity(activity_id)
     
     if not activity:
         raise HTTPException(
@@ -711,7 +740,7 @@ async def delete_activity(
         )
 
     # Use integrated manager for automatic expense removal
-    success = travel_manager.delete_activity_with_expense_sync(activity_id)
+    success = travel_mgr.delete_activity_with_expense_sync(activity_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -831,7 +860,8 @@ async def setup_trip_budget(
                     continue
         
         # Setup trip and budget
-        travel_manager.setup_trip_with_budget(
+        travel_mgr = get_travel_manager()
+        travel_mgr.setup_trip_with_budget(
             start_date=budget_data.start_date,
             end_date=budget_data.end_date,
             total_budget=Decimal(str(budget_data.total_budget)),
@@ -860,13 +890,14 @@ async def get_expense_summary(
     """Get comprehensive activity-expense summary"""
     try:
         # Filter activities by user
+        travel_mgr = get_travel_manager()
         if trip_id:
             user_activities = [
-                activity for activity in travel_manager.activity_manager.get_activities_by_trip(trip_id)
-                if activity.created_by == current_user.id
+                activity for activity in travel_mgr.activity_manager.get_activities_by_user(current_user.id)
+                if activity.trip_id == trip_id
             ]
         else:
-            user_activities = travel_manager.activity_manager.get_activities_by_user(current_user.id)
+            user_activities = travel_mgr.activity_manager.get_activities_by_user(current_user.id)
         
         # Create temporary manager with user's activities only
         temp_manager = IntegratedTravelManager()
@@ -874,22 +905,22 @@ async def get_expense_summary(
         
         # Copy expense mappings for user's activities
         for activity_id in temp_manager.activity_manager.activities.keys():
-            if activity_id in travel_manager.expense_manager._activity_expense_map:
+            if activity_id in travel_mgr.expense_manager._activity_expense_map:
                 temp_manager.expense_manager._activity_expense_map[activity_id] = \
-                    travel_manager.expense_manager._activity_expense_map[activity_id]
+                    travel_mgr.expense_manager._activity_expense_map[activity_id]
         
         # Copy relevant expenses (expenses linked to user's activities)
         user_activity_ids = set(temp_manager.activity_manager.activities.keys())
         temp_manager.expense_manager.expenses = [
-            expense for expense in travel_manager.expense_manager.expenses
+            expense for expense in travel_mgr.expense_manager.expenses
             if any(activity_id in user_activity_ids 
-                   for activity_id in travel_manager.expense_manager._activity_expense_map
-                   if expense in travel_manager.expense_manager._activity_expense_map.get(activity_id, []))
+                   for activity_id in travel_mgr.expense_manager._activity_expense_map
+                   if expense in travel_mgr.expense_manager._activity_expense_map.get(activity_id, []))
         ]
         
         # Copy budget info
-        temp_manager.expense_manager.trip_budget = travel_manager.expense_manager.trip_budget
-        temp_manager.expense_manager.trip = travel_manager.expense_manager.trip
+        temp_manager.expense_manager.trip_budget = travel_mgr.expense_manager.trip_budget
+        temp_manager.expense_manager.trip = travel_mgr.expense_manager.trip
         
         summary = temp_manager.get_activity_expense_summary(trip_id)
         

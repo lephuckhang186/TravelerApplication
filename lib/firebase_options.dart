@@ -17,13 +17,13 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions are not supported for the Web platform.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
-      case TargetPlatform.iOS:
-        return ios;
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -31,30 +31,11 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyABxnP4d2wRFC6-7re8H_OCv2jLcmmNzb0',
-    appId: '1:522424214900:web:0ec581a39b79c371123821',
-    messagingSenderId: '522424214900',
-    projectId: 'tripwise-app-9fa80',
-    authDomain: 'tripwise-app-9fa80.firebaseapp.com',
-    storageBucket: 'tripwise-app-9fa80.firebasestorage.app',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyABxnP4d2wRFC6-7re8H_OCv2jLcmmNzb0',
     appId: '1:522424214900:android:816d5b67e9723aad123821',
     messagingSenderId: '522424214900',
     projectId: 'tripwise-app-9fa80',
     storageBucket: 'tripwise-app-9fa80.firebasestorage.app',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAYZFPtSB19R8-3ua7gbRlHRcb58mEsvNQ',
-    appId: '1:522424214900:ios:d9e327429f2e7462123821',
-    messagingSenderId: '522424214900',
-    projectId: 'tripwise-app-9fa80',
-    storageBucket: 'tripwise-app-9fa80.firebasestorage.app',
-    iosClientId: '522424214900-rm8mmlilhcfk496i97s34l08fk78fm9o.apps.googleusercontent.com',
-    iosBundleId: 'com.example.flutterApplication1',
   );
 }
