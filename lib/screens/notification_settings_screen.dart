@@ -13,8 +13,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   bool _tripReminders = true;
   bool _expenseAlerts = true;
   bool _planUpdates = false;
-  bool _discoveryTips = true;
-  bool _promotions = false;
   bool _systemUpdates = true;
   
   String _reminderTime = '1 ngày trước';
@@ -74,23 +72,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             settingsWidget: _buildExpenseLimitPicker(),
           ),
 
-          const SizedBox(height: 24),
-          _buildSectionTitle('Khám phá & Gợi ý'),
-          _buildNotificationCard(
-            icon: Icons.lightbulb,
-            title: 'Mẹo du lịch',
-            subtitle: 'Nhận gợi ý địa điểm và hoạt động mới',
-            value: _discoveryTips,
-            onChanged: (value) => setState(() => _discoveryTips = value),
-          ),
-          
-          _buildNotificationCard(
-            icon: Icons.local_offer,
-            title: 'Khuyến mãi',
-            subtitle: 'Thông báo về các ưu đãi và chương trình khuyến mãi',
-            value: _promotions,
-            onChanged: (value) => setState(() => _promotions = value),
-          ),
 
           const SizedBox(height: 24),
           _buildSectionTitle('Hệ thống'),
@@ -377,8 +358,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       _tripReminders = true;
       _expenseAlerts = true;
       _planUpdates = true;
-      _discoveryTips = true;
-      _promotions = true;
       _systemUpdates = true;
     });
     _showSnackBar('Đã bật tất cả thông báo');
@@ -389,8 +368,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       _tripReminders = false;
       _expenseAlerts = false;
       _planUpdates = false;
-      _discoveryTips = false;
-      _promotions = false;
       _systemUpdates = false;
     });
     _showSnackBar('Đã tắt tất cả thông báo');
