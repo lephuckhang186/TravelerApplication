@@ -558,11 +558,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Quick Actions Section (4 icons) - matching tôi1.jpg
+  /// Quick Actions Section (3 icons) - evenly spaced and balanced
   Widget _buildQuickActions() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -575,21 +575,14 @@ class _SettingsScreenState extends State<SettingsScreen>
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildQuickActionItem(
             Icons.account_balance_wallet_outlined,
-            'Quản lý',
+            'Quản lý\nchi tiêu',
             Colors.grey[600]!,
             null,
             () => _onExpenseManagement(),
-          ),
-          _buildQuickActionItem(
-            Icons.settings_outlined,
-            'Cài đặt\nthanh toán',
-            Colors.grey[600]!,
-            null,
-            () => _onPaymentSettings(),
           ),
           _buildQuickActionItem(
             Icons.lock_outline,
