@@ -166,7 +166,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 _buildContactInfoSection(),
                 const SizedBox(height: 16),
-                _buildPreferencesSection(),
                 const SizedBox(height: 16),
                 _buildStatsSection(),
               ],
@@ -373,38 +372,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPreferencesSection() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.settings, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Sở thích du lịch',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildPreferenceItem('Loại hình du lịch yêu thích', 'Khám phá văn hóa, Ẩm thực', Icons.favorite),
-            _buildPreferenceItem('Ngân sách trung bình', '5-10 triệu VNĐ/chuyến', Icons.account_balance_wallet),
-            _buildPreferenceItem('Thời gian du lịch', 'Cuối tuần, Ngày lễ', Icons.calendar_today),
-            _buildPreferenceItem('Phương tiện di chuyển', 'Máy bay, Xe khách', Icons.directions_car),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildStatsSection() {
     return Card(
@@ -582,39 +549,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPreferenceItem(String title, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  value,
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Container(
