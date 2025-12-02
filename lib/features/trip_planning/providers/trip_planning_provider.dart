@@ -3,11 +3,13 @@ import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../services/trip_planning_service.dart';
 import '../services/trip_storage_service.dart';
+import '../../expense_management/services/budget_sync_service.dart';
 
 /// Provider for managing trip planning state
 class TripPlanningProvider extends ChangeNotifier {
   final TripPlanningService _apiService = TripPlanningService();
   final TripStorageService _storageService = TripStorageService();
+  final BudgetSyncService _budgetSyncService = BudgetSyncService();
 
   List<TripModel> _trips = [];
   TripModel? _currentTrip;
@@ -163,6 +165,120 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
+  /// Update an activity in a specific trip
+  Future<bool> updateActivityInTrip(String tripId, ActivityModel updatedActivity) async {
+    try {
+      final tripIndex = _trips.indexWhere((trip) => trip.id == tripId);
+      if (tripIndex == -1) {
+        _setError('Trip not found');
+        return false;
+      }
+
+      final trip = _trips[tripIndex];
+      final activityIndex = trip.activities.indexWhere((activity) => activity.id == updatedActivity.id);
+      if (activityIndex == -1) {
+        _setError('Activity not found in trip');
+        return false;
+      }
+
+      // Update the activity in the trip
+      final updatedActivities = List<ActivityModel>.from(trip.activities);
+      updatedActivities[activityIndex] = updatedActivity;
+
+      // Create updated trip with new activities
+      final updatedTrip = trip.copyWith(activities: updatedActivities);
+      _trips[tripIndex] = updatedTrip;
+
+      // Save to storage
+      await _storageService.saveTrips(_trips);
+
+      // Update current trip if it's the same
+      if (_currentTrip?.id == tripId) {
+        _currentTrip = updatedTrip;
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Failed to update activity: $e');
+      return false;
+    }
+  }
+
+  /// Sync trip budget status with expense data
+  Future<TripModel?> syncTripBudgetStatus(String tripId) async {
+    try {
+      final trip = getTripById(tripId);
+      if (trip == null) {
+        _setError('Trip not found');
+        return null;
+      }
+
+      // Use budget sync service to update trip budget
+      final syncedTrip = await _budgetSyncService.syncTripBudgetStatus(trip);
+      
+      // Update the trip in the list
+      final tripIndex = _trips.indexWhere((t) => t.id == tripId);
+      if (tripIndex != -1) {
+        _trips[tripIndex] = syncedTrip;
+        await _storageService.saveTrips(_trips);
+        
+        // Update current trip if it's the same
+        if (_currentTrip?.id == tripId) {
+          _currentTrip = syncedTrip;
+        }
+        
+        notifyListeners();
+      }
+
+      return syncedTrip;
+    } catch (e) {
+      _setError('Failed to sync budget status: $e');
+      return null;
+    }
+  }
+
+  /// Create expense from activity and sync budget
+  Future<bool> createExpenseFromActivity({
+    required ActivityModel activity,
+    required TripModel trip,
+    required double actualCost,
+    String? description,
+  }) async {
+    try {
+      await _budgetSyncService.createExpenseFromActivity(
+        activity: activity,
+        trip: trip,
+        actualCost: actualCost,
+        description: description,
+        tripProvider: this,
+      );
+      
+      // Sync the trip budget status after creating expense
+      await syncTripBudgetStatus(trip.id!);
+      
+      return true;
+    } catch (e) {
+      _setError('Failed to create expense from activity: $e');
+      return false;
+    }
+  }
+
+  /// Get budget status for a trip
+  Future<Map<String, dynamic>?> getTripBudgetStatus(String tripId) async {
+    try {
+      final trip = getTripById(tripId);
+      if (trip == null) {
+        return null;
+      }
+
+      return await _budgetSyncService.getTripBudgetStatus(trip);
+    } catch (e) {
+      _setError('Failed to get budget status: $e');
+      return null;
+    }
+  }
+
   /// Search trips
   List<TripModel> searchTrips(String query) {
     if (query.isEmpty) return _trips;
@@ -263,5 +379,11 @@ class TripPlanningProvider extends ChangeNotifier {
   void _clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _budgetSyncService.dispose();
+    super.dispose();
   }
 }

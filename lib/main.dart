@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/loading_screen.dart';
@@ -9,6 +10,8 @@ import 'screens/home_screen.dart';
 import 'services/user_service.dart';
 import 'services/auth_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/expense_management/presentation/providers/expense_provider.dart';
+import 'features/trip_planning/providers/trip_planning_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,19 +31,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'TravelPro - Smart Travel Planner',
-      debugShowCheckedModeBanner: false,
-      // Tắt DevicePreview cho production
-      // builder: (context, child) => DevicePreview.appBuilder(context, child!),
-      // locale: DevicePreview.locale(context),
-      theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
-      routes: {
-        '/auth': (context) => const AuthScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/loading': (context) => const LoadingScreen(),
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+        ChangeNotifierProvider(create: (_) => TripPlanningProvider()),
+      ],
+      child: MaterialApp(
+        title: 'TravelPro - Smart Travel Planner',
+        debugShowCheckedModeBanner: false,
+        // Tắt DevicePreview cho production
+        // builder: (context, child) => DevicePreview.appBuilder(context, child!),
+        // locale: DevicePreview.locale(context),
+        theme: AppTheme.lightTheme,
+        home: const SplashScreen(),
+        routes: {
+          '/auth': (context) => const AuthScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/loading': (context) => const LoadingScreen(),
+        },
+      ),
     );
   }
 }

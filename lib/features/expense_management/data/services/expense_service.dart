@@ -194,12 +194,34 @@ class ExpenseService {
     }
   }
 
-  /// Get budget status
-  Future<BudgetStatus> getBudgetStatus() async {
+  /// Get budget status for a specific trip or current trip
+  Future<BudgetStatus> getBudgetStatus({String? tripId}) async {
     try {
-      final response = await _apiClient.get(ApiConfig.budgetStatusEndpoint);
+      final queryParams = tripId != null ? {'trip_id': tripId} : null;
+      final response = await _apiClient.get(
+        ApiConfig.budgetStatusEndpoint,
+        queryParams: queryParams,
+      );
       return BudgetStatus.fromJson(response as Map<String, dynamic>);
     } catch (e) {
+      // Return default budget status if API returns 404 or error
+      if (e.toString().contains('404') || e.toString().contains('No budget')) {
+        return BudgetStatus(
+          totalBudget: 0.0,
+          totalSpent: 0.0,
+          percentageUsed: 0.0,
+          remainingBudget: 0.0,
+          startDate: DateTime.now(),
+          endDate: DateTime.now(),
+          daysRemaining: 0,
+          daysTotal: 0,
+          recommendedDailySpending: 0.0,
+          averageDailySpending: 0.0,
+          burnRateStatus: BurnRateStatus.onTrack,
+          isOverBudget: false,
+          categoryOverruns: [],
+        );
+      }
       throw _handleException(e, 'Failed to fetch budget status');
     }
   }

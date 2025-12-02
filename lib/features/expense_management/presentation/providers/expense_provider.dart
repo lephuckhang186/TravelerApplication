@@ -309,16 +309,18 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   /// Fetch budget status
-  Future<void> fetchBudgetStatus() async {
+  /// Fetch budget status for a specific trip or current trip
+  Future<void> fetchBudgetStatus({String? tripId}) async {
     _isBudgetLoading = true;
     _budgetError = null;
     notifyListeners();
     
     try {
-      _budgetStatus = await _expenseService.getBudgetStatus();
+      _budgetStatus = await _expenseService.getBudgetStatus(tripId: tripId);
       _budgetError = null;
     } catch (e) {
       _budgetError = e.toString();
+      debugPrint('DEBUG: Failed to fetch budget status: $e');
     } finally {
       _isBudgetLoading = false;
       notifyListeners();

@@ -1,11 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:math';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'presentation/providers/expense_provider.dart';
 import 'data/models/expense_models.dart';
+import 'data/services/expense_service.dart';
 import '../../services/auth_service.dart';
+import '../trip_planning/providers/trip_planning_provider.dart';
+import '../trip_planning/models/trip_model.dart';
+
+/// Enum for trip date status
+enum TripDateStatus {
+  none,
+  upcoming,
+  active,
+  completed,
+}
+
+/// Class for status colors
+class StatusColors {
+  final Color backgroundColor;
+  final Color textColor;
+  final Color? borderColor;
+  final Color indicatorColor;
+
+  StatusColors({
+    required this.backgroundColor,
+    required this.textColor,
+    this.borderColor,
+    required this.indicatorColor,
+  });
+}
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -22,6 +48,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   int _chartTypeIndex = 0; // 0: Pie chart, 1: Bar chart
   int _categoryTabIndex = 0; // 0: Subcategory, 1: Category
   int? _selectedBarIndex; // Index of selected bar in chart
+  String? _selectedTripId; // Selected trip for filtering
+  BudgetStatus? _budgetStatus; // Current budget status
 
   late TabController _mainTabController;
   late TabController _categoryTabController;
@@ -49,6 +77,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     _categoryTabController = TabController(length: 2, vsync: this);
     _expenseProvider = ExpenseProvider();
     _initializeWithAuth();
+    
+    // Initialize trip provider when this screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTripProvider();
+    });
   }
 
   /// Initialize with authentication and load data
@@ -79,6 +112,18 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     }
   }
 
+  /// Initialize trip provider
+  Future<void> _initializeTripProvider() async {
+    try {
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
+        await tripProvider.initialize();
+      }
+    } catch (e) {
+      debugPrint('Error initializing trip provider: $e');
+    }
+  }
+
   /// Load data from backend
   Future<void> _loadData() async {
     // Get current month date range
@@ -91,7 +136,28 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       _expenseProvider.fetchExpenseSummary(),
       _expenseProvider.fetchCategoryStatus(),
       _expenseProvider.fetchSpendingTrends(),
+      _expenseProvider.fetchBudgetStatus(tripId: _selectedTripId),
     ]);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh trip data when returning to this screen
+    _refreshTripData();
+  }
+
+  /// Refresh trip data
+  Future<void> _refreshTripData() async {
+    try {
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      // Only refresh if we're not currently loading
+      if (!tripProvider.isLoading) {
+        await tripProvider.initialize();
+      }
+    } catch (e) {
+      debugPrint('Error refreshing trip data: $e');
+    }
   }
 
   @override
@@ -188,6 +254,76 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   child: Icon(
                     Icons.filter_alt_outlined,
                     color: Colors.grey[700],
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Refresh button
+          MouseRegion(
+            onEnter: (_) => setState(() {}),
+            onExit: (_) => setState(() {}),
+            child: GestureDetector(
+              onTap: () => _onRefreshTap(),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.refresh,
+                    color: Colors.grey[700],
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Budget button
+          MouseRegion(
+            onEnter: (_) => setState(() {}),
+            onExit: (_) => setState(() {}),
+            child: GestureDetector(
+              onTap: () => _showBudgetDialog(),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _selectedTripId != null ? Colors.blue[50] : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _selectedTripId != null ? Colors.blue[200]! : Colors.grey[200]!
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.account_balance_wallet,
+                    color: _selectedTripId != null ? Colors.blue[600] : Colors.grey[700],
                     size: 20,
                   ),
                 ),
@@ -382,220 +518,452 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-  /// Month selector with arrows
+  /// Month selector with arrows and trip filter
   Widget _buildMonthSelector() {
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () => _changeMonth(-1),
-          child: AnimatedScale(
-            scale: 1.0,
-            duration: const Duration(milliseconds: 150),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: Icon(Icons.chevron_left, color: Colors.grey[700]),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Consumer<TripPlanningProvider>(
+      builder: (context, tripProvider, child) {
+        return Column(
+          children: [
+            // Trip Filter Row
+            Row(
               children: [
-                Icon(Icons.calendar_today, size: 16, color: Colors.grey[700]),
+                Icon(Icons.trip_origin, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 8),
-                Text(
-                  '${_months[_currentMonthIndex]}/$_currentYear',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedTripId,
+                        hint: Text(
+                          'All Trips',
+                          style: GoogleFonts.quattrocento(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'All Trips',
+                              style: GoogleFonts.quattrocento(fontSize: 14),
+                            ),
+                          ),
+                          ...tripProvider.trips.map((trip) => DropdownMenuItem(
+                            value: trip.id,
+                            child: Text(
+                              '${trip.name} (${trip.destination})',
+                              style: GoogleFonts.quattrocento(fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )),
+                        ],
+                        onChanged: (String? tripId) {
+                          setState(() {
+                            _selectedTripId = tripId;
+                          });
+                          _loadData(); // Reload data when trip filter changes
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: () => _changeMonth(1),
-          child: AnimatedScale(
-            scale: 1.0,
-            duration: const Duration(milliseconds: 150),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: Icon(Icons.chevron_right, color: Colors.grey[700]),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Calendar view (simplified)
-  Widget _buildCalendarView() {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7,
-        childAspectRatio: 1,
-      ),
-      itemCount: 35, // 5 weeks
-      itemBuilder: (context, index) {
-        final day = index + 1;
-        final isSelected = ExpenseProvider().selectedDay == day;
-        return GestureDetector(
-          onTap: () => _onDayTap(day),
-          child: Container(
-            margin: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.orange[100] : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                '$day',
-                style: GoogleFonts.quattrocento(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? Colors.orange[800] : Colors.black87,
+            const SizedBox(height: 12),
+            
+            // Budget Status Card (if trip selected)
+            if (_selectedTripId != null) ...[
+              _buildBudgetStatusCard(tripProvider),
+              const SizedBox(height: 12),
+            ],
+            
+            // Month Selector Row  
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () => _changeMonth(-1),
+                  child: AnimatedScale(
+                    scale: 1.0,
+                    duration: const Duration(milliseconds: 150),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(Icons.chevron_left, color: Colors.grey[700]),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.calendar_today, size: 16, color: Colors.grey[700]),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_months[_currentMonthIndex]}/$_currentYear',
+                          style: GoogleFonts.quattrocento(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _changeMonth(1),
+                  child: AnimatedScale(
+                    scale: 1.0,
+                    duration: const Duration(milliseconds: 150),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(Icons.chevron_right, color: Colors.grey[700]),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
+          ],
         );
       },
     );
   }
 
-  /// Expense list for activities
-  Widget _buildExpenseList() {
-    return AnimatedBuilder(
-      animation: _expenseProvider,
-      builder: (context, child) {
-        if (_expenseProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (_expenseProvider.error != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  'Lỗi tải dữ liệu',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _loadData,
-                  child: const Text('Thử lại'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final expenses = _expenseProvider.expenses;
-
-        if (expenses.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.receipt_long, size: 48, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  'Chưa có giao dịch nào',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
+  /// Calendar view with trip status colors
+  Widget _buildCalendarView() {
+    return Consumer<TripPlanningProvider>(
+      builder: (context, tripProvider, child) {
+        // Calculate the first day of the current month
+        final currentMonthDate = DateTime(_currentYear, _currentMonthIndex + 1, 1);
+        final firstDayOfMonth = currentMonthDate.weekday % 7; // Adjust for Sunday start
+        final daysInMonth = DateTime(_currentYear, _currentMonthIndex + 2, 0).day;
+        
         return Column(
-          children: expenses.map((expense) {
-            return GestureDetector(
-              onTap: () => _onExpenseTap(
-                expense.description.isNotEmpty
-                    ? expense.description
-                    : expense.category.displayName,
+          children: [
+            // Weekday headers
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+                    .map((day) => Expanded(
+                          child: Center(
+                            child: Text(
+                              day,
+                              style: GoogleFonts.quattrocento(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ))
+                    .toList(),
               ),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+            ),
+            
+            // Calendar grid
+            Expanded(
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  childAspectRatio: 1,
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
+                itemCount: 42, // 6 weeks to ensure full month display
+                itemBuilder: (context, index) {
+                  final dayOffset = index - firstDayOfMonth + 1;
+                  
+                  // Skip days outside current month
+                  if (dayOffset < 1 || dayOffset > daysInMonth) {
+                    return Container();
+                  }
+                  
+                  final currentDate = DateTime(_currentYear, _currentMonthIndex + 1, dayOffset);
+                  final isSelected = _expenseProvider.selectedDay == dayOffset;
+                  
+                  // Get trip status for this date
+                  final tripStatus = _getTripStatusForDate(tripProvider.trips, currentDate);
+                  final statusColors = _getStatusColors(tripStatus);
+                  
+                  return GestureDetector(
+                    onTap: () => _onDayTap(dayOffset),
+                    child: Container(
+                      margin: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: isSelected ? Colors.orange[100] : statusColors.backgroundColor,
                         borderRadius: BorderRadius.circular(8),
+                        border: statusColors.borderColor != null 
+                            ? Border.all(color: statusColors.borderColor!, width: 2)
+                            : null,
                       ),
-                      child: Icon(
-                        _getCategoryIcon(expense.category),
-                        size: 20,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Stack(
                         children: [
-                          Text(
-                            expense.description.isNotEmpty
-                                ? _extractActivityTitle(expense.description)
-                                : expense.category.displayName,
-                            style: GoogleFonts.quattrocento(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                          Center(
+                            child: Text(
+                              '$dayOffset',
+                              style: GoogleFonts.quattrocento(
+                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                color: isSelected ? Colors.orange[800] : statusColors.textColor,
+                              ),
                             ),
                           ),
-                          Text(
-                            _formatExpenseDate(expense.expenseDate),
-                            style: GoogleFonts.quattrocento(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                          // Status indicator dot
+                          if (tripStatus != TripDateStatus.none)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: statusColors.indicatorColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
+            
+            // Legend
+            const SizedBox(height: 8),
+            _buildCalendarLegend(),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Expense list for activities grouped by trip
+  Widget _buildExpenseList() {
+    return Consumer<TripPlanningProvider>(
+      builder: (context, tripProvider, child) {
+        return AnimatedBuilder(
+          animation: _expenseProvider,
+          builder: (context, child) {
+            if (_expenseProvider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (_expenseProvider.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
                     Text(
-                      '-${_formatMoney(expense.amount)}₫',
+                      'Lỗi tải dữ liệu',
                       style: GoogleFonts.quattrocento(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.red[700],
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final expenses = _expenseProvider.expenses;
+
+            if (expenses.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.receipt_long, size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Chưa có giao dịch nào',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 16,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
                 ),
-              ),
+              );
+            }
+
+            // Group expenses by trip
+            final groupedExpenses = _groupExpensesByTrip(expenses, tripProvider.trips);
+            
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: groupedExpenses.keys.length,
+              itemBuilder: (context, groupIndex) {
+                final tripName = groupedExpenses.keys.elementAt(groupIndex);
+                final tripExpenses = groupedExpenses[tripName]!;
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Trip header
+                    if (tripName != 'Other Expenses') ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.flight, color: Colors.blue[600], size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              tripName,
+                              style: GoogleFonts.quattrocento(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue[800],
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${tripExpenses.length} activities',
+                              style: GoogleFonts.quattrocento(
+                                fontSize: 12,
+                                color: Colors.blue[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    
+                    // Expenses for this trip
+                    ...tripExpenses.map((expense) {
+                      return GestureDetector(
+                        onTap: () => _onExpenseTap(
+                          expense.description.isNotEmpty
+                              ? expense.description
+                              : expense.category.displayName,
+                        ),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: tripName == 'Other Expenses' ? Colors.grey[50] : Colors.blue[25],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: tripName == 'Other Expenses' 
+                                  ? Colors.grey[200]! 
+                                  : Colors.blue[100]!
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: _getCategoryColor(expense.category).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  _getCategoryIcon(expense.category),
+                                  size: 20,
+                                  color: _getCategoryColor(expense.category),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      expense.description.isNotEmpty
+                                          ? _extractActivityTitle(expense.description)
+                                          : expense.category.displayName,
+                                      style: GoogleFonts.quattrocento(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.access_time,
+                                          size: 12,
+                                          color: Colors.grey[500],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _formatExpenseDate(expense.expenseDate),
+                                          style: GoogleFonts.quattrocento(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        if (_extractTripFromDescription(expense.description) != null) ...[
+                                          const SizedBox(width: 12),
+                                          Icon(
+                                            Icons.location_on,
+                                            size: 12,
+                                            color: Colors.blue[500],
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _extractTripFromDescription(expense.description)!,
+                                            style: GoogleFonts.quattrocento(
+                                              fontSize: 12,
+                                              color: Colors.blue[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '-${_formatMoney(expense.amount)}₫',
+                                style: GoogleFonts.quattrocento(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    
+                    const SizedBox(height: 16),
+                  ],
+                );
+              },
             );
-          }).toList(),
+          },
         );
       },
     );
@@ -612,6 +980,83 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     }
     
     return description;
+  }
+
+  /// Extract trip information from expense description
+  String? _extractTripFromDescription(String description) {
+    if (description.isEmpty) return null;
+    
+    // Check for pattern [Trip: xxx]
+    final tripMatch = RegExp(r'\[Trip:\s*([^\]]+)\]').firstMatch(description);
+    if (tripMatch != null) {
+      return tripMatch.group(1)?.trim();
+    }
+    
+    return null;
+  }
+
+  /// Group expenses by trip
+  Map<String, List<Expense>> _groupExpensesByTrip(List<Expense> expenses, List<TripModel> trips) {
+    final Map<String, List<Expense>> grouped = {};
+    
+    for (final expense in expenses) {
+      String tripName = 'Other Expenses';
+      
+      // Try to find trip from expense description first
+      final tripFromDesc = _extractTripFromDescription(expense.description);
+      if (tripFromDesc != null) {
+        tripName = tripFromDesc;
+      } else {
+        // Try to match expense date with trip dates
+        for (final trip in trips) {
+          if (expense.expenseDate.isAfter(trip.startDate) && 
+              expense.expenseDate.isBefore(trip.endDate.add(const Duration(days: 1)))) {
+            tripName = '${trip.name} (${trip.destination})';
+            break;
+          }
+        }
+      }
+      
+      // Filter by selected trip if one is selected
+      if (_selectedTripId != null) {
+        final selectedTrip = trips.firstWhere(
+          (trip) => trip.id == _selectedTripId,
+          orElse: () => trips.first,
+        );
+        final expectedTripName = '${selectedTrip.name} (${selectedTrip.destination})';
+        
+        // Only include expenses from selected trip
+        if (tripName != expectedTripName && tripFromDesc != selectedTrip.name) {
+          continue;
+        }
+      }
+      
+      grouped.putIfAbsent(tripName, () => []).add(expense);
+    }
+    
+    return grouped;
+  }
+
+  /// Get category color for visual distinction
+  Color _getCategoryColor(ExpenseCategory category) {
+    switch (category) {
+      case ExpenseCategory.flight:
+        return Colors.blue[600]!;
+      case ExpenseCategory.activity:
+        return Colors.green[600]!;
+      case ExpenseCategory.lodging:
+        return Colors.purple[600]!;
+      case ExpenseCategory.restaurant:
+        return Colors.orange[600]!;
+      case ExpenseCategory.transportation:
+        return Colors.teal[600]!;
+      case ExpenseCategory.shopping:
+        return Colors.pink[600]!;
+      case ExpenseCategory.tour:
+        return Colors.amber[600]!;
+      default:
+        return Colors.grey[600]!;
+    }
   }
 
   /// Pie chart
@@ -748,7 +1193,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
       return PieChartSectionData(
         value: categoryEntry.value,
-        title: '${percentage.toStringAsFixed(0)}%', // Chỉ hiển thị % thôi
+        title: displayName.length > 15 ? '${percentage.toStringAsFixed(0)}%' : displayName, // Show name or % based on length
         radius: 80, // Tăng radius lên 100 để pie chart to hơn
         color: colors[index % colors.length],
         titleStyle: GoogleFonts.quattrocento(
@@ -1737,7 +2182,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         _currentYear--;
       }
     });
-    _loadData(); // Reload data for new month
+    _loadData(); // Reload expense data for new month
+    _refreshTripData(); // Also refresh trip data to ensure calendar is up-to-date
   }
 
   void _toggleChartType() {
@@ -1750,8 +2196,41 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     _showMessage('Opening filters...');
   }
 
+  void _onRefreshTap() async {
+    _showMessage('Refreshing data...');
+    await Future.wait([
+      _loadData(),
+      _refreshTripData(),
+    ]);
+    _showMessage('Data refreshed!');
+  }
+
   void _onGridTap() {
     _showMessage('Opening grid view...');
+  }
+
+  /// Show budget creation dialog
+  void _showBudgetDialog() {
+    if (_selectedTripId == null) {
+      _showMessage('Please select a trip first');
+      return;
+    }
+    
+    final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+    final selectedTrip = tripProvider.trips.firstWhere(
+      (trip) => trip.id == _selectedTripId,
+      orElse: () => tripProvider.trips.first,
+    );
+    
+    showDialog(
+      context: context,
+      builder: (context) => _BudgetCreationDialog(
+        trip: selectedTrip,
+        onBudgetCreated: () {
+          _loadData(); // Refresh data after budget creation
+        },
+      ),
+    );
   }
 
   void _onDayTap(int day) {
@@ -1775,6 +2254,349 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
+    );
+  }
+
+  /// Get trip status for a specific date
+  TripDateStatus _getTripStatusForDate(List<TripModel> trips, DateTime date) {
+    for (final trip in trips) {
+      // Check if date falls within trip duration
+      final tripStart = DateTime(trip.startDate.year, trip.startDate.month, trip.startDate.day);
+      final tripEnd = DateTime(trip.endDate.year, trip.endDate.month, trip.endDate.day);
+      final checkDate = DateTime(date.year, date.month, date.day);
+      
+      if (checkDate.isAtSameMomentAs(tripStart) || checkDate.isAtSameMomentAs(tripEnd) ||
+          (checkDate.isAfter(tripStart) && checkDate.isBefore(tripEnd))) {
+        
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        
+        if (checkDate.isAfter(today)) {
+          return TripDateStatus.upcoming;
+        } else if (checkDate.isAtSameMomentAs(today) || 
+                  (checkDate.isAfter(tripStart) && checkDate.isBefore(tripEnd.add(const Duration(days: 1))))) {
+          return TripDateStatus.active;
+        } else {
+          return TripDateStatus.completed;
+        }
+      }
+    }
+    return TripDateStatus.none;
+  }
+  
+  /// Get colors for trip status
+  StatusColors _getStatusColors(TripDateStatus status) {
+    switch (status) {
+      case TripDateStatus.upcoming:
+        return StatusColors(
+          backgroundColor: Colors.blue[50]!,
+          textColor: Colors.blue[800]!,
+          borderColor: Colors.blue[200],
+          indicatorColor: Colors.blue[600]!,
+        );
+      case TripDateStatus.active:
+        return StatusColors(
+          backgroundColor: Colors.green[50]!,
+          textColor: Colors.green[800]!,
+          borderColor: Colors.green[300],
+          indicatorColor: Colors.green[600]!,
+        );
+      case TripDateStatus.completed:
+        return StatusColors(
+          backgroundColor: Colors.grey[100]!,
+          textColor: Colors.grey[700]!,
+          borderColor: null,
+          indicatorColor: Colors.grey[500]!,
+        );
+      case TripDateStatus.none:
+        return StatusColors(
+          backgroundColor: Colors.transparent,
+          textColor: Colors.black87,
+          borderColor: null,
+          indicatorColor: Colors.transparent,
+        );
+    }
+  }
+  
+  /// Build calendar legend
+  Widget _buildCalendarLegend() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildCalendarLegendItem('Upcoming', Colors.blue[600]!, Colors.blue[50]!),
+          _buildCalendarLegendItem('Active', Colors.green[600]!, Colors.green[50]!),
+          _buildCalendarLegendItem('Completed', Colors.grey[500]!, Colors.grey[100]!),
+        ],
+      ),
+    );
+  }
+  
+  /// Build individual calendar legend item
+  Widget _buildCalendarLegendItem(String label, Color indicatorColor, Color backgroundColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            shape: BoxShape.circle,
+            border: Border.all(color: indicatorColor.withValues(alpha: 0.5)),
+          ),
+          child: Center(
+            child: Container(
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(
+                color: indicatorColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: GoogleFonts.quattrocento(
+            fontSize: 10,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build budget status card
+  Widget _buildBudgetStatusCard(TripPlanningProvider tripProvider) {
+    if (_selectedTripId == null) return Container();
+    
+    final selectedTrip = tripProvider.trips.firstWhere(
+      (trip) => trip.id == _selectedTripId,
+      orElse: () => tripProvider.trips.first,
+    );
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue[50]!,
+            Colors.blue[100]!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Column(
+        children: [
+          // Header
+          Row(
+            children: [
+              Icon(Icons.account_balance_wallet, 
+                   color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Budget Status - ${selectedTrip.name}',
+                style: GoogleFonts.quattrocento(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue[800],
+                ),
+              ),
+              const Spacer(),
+              _buildBudgetWarningIndicator(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Budget metrics row
+          Row(
+            children: [
+              Expanded(child: _buildBudgetMetric('Total Budget', 
+                  selectedTrip.budget?.estimatedCost ?? 0, 
+                  Colors.blue[600]!, Icons.monetization_on)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildBudgetMetric('Spent', 
+                  selectedTrip.totalActualSpent, 
+                  Colors.orange[600]!, Icons.trending_down)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildBudgetMetric('Remaining', 
+                  (selectedTrip.budget?.estimatedCost ?? 0) - selectedTrip.totalActualSpent, 
+                  Colors.green[600]!, Icons.savings)),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Progress bar
+          _buildBudgetProgressBar(selectedTrip),
+        ],
+      ),
+    );
+  }
+  
+  /// Build budget warning indicator
+  Widget _buildBudgetWarningIndicator() {
+    // Calculate percentage from selected trip if available
+    double percentage = 0;
+    if (_selectedTripId != null) {
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      final selectedTrip = tripProvider.trips.firstWhere(
+        (trip) => trip.id == _selectedTripId,
+        orElse: () => tripProvider.trips.first,
+      );
+      
+      final budget = selectedTrip.budget?.estimatedCost ?? 0;
+      if (budget > 0) {
+        percentage = (selectedTrip.totalActualSpent / budget) * 100;
+      }
+    }
+    
+    Color indicatorColor;
+    IconData indicatorIcon;
+    String message;
+    
+    if (percentage >= 90) {
+      indicatorColor = Colors.red[600]!;
+      indicatorIcon = Icons.warning;
+      message = 'Over budget!';
+    } else if (percentage >= 75) {
+      indicatorColor = Colors.orange[600]!;
+      indicatorIcon = Icons.info;
+      message = '${(100 - percentage).toStringAsFixed(0)}% left';
+    } else {
+      indicatorColor = Colors.green[600]!;
+      indicatorIcon = Icons.check_circle;
+      message = 'On track';
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: indicatorColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: indicatorColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(indicatorIcon, color: indicatorColor, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            message,
+            style: GoogleFonts.quattrocento(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: indicatorColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build individual budget metric
+  Widget _buildBudgetMetric(String label, double value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.quattrocento(
+              fontSize: 10,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _formatMoney(value),
+            style: GoogleFonts.quattrocento(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build budget progress bar
+  Widget _buildBudgetProgressBar(TripModel trip) {
+    final budget = trip.budget?.estimatedCost ?? 0;
+    final spent = trip.totalActualSpent;
+    final percentage = budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+    
+    Color progressColor;
+    if (percentage >= 0.9) {
+      progressColor = Colors.red[600]!;
+    } else if (percentage >= 0.75) {
+      progressColor = Colors.orange[600]!;
+    } else {
+      progressColor = Colors.green[600]!;
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Budget Usage',
+              style: GoogleFonts.quattrocento(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            Text(
+              '${(percentage * 100).toStringAsFixed(1)}%',
+              style: GoogleFonts.quattrocento(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: progressColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 8,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: percentage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: progressColor,
+                borderRadius: BorderRadius.circular(4),
+                gradient: LinearGradient(
+                  colors: [
+                    progressColor,
+                    progressColor.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1848,6 +2670,272 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       return _getCategoryIcon(category);
     } catch (e) {
       return Icons.category;
+    }
+  }
+}
+
+/// Budget creation dialog widget
+class _BudgetCreationDialog extends StatefulWidget {
+  final TripModel trip;
+  final VoidCallback onBudgetCreated;
+
+  const _BudgetCreationDialog({
+    required this.trip,
+    required this.onBudgetCreated,
+  });
+
+  @override
+  State<_BudgetCreationDialog> createState() => _BudgetCreationDialogState();
+}
+
+class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _totalBudgetController = TextEditingController();
+  final _dailyLimitController = TextEditingController();
+  
+  bool _isCreating = false;
+  
+  // Category allocations
+  final Map<ExpenseCategory, double> _categoryAllocations = {};
+  
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill with trip budget if available
+    if (widget.trip.budget != null) {
+      _totalBudgetController.text = widget.trip.budget!.estimatedCost.toString();
+    }
+  }
+  
+  @override
+  void dispose() {
+    _totalBudgetController.dispose();
+    _dailyLimitController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 500,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              // Header
+              Row(
+                children: [
+                  Icon(Icons.account_balance_wallet, 
+                       color: Colors.blue[600], size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Create Budget for ${widget.trip.name}',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Trip info
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.flight, color: Colors.blue[600], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.trip.destination,
+                            style: GoogleFonts.quattrocento(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue[800],
+                            ),
+                          ),
+                          Text(
+                            '${widget.trip.durationDays} days trip',
+                            style: GoogleFonts.quattrocento(
+                              fontSize: 12,
+                              color: Colors.blue[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Total budget field
+              TextFormField(
+                controller: _totalBudgetController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Total Budget (VND)',
+                  prefixIcon: Icon(Icons.monetization_on, color: Colors.green[600]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.blue[600]!),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter total budget';
+                  }
+                  final amount = double.tryParse(value);
+                  if (amount == null || amount <= 0) {
+                    return 'Please enter a valid amount';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Daily limit field
+              TextFormField(
+                controller: _dailyLimitController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Daily Limit (Optional)',
+                  prefixIcon: Icon(Icons.today, color: Colors.orange[600]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.blue[600]!),
+                  ),
+                ),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final amount = double.tryParse(value);
+                    if (amount == null || amount <= 0) {
+                      return 'Please enter a valid amount';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isCreating ? null : () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isCreating ? null : _createBudget,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[600],
+                        foregroundColor: Colors.white,
+                      ),
+                      child: _isCreating
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text('Create Budget'),
+                    ),
+                  ),
+                ],
+              ), // Close the Row children
+            ], // Close the Column children  
+          ), // Close the Form
+        ), // Close the Container padding
+      ), // Close the ConstrainedBox child
+    ), // Close the Dialog
+    );
+  }
+  
+  Future<void> _createBudget() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() {
+      _isCreating = true;
+    });
+    
+    try {
+      final totalBudget = double.parse(_totalBudgetController.text);
+      final dailyLimit = _dailyLimitController.text.isNotEmpty 
+          ? double.parse(_dailyLimitController.text) 
+          : null;
+      
+      // Create budget through expense service
+      final expenseService = ExpenseService();
+      
+      final budget = Budget(
+        totalBudget: totalBudget,
+        dailyLimit: dailyLimit,
+      );
+      
+      await expenseService.createBudget(budget);
+      
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onBudgetCreated();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Budget created successfully for ${widget.trip.name}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create budget: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreating = false;
+        });
+      }
     }
   }
 }

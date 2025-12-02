@@ -17,6 +17,7 @@ class Expense:
     amount: Decimal
     category: ActivityType
     description: str = ""
+    date: datetime = None
     currency: str = "VND"
     
     def __post_init__(self):
@@ -24,6 +25,8 @@ class Expense:
             self.amount = Decimal(str(self.amount))
         if self.amount < 0:
             raise ValueError("Expense amount cannot be negative")
+        if self.date is None:
+            self.date = datetime.now()
 
 @dataclass
 class CategoryBudget:
@@ -285,6 +288,7 @@ class ExpenseManager:
         self.expenses: List[Expense] = []
         self.analytics: Optional[Analytics] = None
         self.trip: Optional[Trip] = None
+        self._activity_expense_map: Dict[str, str] = {}
     
     def set_trip(self, trip: Trip):
         """Set the current trip"""
@@ -471,6 +475,31 @@ class ExpenseManager:
         if self.analytics is None and self.expenses:
             self.analytics = Analytics(self.expenses)
         return self.analytics
+    
+    def sync_activity_to_expense(self, activity: Activity) -> Optional[str]:
+        """Sync activity to expense and return expense ID"""
+        if not activity.budget or not activity.budget.actual_cost:
+            return None
+        
+        # Create expense from activity
+        expense = Expense(
+            amount=activity.budget.actual_cost,
+            category=activity.activity_type,
+            description=f"{activity.name} [Activity: {activity.id}]",
+            date=activity.start_time or datetime.now()
+        )
+        
+        # Add expense
+        expense_id = self.add_expense(expense)
+        
+        # Map activity to expense
+        self._activity_expense_map[activity.id] = expense_id
+        
+        return expense_id
+    
+    def _map_activity_type_to_expense_category(self, activity_type: ActivityType) -> ActivityType:
+        """Map activity type to expense category"""
+        return activity_type  # Direct mapping for now
     
     def export_data(self) -> Dict[str, any]:
         """Export all data for persistence or analysis"""

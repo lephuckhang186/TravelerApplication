@@ -229,13 +229,13 @@ def _ensure_user_record(user: User) -> None:
     """Ensure the current user exists inside the local SQLite store."""
     try:
         if not db_manager.get_user(user.id):
-            full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
-            display_name = full_name or user.username or user.email.split("@")[0]
             db_manager.create_user(
                 user_id=user.id,
                 email=user.email,
-                display_name=display_name,
-                photo_url=user.profile_picture
+                username=user.username or user.email.split("@")[0],
+                first_name=user.first_name,
+                last_name=user.last_name,
+                profile_picture=user.profile_picture
             )
     except Exception as exc:
         # Surface a clearer error if we cannot sync user data
@@ -360,6 +360,12 @@ async def create_activity(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Activity title is required"
+            )
+            
+        if not activity_data.activity_type:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Activity type is required"
             )
         # Extract budget info
         estimated_cost = None
@@ -496,12 +502,31 @@ async def create_trip(
 ):
     """Create a new trip with real data storage"""
     try:
+        # Validate required fields
+        if not trip_data.name or trip_data.name.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Trip name is required"
+            )
+            
+        if not trip_data.destination or trip_data.destination.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Trip destination is required"
+            )
+            
+        if trip_data.start_date >= trip_data.end_date:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="End date must be after start date"
+            )
+        
         _ensure_user_record(current_user)
 
         # Create trip data for storage
         trip_data_dict = {
-            "name": trip_data.name,
-            "destination": trip_data.destination,
+            "name": trip_data.name.strip(),
+            "destination": trip_data.destination.strip(),
             "description": trip_data.description,
             "start_date": trip_data.start_date.isoformat(),
             "end_date": trip_data.end_date.isoformat(),

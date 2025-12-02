@@ -39,16 +39,24 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     _trip = widget.trip;
     _activities = List<ActivityModel>.from(widget.trip.activities);
     _loadActivitiesFromServer();
-    // Get expense provider from context after first frame
+    // Try to get expense provider from context after first frame (optional)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
+      _initializeExpenseProvider();
+    });
+  }
+  
+  void _initializeExpenseProvider() {
+    try {
+      if (mounted) {
         _expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
         _integrationService.setExpenseProvider(_expenseProvider!);
-      } catch (e) {
-        // ExpenseProvider not available in this context
-        print('ExpenseProvider not found: $e');
+        debugPrint('ExpenseProvider successfully initialized');
       }
-    });
+    } catch (e) {
+      // ExpenseProvider not available - continue without expense integration
+      debugPrint('ExpenseProvider not available, expense integration disabled: $e');
+      _expenseProvider = null;
+    }
   }
 
   /// Load activities from server to ensure we have the latest data
@@ -347,14 +355,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       onSelected: (value) {
                         if (value == 'delete') {
                           _deleteActivity(activity);
-                        } else if (value == 'edit_cost') {
-                          _showRealCostInput(activity);
+                        } else if (value == 'edit') {
+                          _showEditActivityModal(activity);
                         }
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(
-                          value: 'edit_cost',
-                          child: Text('Add Real Cost'),
+                          value: 'edit',
+                          child: Text('Edit Activity'),
                         ),
                         const PopupMenuItem(
                           value: 'delete',
@@ -496,6 +504,255 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     );
   }
 
+  void _showEditActivityModal(ActivityModel activity) {
+    final titleController = TextEditingController(text: activity.title);
+    final descriptionController = TextEditingController(text: activity.description ?? '');
+    final expectedCostController = TextEditingController(
+      text: activity.budget?.estimatedCost?.toString() ?? ''
+    );
+    dynamic selectedPlace = activity.location != null ? {
+      'display_name': activity.location!.name,
+      'lat': activity.location!.latitude?.toString() ?? '0',
+      'lon': activity.location!.longitude?.toString() ?? '0',
+    } : null;
+    ActivityType selectedType = activity.activityType;
+    DateTime selectedDate = activity.startDate ?? _trip.startDate;
+    TimeOfDay selectedTime = TimeOfDay(
+      hour: selectedDate.hour,
+      minute: selectedDate.minute,
+    );
+    bool checkInStatus = activity.checkIn;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              return SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            'Cancel',
+                            style: GoogleFonts.inter(
+                              color: AppColors.primary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'Edit Activity',
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(width: 64),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      controller: titleController,
+                      label: 'Title',
+                      hint: 'e.g. Morning flight to Hanoi',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTypeSelector(selectedType, (value) {
+                      setModalState(() => selectedType = value);
+                    }),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: descriptionController,
+                      label: 'Destination',
+                      hint: 'Enter destination details',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          // Get category name from selected activity type
+                          String categoryName = _getActivityTypeSearchName(selectedType);
+                          
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SearchPlaceScreen(
+                                prefilledLocation: _trip.destination,
+                                prefilledCategory: categoryName,
+                              ),
+                            ),
+                          );
+
+                          if (result != null) {
+                            setModalState(() {
+                              selectedPlace = result['place'];
+                              titleController.text = result['category'];
+                              descriptionController.text = result['place']['display_name'];
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text('Auto Pick Activities'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCheckInToggle(checkInStatus, (value) {
+                      setModalState(() => checkInStatus = value);
+                    }),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: expectedCostController,
+                      label: checkInStatus ? 'Real Cost (VND)' : 'Expected Cost (VND)',
+                      hint: checkInStatus 
+                          ? 'Enter actual cost spent'
+                          : 'Enter estimated cost (optional)',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildPickerTile(
+                            label: 'Date',
+                            value: _formatDate(selectedDate),
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate,
+                                firstDate: _trip.startDate,
+                                lastDate: _trip.endDate,
+                              );
+                              if (picked != null) {
+                                setModalState(() => selectedDate = picked);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildPickerTile(
+                            label: 'Time',
+                            value:
+                                '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+                            onTap: () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: selectedTime,
+                              );
+                              if (picked != null) {
+                                setModalState(() => selectedTime = picked);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final title = titleController.text.trim();
+                          if (title.isEmpty) return;
+                          
+                          final startDate = DateTime(
+                            selectedDate.year,
+                            selectedDate.month,
+                            selectedDate.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
+                          final expectedCost = expectedCostController.text.trim().isEmpty 
+                              ? null 
+                              : double.tryParse(expectedCostController.text.trim());
+                          
+                          // Create budget preserving actual cost if exists
+                          BudgetModel? budget;
+                          if (expectedCost != null) {
+                            budget = BudgetModel(
+                              estimatedCost: expectedCost,
+                              actualCost: activity.budget?.actualCost, // Preserve actual cost
+                              currency: 'VND',
+                              category: activity.budget?.category,
+                            );
+                          } else if (activity.budget != null) {
+                            budget = activity.budget; // Keep existing budget if no new expected cost
+                          }
+                          
+                          final updatedActivity = activity.copyWith(
+                            title: title,
+                            description: descriptionController.text.trim().isEmpty
+                                ? null
+                                : descriptionController.text.trim(),
+                            activityType: selectedType,
+                            startDate: startDate,
+                            budget: budget,
+                            checkIn: checkInStatus,
+                            location: selectedPlace != null
+                                ? LocationModel(
+                                    name: selectedPlace['display_name'],
+                                    latitude: double.tryParse(selectedPlace['lat']),
+                                    longitude: double.tryParse(selectedPlace['lon']),
+                                  )
+                                : null,
+                          );
+                          Navigator.pop(context);
+                          _updateActivity(updatedActivity);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Update Activity'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   void _showAddActivityModal() {
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
@@ -566,14 +823,31 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       hint: 'e.g. Morning flight to Hanoi',
                     ),
                     const SizedBox(height: 16),
+                    _buildTypeSelector(selectedType, (value) {
+                      setModalState(() => selectedType = value);
+                    }),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: descriptionController,
+                      label: 'Destination',
+                      hint: 'Enter destination details',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: ElevatedButton.icon(
                         onPressed: () async {
+                          // Get category name from selected activity type
+                          String categoryName = _getActivityTypeSearchName(selectedType);
+                          
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const SearchPlaceScreen(),
+                              builder: (context) => SearchPlaceScreen(
+                                prefilledLocation: _trip.destination,
+                                prefilledCategory: categoryName,
+                              ),
                             ),
                           );
 
@@ -585,31 +859,28 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             });
                           }
                         },
-                        child: const Text('Search for a place'),
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text('Auto Pick Activities'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: descriptionController,
-                      label: 'Notes',
-                      hint: 'Add extra details (optional)',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: expectedCostController,
-                      label: 'Expected Cost (VND)',
-                      hint: 'Enter estimated cost (optional)',
-                      keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 16),
                     _buildCheckInToggle(checkInStatus, (value) {
                       setModalState(() => checkInStatus = value);
                     }),
                     const SizedBox(height: 16),
-                    _buildTypeSelector(selectedType, (value) {
-                      setModalState(() => selectedType = value);
-                    }),
+                    _buildTextField(
+                      controller: expectedCostController,
+                      label: checkInStatus ? 'Real Cost (VND)' : 'Expected Cost (VND)',
+                      hint: checkInStatus 
+                          ? 'Enter actual cost spent'
+                          : 'Enter estimated cost (optional)',
+                      keyboardType: TextInputType.number,
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -827,41 +1098,82 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   String _getActivityTypeDisplayName(ActivityType type) {
     switch (type) {
       case ActivityType.flight:
-        return '✈️ Chuyến bay';
+        return '✈️ Flight';
       case ActivityType.activity:
-        return '🎯 Hoạt động';
+        return '🎯 Activity';
       case ActivityType.lodging:
-        return '🏨 Lưu trú';
+        return '🏨 Lodging';
       case ActivityType.carRental:
-        return '🚗 Thuê xe';
+        return '🚗 Car Rental';
       case ActivityType.concert:
-        return '🎵 Hòa nhạc';
+        return '🎵 Concert';
       case ActivityType.cruising:
-        return '🛳️ Du thuyền';
+        return '🛳️ Cruise';
       case ActivityType.direction:
-        return '🧭 Chỉ đường';
+        return '🧭 Directions';
       case ActivityType.ferry:
-        return '⛴️ Phà';
+        return '⛴️ Ferry';
       case ActivityType.groundTransportation:
-        return '🚌 Di chuyển mặt đất';
+        return '🚌 Ground Transportation';
       case ActivityType.map:
-        return '🗺️ Bản đồ';
+        return '🗺️ Map';
       case ActivityType.meeting:
-        return '🤝 Cuộc họp';
+        return '🤝 Meeting';
       case ActivityType.note:
-        return '📝 Ghi chú';
+        return '📝 Note';
       case ActivityType.parking:
-        return '🅿️ Đỗ xe';
+        return '🅿️ Parking';
       case ActivityType.rail:
-        return '🚂 Tàu hỏa';
+        return '🚂 Rail';
       case ActivityType.restaurant:
-        return '🍽️ Nhà hàng';
+        return '🍽️ Restaurant';
       case ActivityType.theater:
-        return '🎭 Rạp hát';
+        return '🎭 Theater';
       case ActivityType.tour:
-        return '🎫 Tour du lịch';
+        return '🎫 Tour';
       case ActivityType.transportation:
-        return '🚇 Di chuyển';
+        return '🚇 Transportation';
+    }
+  }
+
+  String _getActivityTypeSearchName(ActivityType type) {
+    switch (type) {
+      case ActivityType.flight:
+        return 'airport';
+      case ActivityType.activity:
+        return 'attraction';
+      case ActivityType.lodging:
+        return 'hotel';
+      case ActivityType.carRental:
+        return 'car rental';
+      case ActivityType.concert:
+        return 'concert hall';
+      case ActivityType.cruising:
+        return 'port';
+      case ActivityType.direction:
+        return 'landmark';
+      case ActivityType.ferry:
+        return 'ferry terminal';
+      case ActivityType.groundTransportation:
+        return 'bus station';
+      case ActivityType.map:
+        return 'tourist information';
+      case ActivityType.meeting:
+        return 'conference center';
+      case ActivityType.note:
+        return 'landmark';
+      case ActivityType.parking:
+        return 'parking';
+      case ActivityType.rail:
+        return 'train station';
+      case ActivityType.restaurant:
+        return 'restaurant';
+      case ActivityType.theater:
+        return 'theater';
+      case ActivityType.tour:
+        return 'tour operator';
+      case ActivityType.transportation:
+        return 'transport hub';
     }
   }
 
@@ -904,6 +1216,84 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     );
   }
 
+  void _showEditTripDialog() {
+    final nameController = TextEditingController(text: _trip.name);
+    final destinationController = TextEditingController(text: _trip.destination);
+    final descriptionController = TextEditingController(text: _trip.description ?? '');
+    final budgetController = TextEditingController(
+      text: _trip.budget?.estimatedCost?.toString() ?? ''
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Trip Information'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Trip Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: destinationController,
+                decoration: const InputDecoration(
+                  labelText: 'Destination',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: budgetController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Total Budget (VND)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await _saveEditedTripInfo(
+                nameController.text.trim(),
+                destinationController.text.trim(),
+                descriptionController.text.trim(),
+                budgetController.text.trim(),
+              );
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showMoreOptions() {
     showModalBottomSheet(
       context: context,
@@ -929,7 +1319,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               leading: const Icon(Icons.edit_outlined),
               title: const Text('Edit Trip Info'),
               subtitle: const Text('Rename or update the description'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                _showEditTripDialog();
+              },
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline),
@@ -941,6 +1334,57 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _updateActivity(ActivityModel updatedActivity) async {
+    try {
+      // Find the activity to update
+      final index = _activities.indexWhere((a) => a.id == updatedActivity.id);
+      if (index == -1) {
+        throw Exception('Activity not found');
+      }
+
+      // Try to update on server if activity has an ID and not local
+      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+        try {
+          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
+        } catch (e) {
+          debugPrint('Failed to update activity on server: $e');
+          // Continue with local update even if server fails
+        }
+      }
+      
+      setState(() {
+        _activities[index] = updatedActivity;
+        // Resort activities by start date
+        _activities.sort((a, b) {
+          if (a.startDate == null && b.startDate == null) return 0;
+          if (a.startDate == null) return 1;
+          if (b.startDate == null) return -1;
+          return a.startDate!.compareTo(b.startDate!);
+        });
+      });
+      await _persistTripChanges();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Activity updated successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update activity: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _addActivity(ActivityModel activity) async {
@@ -1013,6 +1457,97 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to remove activity: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveEditedTripInfo(
+    String name,
+    String destination,
+    String description,
+    String budgetText,
+  ) async {
+    try {
+      if (name.isEmpty || destination.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Trip name and destination are required'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Parse budget
+      double? budget;
+      if (budgetText.isNotEmpty) {
+        budget = double.tryParse(budgetText);
+        if (budget == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid budget amount'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+
+      // Create updated budget model
+      BudgetModel? budgetModel;
+      if (budget != null) {
+        budgetModel = BudgetModel(
+          estimatedCost: budget,
+          currency: _trip.budget?.currency ?? 'VND',
+          actualCost: _trip.budget?.actualCost,
+          category: _trip.budget?.category,
+        );
+      }
+
+      // Update trip with new information
+      final updatedTrip = _trip.copyWith(
+        name: name,
+        destination: destination,
+        description: description.isNotEmpty ? description : null,
+        budget: budgetModel,
+        updatedAt: DateTime.now(),
+      );
+
+      // Save to storage
+      final storedTrip = await _storageService.saveTrip(updatedTrip);
+
+      // Try to update on server if trip has ID and not local
+      if (storedTrip.id != null && !storedTrip.id!.startsWith('local_')) {
+        try {
+          await _tripService.updateTrip(storedTrip.id!, storedTrip);
+        } catch (e) {
+          debugPrint('Failed to update trip on server: $e');
+          // Continue with local update even if server fails
+        }
+      }
+
+      setState(() {
+        _trip = storedTrip;
+        _hasChanges = true;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Trip information updated successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update trip: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1305,9 +1840,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
 
     if (mounted) {
+      String message = 'Checked in!';
+      if (actualCost > 0) {
+        message += _expenseProvider != null ? ' Expense created.' : ' Cost recorded.';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Checked in! ${actualCost > 0 ? "Expense created." : ""}'),
+          content: Text(message),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 2),
         ),
@@ -1333,22 +1873,28 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         return;
       }
 
-      final success = await _integrationService.syncActivityExpense(activity);
-      
-      if (!success) {
-        // Fallback to direct expense service call
-        await _expenseService.createExpenseFromActivity(
-          amount: activity.budget!.actualCost!,
-          category: activity.activityType.value,
-          description: '${activity.title}',
-          activityId: activity.id,
-          tripId: _trip.id,
-        );
+      // Only try expense integration if provider is available
+      if (_expenseProvider != null) {
+        final success = await _integrationService.syncActivityExpense(activity);
+        
+        if (!success) {
+          // Fallback to direct expense service call
+          await _expenseService.createExpenseFromActivity(
+            amount: activity.budget!.actualCost!,
+            category: activity.activityType.value,
+            description: '${activity.title}',
+            activityId: activity.id,
+            tripId: _trip.id,
+          );
+        }
+        debugPrint('Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND)');
+      } else {
+        // Log activity cost without expense integration
+        debugPrint('Activity cost recorded (expense integration disabled): ${activity.title} (${activity.budget!.actualCost} VND)');
       }
-
-      debugPrint('Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND)');
     } catch (e) {
       debugPrint('Failed to create expense for checked-in activity: $e');
+      // Don't throw error - continue without expense integration
     }
   }
 
@@ -1486,11 +2032,15 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       await _syncExpense(updatedActivity);
       
       if (mounted) {
+        String message = _expenseProvider != null 
+            ? 'Real cost saved and synced to expenses!' 
+            : 'Real cost saved successfully!';
+            
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Real cost saved and synced to expenses!'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -1510,18 +2060,24 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     if (activity.budget?.actualCost == null) return;
     
     try {
-      // Use integration service for better tracking
-      final success = await _integrationService.syncActivityExpense(activity);
-      
-      if (!success) {
-        // Fallback to direct service call if integration fails
-        await _expenseService.createExpenseFromActivity(
-          amount: activity.budget!.actualCost!,
-          category: activity.activityType.value,
-          description: '${activity.title}',
-          activityId: activity.id,
-          tripId: _trip.id,
-        );
+      // Only sync if expense provider is available
+      if (_expenseProvider != null) {
+        // Use integration service for better tracking
+        final success = await _integrationService.syncActivityExpense(activity);
+        
+        if (!success) {
+          // Fallback to direct service call if integration fails
+          await _expenseService.createExpenseFromActivity(
+            amount: activity.budget!.actualCost!,
+            category: activity.activityType.value,
+            description: '${activity.title}',
+            activityId: activity.id,
+            tripId: _trip.id,
+          );
+        }
+        debugPrint('Expense synced successfully for: ${activity.title}');
+      } else {
+        debugPrint('Expense sync skipped (provider not available) for: ${activity.title}');
       }
     } catch (e) {
       debugPrint('Failed to sync expense: $e');

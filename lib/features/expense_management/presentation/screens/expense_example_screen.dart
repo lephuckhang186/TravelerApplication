@@ -467,6 +467,19 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
     }
   }
 
+  String _formatDateDisplay(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    String dayName = days[date.weekday - 1];
+    String day = date.day.toString().padLeft(2, '0');
+    String month = months[date.month - 1];
+    String year = date.year.toString();
+    
+    return '$dayName, $day $month $year';
+  }
+
   IconData _getCategoryIcon(ExpenseCategory category) {
     switch (category) {
       case ExpenseCategory.flight:
@@ -542,44 +555,176 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
           children: [
             const Text('You need to create a trip first to track expenses.'),
             const SizedBox(height: 16),
-            TextField(
-              controller: startDateController,
-              decoration: const InputDecoration(
-                labelText: 'Start Date',
-                hintText: 'YYYY-MM-DD',
-              ),
+            // Enhanced Start Date Picker
+            GestureDetector(
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
                   initialDate: DateTime.now(),
                   firstDate: DateTime.now().subtract(const Duration(days: 30)),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: Colors.blue.shade600, // Calendar header color
+                          onPrimary: Colors.white,
+                          surface: Colors.white,
+                          onSurface: Colors.black87,
+                        ),
+                        datePickerTheme: DatePickerThemeData(
+                          backgroundColor: Colors.white,
+                          headerBackgroundColor: Colors.blue[600],
+                          headerForegroundColor: Colors.white,
+                          dayForegroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.white;
+                            }
+                            return Colors.black87;
+                          }),
+                          dayBackgroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.blue.shade600;
+                            }
+                            if (states.contains(MaterialState.hovered)) {
+                              return Colors.blue.shade100;
+                            }
+                            return Colors.transparent;
+                          }),
+                          todayForegroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.white;
+                            }
+                            return Colors.blue.shade600;
+                          }),
+                          todayBackgroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.blue.shade600;
+                            }
+                            return Colors.blue.shade50;
+                          }),
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
                 );
                 if (date != null) {
                   startDate = date;
-                  startDateController.text = date.toString().split(' ')[0];
+                  startDateController.text = _formatDateDisplay(date);
                 }
               },
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: endDateController,
-              decoration: const InputDecoration(
-                labelText: 'End Date',
-                hintText: 'YYYY-MM-DD',
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: startDateController,
+                  decoration: InputDecoration(
+                    labelText: 'Trip Start Date',
+                    hintText: 'Select start date',
+                    prefixIcon: Icon(Icons.calendar_today, color: Colors.blue.shade600),
+                    suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.blue.shade600),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.blue.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.blue.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.blue.shade50,
+                  ),
+                ),
               ),
+            ),
+            const SizedBox(height: 16),
+            // Enhanced End Date Picker
+            GestureDetector(
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
                   initialDate: startDate ?? DateTime.now().add(const Duration(days: 1)),
                   firstDate: startDate ?? DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: Colors.orange.shade600, // Different color for end date
+                          onPrimary: Colors.white,
+                          surface: Colors.white,
+                          onSurface: Colors.black87,
+                        ),
+                        datePickerTheme: DatePickerThemeData(
+                          backgroundColor: Colors.white,
+                          headerBackgroundColor: Colors.orange.shade600,
+                          headerForegroundColor: Colors.white,
+                          dayForegroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.white;
+                            }
+                            return Colors.black87;
+                          }),
+                          dayBackgroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.orange.shade600;
+                            }
+                            if (states.contains(MaterialState.hovered)) {
+                              return Colors.orange.shade100;
+                            }
+                            return Colors.transparent;
+                          }),
+                          todayForegroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.white;
+                            }
+                            return Colors.orange.shade600;
+                          }),
+                          todayBackgroundColor: MaterialStateColor.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return Colors.orange.shade600;
+                            }
+                            return Colors.orange.shade50;
+                          }),
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
                 );
                 if (date != null) {
                   endDate = date;
-                  endDateController.text = date.toString().split(' ')[0];
+                  endDateController.text = _formatDateDisplay(date);
                 }
               },
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: endDateController,
+                  decoration: InputDecoration(
+                    labelText: 'Trip End Date',
+                    hintText: 'Select end date',
+                    prefixIcon: Icon(Icons.calendar_today, color: Colors.orange.shade600),
+                    suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.orange.shade600),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.orange.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.orange.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.orange.shade600, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.orange.shade50,
+                  ),
+                ),
+              ),
             ),
           ],
         ),

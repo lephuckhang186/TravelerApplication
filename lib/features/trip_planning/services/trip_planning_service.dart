@@ -425,26 +425,76 @@ class TripPlanningService {
 
   // ===== TRIP MANAGEMENT METHODS =====
 
+  /// Test API connectivity and authentication
+  Future<bool> testConnection() async {
+    try {
+      final headers = await _headers;
+      final response = await http.get(
+        Uri.parse('$baseUrl/activities/types/list'),
+        headers: headers,
+      );
+      debugPrint('DEBUG: Connection test - Status: ${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('DEBUG: Connection test failed: $e');
+      return false;
+    }
+  }
+
   /// Create a new trip with backend integration
   Future<TripModel> createTrip(TripModel trip) async {
     try {
-      final body = {
-        'name': trip.name,
-        'destination': trip.destination,
-        'description': trip.description,
-        'start_date': trip.startDate.toIso8601String().split('T')[0],
-        'end_date': trip.endDate.toIso8601String().split('T')[0],
-        'total_budget': trip.budget?.estimatedCost,
+      debugPrint('DEBUG: Creating trip with data: ${trip.name}, ${trip.destination}');
+      debugPrint('DEBUG: Start date: ${trip.startDate}, End date: ${trip.endDate}');
+      
+      // Test connection first
+      final connectionOk = await testConnection();
+      if (!connectionOk) {
+        throw Exception('Unable to connect to server. Please check your internet connection.');
+      }
+      
+      // Validate input data
+      if (trip.name.trim().isEmpty) {
+        throw Exception('Trip name cannot be empty');
+      }
+      if (trip.destination.trim().isEmpty) {
+        throw Exception('Trip destination cannot be empty');
+      }
+      if (trip.startDate.isAfter(trip.endDate) || trip.startDate.isAtSameMomentAs(trip.endDate)) {
+        throw Exception('End date must be after start date');
+      }
+
+      final body = <String, dynamic>{
+        'name': trip.name.trim(),
+        'destination': trip.destination.trim(),
+        'start_date': trip.startDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
+        'end_date': trip.endDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
         'currency': trip.budget?.currency ?? 'VND',
       };
+
+      // Only add optional fields if they have valid values
+      if (trip.description != null && trip.description!.trim().isNotEmpty) {
+        body['description'] = trip.description!.trim();
+      }
+      
+      if (trip.budget?.estimatedCost != null && trip.budget!.estimatedCost! > 0) {
+        body['total_budget'] = trip.budget!.estimatedCost;
+      }
+      
+      debugPrint('DEBUG: Request body: ${jsonEncode(body)}');
       
       // Use real endpoint with authentication
       final headers = await _headers;
+      debugPrint('DEBUG: Request headers: $headers');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/activities/trips'),
         headers: headers,
         body: jsonEncode(body),
       );
+      
+      debugPrint('DEBUG: Response status: ${response.statusCode}');
+      debugPrint('DEBUG: Response body: ${response.body}');
       
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -461,12 +511,25 @@ class TripPlanningService {
       } else {
         try {
           final errorData = jsonDecode(response.body);
-          throw Exception('Failed to create trip: ${errorData['detail'] ?? response.statusCode}');
+          final errorDetail = errorData['detail'];
+          if (errorDetail is String) {
+            throw Exception('Failed to create trip: $errorDetail');
+          } else if (errorDetail is List) {
+            // Handle FastAPI validation errors
+            final errors = errorDetail.map((e) => '${e['loc']?.join('.')}: ${e['msg']}').join(', ');
+            throw Exception('Validation errors: $errors');
+          } else {
+            throw Exception('Failed to create trip: ${response.statusCode}');
+          }
         } catch (e) {
-          throw Exception('Failed to create trip: HTTP ${response.statusCode}');
+          if (e.toString().contains('Failed to create trip') || e.toString().contains('Validation errors')) {
+            rethrow;
+          }
+          throw Exception('Failed to create trip: HTTP ${response.statusCode} - ${response.body}');
         }
       }
     } catch (e) {
+      debugPrint('DEBUG: Create trip error: $e');
       throw Exception('Error creating trip: $e');
     }
   }
