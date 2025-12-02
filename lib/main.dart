@@ -19,7 +19,8 @@ void main() async {
   // Initialize UserService
   await UserService().init();
 
-  runApp(DevicePreview(enabled: true, builder: (context) => const MyApp()));
+  // Tắt DevicePreview cho production build
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -30,10 +31,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'TravelPro - Smart Travel Planner',
       debugShowCheckedModeBanner: false,
-      builder: (context, child) {
-        return DevicePreview.appBuilder(context, child!);
-      },
-      locale: DevicePreview.locale(context),
+      // Tắt DevicePreview cho production
+      // builder: (context, child) => DevicePreview.appBuilder(context, child!),
+      // locale: DevicePreview.locale(context),
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       routes: {

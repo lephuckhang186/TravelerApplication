@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 class AuthService {
@@ -11,8 +12,7 @@ class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId:
-        '522424214900-dalkqs7t7kba0r25doeg66j1bcms6jku.apps.googleusercontent.com',
+    scopes: <String>['email', 'profile'],
   );
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final dio.Dio _dio = dio.Dio();
@@ -31,27 +31,7 @@ class AuthService {
   // Đăng ký bằng email và password với validation chi tiết
   Future<UserCredential?> signUpWithEmail(String email, String password) async {
     try {
-      // Kiểm tra email có tồn tại trước không
-      final methods = await _auth.fetchSignInMethodsForEmail(email.trim());
-      if (methods.isNotEmpty) {
-        final providers = methods
-            .map((method) {
-              switch (method) {
-                case 'password':
-                  return 'email/mật khẩu';
-                case 'google.com':
-                  return 'Google';
-                case 'facebook.com':
-                  return 'Facebook';
-                default:
-                  return method;
-              }
-            })
-            .join(', ');
-
-        throw Exception('Email này đã được đăng ký bằng: $providers');
-      }
-
+      // Firebase sẽ tự động kiểm tra email duplicate và báo lỗi phù hợp
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
@@ -66,38 +46,10 @@ class AuthService {
     }
   }
 
-  // Kiểm tra email có tồn tại không
+  // Kiểm tra email có tồn tại không (deprecated method - bỏ qua)
   Future<Map<String, dynamic>> checkEmailExists(String email) async {
-    try {
-      final methods = await _auth.fetchSignInMethodsForEmail(email.trim());
-
-      if (methods.isEmpty) {
-        return {'exists': false, 'message': 'Email này chưa được đăng ký'};
-      }
-
-      final providers = methods
-          .map((method) {
-            switch (method) {
-              case 'password':
-                return 'email/mật khẩu';
-              case 'google.com':
-                return 'Google';
-              case 'facebook.com':
-                return 'Facebook';
-              default:
-                return method;
-            }
-          })
-          .join(', ');
-
-      return {
-        'exists': true,
-        'providers': methods,
-        'message': 'Email này đã được đăng ký bằng: $providers',
-      };
-    } on FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
-    }
+    // fetchSignInMethodsForEmail đã deprecated, trả về false luôn
+    return {'exists': false, 'message': 'Có thể đăng ký với email này'};
   }
 
   // Đăng nhập bằng email và password
@@ -141,8 +93,8 @@ class AuthService {
       print('Access Token: ${googleAuth.accessToken}');
       print('ID Token: ${googleAuth.idToken}');
 
-      // CHỈ CẦN accessToken là đủ, idToken có thể null trên web
-      if (googleAuth.accessToken == null) {
+      // Kiểm tra accessToken và idToken
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
         throw Exception('Không thể lấy token từ Google');
       }
       print('Đã lấy token từ Google');

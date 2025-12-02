@@ -1,24 +1,20 @@
 {
   "project_info": {
-    "project_number": "662155786288",
+    "project_number": "522424214900",
     "project_id": "tripwise-app-9fa80",
     "storage_bucket": "tripwise-app-9fa80.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:662155786288:android:816d5b67e9723aad123821",
+        "mobilesdk_app_id": "1:522424214900:android:816d5b67e9723aad123821",
         "android_client_info": {
           "package_name": "com.example.flutter_application_1"
         }
       },
       "oauth_client": [
         {
-          "client_id": "662155786288-0lngtq5jcmf7na2ogk0p50jhjpc0431d.apps.googleusercontent.com",
-          "client_type": 1
-        },
-        {
-          "client_id": "662155786288-0lngtq5jcmf7na2ogk0p50jhjpc0431d.apps.googleusercontent.com",
+          "client_id": "522424214900-dalkqs7t7kba0r25doeg66j1bcms6jku.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -31,11 +27,11 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "662155786288-0lngtq5jcmf7na2ogk0p50jhjpc0431d.apps.googleusercontent.com",
+              "client_id": "522424214900-dalkqs7t7kba0r25doeg66j1bcms6jku.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "662155786288-0lngtq5jcmf7na2ogk0p50jhjpc0431d.apps.googleusercontent.com",
+              "client_id": "522424214900-rm8mmlilhcfk496i97s34l08fk78fm9o.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.example.flutterApplication1"
