@@ -12,13 +12,132 @@ class DatabaseManager:
     
     def __init__(self, db_path: str = "travel_app.db"):
         self.db_path = db_path
-        # Database is now initialized externally via db_setup
-        self._ensure_connection()
+        # Create database if it doesn't exist
+        self._init_database()
     
-    def _ensure_connection(self):
-        """Ensure database file exists and is accessible"""
+    def _init_database(self):
+        """Initialize database and create tables if they don't exist"""
         if not os.path.exists(self.db_path):
-            raise FileNotFoundError(f"Database file not found: {self.db_path}. Please run database setup first.")
+            # Create database and tables
+            self._create_tables()
+        else:
+            # Check if all required tables exist
+            self._ensure_tables_exist()
+
+    def _ensure_tables_exist(self):
+        """Ensure all required tables exist"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                existing_tables = {row[0] for row in cursor.fetchall()}
+                required_tables = {'users', 'trips', 'planners', 'activities', 'expenses', 'collaborators'}
+                
+                if not required_tables.issubset(existing_tables):
+                    print(f"Missing tables: {required_tables - existing_tables}")
+                    self._create_tables()
+        except Exception as e:
+            print(f"Error checking tables: {e}")
+            self._create_tables()
+
+    def _create_tables(self):
+        """Create all required database tables"""
+        with self.get_connection() as conn:
+            # Users table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    username TEXT,
+                    first_name TEXT,
+                    last_name TEXT,
+                    profile_picture TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Trips table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS trips (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    destination TEXT NOT NULL,
+                    description TEXT,
+                    start_date TEXT NOT NULL,
+                    end_date TEXT NOT NULL,
+                    total_budget REAL,
+                    currency TEXT DEFAULT 'VND',
+                    is_active BOOLEAN DEFAULT 1,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            """)
+            
+            # Planners table (for backward compatibility)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS planners (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    start_date TEXT NOT NULL,
+                    end_date TEXT NOT NULL,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            """)
+            
+            # Activities table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS activities (
+                    id TEXT PRIMARY KEY,
+                    planner_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    start_time TEXT,
+                    end_time TEXT,
+                    location TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (planner_id) REFERENCES planners (id)
+                )
+            """)
+            
+            # Expenses table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS expenses (
+                    id TEXT PRIMARY KEY,
+                    planner_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    currency TEXT DEFAULT 'VND',
+                    category TEXT,
+                    date TEXT NOT NULL,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (planner_id) REFERENCES planners (id)
+                )
+            """)
+            
+            # Collaborators table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS collaborators (
+                    id TEXT PRIMARY KEY,
+                    planner_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    role TEXT DEFAULT 'viewer',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (planner_id) REFERENCES planners (id),
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    UNIQUE(planner_id, user_id)
+                )
+            """)
+            
+            conn.commit()
+            print("Database tables created successfully")
     
     def get_connection(self):
         """Get a database connection with foreign key constraints enabled"""

@@ -18,12 +18,15 @@ class Expense:
     category: ActivityType
     description: str = ""
     currency: str = "VND"
+    date: Optional[datetime] = None
     
     def __post_init__(self):
         if isinstance(self.amount, (int, float)):
             self.amount = Decimal(str(self.amount))
         if self.amount < 0:
             raise ValueError("Expense amount cannot be negative")
+        if self.date is None:
+            self.date = datetime.now()
 
 @dataclass
 class CategoryBudget:
@@ -285,6 +288,7 @@ class ExpenseManager:
         self.expenses: List[Expense] = []
         self.analytics: Optional[Analytics] = None
         self.trip: Optional[Trip] = None
+        self._activity_expense_map: Dict[str, List[Expense]] = {}  # Fix: Initialize missing attribute
     
     def set_trip(self, trip: Trip):
         """Set the current trip"""
@@ -306,8 +310,9 @@ class ExpenseManager:
     
     def add_expense(self, expense: Expense) -> str:
         """Add expense with proper validation and budget tracking"""
-        # Generate unique ID for expense
-        expense_id = f"exp_{len(self.expenses) + 1}_{int(expense.date.timestamp())}"
+        # Generate unique ID for expense  
+        from datetime import datetime
+        expense_id = f"exp_{len(self.expenses) + 1}_{int(datetime.now().timestamp())}"
         
         self.expenses.append(expense)
         
@@ -502,6 +507,33 @@ class ExpenseManager:
     def get_history_expenses(self) -> List[Expense]:
         """Get all historical expenses sorted by date"""
         return sorted(self.expenses, key=lambda x: x.date, reverse=True)
+    
+    def _map_activity_type_to_expense_category(self, activity_type):
+        """Map activity type to expense category"""
+        return activity_type  # Simple mapping for now
+    
+    def sync_activity_to_expense(self, activity) -> Optional[str]:
+        """Sync activity to expense tracking"""
+        if not activity.budget or not activity.budget.actual_cost:
+            return None
+            
+        # Create expense from activity
+        expense = Expense(
+            amount=activity.budget.actual_cost,
+            category=activity.activity_type,
+            description=f"Expense for {activity.name}",
+            currency=activity.budget.currency,
+            date=datetime.now()
+        )
+        
+        expense_id = self.add_expense(expense)
+        
+        # Map activity to expense
+        if activity.id not in self._activity_expense_map:
+            self._activity_expense_map[activity.id] = []
+        self._activity_expense_map[activity.id].append(expense)
+        
+        return expense_id
 
 
 class IntegratedTravelManager:
@@ -518,27 +550,50 @@ class IntegratedTravelManager:
         if trip_id:
             activities = [a for a in activities if getattr(a, 'trip_id', None) == trip_id]
         
+        total_estimated_cost = sum(
+            float(a.expected_cost or 0) for a in activities 
+        )
+        total_actual_cost = sum(
+            float(a.real_cost or 0) for a in activities
+        )
+        synced_activities = len([
+            a for a in activities 
+            if a.id in self.expense_manager._activity_expense_map
+        ])
+        
         summary = {
             'total_activities': len(activities),
-            'total_expenses': len(self.expense_manager.expenses),
-            'total_cost': sum(exp.amount for exp in self.expense_manager.expenses),
-            'activities': []
+            'synced_activities': synced_activities,
+            'unsynced_activities': len(activities) - synced_activities,
+            'total_estimated_cost': total_estimated_cost,
+            'total_actual_cost': total_actual_cost,
+            'budget_variance': total_actual_cost - total_estimated_cost,
+            'budget_status': None,
+            'category_status': None
         }
         
+        activities_detail = []
         for activity in activities:
             activity_expenses = self.expense_manager._activity_expense_map.get(activity.id, [])
-            activity_cost = sum(exp.amount for exp in activity_expenses)
+            activity_cost = sum(float(exp.amount) for exp in activity_expenses)
             
-            summary['activities'].append({
+            activities_detail.append({
                 'id': activity.id,
-                'title': activity.title,
-                'type': activity.type.value if hasattr(activity.type, 'value') else str(activity.type),
+                'title': activity.name,
+                'type': activity.activity_type.value if hasattr(activity.activity_type, 'value') else str(activity.activity_type),
                 'status': activity.status.value if hasattr(activity.status, 'value') else str(activity.status),
                 'expense_count': len(activity_expenses),
-                'total_cost': activity_cost
+                'total_cost': activity_cost,
+                'estimated_cost': float(activity.expected_cost or 0),
+                'actual_cost': float(activity.real_cost or 0),
+                'has_expense': len(activity_expenses) > 0,
+                'expense_category': activity.activity_type.value if hasattr(activity.activity_type, 'value') else str(activity.activity_type)
             })
         
-        return summary
+        return {
+            'summary': summary,
+            'activities': activities_detail
+        }
     
     def create_activity_with_expense(self, title: str, activity_type, created_by: str, 
                                    estimated_cost=None, actual_cost=None, **kwargs):
@@ -658,12 +713,10 @@ class IntegratedTravelManager:
     def setup_trip_with_budget(self, start_date: date, end_date: date, 
                              total_budget: Decimal, category_allocations=None):
         """Setup trip with budget"""
-        trip = Trip(
-            start_date=start_date,
-            end_date=end_date,
-            total_budget=Budget(total_budget=total_budget)
-        )
-        self.expense_manager.trip = trip
-        self.expense_manager.trip_budget = Budget(total_budget=total_budget)
+        trip = Trip(start_date=start_date, end_date=end_date)
+        budget = Budget(total_budget=total_budget, category_allocations=category_allocations)
+        
+        self.expense_manager.set_trip(trip)
+        self.expense_manager.set_budget(budget)
         
         return trip

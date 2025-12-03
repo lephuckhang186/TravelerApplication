@@ -35,8 +35,8 @@ pytest-asyncio==0.21.1
 httpx==0.28.1
 
 # Data processing
-pandas==2.2.3
-numpy==1.26.4
+pandas
+numpy==1.26.2
 
 # Additional utilities
 python-slugify==8.0.1
