@@ -77,12 +77,38 @@ class TripPlanningProvider extends ChangeNotifier {
       await _storageService.saveTrips(_trips);
 
       _clearError();
+      notifyListeners();
       return createdTrip;
     } catch (e) {
       _setError('Failed to create trip: $e');
       return null;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Add an existing trip to the provider
+  Future<void> addTrip(TripModel trip) async {
+    try {
+      // Check if trip already exists
+      final existingIndex = _trips.indexWhere((t) => t.id == trip.id);
+      if (existingIndex >= 0) {
+        // Update existing trip
+        _trips[existingIndex] = trip;
+      } else {
+        // Add new trip
+        _trips.add(trip);
+      }
+      
+      // Save to storage
+      await _storageService.saveTrips(_trips);
+      
+      _clearError();
+      notifyListeners();
+      debugPrint('DEBUG: Added trip to provider: ${trip.name}');
+    } catch (e) {
+      debugPrint('DEBUG: Failed to add trip to provider: $e');
+      _setError('Failed to add trip: $e');
     }
   }
 
@@ -100,32 +126,32 @@ class TripPlanningProvider extends ChangeNotifier {
         return false;
       }
 
-      // Try to delete from server only if it's not a local-only trip
-      bool serverDeleteSuccessful = false;
-      if (!tripId.startsWith('local_')) {
+      // For local trips, always proceed with deletion
+      if (tripId.startsWith('local_')) {
+        debugPrint('DEBUG: Local-only trip detected, proceeding with local deletion');
+      } else {
+        // Try to delete from server for non-local trips
         try {
           debugPrint('DEBUG: Deleting from server...');
           await _apiService.deleteTrip(tripId);
-          serverDeleteSuccessful = true;
           debugPrint('DEBUG: Server deletion successful');
         } catch (e) {
           debugPrint('DEBUG: Server deletion failed: $e');
-          // For 404 errors, it's actually okay - the trip is already gone from server
-          if (e.toString().contains('404')) {
-            debugPrint('DEBUG: Trip already deleted from server (404)');
-            serverDeleteSuccessful = true;
+          // For network errors or 404, we'll still proceed with local deletion
+          if (e.toString().contains('404') || 
+              e.toString().contains('Failed to fetch') ||
+              e.toString().contains('ClientException')) {
+            debugPrint('DEBUG: Network error or 404 - proceeding with local deletion anyway');
           } else {
-            // For other errors, we might want to show a warning but still delete locally
-            debugPrint(
-              'DEBUG: Server error: $e - proceeding with local deletion',
-            );
+            // For other server errors, fail the deletion
+            debugPrint('DEBUG: Unexpected server error - failing deletion');
+            _setError('Failed to delete trip from server. Please check your connection and try again.');
+            return false;
           }
         }
-      } else {
-        debugPrint('DEBUG: Local-only trip, skipping server deletion');
-        serverDeleteSuccessful = true;
       }
 
+      // Proceed with local deletion
       // Remove from local list and storage
       debugPrint('DEBUG: Removing trip from local storage');
       _trips.removeWhere((trip) => trip.id == tripId);

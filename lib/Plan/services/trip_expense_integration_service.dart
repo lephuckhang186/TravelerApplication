@@ -54,7 +54,7 @@ class TripExpenseIntegrationService {
     // Use actual cost if available, otherwise use estimated cost
     final amount =
         activity.budget!.actualCost ?? activity.budget!.estimatedCost;
-    if (amount == null || amount <= 0) {
+    if (amount <= 0) {
       debugPrint('DEBUG: Integration - No valid amount: $amount');
       return false;
     }
