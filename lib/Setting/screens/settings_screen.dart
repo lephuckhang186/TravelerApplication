@@ -585,10 +585,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ),
                         const SizedBox(width: 8),
                         _buildRectangularUtilityItem(
-                          Icons.receipt_long,
-                          'Thanh Toán Nhanh',
-                          const Color(0xFF00BCD4), // Cyan
-                          () => _onPaymentHistory(),
+                          Icons.lock_outline,
+                          'Đăng nhập và bảo mật',
+                          const Color(0xFF4CAF50), // Green
+                          () => _onSecuritySettings(),
                         ),
                       ],
                     ),
@@ -998,6 +998,19 @@ class _SettingsScreenState extends State<SettingsScreen>
     // Payment history functionality
   }
 
+  void _onTranslation() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TranslationScreen()),
+    );
+  }
+
+  void _onCurrencyConverter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
+  }
   void _onTranslation() {
     Navigator.push(
       context,
