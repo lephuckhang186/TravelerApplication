@@ -687,7 +687,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 10),
           // Synchronized scrolling for both rows
           SizedBox(
-            height: 211, // Height for 3 rows + spacing (138 + 65 + 8)
+            height: 138, // Height for 2 rows + spacing (65 + 65 + 8)
             child: ListView(
               controller: scrollController,
               scrollDirection: Axis.horizontal,
@@ -706,10 +706,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ),
                         const SizedBox(width: 8),
                         _buildRectangularUtilityItem(
-                          Icons.receipt_long,
-                          'Thanh Toán Nhanh',
-                          const Color(0xFF00BCD4), // Cyan
-                          () => _onPaymentHistory(),
+                          Icons.translate,
+                          'Dịch văn bản',
+                          const Color(0xFF9C27B0), // Purple
+                          () => _onTranslation(),
                         ),
                       ],
                     ),
@@ -722,25 +722,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                           'Thống kê du lịch',
                           const Color(0xFF00BCD4), // Cyan
                           () => _onTravelStats(),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.redeem,
-                          'Quà của tôi',
-                          const Color(0xFF8BC34A), // Green
-                          () => _onMoreGifts(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Third row - New utilities
-                    Row(
-                      children: [
-                        _buildRectangularUtilityItem(
-                          Icons.translate,
-                          'Dịch văn bản',
-                          const Color(0xFF9C27B0), // Purple
-                          () => _onTranslation(),
                         ),
                         const SizedBox(width: 8),
                         _buildRectangularUtilityItem(
@@ -1013,8 +994,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             'Đổi hình nền',
             () => _onChangeBackground(),
           ),
-          _buildMenuDivider(),
-          _buildLanguageItem(),
         ],
       ),
     );
@@ -1221,6 +1200,19 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _onFinancialCenter() {
     // Financial center functionality
   }
+  void _onTranslation() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TranslationScreen()),
+    );
+  }
+
+  void _onCurrencyConverter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
+  }
 
   void _onChangeBackground() {
     showModalBottomSheet(
@@ -1415,18 +1407,4 @@ class _SettingsScreenState extends State<SettingsScreen>
     // Message display functionality
   }
 
-  // New utility handlers
-  void _onTranslation() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TranslationScreen()),
-    );
-  }
-
-  void _onCurrencyConverter() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
-    );
-  }
 }
