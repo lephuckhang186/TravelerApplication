@@ -27,11 +27,6 @@ class UserUpdate(BaseModel):
     first_name: Optional[str] = Field(None, max_length=50)
     last_name: Optional[str] = Field(None, max_length=50)
     profile_picture: Optional[str] = None
-    full_name: Optional[str] = Field(None, max_length=100)
-    phone: Optional[str] = Field(None, max_length=20)
-    address: Optional[str] = Field(None, max_length=200)
-    gender: Optional[str] = Field(None, max_length=20)
-    date_of_birth: Optional[datetime] = None
 
 
 class UserPasswordUpdate(BaseModel):
@@ -49,13 +44,6 @@ class User(UserBase):
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     last_login: Optional[datetime] = None
-    
-    # Extended profile fields
-    full_name: Optional[str] = Field(None, max_length=100)
-    phone: Optional[str] = Field(None, max_length=20)
-    address: Optional[str] = Field(None, max_length=200)
-    gender: Optional[str] = Field(None, max_length=20)
-    date_of_birth: Optional[datetime] = None
     
     # Travel-specific fields
     preferred_currency: str = "VND"

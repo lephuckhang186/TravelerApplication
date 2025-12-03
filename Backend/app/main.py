@@ -10,6 +10,9 @@ import logging
 import os
 from dotenv import load_dotenv
 
+# Load environment variables first
+load_dotenv()
+
 # Travel-agent environment is loaded in the travel_agent endpoint module
 
 # Handle both relative and absolute imports
@@ -139,7 +142,7 @@ async def internal_error_handler(request: Request, exc):
 # Include API routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(expenses.router, prefix=settings.API_V1_STR)
-app.include_router(activities.router, prefix=settings.API_V1_STR)
+app.include_router(activities.router, prefix=f"{settings.API_V1_STR}/activities")
 app.include_router(planners.router, prefix=f"{settings.API_V1_STR}/planners")
 app.include_router(collaborators.router, prefix=f"{settings.API_V1_STR}/collaborators")
 if travel_agent:
