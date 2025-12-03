@@ -158,6 +158,7 @@ class ExpenseService {
       ),
       description: enhancedDescription,
       expenseDate: DateTime.now(),
+      tripId: tripId, // Pass the tripId to associate with the trip
     );
 
     debugPrint(
@@ -171,6 +172,7 @@ class ExpenseService {
     ExpenseCategory? category,
     DateTime? startDate,
     DateTime? endDate,
+    String? tripId,
   }) async {
     try {
       final queryParams = <String, String>{};
@@ -183,6 +185,9 @@ class ExpenseService {
       }
       if (endDate != null) {
         queryParams['end_date'] = endDate.toIso8601String().split('T')[0];
+      }
+      if (tripId != null) {
+        queryParams['planner_id'] = tripId;
       }
 
       final response = await _apiClient.get(
@@ -271,9 +276,13 @@ class ExpenseService {
   }
 
   /// Get expense summary
-  Future<ExpenseSummary> getExpenseSummary() async {
+  Future<ExpenseSummary> getExpenseSummary({String? tripId}) async {
     try {
-      final response = await _apiClient.get(ApiConfig.expenseSummaryEndpoint);
+      final queryParams = tripId != null ? {'planner_id': tripId} : null;
+      final response = await _apiClient.get(
+        ApiConfig.expenseSummaryEndpoint,
+        queryParams: queryParams,
+      );
       return ExpenseSummary.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       throw _handleException(e, 'Failed to fetch expense summary');

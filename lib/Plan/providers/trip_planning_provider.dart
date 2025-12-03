@@ -65,13 +65,17 @@ class TripPlanningProvider extends ChangeNotifier {
       // Try to create on server first
       TripModel? createdTrip;
       try {
+        debugPrint('DEBUG: Attempting to create trip on server: ${trip.name} -> ${trip.destination}');
         createdTrip = await _apiService.createTrip(trip);
+        debugPrint('DEBUG: Trip created successfully on server with ID: ${createdTrip.id}');
       } catch (e) {
-        print('API Error creating trip: $e');
+        debugPrint('DEBUG: API Error creating trip: $e');
+        debugPrint('DEBUG: Trip data that failed: name="${trip.name}", dest="${trip.destination}", start=${trip.startDate}, end=${trip.endDate}');
         // If API fails, create locally with temporary ID
         createdTrip = trip.copyWith(
           id: 'local_${DateTime.now().millisecondsSinceEpoch}',
         );
+        debugPrint('DEBUG: Created local trip with ID: ${createdTrip.id}');
       }
 
       // Add to local list and storage
@@ -321,7 +325,8 @@ class TripPlanningProvider extends ChangeNotifier {
         );
 
         if (hasLocalOnlyTrips && !hasServerTrips) {
-          debugPrint('DEBUG: Only local trips found, keeping them');
+          debugPrint('DEBUG: Only local trips found, attempting to sync them to server');
+          await _syncLocalTripsToServer();
           return;
         } else if (hasServerTrips) {
           debugPrint(
@@ -391,6 +396,36 @@ class TripPlanningProvider extends ChangeNotifier {
 
   void _clearError() {
     _error = null;
+    notifyListeners();
+  }
+
+  /// Sync local-only trips to server
+  Future<void> _syncLocalTripsToServer() async {
+    final localTrips = _trips.where((trip) => trip.id?.startsWith('local_') == true).toList();
+    
+    for (final localTrip in localTrips) {
+      try {
+        debugPrint('DEBUG: Syncing local trip to server: ${localTrip.name}');
+        
+        // Create a clean trip without the local ID
+        final cleanTrip = localTrip.copyWith(id: null);
+        final serverTrip = await _apiService.createTrip(cleanTrip);
+        
+        // Replace local trip with server trip
+        final index = _trips.indexOf(localTrip);
+        if (index != -1) {
+          _trips[index] = serverTrip;
+        }
+        
+        debugPrint('DEBUG: Successfully synced trip, new ID: ${serverTrip.id}');
+      } catch (e) {
+        debugPrint('DEBUG: Failed to sync local trip ${localTrip.name}: $e');
+        // Keep the local trip if sync fails
+      }
+    }
+    
+    // Save updated trips
+    await _storageService.saveTrips(_trips);
     notifyListeners();
   }
 

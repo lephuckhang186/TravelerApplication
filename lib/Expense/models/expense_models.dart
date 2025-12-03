@@ -145,6 +145,7 @@ class Expense {
   final DateTime date;
   final String description;
   final String currency;
+  final String? tripId; // Added trip ID support
 
   const Expense({
     required this.id,
@@ -153,6 +154,7 @@ class Expense {
     required this.date,
     this.description = '',
     this.currency = 'VND',
+    this.tripId,
   });
 
   /// Validate expense amount
@@ -166,6 +168,7 @@ class Expense {
       date: DateTime.parse(json['expense_date'] as String),
       description: json['description'] as String? ?? '',
       currency: json['currency'] as String? ?? 'VND',
+      tripId: json['planner_id'] as String?, // Map backend planner_id to tripId
     );
   }
 
@@ -177,6 +180,7 @@ class Expense {
       'date': date.toIso8601String(),
       'description': description,
       'currency': currency,
+      if (tripId != null) 'planner_id': tripId,
     };
   }
 
@@ -190,12 +194,14 @@ class ExpenseCreateRequest {
   final ExpenseCategory category;
   final String description;
   final DateTime? expenseDate;
+  final String? tripId; // Added trip ID support
 
   const ExpenseCreateRequest({
     required this.amount,
     required this.category,
     this.description = '',
     this.expenseDate,
+    this.tripId,
   });
 
   /// Validate request data
@@ -207,6 +213,7 @@ class ExpenseCreateRequest {
       'category': category.value,
       'description': description,
       if (expenseDate != null) 'expense_date': expenseDate!.toIso8601String(),
+      if (tripId != null) 'planner_id': tripId,
     };
   }
 }

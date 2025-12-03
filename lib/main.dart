@@ -10,6 +10,8 @@ import 'Login/screens/auth_screen.dart';
 import 'Home/screens/home_screen.dart';
 import 'Login/services/user_service.dart';
 import 'Login/services/auth_service.dart';
+import 'Plan/providers/trip_planning_provider.dart';
+import 'Expense/providers/expense_provider.dart';
 import 'core/theme/app_theme.dart';
 
 void main() async {
@@ -32,19 +34,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'TravelPro - Smart Travel Planner',
-      debugShowCheckedModeBanner: false,
-      // Tắt DevicePreview cho production
-      // builder: (context, child) => DevicePreview.appBuilder(context, child!),
-      // locale: DevicePreview.locale(context),
-      theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
-      routes: {
-        '/auth': (context) => const AuthScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/loading': (context) => const LoadingScreen(),
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TripPlanningProvider()),
+        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+      ],
+      child: MaterialApp(
+        title: 'TravelPro - Smart Travel Planner',
+        debugShowCheckedModeBanner: false,
+        // Tắt DevicePreview cho production
+        // builder: (context, child) => DevicePreview.appBuilder(context, child!),
+        // locale: DevicePreview.locale(context),
+        theme: AppTheme.lightTheme,
+        home: const SplashScreen(),
+        routes: {
+          '/auth': (context) => const AuthScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/loading': (context) => const LoadingScreen(),
+        },
+      ),
     );
   }
 }

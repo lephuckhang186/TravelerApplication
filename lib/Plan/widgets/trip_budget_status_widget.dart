@@ -120,10 +120,10 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isOverBudget ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                    color: Colors.grey.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isOverBudget ? Colors.red : Colors.green,
+                      color: Colors.grey.withOpacity(0.2),
                       width: 1,
                     ),
                   ),
@@ -156,7 +156,7 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                             '${totalSpent.toStringAsFixed(0)} VND',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isOverBudget ? Colors.red : Colors.green,
+                              color: isOverBudget ? Colors.red[600] : Colors.grey[700],
                             ),
                           ),
                         ],
@@ -173,7 +173,7 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                             '${remainingBudget.toStringAsFixed(0)} VND',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: remainingBudget < 0 ? Colors.red : Colors.green,
+                              color: remainingBudget < 0 ? Colors.red[600] : Colors.grey[700],
                             ),
                           ),
                         ],
@@ -199,7 +199,7 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                           '${usagePercentage.toStringAsFixed(1)}%',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: isOverBudget ? Colors.red : Colors.blue,
+                            color: isOverBudget ? Colors.red[600] : Colors.grey[600],
                           ),
                         ),
                       ],
@@ -207,10 +207,10 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                     const SizedBox(height: 4),
                     LinearProgressIndicator(
                       value: (usagePercentage / 100).clamp(0.0, 1.0),
-                      backgroundColor: Colors.grey[300],
+                      backgroundColor: Colors.grey[200],
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        usagePercentage > 100 ? Colors.red :
-                        usagePercentage > 80 ? Colors.orange : Colors.green,
+                        usagePercentage > 100 ? Colors.red[400]! :
+                        usagePercentage > 80 ? Colors.orange[400]! : Colors.blue[400]!,
                       ),
                     ),
                   ],
@@ -228,7 +228,7 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                           'Days Left',
                           daysRemaining.toString(),
                           Icons.calendar_today,
-                          daysRemaining <= 0 ? Colors.red : Colors.blue,
+                          daysRemaining <= 0 ? Colors.red[400]! : Colors.grey[600]!,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -238,7 +238,7 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                           'Recommended Daily',
                           '${recommendedDaily.toStringAsFixed(0)} VND',
                           Icons.trending_down,
-                          recommendedDaily > (totalBudget / 10) ? Colors.orange : Colors.green,
+                          recommendedDaily > (totalBudget / 10) ? Colors.orange[400]! : Colors.grey[600]!,
                         ),
                       ),
                     ],
@@ -252,18 +252,18 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.red, width: 1),
+                      border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning, color: Colors.red, size: 16),
+                        Icon(Icons.warning, color: Colors.red[400], size: 16),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             'Over budget by ${(totalSpent - totalBudget).toStringAsFixed(0)} VND',
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
+                            style: TextStyle(color: Colors.red[600], fontSize: 12),
                           ),
                         ),
                       ],
@@ -275,18 +275,18 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.orange, width: 1),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info, color: Colors.orange, size: 16),
+                        Icon(Icons.info, color: Colors.orange[400], size: 16),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             'Warning: ${usagePercentage.toStringAsFixed(1)}% of budget used',
-                            style: const TextStyle(color: Colors.orange, fontSize: 12),
+                            style: TextStyle(color: Colors.orange[600], fontSize: 12),
                           ),
                         ),
                       ],
@@ -305,9 +305,9 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.grey.withOpacity(0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
       ),
       child: Column(
         children: [

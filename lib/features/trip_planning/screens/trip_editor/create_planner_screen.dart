@@ -9,6 +9,7 @@ import '../../../../Plan/services/trip_planning_service.dart';
 import '../../../../Plan/services/trip_storage_service.dart';
 import '../../../../Expense/services/expense_service.dart';
 import '../../../../Expense/models/expense_models.dart';
+import '../../../../Login/services/auth_service.dart';
 
 class CreatePlannerScreen extends StatefulWidget {
   const CreatePlannerScreen({super.key});
@@ -425,6 +426,16 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     try {
       final expenseService = ExpenseService();
       
+      // First set auth token to ensure authentication
+      final authService = AuthService();
+      final token = await authService.getIdToken();
+      if (token != null) {
+        expenseService.setAuthToken(token);
+      } else {
+        debugPrint('No auth token available for expense budget creation');
+        return;
+      }
+      
       // Create trip in expense service
       final trip = Trip(
         startDate: _startDate,
@@ -444,6 +455,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     } catch (e) {
       debugPrint('Failed to create expense budget: $e');
       // Don't throw error as this is supplementary functionality
+      // The main trip creation should still succeed
     }
   }
 

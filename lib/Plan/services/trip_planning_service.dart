@@ -585,6 +585,9 @@ class TripPlanningService {
 
       // Use real endpoint with authentication
       final headers = await _headers;
+      debugPrint('DEBUG: TripService.getTrips() - Headers: ${headers.keys.toList()}');
+      debugPrint('DEBUG: TripService.getTrips() - Has auth token: ${headers.containsKey('Authorization')}');
+      
       final response = await http.get(
         Uri.parse('$baseUrl/activities/trips'),
         headers: headers,
@@ -632,13 +635,27 @@ class TripPlanningService {
         }
 
         return trips;
+      } else if (response.statusCode == 401) {
+        debugPrint('DEBUG: TripService.getTrips() - Authentication failed');
+        throw Exception('Authentication failed. Please log in again.');
+      } else if (response.statusCode == 404) {
+        debugPrint('DEBUG: TripService.getTrips() - Endpoint not found');
+        throw Exception('Trips endpoint not found. Server may be down.');
+      } else if (response.statusCode == 500) {
+        debugPrint('DEBUG: TripService.getTrips() - Server error');
+        throw Exception('Server error. Please try again later.');
       } else {
+        debugPrint('DEBUG: TripService.getTrips() - Unexpected status: ${response.statusCode}');
         throw Exception(
           'Failed to get trips: ${response.statusCode} - ${response.body}',
         );
       }
     } catch (e) {
       debugPrint('DEBUG: TripService.getTrips() - Error: $e');
+      // If it's a network/connection error, provide more helpful message
+      if (e.toString().contains('SocketException') || e.toString().contains('Connection')) {
+        throw Exception('Network error: Cannot connect to server. Please check your connection.');
+      }
       throw Exception('Error getting trips: $e');
     }
   }

@@ -53,7 +53,15 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   late TabController _mainTabController;
   late TabController _categoryTabController;
-  late ExpenseProvider _expenseProvider;
+  ExpenseProvider? _expenseProvider;
+
+  // Getter to safely access expense provider
+  ExpenseProvider get expenseProvider {
+    if (_expenseProvider == null) {
+      throw StateError('ExpenseProvider not initialized. Make sure the widget is properly built.');
+    }
+    return _expenseProvider!;
+  }
 
   final List<String> _months = [
     'Tháng 1',
@@ -75,13 +83,17 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     super.initState();
     _mainTabController = TabController(length: 2, vsync: this);
     _categoryTabController = TabController(length: 2, vsync: this);
-    _expenseProvider = ExpenseProvider();
-    _initializeWithAuth();
-    
-    // Initialize trip provider when this screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize providers when dependencies are ready
+    if (_expenseProvider == null && mounted) {
+      _expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+      _initializeWithAuth();
       _initializeTripProvider();
-    });
+    }
   }
 
   /// Initialize with authentication and load data
@@ -90,8 +102,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       final authService = AuthService();
       final token = await authService.getIdToken();
 
-      if (token != null) {
-        _expenseProvider.setAuthToken(token);
+      if (token != null && _expenseProvider != null) {
+        expenseProvider.setAuthToken(token);
         await _loadData();
       } else {
         // User not authenticated, redirect to auth screen
@@ -115,48 +127,262 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   /// Initialize trip provider
   Future<void> _initializeTripProvider() async {
     try {
+      if (!mounted) return;
       final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      
+      debugPrint('TRIP_INIT: Current trips: ${tripProvider.trips.length}, isLoading: ${tripProvider.isLoading}');
+      
       if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
+        debugPrint('TRIP_INIT: Initializing trip provider...');
         await tripProvider.initialize();
+        debugPrint('TRIP_INIT: After initialize, trips count: ${tripProvider.trips.length}');
+        
+        if (tripProvider.trips.isNotEmpty) {
+          // Only run cleanup after successful trip loading
+          debugPrint('TRIP_INIT: Running initial cleanup with ${tripProvider.trips.length} trips');
+          await _cleanupOrphanedExpenses(tripProvider.trips);
+        }
       }
     } catch (e) {
-      debugPrint('Error initializing trip provider: $e');
+      debugPrint('TRIP_INIT ERROR: $e');
+    }
+  }
+
+  /// Manual cleanup method that can be called when needed
+  Future<void> _performManualCleanup() async {
+    try {
+      if (!mounted) return;
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      
+      debugPrint('MANUAL_CLEANUP: Starting manual cleanup, trips: ${tripProvider.trips.length}');
+      
+      if (tripProvider.trips.isNotEmpty) {
+        await _cleanupOrphanedExpenses(tripProvider.trips);
+      } else {
+        debugPrint('MANUAL_CLEANUP: No trips available for cleanup validation');
+      }
+    } catch (e) {
+      debugPrint('MANUAL_CLEANUP ERROR: $e');
     }
   }
 
   /// Load data from backend
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (_expenseProvider == null) return;
+    
     // Get current month date range
     final currentDate = DateTime(_currentYear, _currentMonthIndex + 1, 1);
     final startDate = DateTime(currentDate.year, currentDate.month, 1);
     final endDate = DateTime(currentDate.year, currentDate.month + 1, 0);
 
-    await Future.wait([
-      _expenseProvider.fetchExpenses(startDate: startDate, endDate: endDate),
-      _expenseProvider.fetchExpenseSummary(),
-      _expenseProvider.fetchCategoryStatus(),
-      _expenseProvider.fetchSpendingTrends(),
-      _expenseProvider.fetchBudgetStatus(tripId: _selectedTripId),
-    ]);
-  }
+    debugPrint('LOAD_DATA: Loading expenses for ${startDate.toString()} to ${endDate.toString()}, tripId: $_selectedTripId, forceRefresh: $forceRefresh');
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Refresh trip data when returning to this screen
-    _refreshTripData();
+    // Fetch data with trip-specific filtering where applicable
+    await Future.wait([
+      expenseProvider.fetchExpenses(
+        startDate: startDate, 
+        endDate: endDate,
+        tripId: _selectedTripId, // Filter expenses by trip
+      ),
+      expenseProvider.fetchExpenseSummary(tripId: _selectedTripId),
+      expenseProvider.fetchCategoryStatus(),
+      expenseProvider.fetchSpendingTrends(),
+      expenseProvider.fetchBudgetStatus(tripId: _selectedTripId),
+    ]);
+    
+    debugPrint('LOAD_DATA: Loaded ${expenseProvider.expenses.length} expenses');
   }
 
   /// Refresh trip data
   Future<void> _refreshTripData() async {
     try {
+      if (!mounted) return;
       final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      
+      debugPrint('TRIP_REFRESH: Starting trip data refresh, current trips: ${tripProvider.trips.length}');
+      
       // Only refresh if we're not currently loading
       if (!tripProvider.isLoading) {
         await tripProvider.initialize();
+        
+        debugPrint('TRIP_REFRESH: After initialize, loaded trips: ${tripProvider.trips.length}');
+        
+        // Always run cleanup if trip initialization completed successfully (even if result is 0 trips)
+        // This ensures orphaned expenses from deleted trips get cleaned up
+        if (!tripProvider.isLoading && tripProvider.error == null) {
+          debugPrint('TRIP_REFRESH: Trip loading completed successfully, running cleanup with ${tripProvider.trips.length} valid trips');
+          await _cleanupOrphanedExpenses(tripProvider.trips);
+        } else if (tripProvider.error != null) {
+          debugPrint('TRIP_REFRESH: Trip loading failed with error: ${tripProvider.error}. Skipping cleanup to prevent false positives');
+        } else {
+          debugPrint('TRIP_REFRESH: Trip provider still loading, skipping cleanup');
+        }
+      } else {
+        debugPrint('TRIP_REFRESH: Trip provider is currently loading, skipping refresh');
       }
     } catch (e) {
-      debugPrint('Error refreshing trip data: $e');
+      debugPrint('TRIP_REFRESH ERROR: $e');
+    }
+  }
+
+  /// Enhanced cleanup for expenses associated with deleted trips
+  Future<void> _cleanupOrphanedExpenses(List<TripModel> validTrips) async {
+    if (_expenseProvider == null || !mounted) return;
+    
+    try {
+      // Note: validTrips can be empty if user legitimately has no trips
+      // This is now safe because we only call this after confirming trip loading was successful
+      final allExpenses = expenseProvider.expenses;
+      final validTripIds = validTrips.map((trip) => trip.id).toSet();
+      
+      debugPrint('CLEANUP: Current valid trip IDs: ${validTripIds.toList()}');
+      debugPrint('CLEANUP: Total expenses to check: ${allExpenses.length}');
+      
+      // Log trip details for debugging
+      for (final trip in validTrips) {
+        debugPrint('CLEANUP: Valid trip - ID: ${trip.id}, Name: ${trip.name}, Destination: ${trip.destination}');
+      }
+      
+      // Log all expenses for debugging
+      for (final expense in allExpenses) {
+        debugPrint('CLEANUP: Expense - ID: ${expense.id}, TripId: ${expense.tripId}, Description: ${expense.description}');
+      }
+      
+      // Find expenses that have tripIds but the trip no longer exists
+      final orphanedExpenses = allExpenses.where((expense) {
+        final isOrphaned = expense.tripId != null && !validTripIds.contains(expense.tripId);
+        if (isOrphaned) {
+          debugPrint('CLEANUP: Found orphaned expense: ${expense.id} with tripId: ${expense.tripId}');
+        }
+        return isOrphaned;
+      }).toList();
+      
+      // Also find expenses from old trips that might not have proper tripId but are from deleted trips
+      final expensesFromDeletedTrips = allExpenses.where((expense) {
+        if (expense.tripId != null) return false; // Already handled above
+        
+        // Check if expense description contains a trip that no longer exists
+        final tripFromDesc = _extractTripFromDescription(expense.description);
+        if (tripFromDesc != null) {
+          final matchesValidTrip = validTrips.any((trip) =>
+            trip.name == tripFromDesc || 
+            trip.destination == tripFromDesc ||
+            '${trip.name} (${trip.destination})' == tripFromDesc
+          );
+          
+          if (!matchesValidTrip) {
+            debugPrint('CLEANUP: Found expense from deleted trip: ${expense.id} - ${expense.description}');
+            return true;
+          }
+        }
+        return false;
+      }).toList();
+      
+      final allOrphanedExpenses = [...orphanedExpenses, ...expensesFromDeletedTrips];
+      
+      if (allOrphanedExpenses.isNotEmpty) {
+        debugPrint('CLEANUP: Found ${allOrphanedExpenses.length} total orphaned expenses');
+         
+        // Force reload from server to get fresh data
+        debugPrint('CLEANUP: Force reloading expense data from server...');
+        
+        // Update the selected trip if it was deleted
+        if (_selectedTripId != null && !validTripIds.contains(_selectedTripId)) {
+          if (mounted) {
+            setState(() {
+              _selectedTripId = null;
+            });
+          }
+        }
+        
+        // Reload all data to ensure consistency - this should fetch fresh data from server
+        await Future.wait([
+          expenseProvider.fetchExpenses(
+            startDate: DateTime(_currentYear, _currentMonthIndex + 1, 1),
+            endDate: DateTime(_currentYear, _currentMonthIndex + 2, 0),
+            tripId: _selectedTripId,
+          ),
+          expenseProvider.fetchExpenseSummary(tripId: _selectedTripId),
+          expenseProvider.fetchBudgetStatus(tripId: _selectedTripId),
+          expenseProvider.fetchCategoryStatus(),
+          expenseProvider.fetchSpendingTrends(),
+        ]);
+        
+        // Show completion notification
+        if (!mounted) {
+          debugPrint('CLEANUP: No orphaned expenses found');
+        }
+      } else {
+        
+      }
+    } catch (e) {
+      debugPrint('CLEANUP ERROR: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text('Lỗi khi dọn dẹp dữ liệu. Vui lòng thử lại.'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            action: SnackBarAction(
+              label: 'Thử lại',
+              textColor: Colors.white,
+              onPressed: () => _cleanupOrphanedExpenses(validTrips),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Force refresh all chart and list data
+  Future<void> _forceRefreshAllData() async {
+    if (_expenseProvider == null || !mounted) return;
+    
+    try {
+      debugPrint('FORCE_REFRESH: Starting complete data refresh...');
+      
+      // First ensure trip provider is properly initialized
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      debugPrint('FORCE_REFRESH: Current trip count before refresh: ${tripProvider.trips.length}');
+      
+      // Force refresh trip data
+      await tripProvider.initialize();
+      debugPrint('FORCE_REFRESH: Trip count after initialize: ${tripProvider.trips.length}');
+      
+      // Always run cleanup if trip initialization was successful (even with 0 trips)
+      if (!tripProvider.isLoading && tripProvider.error == null) {
+        debugPrint('FORCE_REFRESH: Trip loading successful, running cleanup with ${tripProvider.trips.length} trips');
+        await _cleanupOrphanedExpenses(tripProvider.trips);
+      } else {
+        debugPrint('FORCE_REFRESH: Trip loading failed or still loading - skipping cleanup');
+      }
+      
+      // Then reload all expense data
+      await _loadData();
+      
+      // Also refresh additional data
+      await Future.wait([
+        expenseProvider.fetchSpendingTrends(),
+        expenseProvider.fetchCategoryStatus(),
+      ]);
+      
+      if (mounted) {
+        setState(() {
+          // Force UI refresh
+          _selectedBarIndex = null;
+        });
+      }
+      
+      debugPrint('FORCE_REFRESH: Complete data refresh finished');
+    } catch (e) {
+      debugPrint('FORCE_REFRESH ERROR: $e');
     }
   }
 
@@ -164,7 +390,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   void dispose() {
     _mainTabController.dispose();
     _categoryTabController.dispose();
-    _expenseProvider.dispose();
     super.dispose();
   }
 
@@ -229,142 +454,74 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           const SizedBox(width: 12),
 
           // Filter button
-          MouseRegion(
-            onEnter: (_) => setState(() {}),
-            onExit: (_) => setState(() {}),
-            child: GestureDetector(
-              onTap: () => _onFilterTap(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.filter_alt_outlined,
-                    color: Colors.grey[700],
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
+          _buildHeaderButton(
+            icon: Icons.filter_alt_outlined,
+            onTap: _onFilterTap,
           ),
           const SizedBox(width: 8),
 
           // Refresh button
-          MouseRegion(
-            onEnter: (_) => setState(() {}),
-            onExit: (_) => setState(() {}),
-            child: GestureDetector(
-              onTap: () => _onRefreshTap(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.refresh,
-                    color: Colors.grey[700],
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
+          _buildHeaderButton(
+            icon: Icons.refresh,
+            onTap: _onRefreshTap,
           ),
           const SizedBox(width: 8),
 
           // Budget button
-          MouseRegion(
-            onEnter: (_) => setState(() {}),
-            onExit: (_) => setState(() {}),
-            child: GestureDetector(
-              onTap: () => _showBudgetDialog(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: _selectedTripId != null ? Colors.blue[50] : Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _selectedTripId != null ? Colors.blue[200]! : Colors.grey[200]!
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.account_balance_wallet,
-                    color: _selectedTripId != null ? Colors.blue[600] : Colors.grey[700],
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
+          _buildHeaderButton(
+            icon: Icons.account_balance_wallet,
+            onTap: _showBudgetDialog,
+            isActive: _selectedTripId != null,
           ),
           const SizedBox(width: 8),
 
-          // Grid button (4 squares)
-          MouseRegion(
-            onEnter: (_) => setState(() {}),
-            onExit: (_) => setState(() {}),
-            child: GestureDetector(
-              onTap: () => _onGridTap(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.grid_view,
-                    color: Colors.grey[700],
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
+          // Grid button
+          _buildHeaderButton(
+            icon: Icons.grid_view,
+            onTap: _onGridTap,
           ),
         ],
+      ),
+    );
+  }
+
+  /// Build header button with hover effects
+  Widget _buildHeaderButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return MouseRegion(
+      onEnter: (_) => setState(() {}),
+      onExit: (_) => setState(() {}),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: isActive ? Colors.blue[50] : Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isActive ? Colors.blue[200]! : Colors.grey[200]!,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              color: isActive ? Colors.blue[600] : Colors.grey[700],
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -520,8 +677,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Month selector with arrows and trip filter
   Widget _buildMonthSelector() {
-    return Consumer<TripPlanningProvider>(
-      builder: (context, tripProvider, child) {
+    return Consumer2<TripPlanningProvider, ExpenseProvider>(
+      builder: (context, tripProvider, expenseProvider, child) {
         return Column(
           children: [
             // Trip Filter Row
@@ -564,11 +721,13 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                             ),
                           )),
                         ],
-                        onChanged: (String? tripId) {
+                        onChanged: (String? tripId) async {
+                          debugPrint('TRIP_FILTER: Changed to tripId: $tripId');
                           setState(() {
                             _selectedTripId = tripId;
                           });
-                          _loadData(); // Reload data when trip filter changes
+                          // Force complete refresh when trip filter changes
+                          await _forceRefreshAllData();
                         },
                       ),
                     ),
@@ -580,7 +739,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             
             // Budget Status Card (if trip selected)
             if (_selectedTripId != null) ...[
-              _buildBudgetStatusCard(tripProvider),
+              _buildBudgetStatusCard(tripProvider, expenseProvider),
               const SizedBox(height: 12),
             ],
             
@@ -659,7 +818,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
                     .map((day) => Expanded(
                           child: Center(
                             child: Text(
@@ -693,7 +852,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   }
                   
                   final currentDate = DateTime(_currentYear, _currentMonthIndex + 1, dayOffset);
-                  final isSelected = _expenseProvider.selectedDay == dayOffset;
+                  final isSelected = expenseProvider.selectedDay == dayOffset;
                   
                   // Get trip status for this date
                   final tripStatus = _getTripStatusForDate(tripProvider.trips, currentDate);
@@ -753,18 +912,25 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-  /// Expense list for activities grouped by trip
+  /// Expense list for activities grouped by trip - Enhanced with proper deletion handling
   Widget _buildExpenseList() {
     return Consumer<TripPlanningProvider>(
       builder: (context, tripProvider, child) {
+        if (_expenseProvider == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        // Note: Removed automatic cleanup trigger to prevent repeated calls with empty trip lists
+        // Cleanup is now only triggered from specific refresh actions when trip data is confirmed
+        
         return AnimatedBuilder(
-          animation: _expenseProvider,
+          animation: expenseProvider,
           builder: (context, child) {
-            if (_expenseProvider.isLoading) {
+            if (expenseProvider.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (_expenseProvider.error != null) {
+            if (expenseProvider.error != null) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -789,7 +955,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               );
             }
 
-            final expenses = _expenseProvider.expenses;
+            final expenses = expenseProvider.expenses;
 
             if (expenses.isEmpty) {
               return Center(
@@ -810,8 +976,47 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               );
             }
 
-            // Group expenses by trip
-            final groupedExpenses = _groupExpensesByTrip(expenses, tripProvider.trips);
+            // Group expenses by trip with enhanced filtering
+            final groupedExpenses = _groupExpensesByTripWithCleanup(expenses, tripProvider.trips);
+            
+            if (groupedExpenses.isEmpty) {
+              return Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.filter_alt_off, size: 48, color: Colors.orange[600]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Không có giao dịch phù hợp',
+                        style: GoogleFonts.quattrocento(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedTripId != null 
+                            ? 'Trip đã chọn không có giao dịch nào'
+                            : 'Thử thay đổi bộ lọc hoặc thêm giao dịch mới',
+                        style: GoogleFonts.quattrocento(
+                          fontSize: 14,
+                          color: Colors.orange[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
             
             return ListView.builder(
               shrinkWrap: true,
@@ -995,23 +1200,63 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     return null;
   }
 
-  /// Group expenses by trip
-  Map<String, List<Expense>> _groupExpensesByTrip(List<Expense> expenses, List<TripModel> trips) {
+  /// Enhanced group expenses by trip with cleanup
+  Map<String, List<Expense>> _groupExpensesByTripWithCleanup(List<Expense> expenses, List<TripModel> trips) {
     final Map<String, List<Expense>> grouped = {};
+    final validTripIds = trips.map((trip) => trip.id).toSet();
     
-    for (final expense in expenses) {
+    // Filter out expenses with invalid trip IDs immediately
+    final validExpenses = expenses.where((expense) {
+      // If expense has a tripId, it must be in the valid trips list
+      if (expense.tripId != null) {
+        return validTripIds.contains(expense.tripId);
+      }
+      // Expenses without tripId are considered valid (will be categorized as "Other Expenses")
+      return true;
+    }).toList();
+    
+    for (final expense in validExpenses) {
       String tripName = 'Other Expenses';
+      String? associatedTripId;
       
-      // Try to find trip from expense description first
-      final tripFromDesc = _extractTripFromDescription(expense.description);
-      if (tripFromDesc != null) {
-        tripName = tripFromDesc;
-      } else {
-        // Try to match expense date with trip dates
+      // First priority: Use expense tripId to find matching trip
+      if (expense.tripId != null && validTripIds.contains(expense.tripId)) {
+        final matchingTrip = trips.firstWhere(
+          (trip) => trip.id == expense.tripId,
+          orElse: () => trips.first, // This should not happen due to filtering above
+        );
+        tripName = '${matchingTrip.name} (${matchingTrip.destination})';
+        associatedTripId = matchingTrip.id;
+      }
+      
+      // Second priority: Try to find trip from expense description
+      if (associatedTripId == null) {
+        final tripFromDesc = _extractTripFromDescription(expense.description);
+        if (tripFromDesc != null) {
+          // Find matching trip by name or destination
+          final matchingTrips = trips.where((trip) => 
+            trip.name == tripFromDesc || 
+            trip.destination == tripFromDesc ||
+            '${trip.name} (${trip.destination})' == tripFromDesc
+          );
+          
+          if (matchingTrips.isNotEmpty) {
+            final matchingTrip = matchingTrips.first;
+            tripName = '${matchingTrip.name} (${matchingTrip.destination})';
+            associatedTripId = matchingTrip.id;
+          } else {
+            tripName = tripFromDesc; // Keep original description if no trip found
+          }
+        }
+      }
+      
+      // Third priority: Try to match expense date with trip dates
+      if (associatedTripId == null) {
         for (final trip in trips) {
-          if (expense.expenseDate.isAfter(trip.startDate) && 
-              expense.expenseDate.isBefore(trip.endDate.add(const Duration(days: 1)))) {
+          if (expense.expenseDate.isAfter(trip.startDate.subtract(const Duration(days: 1))) && 
+              expense.expenseDate.isBefore(trip.endDate.add(const Duration(days: 2)))) {
             tripName = '${trip.name} (${trip.destination})';
+            associatedTripId = trip.id;
             break;
           }
         }
@@ -1019,14 +1264,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       
       // Filter by selected trip if one is selected
       if (_selectedTripId != null) {
-        final selectedTrip = trips.firstWhere(
-          (trip) => trip.id == _selectedTripId,
-          orElse: () => trips.first,
-        );
-        final expectedTripName = '${selectedTrip.name} (${selectedTrip.destination})';
-        
-        // Only include expenses from selected trip
-        if (tripName != expectedTripName && tripFromDesc != selectedTrip.name) {
+        // Only include expenses associated with the selected trip
+        if (associatedTripId != _selectedTripId) {
           continue;
         }
       }
@@ -1035,6 +1274,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     }
     
     return grouped;
+  }
+
+  /// Original grouping method for backward compatibility
+  Map<String, List<Expense>> _groupExpensesByTrip(List<Expense> expenses, List<TripModel> trips) {
+    return _groupExpensesByTripWithCleanup(expenses, trips);
   }
 
   /// Get category color for visual distinction
@@ -1061,8 +1305,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Pie chart
   Widget _buildPieChart() {
+    if (_expenseProvider == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return AnimatedBuilder(
-      animation: _expenseProvider,
+      animation: expenseProvider,
       builder: (context, child) {
         return Column(
           children: [
@@ -1102,7 +1349,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   }
 
   Widget _buildPieChartContent() {
-    if (_expenseProvider.isSummaryLoading) {
+    if (expenseProvider.isSummaryLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -1112,7 +1359,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     if (_categoryTabIndex == 0) {
       // Subcategory tab - group by expense description (activity title)
       final subcategoryBreakdown = <String, double>{};
-      for (final expense in _expenseProvider.expenses) {
+      for (final expense in expenseProvider.expenses) {
         final rawDescription = (expense.description.isNotEmpty)
             ? expense.description
             : expense.category?.displayName ?? 'Unknown';
@@ -1123,7 +1370,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       chartData = subcategoryBreakdown;
     } else {
       // Category tab - use existing category breakdown
-      final summary = _expenseProvider.expenseSummary;
+      final summary = expenseProvider.expenseSummary;
       chartData = summary?.categoryBreakdown ?? {};
     }
 
@@ -1289,7 +1536,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           ),
           child: Center(
             child: Text(
-              '${_formatMoney(_expenseProvider.expenseSummary?.totalAmount ?? 0)}₫',
+              '${_formatMoney(expenseProvider.expenseSummary?.totalAmount ?? 0)}₫',
               textAlign: TextAlign.center,
               style: GoogleFonts.quattrocento(
                 fontSize: 14,
@@ -1307,8 +1554,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Advanced animated bar chart with real data and beautiful decorations
   Widget _buildCustomHorizontalBarChart() {
+    if (_expenseProvider == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return AnimatedBuilder(
-      animation: _expenseProvider,
+      animation: expenseProvider,
       builder: (context, child) {
         // Get real data from spending trends or create mock data based on current month
         List<Map<String, dynamic>> chartData = _generateChartData();
@@ -1325,7 +1575,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   /// Generate chart data from real expense data
   List<Map<String, dynamic>> _generateChartData() {
     // Use real expense data from provider
-    final expenses = _expenseProvider.expenses;
+    final expenses = expenseProvider.expenses;
 
     if (expenses.isEmpty) {
       return [];
@@ -1340,7 +1590,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
     // If no monthly data, just return current month total
     if (monthlyData.isEmpty) {
-      final currentTotal = _expenseProvider.expenseSummary?.totalAmount ?? 0.0;
+      final currentTotal = expenseProvider.expenseSummary?.totalAmount ?? 0.0;
       if (currentTotal > 0) {
         return [
           {
@@ -1885,22 +2135,22 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   /// Category list
   Widget _buildCategoryList() {
     return AnimatedBuilder(
-      animation: _expenseProvider,
+      animation: expenseProvider,
       builder: (context, child) {
-        if (_expenseProvider.isSummaryLoading ||
-            _expenseProvider.isCategoryLoading) {
+        if (expenseProvider.isSummaryLoading ||
+            expenseProvider.isCategoryLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final summary = _expenseProvider.expenseSummary;
-        final categoryStatuses = _expenseProvider.categoryStatus;
+        final summary = expenseProvider.expenseSummary;
+        final categoryStatuses = expenseProvider.categoryStatus;
 
         List<Map<String, dynamic>> categories = [];
 
         if (_categoryTabIndex == 0) {
           // Subcategory tab - group expenses by description (activity title)
           final subcategoryBreakdown = <String, double>{};
-          for (final expense in _expenseProvider.expenses) {
+          for (final expense in expenseProvider.expenses) {
             final rawDescription = expense.description.isNotEmpty
                 ? expense.description
                 : expense.category.displayName;
@@ -1915,15 +2165,15 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   // Try to find corresponding expense to get icon
                   Expense? expense;
                   try {
-                    expense = _expenseProvider.expenses.firstWhere(
+                    expense = expenseProvider.expenses.firstWhere(
                       (e) => _extractActivityTitle((e.description?.isNotEmpty ?? false)
                               ? e.description ?? ''
                               : e.category?.displayName ?? 'Unknown') ==
                           entry.key,
                     );
                   } catch (e) {
-                    expense = _expenseProvider.expenses.isNotEmpty
-                        ? _expenseProvider.expenses.first
+                    expense = expenseProvider.expenses.isNotEmpty
+                        ? expenseProvider.expenses.first
                         : null;
                   }
 
@@ -1962,7 +2212,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         if (_categoryTabIndex == 0) {
           // Show subcategories - group expenses by description (activity title)
           final subcategoryBreakdown = <String, double>{};
-          for (final expense in _expenseProvider.expenses) {
+          for (final expense in expenseProvider.expenses) {
             final rawDescription = expense.description.isNotEmpty
                 ? expense.description
                 : expense.category.displayName;
@@ -1974,12 +2224,12 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           if (subcategoryBreakdown.isNotEmpty) {
             categories = subcategoryBreakdown.entries.map((entry) {
               // Try to find corresponding expense to get icon
-              final expense = _expenseProvider.expenses.firstWhere(
+              final expense = expenseProvider.expenses.firstWhere(
                 (e) => _extractActivityTitle((e.description?.isNotEmpty ?? false)
                         ? e.description ?? ''
                         : e.category?.displayName ?? 'Unknown') ==
                     entry.key,
-                orElse: () => _expenseProvider.expenses.first,
+                orElse: () => expenseProvider.expenses.first,
               );
 
               return {
@@ -2195,12 +2445,25 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   }
 
   void _onRefreshTap() async {
+    debugPrint('REFRESH_TAP: Starting refresh...');
     _showMessage('Refreshing data...');
-    await Future.wait([
-      _loadData(),
-      _refreshTripData(),
-    ]);
-    _showMessage('Data refreshed!');
+    
+    try {
+      // Get trip provider for debugging
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      debugPrint('REFRESH_TAP: Before refresh - Trips: ${tripProvider.trips.length}, Expenses: ${expenseProvider.expenses.length}');
+      
+      await Future.wait([
+        _loadData(),
+        _refreshTripData(),
+      ]);
+      
+      debugPrint('REFRESH_TAP: After refresh - Trips: ${tripProvider.trips.length}, Expenses: ${expenseProvider.expenses.length}');
+      _showMessage('Data refreshed!');
+    } catch (e) {
+      debugPrint('REFRESH_TAP ERROR: $e');
+      _showMessage('Refresh failed: $e');
+    }
   }
 
   void _onGridTap() {
@@ -2368,13 +2631,56 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   }
 
   /// Build budget status card
-  Widget _buildBudgetStatusCard(TripPlanningProvider tripProvider) {
+  Widget _buildBudgetStatusCard(TripPlanningProvider tripProvider, ExpenseProvider expenseProvider) {
     if (_selectedTripId == null) return Container();
     
     final selectedTrip = tripProvider.trips.firstWhere(
       (trip) => trip.id == _selectedTripId,
       orElse: () => tripProvider.trips.first,
     );
+    
+    // Get budget status from expense provider (should be filtered by trip ID already)
+    final budgetStatus = expenseProvider.budgetStatus;
+    
+    // Calculate actual spent from current expenses for this specific trip
+    double actualSpent = 0.0;
+    
+    // Always calculate from current expenses to ensure accuracy for the selected trip
+    actualSpent = expenseProvider.expenses
+        .where((expense) {
+          // First priority: Check if expense has matching trip ID
+          if (expense.tripId != null && expense.tripId == _selectedTripId) {
+            return true;
+          }
+          
+          // Second priority: Check trip name in description (exact matches)
+          final tripFromDesc = _extractTripFromDescription(expense.description);
+          if (tripFromDesc != null) {
+            // Try multiple matching patterns
+            final patterns = [
+              selectedTrip.name,
+              '${selectedTrip.name} (${selectedTrip.destination})',
+              selectedTrip.destination,
+            ];
+            return patterns.contains(tripFromDesc);
+          }
+          
+          // Third priority: Check if expense date falls within trip dates
+          // Only if no trip ID or description match found
+          if (expense.tripId == null && tripFromDesc == null) {
+            return expense.expenseDate.isAfter(selectedTrip.startDate.subtract(const Duration(days: 1))) && 
+                   expense.expenseDate.isBefore(selectedTrip.endDate.add(const Duration(days: 2)));
+          }
+          
+          return false;
+        })
+        .fold(0.0, (sum, expense) => sum + expense.amount);
+    
+    // Use trip-specific budget if available, otherwise fall back to budgetStatus or trip budget
+    final totalBudget = (budgetStatus != null && budgetStatus.totalBudget > 0) 
+        ? budgetStatus.totalBudget 
+        : selectedTrip.budget?.estimatedCost ?? 0.0;
+    final remaining = totalBudget - actualSpent;
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2407,7 +2713,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 ),
               ),
               const Spacer(),
-              _buildBudgetWarningIndicator(),
+              _buildBudgetWarningIndicator(totalBudget, actualSpent),
             ],
           ),
           const SizedBox(height: 12),
@@ -2416,50 +2722,59 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           Row(
             children: [
               Expanded(child: _buildBudgetMetric('Total Budget', 
-                  selectedTrip.budget?.estimatedCost ?? 0, 
+                  totalBudget, 
                   Colors.blue[600]!, Icons.monetization_on)),
               const SizedBox(width: 12),
               Expanded(child: _buildBudgetMetric('Spent', 
-                  selectedTrip.totalActualSpent, 
+                  actualSpent, 
                   Colors.orange[600]!, Icons.trending_down)),
               const SizedBox(width: 12),
               Expanded(child: _buildBudgetMetric('Remaining', 
-                  (selectedTrip.budget?.estimatedCost ?? 0) - selectedTrip.totalActualSpent, 
-                  Colors.green[600]!, Icons.savings)),
+                  remaining, 
+                  remaining >= 0 ? Colors.green[600]! : Colors.red[600]!, 
+                  remaining >= 0 ? Icons.savings : Icons.warning)),
             ],
           ),
           
           const SizedBox(height: 12),
           
           // Progress bar
-          _buildBudgetProgressBar(selectedTrip),
+          _buildBudgetProgressBar2(totalBudget, actualSpent),
+          
+          // Budget period info
+          if (budgetStatus != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Budget period: ${budgetStatus.daysRemaining} days remaining of ${budgetStatus.daysTotal}',
+              style: GoogleFonts.quattrocento(
+                fontSize: 10,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
   
   /// Build budget warning indicator
-  Widget _buildBudgetWarningIndicator() {
-    // Calculate percentage from selected trip if available
+  Widget _buildBudgetWarningIndicator(double totalBudget, double actualSpent) {
+    // Calculate percentage from actual current data
     double percentage = 0;
-    if (_selectedTripId != null) {
-      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
-      final selectedTrip = tripProvider.trips.firstWhere(
-        (trip) => trip.id == _selectedTripId,
-        orElse: () => tripProvider.trips.first,
-      );
-      
-      final budget = selectedTrip.budget?.estimatedCost ?? 0;
-      if (budget > 0) {
-        percentage = (selectedTrip.totalActualSpent / budget) * 100;
-      }
+    if (totalBudget > 0) {
+      percentage = (actualSpent / totalBudget) * 100;
     }
     
     Color indicatorColor;
     IconData indicatorIcon;
     String message;
     
-    if (percentage >= 90) {
+    if (percentage >= 100) {
+      indicatorColor = Colors.red[600]!;
+      indicatorIcon = Icons.error;
+      message = 'Over budget!';
+    } else if (percentage >= 90) {
       indicatorColor = Colors.red[600]!;
       indicatorIcon = Icons.warning;
       message = 'Over budget!';
@@ -2532,17 +2847,17 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
   
-  /// Build budget progress bar
-  Widget _buildBudgetProgressBar(TripModel trip) {
-    final budget = trip.budget?.estimatedCost ?? 0;
-    final spent = trip.totalActualSpent;
-    final percentage = budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+  /// Build budget progress bar with current data
+  Widget _buildBudgetProgressBar2(double totalBudget, double actualSpent) {
+    final percentage = totalBudget > 0 ? (actualSpent / totalBudget).clamp(0.0, 1.5) : 0.0;
     
     Color progressColor;
-    if (percentage >= 0.9) {
+    if (percentage >= 1.0) {
       progressColor = Colors.red[600]!;
-    } else if (percentage >= 0.75) {
+    } else if (percentage >= 0.9) {
       progressColor = Colors.orange[600]!;
+    } else if (percentage >= 0.75) {
+      progressColor = Colors.amber[600]!;
     } else {
       progressColor = Colors.green[600]!;
     }

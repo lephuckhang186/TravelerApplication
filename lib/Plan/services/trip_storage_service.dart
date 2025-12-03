@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/trip_model.dart';
 
@@ -31,13 +32,24 @@ class TripStorageService {
       final prefs = await SharedPreferences.getInstance();
       final tripsString = prefs.getString(_tripsKey);
 
+      debugPrint('DEBUG: TripStorage.loadTrips() - Raw data length: ${tripsString?.length ?? 0}');
+
       if (tripsString == null || tripsString.isEmpty) {
+        debugPrint('DEBUG: TripStorage.loadTrips() - No trips found in local storage');
         return [];
       }
 
       final List<dynamic> tripsJson = jsonDecode(tripsString);
-      return tripsJson.map((trip) => TripModel.fromJson(trip)).toList();
+      final trips = tripsJson.map((trip) => TripModel.fromJson(trip)).toList();
+      
+      debugPrint('DEBUG: TripStorage.loadTrips() - Loaded ${trips.length} trips from local storage');
+      for (int i = 0; i < trips.length; i++) {
+        debugPrint('DEBUG: Local Trip ${i + 1}: ${trips[i].name} (${trips[i].id})');
+      }
+      
+      return trips;
     } catch (e) {
+      debugPrint('DEBUG: TripStorage.loadTrips() - Error: $e');
       throw Exception('Error loading trips from local storage: $e');
     }
   }
