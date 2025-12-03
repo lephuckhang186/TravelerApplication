@@ -27,7 +27,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen>
     with AutomaticKeepAliveClientMixin {
-  String _currentUsername = 'Người dùng';
+  String _currentUsername = 'Loading...';
   String? _currentAvatarPath;
   String _displayName = 'Đang tải...';
   bool _isVerified = true;
@@ -59,17 +59,16 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _updateDisplayData(UserProfile profile) {
     final fullName = profile.fullName.trim();
-    final firstName = profile.firstName?.trim() ?? '';
-    final lastName = profile.lastName?.trim() ?? '';
 
     // Determine best display name
     String displayName = '';
     if (fullName.isNotEmpty) {
       displayName = fullName;
-    } else if (firstName.isNotEmpty || lastName.isNotEmpty) {
-      displayName = '$firstName $lastName'.trim();
     } else {
-      displayName = 'Người dùng';
+      final currentUser = _authService.currentUser;
+      displayName = currentUser?.displayName?.isNotEmpty == true
+          ? currentUser!.displayName!
+          : currentUser?.email?.split('@').first ?? 'User';
     }
 
     if (mounted) {
@@ -125,19 +124,15 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (_userProfile != null) {
         // Load real data from Firestore
         final fullName = _userProfile!.fullName.trim();
-        final firstName = _userProfile!.firstName?.trim() ?? '';
-        final lastName = _userProfile!.lastName?.trim() ?? '';
 
         // Determine best display name
         String displayName = '';
         if (fullName.isNotEmpty) {
           displayName = fullName;
-        } else if (firstName.isNotEmpty || lastName.isNotEmpty) {
-          displayName = '$firstName $lastName'.trim();
         } else if (currentUser.displayName?.isNotEmpty == true) {
           displayName = currentUser.displayName!;
         } else {
-          displayName = 'Người dùng';
+          displayName = currentUser.email?.split('@').first ?? 'User';
         }
 
         setState(() {
@@ -150,8 +145,11 @@ class _SettingsScreenState extends State<SettingsScreen>
       } else {
         // Fallback to Firebase Auth data
         setState(() {
-          _displayName = currentUser.displayName ?? 'Người dùng';
-          _currentUsername = currentUser.displayName ?? 'Người dùng';
+          final fallbackName = currentUser.displayName?.isNotEmpty == true
+              ? currentUser.displayName!
+              : currentUser.email?.split('@').first ?? 'User';
+          _displayName = fallbackName;
+          _currentUsername = fallbackName;
           _currentAvatarPath = currentUser.photoURL;
           _isVerified = currentUser.emailVerified;
         });
@@ -165,9 +163,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _setDefaultUserData() {
+    final currentUser = _authService.currentUser;
+    final fallbackName = currentUser?.displayName?.isNotEmpty == true
+        ? currentUser!.displayName!
+        : currentUser?.email?.split('@').first ?? 'User';
     setState(() {
-      _displayName = 'Người dùng';
-      _currentUsername = 'Người dùng';
+      _displayName = fallbackName;
+      _currentUsername = fallbackName;
       _currentAvatarPath = null;
       _isVerified = false;
       _isLoading = false;

@@ -89,8 +89,6 @@ class FirestoreUserService {
   Future<void> updateUserProfile({
     required String uid,
     String? fullName,
-    String? firstName,
-    String? lastName,
     DateTime? dateOfBirth,
     String? phone,
     String? address,
@@ -103,8 +101,6 @@ class FirestoreUserService {
       };
 
       if (fullName != null) updates['fullName'] = fullName;
-      if (firstName != null) updates['firstName'] = firstName;
-      if (lastName != null) updates['lastName'] = lastName;
       if (phone != null) updates['phone'] = phone;
       if (address != null) updates['address'] = address;
       if (gender != null) updates['gender'] = gender;
