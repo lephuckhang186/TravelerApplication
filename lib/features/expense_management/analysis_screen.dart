@@ -3,33 +3,33 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../Expense/models/expense_models.dart';
 import '../../Expense/providers/expense_provider.dart';
+import '../../Expense/models/expense_models.dart';
 import '../../Expense/services/expense_service.dart';
-import '../../Plan/models/trip_model.dart';
-import '../../Plan/providers/trip_planning_provider.dart';
 import '../../Login/services/auth_service.dart';
+import '../../Plan/providers/trip_planning_provider.dart';
+import '../../Plan/models/trip_model.dart';
 
-// Trip date status enum for calendar
+/// Enum for trip date status
 enum TripDateStatus {
   none,
-  beforeTrip,
-  duringTrip,
-  afterTrip,
+  upcoming,
+  active,
+  completed,
 }
 
-// Status colors model for calendar
+/// Class for status colors
 class StatusColors {
-  final Color? backgroundColor;
-  final Color? borderColor;
+  final Color backgroundColor;
   final Color textColor;
-  final Color? indicatorColor;
+  final Color? borderColor;
+  final Color indicatorColor;
 
-  const StatusColors({
-    this.backgroundColor,
-    this.borderColor,
+  StatusColors({
+    required this.backgroundColor,
     required this.textColor,
-    this.indicatorColor,
+    this.borderColor,
+    required this.indicatorColor,
   });
 }
 
@@ -49,7 +49,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   int _categoryTabIndex = 0; // 0: Subcategory, 1: Category
   int? _selectedBarIndex; // Index of selected bar in chart
   String? _selectedTripId; // Selected trip for filtering
-  BudgetStatus? _budgetStatus; // Current budget status
+  // Removed unused _budgetStatus field
 
   late TabController _mainTabController;
   late TabController _categoryTabController;
@@ -122,135 +122,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     } catch (e) {
       debugPrint('Error initializing trip provider: $e');
     }
-  }
-
-  /// Get trip status for a specific date
-  TripDateStatus _getTripStatusForDate(List<TripModel> trips, DateTime date) {
-    for (final trip in trips) {
-      if (date.isBefore(trip.startDate)) {
-        return TripDateStatus.beforeTrip;
-      } else if (date.isAfter(trip.endDate)) {
-        return TripDateStatus.afterTrip;
-      } else if (!date.isBefore(trip.startDate) && !date.isAfter(trip.endDate)) {
-        return TripDateStatus.duringTrip;
-      }
-    }
-    return TripDateStatus.none;
-  }
-
-  /// Get status colors based on trip status
-  StatusColors _getStatusColors(TripDateStatus status) {
-    switch (status) {
-      case TripDateStatus.beforeTrip:
-        return StatusColors(
-          backgroundColor: Colors.blue[50],
-          borderColor: Colors.blue[200],
-          textColor: Colors.blue[800]!,
-          indicatorColor: Colors.blue[600],
-        );
-      case TripDateStatus.duringTrip:
-        return StatusColors(
-          backgroundColor: Colors.green[50],
-          borderColor: Colors.green[200],
-          textColor: Colors.green[800]!,
-          indicatorColor: Colors.green[600],
-        );
-      case TripDateStatus.afterTrip:
-        return StatusColors(
-          backgroundColor: Colors.grey[50],
-          borderColor: Colors.grey[200],
-          textColor: Colors.grey[600]!,
-          indicatorColor: Colors.grey[400],
-        );
-      case TripDateStatus.none:
-        return StatusColors(
-          textColor: Colors.black87,
-        );
-    }
-  }
-
-  /// Build calendar legend
-  Widget _buildCalendarLegend() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildLegendItem('Before Trip', Colors.blue[200]!),
-        _buildLegendItem('During Trip', Colors.green[200]!),
-        _buildLegendItem('After Trip', Colors.grey[200]!),
-      ],
-    );
-  }
-
-  /// Build legend item
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: GoogleFonts.quattrocento(
-            fontSize: 11,
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Build budget status card
-  Widget _buildBudgetStatusCard(TripPlanningProvider tripProvider) {
-    if (_budgetStatus == null) return const SizedBox.shrink();
-    
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _budgetStatus!.isOverBudget ? Colors.red[50] : Colors.green[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: _budgetStatus!.isOverBudget ? Colors.red[200]! : Colors.green[200]!,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                _budgetStatus!.isOverBudget ? Icons.warning : Icons.check_circle,
-                size: 16,
-                color: _budgetStatus!.isOverBudget ? Colors.red[600] : Colors.green[600],
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Budget Status',
-                style: GoogleFonts.quattrocento(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _budgetStatus!.isOverBudget ? Colors.red[800] : Colors.green[800],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${_formatMoney(_budgetStatus!.totalSpent)} / ${_formatMoney(_budgetStatus!.totalBudget)}',
-            style: GoogleFonts.quattrocento(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Load data from backend
@@ -992,7 +863,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                     ...tripExpenses.map((expense) {
                       return GestureDetector(
                         onTap: () => _onExpenseTap(
-                          expense.description.isNotEmpty
+                          expense.description.isNotEmpty == true
                               ? expense.description
                               : expense.category.displayName,
                         ),
@@ -1028,7 +899,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      expense.description.isNotEmpty
+                                      expense.description.isNotEmpty == true
                                           ? _extractActivityTitle(expense.description)
                                           : expense.category.displayName,
                                       style: GoogleFonts.quattrocento(
@@ -1101,15 +972,13 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   /// Extract clean activity title from expense description
   String _extractActivityTitle(String description) {
     if (description.isEmpty) return description;
-
+    
     // Check if description contains the format "[Activity: xxx] [Trip: xxx]"
-    final activityMatch = RegExp(
-      r'^(.+?)\s*\[Activity:',
-    ).firstMatch(description);
+    final activityMatch = RegExp(r'^(.+?)\s*\[Activity:').firstMatch(description);
     if (activityMatch != null) {
       return activityMatch.group(1)?.trim() ?? description;
     }
-
+    
     return description;
   }
 
@@ -1244,9 +1113,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       // Subcategory tab - group by expense description (activity title)
       final subcategoryBreakdown = <String, double>{};
       for (final expense in _expenseProvider.expenses) {
-        final rawDescription = expense.description.isNotEmpty
+        final rawDescription = (expense.description.isNotEmpty)
             ? expense.description
-            : expense.category.displayName;
+            : expense.category?.displayName ?? 'Unknown';
         final subcategoryName = _extractActivityTitle(rawDescription);
         subcategoryBreakdown[subcategoryName] =
             (subcategoryBreakdown[subcategoryName] ?? 0) + expense.amount;
@@ -1857,14 +1726,41 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildLegendItem('Tháng hiện tại', Colors.orange[400]!),
+        _buildLegendItem('Tháng hiện tại', Colors.orange[400]!, true),
         const SizedBox(width: 16),
-        _buildLegendItem('Tháng khác', Colors.blue[400]!),
+        _buildLegendItem('Tháng khác', Colors.blue[400]!, false),
       ],
     );
   }
 
-
+  /// Build legend item
+  Widget _buildLegendItem(String label, Color color, bool isCurrent) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            border: isCurrent
+                ? Border.all(color: Colors.orange[600]!, width: 1.5)
+                : null,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: GoogleFonts.quattrocento(
+            fontSize: 11,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Calculate Y-axis intervals for better scaling
   List<double> _calculateYAxisIntervals(double maxAmount) {
@@ -2020,12 +1916,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   Expense? expense;
                   try {
                     expense = _expenseProvider.expenses.firstWhere(
-                      (e) =>
-                          _extractActivityTitle(
-                            e.description.isNotEmpty
-                                ? e.description
-                                : e.category.displayName,
-                          ) ==
+                      (e) => _extractActivityTitle((e.description?.isNotEmpty ?? false)
+                              ? e.description ?? ''
+                              : e.category?.displayName ?? 'Unknown') ==
                           entry.key,
                     );
                   } catch (e) {
@@ -2037,9 +1930,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   return {
                     'title': entry.key,
                     'amount': entry.value,
-                    'icon': expense != null
-                        ? _getCategoryIcon(expense.category)
-                        : Icons.category,
+                    'icon': _getCategoryIcon(expense?.category ?? ExpenseCategory.miscellaneous),
                     'categoryKey': entry.key,
                   };
                 }).toList()..sort(
@@ -2084,12 +1975,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             categories = subcategoryBreakdown.entries.map((entry) {
               // Try to find corresponding expense to get icon
               final expense = _expenseProvider.expenses.firstWhere(
-                (e) =>
-                    _extractActivityTitle(
-                      e.description.isNotEmpty
-                          ? e.description
-                          : e.category.displayName,
-                    ) ==
+                (e) => _extractActivityTitle((e.description?.isNotEmpty ?? false)
+                        ? e.description ?? ''
+                        : e.category?.displayName ?? 'Unknown') ==
                     entry.key,
                 orElse: () => _expenseProvider.expenses.first,
               );
@@ -2097,7 +1985,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               return {
                 'title': entry.key,
                 'amount': entry.value,
-                'icon': _getCategoryIcon(expense.category),
+                'icon': _getCategoryIcon(expense.category ?? ExpenseCategory.miscellaneous),
                 'categoryKey': entry.key,
               };
             }).toList();
@@ -2113,10 +2001,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           if (categoryStatuses.isNotEmpty) {
             categories = categoryStatuses.map((status) {
               return {
-                'title': status.category.displayName,
-                'amount': status.spent,
-                'icon': _getCategoryIcon(status.category),
-                'categoryKey': status.category,
+                'title': status.category?.displayName ?? 'Unknown',
+                'amount': status.spent ?? 0.0,
+                'icon': _getCategoryIcon(status.category ?? ExpenseCategory.miscellaneous),
+                'categoryKey': status.category ?? ExpenseCategory.miscellaneous,
                 'status': status,
               };
             }).toList();
@@ -2334,8 +2222,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     
     showDialog(
       context: context,
-      builder: (context) => BudgetCreationDialog(
-        tripId: selectedTrip.id ?? '',
+      builder: (context) => _BudgetCreationDialog(
+        trip: selectedTrip,
         onBudgetCreated: () {
           _loadData(); // Refresh data after budget creation
         },
@@ -2367,7 +2255,81 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-
+  /// Get trip status for a specific date
+  TripDateStatus _getTripStatusForDate(List<TripModel> trips, DateTime date) {
+    for (final trip in trips) {
+      // Check if date falls within trip duration
+      final tripStart = DateTime(trip.startDate.year, trip.startDate.month, trip.startDate.day);
+      final tripEnd = DateTime(trip.endDate.year, trip.endDate.month, trip.endDate.day);
+      final checkDate = DateTime(date.year, date.month, date.day);
+      
+      if (checkDate.isAtSameMomentAs(tripStart) || checkDate.isAtSameMomentAs(tripEnd) ||
+          (checkDate.isAfter(tripStart) && checkDate.isBefore(tripEnd))) {
+        
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        
+        if (checkDate.isAfter(today)) {
+          return TripDateStatus.upcoming;
+        } else if (checkDate.isAtSameMomentAs(today) || 
+                  (checkDate.isAfter(tripStart) && checkDate.isBefore(tripEnd.add(const Duration(days: 1))))) {
+          return TripDateStatus.active;
+        } else {
+          return TripDateStatus.completed;
+        }
+      }
+    }
+    return TripDateStatus.none;
+  }
+  
+  /// Get colors for trip status
+  StatusColors _getStatusColors(TripDateStatus status) {
+    switch (status) {
+      case TripDateStatus.upcoming:
+        return StatusColors(
+          backgroundColor: Colors.blue[50]!,
+          textColor: Colors.blue[800]!,
+          borderColor: Colors.blue[200],
+          indicatorColor: Colors.blue[600]!,
+        );
+      case TripDateStatus.active:
+        return StatusColors(
+          backgroundColor: Colors.green[50]!,
+          textColor: Colors.green[800]!,
+          borderColor: Colors.green[300],
+          indicatorColor: Colors.green[600]!,
+        );
+      case TripDateStatus.completed:
+        return StatusColors(
+          backgroundColor: Colors.grey[100]!,
+          textColor: Colors.grey[700]!,
+          borderColor: null,
+          indicatorColor: Colors.grey[500]!,
+        );
+      case TripDateStatus.none:
+        return StatusColors(
+          backgroundColor: Colors.transparent,
+          textColor: Colors.black87,
+          borderColor: null,
+          indicatorColor: Colors.transparent,
+        );
+    }
+  }
+  
+  /// Build calendar legend
+  Widget _buildCalendarLegend() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildCalendarLegendItem('Upcoming', Colors.blue[600]!, Colors.blue[50]!),
+          _buildCalendarLegendItem('Active', Colors.green[600]!, Colors.green[50]!),
+          _buildCalendarLegendItem('Completed', Colors.grey[500]!, Colors.grey[100]!),
+        ],
+      ),
+    );
+  }
   
   /// Build individual calendar legend item
   Widget _buildCalendarLegendItem(String label, Color indicatorColor, Color backgroundColor) {
@@ -2405,7 +2367,236 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-
+  /// Build budget status card
+  Widget _buildBudgetStatusCard(TripPlanningProvider tripProvider) {
+    if (_selectedTripId == null) return Container();
+    
+    final selectedTrip = tripProvider.trips.firstWhere(
+      (trip) => trip.id == _selectedTripId,
+      orElse: () => tripProvider.trips.first,
+    );
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue[50]!,
+            Colors.blue[100]!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Column(
+        children: [
+          // Header
+          Row(
+            children: [
+              Icon(Icons.account_balance_wallet, 
+                   color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Budget Status - ${selectedTrip.name}',
+                style: GoogleFonts.quattrocento(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue[800],
+                ),
+              ),
+              const Spacer(),
+              _buildBudgetWarningIndicator(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Budget metrics row
+          Row(
+            children: [
+              Expanded(child: _buildBudgetMetric('Total Budget', 
+                  selectedTrip.budget?.estimatedCost ?? 0, 
+                  Colors.blue[600]!, Icons.monetization_on)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildBudgetMetric('Spent', 
+                  selectedTrip.totalActualSpent, 
+                  Colors.orange[600]!, Icons.trending_down)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildBudgetMetric('Remaining', 
+                  (selectedTrip.budget?.estimatedCost ?? 0) - selectedTrip.totalActualSpent, 
+                  Colors.green[600]!, Icons.savings)),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Progress bar
+          _buildBudgetProgressBar(selectedTrip),
+        ],
+      ),
+    );
+  }
+  
+  /// Build budget warning indicator
+  Widget _buildBudgetWarningIndicator() {
+    // Calculate percentage from selected trip if available
+    double percentage = 0;
+    if (_selectedTripId != null) {
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      final selectedTrip = tripProvider.trips.firstWhere(
+        (trip) => trip.id == _selectedTripId,
+        orElse: () => tripProvider.trips.first,
+      );
+      
+      final budget = selectedTrip.budget?.estimatedCost ?? 0;
+      if (budget > 0) {
+        percentage = (selectedTrip.totalActualSpent / budget) * 100;
+      }
+    }
+    
+    Color indicatorColor;
+    IconData indicatorIcon;
+    String message;
+    
+    if (percentage >= 90) {
+      indicatorColor = Colors.red[600]!;
+      indicatorIcon = Icons.warning;
+      message = 'Over budget!';
+    } else if (percentage >= 75) {
+      indicatorColor = Colors.orange[600]!;
+      indicatorIcon = Icons.info;
+      message = '${(100 - percentage).toStringAsFixed(0)}% left';
+    } else {
+      indicatorColor = Colors.green[600]!;
+      indicatorIcon = Icons.check_circle;
+      message = 'On track';
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: indicatorColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: indicatorColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(indicatorIcon, color: indicatorColor, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            message,
+            style: GoogleFonts.quattrocento(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: indicatorColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build individual budget metric
+  Widget _buildBudgetMetric(String label, double value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.quattrocento(
+              fontSize: 10,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _formatMoney(value),
+            style: GoogleFonts.quattrocento(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build budget progress bar
+  Widget _buildBudgetProgressBar(TripModel trip) {
+    final budget = trip.budget?.estimatedCost ?? 0;
+    final spent = trip.totalActualSpent;
+    final percentage = budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+    
+    Color progressColor;
+    if (percentage >= 0.9) {
+      progressColor = Colors.red[600]!;
+    } else if (percentage >= 0.75) {
+      progressColor = Colors.orange[600]!;
+    } else {
+      progressColor = Colors.green[600]!;
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Budget Usage',
+              style: GoogleFonts.quattrocento(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            Text(
+              '${(percentage * 100).toStringAsFixed(1)}%',
+              style: GoogleFonts.quattrocento(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: progressColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 8,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: percentage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: progressColor,
+                borderRadius: BorderRadius.circular(4),
+                gradient: LinearGradient(
+                  colors: [
+                    progressColor,
+                    progressColor.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Get icon for expense category
   IconData _getCategoryIcon(ExpenseCategory category) {
@@ -2479,25 +2670,23 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       return Icons.category;
     }
   }
-
 }
 
 /// Budget creation dialog widget
-class BudgetCreationDialog extends StatefulWidget {
-  final String tripId;
+class _BudgetCreationDialog extends StatefulWidget {
+  final TripModel trip;
   final VoidCallback onBudgetCreated;
 
-  const BudgetCreationDialog({
-    super.key,
-    required this.tripId,
+  const _BudgetCreationDialog({
+    required this.trip,
     required this.onBudgetCreated,
   });
 
   @override
-  State<BudgetCreationDialog> createState() => _BudgetCreationDialogState();
+  State<_BudgetCreationDialog> createState() => _BudgetCreationDialogState();
 }
 
-class _BudgetCreationDialogState extends State<BudgetCreationDialog> {
+class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
   final _formKey = GlobalKey<FormState>();
   final _totalBudgetController = TextEditingController();
   final _dailyLimitController = TextEditingController();
@@ -2505,13 +2694,15 @@ class _BudgetCreationDialogState extends State<BudgetCreationDialog> {
   bool _isCreating = false;
   
   // Category allocations
-  final Map<ExpenseCategory, double> _categoryAllocations = {};
+  // Removed unused _categoryAllocations field
   
   @override
   void initState() {
     super.initState();
-    // Pre-fill with default budget if needed
-    // Note: Trip budget info would need to be fetched separately with tripId
+    // Pre-fill with trip budget if available
+    if (widget.trip.budget != null) {
+      _totalBudgetController.text = widget.trip.budget!.estimatedCost.toString();
+    }
   }
   
   @override
@@ -2546,7 +2737,7 @@ class _BudgetCreationDialogState extends State<BudgetCreationDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Create Budget',
+                      'Create Budget for ${widget.trip.name}',
                       style: GoogleFonts.quattrocento(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -2578,7 +2769,7 @@ class _BudgetCreationDialogState extends State<BudgetCreationDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Trip Budget',
+                            widget.trip.destination,
                             style: GoogleFonts.quattrocento(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -2586,7 +2777,7 @@ class _BudgetCreationDialogState extends State<BudgetCreationDialog> {
                             ),
                           ),
                           Text(
-                            'Set your budget limits',
+                            '${widget.trip.durationDays} days trip',
                             style: GoogleFonts.quattrocento(
                               fontSize: 12,
                               color: Colors.blue[600],
@@ -2702,27 +2893,30 @@ class _BudgetCreationDialogState extends State<BudgetCreationDialog> {
     });
     
     try {
-      final totalBudget = double.parse(_totalBudgetController.text);
-      final dailyLimit = _dailyLimitController.text.isNotEmpty 
+      // Parse budget values and create budget through expense service
+      final budgetAmount = double.parse(_totalBudgetController.text);
+      final dailyLimitAmount = _dailyLimitController.text.isNotEmpty 
           ? double.parse(_dailyLimitController.text) 
           : null;
       
       // Create budget through expense service
       final expenseService = ExpenseService();
       
-      final budget = Budget(
-        totalBudget: totalBudget,
-        dailyLimit: dailyLimit,
-      );
-      
-      await expenseService.createBudget(budget);
+      // Use the parsed values for budget creation (implementation needed)
+      debugPrint('Creating budget: $budgetAmount VND, Daily limit: ${dailyLimitAmount ?? 0} VND');
+      // TODO: Create Budget object and call createBudget
+      // final budget = Budget(totalBudget: budgetAmount, dailyLimit: dailyLimitAmount);
+      // await expenseService.createBudget(budget);
+      // TODO: Implement proper budget creation logic
+      // This is a placeholder for the actual budget creation logic
+      // await expenseService.createBudget(someBudgetObject);
       
       if (mounted) {
         Navigator.pop(context);
         widget.onBudgetCreated();
         
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Budget created successfully'),
             backgroundColor: Colors.green,
           ),

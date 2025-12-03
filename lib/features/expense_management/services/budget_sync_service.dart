@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import '../data/models/expense_models.dart';
-import '../data/services/expense_service.dart';
-import '../../trip_planning/models/trip_model.dart';
-import '../../trip_planning/models/activity_models.dart';
-import '../../trip_planning/providers/trip_planning_provider.dart';
+import '../../../Expense/models/expense_models.dart';
+import '../../../Expense/services/expense_service.dart';
+import '../../../Plan/models/trip_model.dart';
+import '../../../Plan/models/activity_models.dart';
+import '../../../Plan/providers/trip_planning_provider.dart';
 
 /// Service to sync expense data with trip budget status
 class BudgetSyncService {

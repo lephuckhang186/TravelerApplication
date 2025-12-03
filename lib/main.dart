@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'screens/splash_screen.dart';
-import 'screens/loading_screen.dart';
-import 'screens/auth_screen.dart';
-import 'screens/home_screen.dart';
-import 'services/user_service.dart';
-import 'services/auth_service.dart';
+import 'Login/screens/splash_screen.dart';
+import 'Login/screens/loading_screen.dart';
+import 'Login/screens/auth_screen.dart';
+import 'Home/screens/home_screen.dart';
+import 'Login/services/user_service.dart';
+import 'Login/services/auth_service.dart';
 import 'core/theme/app_theme.dart';
 
 void main() async {

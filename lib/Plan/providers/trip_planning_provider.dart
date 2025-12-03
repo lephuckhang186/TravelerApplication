@@ -3,7 +3,7 @@ import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../services/trip_planning_service.dart';
 import '../services/trip_storage_service.dart';
-import '../../expense_management/services/budget_sync_service.dart';
+import '../../features/expense_management/services/budget_sync_service.dart';
 
 /// Provider for managing trip planning state
 class TripPlanningProvider extends ChangeNotifier {
