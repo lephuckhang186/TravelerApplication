@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../Core/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AiAssistantScreen extends StatefulWidget {
+  const AiAssistantScreen({Key? key}) : super(key: key);
+
   @override
   _AiAssistantScreenState createState() => _AiAssistantScreenState();
 }
@@ -101,7 +104,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       final response = await http.post(
         Uri.parse('http://127.0.0.1:8000/invoke'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'input': userMessage, 'history': history}));
+        body: jsonEncode({'input': userMessage, 'history': history}),
+      );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -135,11 +139,23 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
           'AI Travel Assistant',
-          style: TextStyle(fontFamily: 'Urbanist-Regular')),
-        elevation: 1,
-        backgroundColor: Colors.white),
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        centerTitle: true,
+      ),
       drawer: Drawer(
         child: Column(
           children: [
@@ -152,14 +168,19 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     color: Colors.white,
-                    fontSize: 20)))),
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+            ),
             ListTile(
               leading: Icon(Icons.add),
               title: Text('New Chat'),
               onTap: () {
                 _newChat();
                 Navigator.pop(context);
-              }),
+              },
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: _chatHistories.length,
@@ -168,7 +189,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   return ListTile(
                     title: Text(
                       'Chat ${_chatHistories.length - index}',
-                      overflow: TextOverflow.ellipsis),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     onTap: () {
                       setState(() {
                         _currentChat = chatHistory;
@@ -181,29 +203,59 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       onPressed: () {
                         _deleteChatHistory(chatHistory);
                         Navigator.pop(context);
-                      }));
-                })),
-          ])),
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
-            child: _messages.isEmpty
-                ? _buildWelcomeView()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final message = _messages[index];
-                      return _buildMessageBubble(
-                        message['content']!,
-                        message['role']!);
-                    })),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: _messages.isEmpty
+                  ? _buildWelcomeView()
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[index];
+                        return _buildMessageBubble(
+                          message['content']!,
+                          message['role']!,
+                        );
+                      },
+                    ),
+            ),
+          ),
           if (_isLoading)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CircularProgressIndicator()),
-          _buildMessageInputField(),
-        ]));
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: const CircularProgressIndicator(),
+            ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: SafeArea(top: false, child: _buildMessageInputField()),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildWelcomeView() {
@@ -256,15 +308,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               gradient: LinearGradient(
                 colors: [Colors.blue.shade400, Colors.blue.shade600],
                 begin: Alignment.topLeft,
-                end: Alignment.bottomRight),
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
                   color: Colors.blue.withOpacity(0.3),
                   spreadRadius: 2,
                   blurRadius: 10,
-                  offset: const Offset(0, 4)),
-              ]),
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
               children: [
                 Icon(Icons.travel_explore, size: 48, color: Colors.white),
@@ -273,7 +328,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   'Xin chào! 👋',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
-                    fontSize: 28,color: Colors.white)),
+                    fontSize: 28,
+                    color: Colors.white,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Tôi là trợ lý AI du lịch của bạn!\nSẵn sàng giúp bạn khám phá Việt Nam 🇻🇳',
@@ -282,8 +340,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     color: Colors.white.withOpacity(0.9),
-                    height: 1.5)),
-              ])),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 32),
 
@@ -291,7 +353,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             'Bạn muốn hỏi gì? 🤔',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
-              fontSize: 20,color: Colors.grey[700])),
+              fontSize: 20,
+              color: Colors.grey[700],
+            ),
+          ),
 
           const SizedBox(height: 20),
 
@@ -303,7 +368,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.2),
+              childAspectRatio: 1.2,
+            ),
             itemCount: suggestions.length,
             itemBuilder: (context, index) {
               final suggestion = suggestions[index];
@@ -323,25 +389,35 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         color: Colors.grey.withOpacity(0.1),
                         spreadRadius: 1,
                         blurRadius: 6,
-                        offset: const Offset(0, 2)),
-                    ]),
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         suggestion['icon'] as IconData,
                         size: 32,
-                        color: Colors.blue.shade600),
+                        color: Colors.blue.shade600,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         suggestion['text'] as String,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
-                          fontSize: 13,color: Colors.grey[700],
-                          height: 1.3)),
-                    ])));
-            }),
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
 
           const SizedBox(height: 24),
 
@@ -351,8 +427,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               color: Colors.grey[500],
-              fontStyle: FontStyle.italic)),
-        ]));
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildMessageBubble(String text, String role) {
@@ -364,44 +444,70 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
         decoration: BoxDecoration(
           color: isUser ? Colors.blue[600] : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20.0)),
+          borderRadius: BorderRadius.circular(20.0),
+        ),
         child: Text(
           text,
           style: TextStyle(
             fontFamily: 'Urbanist-Regular',
-            color: isUser ? Colors.white : Colors.black87))));
+            color: isUser ? Colors.white : Colors.black87,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildMessageInputField() {
     return Container(
-      padding: const EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: Offset(0, -1)),
-        ]),
+      padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 16.0),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                hintText: 'Ask me anything about your trip...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20.0),
-                  borderSide: BorderSide.none),
-                filled: true,
-                fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0)),
-              onSubmitted: (_) => _sendMessage())),
-          SizedBox(width: 8.0),
-          IconButton(
-            icon: Icon(Icons.send, color: Colors.blue[600]),
-            onPressed: _sendMessage),
-        ]));
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(24.0),
+                border: Border.all(color: Colors.grey.shade300, width: 1),
+              ),
+              child: TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  hintText: 'Ask me anything about your trip...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 16,
+                    fontFamily: 'Urbanist-Regular',
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 14.0,
+                  ),
+                ),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'Urbanist-Regular',
+                ),
+                onSubmitted: (_) => _sendMessage(),
+                maxLines: null,
+                textInputAction: TextInputAction.send,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12.0),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(24.0),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send_rounded, color: Colors.white),
+              onPressed: _isLoading ? null : _sendMessage,
+              iconSize: 22,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

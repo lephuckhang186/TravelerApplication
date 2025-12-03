@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
-import '../widgets/ai_assistant_widget.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';
 import '../models/trip_model.dart';
@@ -167,7 +166,7 @@ class _PlanScreenState extends State<PlanScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: AppColors.skyBlue,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.more_horiz, color: Colors.white),
@@ -184,8 +183,12 @@ class _PlanScreenState extends State<PlanScreen>
             padding: const EdgeInsets.all(16.0),
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.skyBlue.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.steelBlue.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               child: TextField(
                 controller: _searchController,
@@ -255,75 +258,11 @@ class _PlanScreenState extends State<PlanScreen>
 
           // Fixed height spacer instead of flexible Spacer to ensure ListView gets proper space
           const SizedBox(height: 20),
-
-          // AI Chat Box với góc tròn ở 2 đầu - thu nhỏ chiều rộng
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
-              bottom: 90.0, // Đẩy lên cao hơn tránh Dynamic Island
-            ),
-            child: Center(
-              child: GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (BuildContext context) {
-                      return SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.9,
-                        child: AiAssistantPanel(
-                          onClose: () => Navigator.of(context).pop(),
-                        ),
-                      );
-                    },
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(30), // Góc tròn ở 2 đầu
-                    border: Border.all(color: AppColors.support),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min, // Thu nhỏ theo nội dung
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.smart_toy_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Ask, chat, plan trip with AI...',
-                        style: GoogleFonts.quattrocento(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(
-          bottom: 160, // Đẩy nút + lên cao hơn để tránh Dynamic Island
+          bottom: 50, // Đẩy nút + lên cao hơn để tránh Dynamic Island
         ), // Đẩy nút + lên cao hơn để tránh dính chat box
         child: FloatingActionButton(
           onPressed: () => _showCreateTripModal(context),
@@ -376,7 +315,7 @@ class _PlanScreenState extends State<PlanScreen>
                 height: 60,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.skyBlue.withValues(alpha: 0.3),
                 ),
                 child: trip.coverImage != null
                     ? ClipRRect(
@@ -466,8 +405,15 @@ class _PlanScreenState extends State<PlanScreen>
     if (!mounted) return;
 
     if (result == true) {
-      _loadTrips();
+      // Trip was deleted - provider already handled it, just refresh UI
+      final provider = context.read<TripPlanningProvider>();
+      await provider.initialize();
+      setState(() {
+        _trips.clear();
+        _trips.addAll(provider.trips);
+      });
     } else if (result is TripModel) {
+      // Trip was updated
       final index = _trips.indexWhere((t) => t.id == result.id);
       if (index >= 0) {
         setState(() {
@@ -475,7 +421,12 @@ class _PlanScreenState extends State<PlanScreen>
         });
         await _storageService.saveTrips(_trips);
       } else {
-        _loadTrips();
+        final provider = context.read<TripPlanningProvider>();
+        await provider.initialize();
+        setState(() {
+          _trips.clear();
+          _trips.addAll(provider.trips);
+        });
       }
     }
   }
@@ -488,8 +439,12 @@ class _PlanScreenState extends State<PlanScreen>
 
     // If a trip was created, refresh the list
     if (result != null) {
-      await _storageService.saveTrip(result);
-      _loadTrips();
+      final provider = context.read<TripPlanningProvider>();
+      await provider.addTrip(result);
+      setState(() {
+        _trips.clear();
+        _trips.addAll(provider.trips);
+      });
     }
   }
 

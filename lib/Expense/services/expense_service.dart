@@ -25,14 +25,14 @@ class ExpenseService {
         if (token != null) {
           _apiClient.setAuthToken(token);
           debugPrint(
-            'DEBUG: ExpenseService - Auth token set for user: ${user.uid ?? "unknown"}',
+            'DEBUG: ExpenseService - Auth token set for user: ${user.uid}',
           );
           debugPrint(
             'DEBUG: ExpenseService - Token: ${token.isNotEmpty ? token.substring(0, 50) : "empty"}...',
           );
         } else {
           debugPrint(
-            'DEBUG: ExpenseService - Failed to get token for user: ${user.uid ?? "unknown"}',
+            'DEBUG: ExpenseService - Failed to get token for user: ${user.uid}',
           );
         }
       } else {
@@ -52,11 +52,11 @@ class ExpenseService {
         if (token != null) {
           _apiClient.setAuthToken(token);
           debugPrint(
-            'DEBUG: ExpenseService - Refreshed auth token for user: ${user.uid ?? "unknown"}',
+            'DEBUG: ExpenseService - Refreshed auth token for user: ${user.uid}',
           );
         } else {
           debugPrint(
-            'DEBUG: ExpenseService - Failed to refresh token for user: ${user.uid ?? "unknown"}',
+            'DEBUG: ExpenseService - Failed to refresh token for user: ${user.uid}',
           );
         }
       }

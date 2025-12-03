@@ -3,7 +3,6 @@ import '../services/auth_service.dart';
 import '../services/firestore_user_service.dart';
 import 'email_auth_screen.dart';
 import 'google_signup_completion_screen.dart';
-import '../../Home/screens/home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -427,16 +426,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  void _showComingSoonMessage(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature sẽ được cập nhật sớm!'),
-        backgroundColor: Colors.orange,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   Widget _buildSignUpButton(
     String text,
     IconData icon,
@@ -553,16 +542,6 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _showComingSoonMessage(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature sẽ được cập nhật sớm!'),
-        backgroundColor: Colors.orange,
         behavior: SnackBarBehavior.floating,
       ),
     );

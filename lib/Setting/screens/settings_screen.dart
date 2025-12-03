@@ -12,7 +12,6 @@ import 'notification_settings_screen.dart';
 import 'share_feedback_screen.dart';
 import 'general_info_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
-import '../../Login/screens/security_login_screen.dart';
 import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
@@ -30,8 +29,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   String _currentUsername = 'Người dùng';
   String? _currentAvatarPath;
   String _displayName = 'Đang tải...';
-  String _phoneNumber = '';
-  String _currentLanguage = 'VI';
   bool _isVerified = true;
   bool _isLoading = true;
 
@@ -78,7 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       setState(() {
         _displayName = displayName;
         _currentUsername = displayName;
-        _phoneNumber = profile.phone ?? '';
         _currentAvatarPath = profile.profilePicture;
         _userProfile = profile;
       });
@@ -146,7 +142,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         setState(() {
           _displayName = displayName;
           _currentUsername = displayName;
-          _phoneNumber = _userProfile!.phone ?? '';
           _currentAvatarPath =
               _userProfile!.profilePicture ?? currentUser.photoURL;
           _isVerified = currentUser.emailVerified;
@@ -156,7 +151,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         setState(() {
           _displayName = currentUser.displayName ?? 'Người dùng';
           _currentUsername = currentUser.displayName ?? 'Người dùng';
-          _phoneNumber = '';
           _currentAvatarPath = currentUser.photoURL;
           _isVerified = currentUser.emailVerified;
         });
@@ -173,7 +167,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     setState(() {
       _displayName = 'Người dùng';
       _currentUsername = 'Người dùng';
-      _phoneNumber = '';
       _currentAvatarPath = null;
       _isVerified = false;
       _isLoading = false;
@@ -214,11 +207,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                         if (!_isScrolled) _buildFullHeaderSection(),
                         if (_isScrolled)
                           const SizedBox(height: 56), // Space for pinned header
-
-                        const SizedBox(height: 12),
-
-                        // Quick Actions (4 icons)
-                        _buildQuickActions(),
 
                         const SizedBox(height: 12),
 
@@ -558,122 +546,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Quick Actions Section (4 icons) - matching tôi1.jpg
-  Widget _buildQuickActions() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.06),
-            spreadRadius: 1,
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildQuickActionItem(
-            Icons.account_balance_wallet_outlined,
-            'Quản lý',
-            Colors.grey[600]!,
-            null,
-            () => _onExpenseManagement(),
-          ),
-          _buildQuickActionItem(
-            Icons.settings_outlined,
-            'Cài đặt\nthanh toán',
-            Colors.grey[600]!,
-            null,
-            () => _onPaymentSettings(),
-          ),
-          _buildQuickActionItem(
-            Icons.lock_outline,
-            'Đăng nhập\nvà bảo mật',
-            Colors.grey[600]!,
-            null,
-            () => _onSecuritySettings(),
-          ),
-          _buildQuickActionItem(
-            Icons.notifications_outlined,
-            'Cài đặt\nthông báo',
-            Colors.grey[600]!,
-            null,
-            () => _onNotificationSettings(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionItem(
-    IconData icon,
-    String label,
-    Color iconColor,
-    String? badge,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 20, color: iconColor),
-              ),
-              if (badge != null)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white, width: 1),
-                    ),
-                    child: Center(
-                      child: Text(
-                        badge,
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.quattrocento(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-            maxLines: 2,
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Utilities Section - 2 horizontal rows with synchronized scrolling
   Widget _buildUtilitiesSection() {
     final ScrollController scrollController = ScrollController();
@@ -692,9 +564,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Synchronized scrolling for both rows
+          // Synchronized scrolling for 2 rows with 4 utilities
           SizedBox(
-            height: 211, // Height for 3 rows + spacing (138 + 65 + 8)
+            height: 138, // Height for 2 rows + spacing (65 + 65 + 8)
             child: ListView(
               controller: scrollController,
               scrollDirection: Axis.horizontal,
@@ -706,10 +578,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Row(
                       children: [
                         _buildRectangularUtilityItem(
-                          Icons.monetization_on,
-                          'Trung Tâm Tài Chính',
+                          Icons.account_balance_wallet_outlined,
+                          'Quản lý chi tiêu',
                           const Color(0xFF2196F3), // Blue
-                          () => _onFinancialCenter(),
+                          () => _onExpenseManagement(),
                         ),
                         const SizedBox(width: 8),
                         _buildRectangularUtilityItem(
@@ -725,36 +597,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Row(
                       children: [
                         _buildRectangularUtilityItem(
-                          Icons.analytics,
-                          'Thống kê du lịch',
-                          const Color(0xFF00BCD4), // Cyan
-                          () => _onTravelStats(),
+                          Icons.currency_exchange,
+                          'Chuyển đổi tiền tệ',
+                          const Color(0xFFFF9800), // Orange
+                          () => _onCurrencyConverter(),
                         ),
                         const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.redeem,
-                          'Quà của tôi',
-                          const Color(0xFF8BC34A), // Green
-                          () => _onMoreGifts(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Third row - New utilities
-                    Row(
-                      children: [
                         _buildRectangularUtilityItem(
                           Icons.translate,
                           'Dịch văn bản',
                           const Color(0xFF9C27B0), // Purple
                           () => _onTranslation(),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.currency_exchange,
-                          'Chuyển đổi tiền tệ',
-                          const Color(0xFFFF9800), // Orange
-                          () => _onCurrencyConverter(),
                         ),
                       ],
                     ),
@@ -1020,8 +873,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             'Đổi hình nền',
             () => _onChangeBackground(),
           ),
-          _buildMenuDivider(),
-          _buildLanguageItem(),
         ],
       ),
     );
@@ -1047,60 +898,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
             Icon(Icons.chevron_right, color: Colors.grey[400], size: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageItem() {
-    return GestureDetector(
-      onTap: () => _onLanguages(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: [
-            Icon(Icons.language_outlined, size: 24, color: Colors.grey[600]),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Text(
-                'Ngôn ngữ',
-                style: GoogleFonts.quattrocento(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey[800],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'EN',
-                    style: GoogleFonts.quattrocento(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _currentLanguage,
-                    style: GoogleFonts.quattrocento(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -1167,17 +964,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _onPaymentSettings() {
-    // Payment settings functionality
-  }
-
-  void _onSecuritySettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SecurityLoginScreen()),
-    );
-  }
-
   void _onNotificationSettings() {
     Navigator.push(
       context,
@@ -1208,25 +994,22 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  // New utility handlers
-  void _onCreditScore() {
-    // Credit score functionality
-  }
-
   void _onPaymentHistory() {
     // Payment history functionality
   }
 
-  void _onGiftCard() {
-    // Gift card functionality
+  void _onTranslation() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TranslationScreen()),
+    );
   }
 
-  void _onMoreGifts() {
-    // More gifts functionality
-  }
-
-  void _onFinancialCenter() {
-    // Financial center functionality
+  void _onCurrencyConverter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
   }
 
   void _onChangeBackground() {
@@ -1262,94 +1045,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               onTap: () {
                 Navigator.pop(context);
                 // Photo library functionality
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onSwitchAccount() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          'Đổi tài khoản',
-          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Bạn có muốn đăng nhập bằng tài khoản khác?',
-          style: GoogleFonts.quattrocento(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Hủy',
-              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Account switching functionality
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7B61FF),
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Đồng ý', style: GoogleFonts.quattrocento()),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _onLanguages() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Chọn ngôn ngữ',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Text('🇺🇸'),
-              title: const Text('English'),
-              trailing: _currentLanguage == 'EN'
-                  ? const Icon(Icons.check, color: Colors.green)
-                  : null,
-              onTap: () {
-                setState(() {
-                  _currentLanguage = 'EN';
-                });
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Text('🇻🇳'),
-              title: const Text('Tiếng Việt'),
-              trailing: _currentLanguage == 'VI'
-                  ? const Icon(Icons.check, color: Colors.green)
-                  : null,
-              onTap: () {
-                setState(() {
-                  _currentLanguage = 'VI';
-                });
-                Navigator.pop(context);
               },
             ),
           ],
@@ -1415,25 +1110,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ],
       ),
-    );
-  }
-
-  void _showMessage(String message) {
-    // Message display functionality
-  }
-
-  // New utility handlers
-  void _onTranslation() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TranslationScreen()),
-    );
-  }
-
-  void _onCurrencyConverter() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
     );
   }
 }

@@ -72,8 +72,17 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black54),
-            onPressed: _loadExchangeRate,
+            icon: _isLoading 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black54,
+                    ),
+                  )
+                : const Icon(Icons.refresh, color: Colors.black54),
+            onPressed: _isLoading ? null : _loadExchangeRate,
           ),
         ],
       ),

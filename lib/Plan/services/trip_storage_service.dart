@@ -137,7 +137,6 @@ class TripStorageService {
   /// Get storage usage info
   Future<Map<String, dynamic>> getStorageInfo() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final trips = await loadTrips();
       final preferences = await loadUserPreferences();
 
