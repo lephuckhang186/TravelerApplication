@@ -48,8 +48,6 @@ class ProfileApiService {
   // Update user profile on backend
   Future<bool> updateUserProfile({
     String? fullName,
-    String? firstName,
-    String? lastName,
     String? phone,
     String? address,
     String? gender,
@@ -61,8 +59,6 @@ class ProfileApiService {
 
       final updateData = <String, dynamic>{};
       if (fullName != null) updateData['full_name'] = fullName;
-      if (firstName != null) updateData['first_name'] = firstName;
-      if (lastName != null) updateData['last_name'] = lastName;
       if (phone != null) updateData['phone'] = phone;
       if (address != null) updateData['address'] = address;
       if (gender != null) updateData['gender'] = gender;
@@ -123,8 +119,6 @@ class ProfileApiService {
 
   // Update a specific field
   Future<bool> updateField(String field, dynamic value) async {
-    final updateData = {field: value};
-
     switch (field) {
       case 'fullName':
         return updateUserProfile(fullName: value);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
+import '../../Core/theme/app_theme.dart';
 import '../../Expense/models/expense_models.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../../Expense/services/expense_service.dart';
@@ -301,6 +301,23 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Quản lý chi tiêu',
+          style: GoogleFonts.quattrocento(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -1328,7 +1345,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         radius: 80, // Tăng radius lên 100 để pie chart to hơn
         color: colors[index % colors.length],
         titleStyle: GoogleFonts.quattrocento(
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),

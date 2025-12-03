@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// TripWise App Theme - Palette: Trắng & Xanh Ngọc Bích
+/// TripWise App Theme - Palette: Bluebird & Clear Skies
 ///
 /// Color Palette:
-/// - Primary (Main Brand): #40E0D0 (Turquoise - Xanh ngọc bích)
-/// - Secondary: #2E8B8B (Dark Turquoise - Xanh ngọc bích đậm)  
-/// - Support (Borders/Dividers): #B0E0E6 (Powder Blue - Xanh nhạt)
+/// - Primary (Main Brand): #1E90FF (Dodger Blue - Xanh dương chính)
+/// - Secondary: #4682B4 (Steel Blue - Xanh thép)  
+/// - Support (Sky): #87CEEB (Sky Blue - Xanh trời)
 /// - Background: #FFFFFF (White - Trắng)
-/// - Surface: #F8FFFF (Ghost White - Trắng kem nhẹ)
-/// - Text Primary: #2E8B8B (Dark Turquoise cho text chính)
-/// - Text Secondary: #5F9EA0 (Cadet Blue cho text phụ)
+/// - Surface: #F0F8FF (Alice Blue - Xanh nhạt như mây)
+/// - Text Primary: #1E90FF (Dodger Blue cho text chính)
+/// - Text Secondary: #4682B4 (Steel Blue cho text phụ)
 /// - Success: #20B2AA (Light Sea Green)
 /// - Warning/Error: #FF6B6B (Light Coral)
 
 class AppColors {
   // Primary Colors - Màu chủ đạo
-  static const Color primary = Color(0xFF40E0D0); // Turquoise - Xanh ngọc bích
-  static const Color secondary = Color(0xFF2E8B8B); // Dark Turquoise - Xanh ngọc bích đậm
-  static const Color accent = Color(0xFF40E0D0); // Turquoise - Accent giống primary
-  static const Color support = Color(0xFFB0E0E6); // Powder Blue - Xanh nhạt cho borders
+  static const Color primary = Color(0xFF1E90FF); // Dodger Blue - Xanh dương chính
+  static const Color secondary = Color(0xFF4682B4); // Steel Blue - Xanh thép
+  static const Color accent = Color(0xFF1E90FF); // Dodger Blue - Accent giống primary
+  static const Color support = Color(0xFF87CEEB); // Sky Blue - Xanh trời
   static const Color background = Color(0xFFFFFFFF); // White - Trắng
-  static const Color surface = Color(0xFFF8FFFF); // Ghost White - Trắng kem nhẹ
+  static const Color surface = Color(0xFFF0F8FF); // Alice Blue - Xanh nhạt như mây
 
   // Text Colors - Màu chữ
-  static const Color textPrimary = Color(0xFF2E8B8B); // Dark Turquoise cho text chính
-  static const Color textSecondary = Color(0xFF5F9EA0); // Cadet Blue cho text phụ
+  static const Color textPrimary = Color(0xFF1E90FF); // Dodger Blue cho text chính
+  static const Color textSecondary = Color(0xFF4682B4); // Steel Blue cho text phụ
   static const Color textOnAccent = Color(0xFFFFFFFF); // White text trên accent
 
   // Status Colors - Màu trạng thái
@@ -33,16 +33,22 @@ class AppColors {
   static const Color warning = Color(0xFFFF6B6B); // Light Coral
 
   // Interactive States - Trạng thái tương tác
-  static const Color accentHover = Color(0xFF3CCCC0); // Darker turquoise for hover
-  static const Color accentPressed = Color(0xFF2EB8B8); // Even darker for pressed
+  static const Color accentHover = Color(0xFF0080FF); // Lighter dodger blue for hover
+  static const Color accentPressed = Color(0xFF1C7ED6); // Darker dodger blue for pressed
 
-  // Chart Colors - Màu biểu đồ (hài hòa với palette)
+  // Bluebird + Clear Skies Extended Palette
+  static const Color skyBlue = Color(0xFF87CEEB); // Sky Blue - Xanh trời
+  static const Color steelBlue = Color(0xFF4682B4); // Steel Blue - Xanh thép
+  static const Color dodgerBlue = Color(0xFF1E90FF); // Dodger Blue - Xanh dương
+  static const Color navyBlue = Color(0xFF003F7F); // Navy Blue - Xanh đậm cho contrast
+
+  // Chart Colors - Màu biểu đồ (hài hòa với bluebird palette)
   static const List<Color> chartColors = [
-    primary, // #40E0D0 - Turquoise
-    secondary, // #2E8B8B - Dark Turquoise  
-    success, // #20B2AA - Light Sea Green
-    Color(0xFF48D1CC), // Medium Turquoise
-    Color(0xFF00CED1), // Dark Turquoise
+    primary, // #1E90FF - Dodger Blue
+    secondary, // #4682B4 - Steel Blue  
+    skyBlue, // #87CEEB - Sky Blue
+    Color(0xFF6495ED), // Cornflower Blue
+    Color(0xFF4169E1), // Royal Blue
     warning, // #FF6B6B - Light Coral
   ];
 }

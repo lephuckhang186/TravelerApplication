@@ -10,9 +10,9 @@ import 'Login/screens/auth_screen.dart';
 import 'Home/screens/home_screen.dart';
 import 'Login/services/user_service.dart';
 import 'Login/services/auth_service.dart';
+import 'Core/theme/app_theme.dart';
 import 'Plan/providers/trip_planning_provider.dart';
 import 'Expense/providers/expense_provider.dart';
-import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,15 +36,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => TripPlanningProvider()),
-        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+        ChangeNotifierProvider(create: (context) => TripPlanningProvider()),
+        ChangeNotifierProvider(create: (context) => ExpenseProvider()),
       ],
       child: MaterialApp(
         title: 'TravelPro - Smart Travel Planner',
         debugShowCheckedModeBanner: false,
-        // Tắt DevicePreview cho production
-        // builder: (context, child) => DevicePreview.appBuilder(context, child!),
-        // locale: DevicePreview.locale(context),
+        // Enable DevicePreview integration
+        useInheritedMediaQuery: true,
+        locale: DevicePreview.locale(context),
+        builder: DevicePreview.appBuilder,
         theme: AppTheme.lightTheme,
         home: const SplashScreen(),
         routes: {

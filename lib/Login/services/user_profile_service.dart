@@ -47,8 +47,6 @@ class UserProfileService {
   // Update user profile with dual sync (Firestore + Backend)
   Future<bool> updateUserProfile({
     String? fullName,
-    String? firstName,
-    String? lastName,
     String? phone,
     String? address,
     String? gender,
@@ -65,8 +63,6 @@ class UserProfileService {
         await _firestoreService.updateUserProfile(
           uid: currentUser.uid,
           fullName: fullName,
-          firstName: firstName,
-          lastName: lastName,
           phone: phone,
           address: address,
           gender: gender,
@@ -83,8 +79,6 @@ class UserProfileService {
       try {
         apiSuccess = await _apiService.updateUserProfile(
           fullName: fullName,
-          firstName: firstName,
-          lastName: lastName,
           phone: phone,
           address: address,
           gender: gender,
@@ -178,12 +172,12 @@ class UserProfileService {
       final profile = UserProfile(
         uid: user.uid,
         email: user.email ?? '',
-        fullName: user.displayName ?? 'Người dùng mới',
+        fullName: user.displayName?.isNotEmpty == true
+            ? user.displayName!
+            : user.email?.split('@').first ?? 'User',
         createdAt: now,
         updatedAt: now,
         profilePicture: user.photoURL,
-        firstName: _extractFirstName(user.displayName),
-        lastName: _extractLastName(user.displayName),
       );
 
       await _firestoreService.createOrUpdateUser(profile);
@@ -207,19 +201,5 @@ class UserProfileService {
   // Clear cached profile
   void clearCache() {
     _cachedProfile = null;
-  }
-
-  // Extract first name from full name
-  String? _extractFirstName(String? fullName) {
-    if (fullName == null || fullName.isEmpty) return null;
-    final parts = fullName.trim().split(' ');
-    return parts.isNotEmpty ? parts.first : null;
-  }
-
-  // Extract last name from full name
-  String? _extractLastName(String? fullName) {
-    if (fullName == null || fullName.isEmpty) return null;
-    final parts = fullName.trim().split(' ');
-    return parts.length > 1 ? parts.sublist(1).join(' ') : null;
   }
 }

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Activity Type enum matching backend ActivityType
 enum ActivityType {
   flight('flight'),
@@ -23,7 +21,7 @@ enum ActivityType {
 
   const ActivityType(this.value);
   final String value;
-  
+
   static ActivityType fromString(String value) {
     return ActivityType.values.firstWhere(
       (e) => e.value == value,
@@ -42,7 +40,7 @@ enum ActivityStatus {
 
   const ActivityStatus(this.value);
   final String value;
-  
+
   static ActivityStatus fromString(String value) {
     return ActivityStatus.values.firstWhere(
       (e) => e.value == value,
@@ -60,7 +58,7 @@ enum Priority {
 
   const Priority(this.value);
   final String value;
-  
+
   static Priority fromString(String value) {
     return Priority.values.firstWhere(
       (e) => e.value == value,
@@ -186,20 +184,10 @@ class ContactModel {
   final String? email;
   final String? website;
 
-  ContactModel({
-    this.name,
-    this.phone,
-    this.email,
-    this.website,
-  });
+  ContactModel({this.name, this.phone, this.email, this.website});
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'phone': phone,
-      'email': email,
-      'website': website,
-    };
+    return {'name': name, 'phone': phone, 'email': email, 'website': website};
   }
 
   factory ContactModel.fromJson(Map<String, dynamic> json) {
@@ -324,24 +312,42 @@ class ActivityModel {
       id: json['id'],
       title: json['title'] ?? '',
       description: json['description'],
-      activityType: ActivityType.fromString(json['activity_type'] ?? 'activity'),
+      activityType: ActivityType.fromString(
+        json['activity_type'] ?? 'activity',
+      ),
       status: ActivityStatus.fromString(json['status'] ?? 'planned'),
       priority: Priority.fromString(json['priority'] ?? 'medium'),
-      startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : null,
-      endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'])
+          : null,
+      endDate: json['end_date'] != null
+          ? DateTime.parse(json['end_date'])
+          : null,
       durationMinutes: json['duration_minutes'],
-      location: json['location'] != null ? LocationModel.fromJson(json['location']) : null,
-      budget: json['budget'] != null ? BudgetModel.fromJson(json['budget']) : null,
-      contact: json['contact'] != null ? ContactModel.fromJson(json['contact']) : null,
+      location: json['location'] != null
+          ? LocationModel.fromJson(json['location'])
+          : null,
+      budget: json['budget'] != null
+          ? BudgetModel.fromJson(json['budget'])
+          : null,
+      contact: json['contact'] != null
+          ? ContactModel.fromJson(json['contact'])
+          : null,
       notes: json['notes'],
       tags: List<String>.from(json['tags'] ?? []),
       attachments: List<String>.from(json['attachments'] ?? []),
       tripId: json['trip_id'],
       checkIn: json['check_in'] ?? false,
       createdBy: json['created_by'],
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
-      expenseInfo: json['expense_info'] != null ? ExpenseInfo.fromJson(json['expense_info']) : ExpenseInfo(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
+      expenseInfo: json['expense_info'] != null
+          ? ExpenseInfo.fromJson(json['expense_info'])
+          : ExpenseInfo(),
     );
   }
 

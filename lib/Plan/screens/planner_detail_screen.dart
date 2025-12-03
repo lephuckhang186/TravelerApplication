@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'search_place_screen.dart';
+import 'ai_assistant_screen.dart';
 import '../../Core/theme/app_theme.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
@@ -148,10 +149,25 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             Expanded(child: _buildTimeline()),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _isDeleting ? null : _showAddActivityModal,
-          backgroundColor: AppColors.primary,
-          child: const Icon(Icons.add, color: Colors.white),
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // AI Assistant Button
+            FloatingActionButton(
+              heroTag: "ai_assistant_btn",
+              onPressed: _isDeleting ? null : _openAIAssistant,
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            // Add Activity Button
+            FloatingActionButton(
+              heroTag: "add_activity_btn",
+              onPressed: _isDeleting ? null : _showAddActivityModal,
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          ],
         ),
       ),
     );
@@ -771,6 +787,13 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _openAIAssistant() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
     );
   }
 

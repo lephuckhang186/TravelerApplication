@@ -74,6 +74,11 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
         title: const Text('Expense Management'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Quay lại',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

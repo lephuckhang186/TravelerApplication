@@ -11,8 +11,6 @@ class UserProfile {
   final String? address;
   final String? gender;
   final String? profilePicture;
-  final String? firstName;
-  final String? lastName;
 
   UserProfile({
     required this.uid,
@@ -25,8 +23,6 @@ class UserProfile {
     this.address,
     this.gender,
     this.profilePicture,
-    this.firstName,
-    this.lastName,
   });
 
   // Convert UserProfile to Map for Firestore
@@ -42,8 +38,6 @@ class UserProfile {
       'address': address,
       'gender': gender,
       'profilePicture': profilePicture,
-      'firstName': firstName,
-      'lastName': lastName,
     };
   }
 
@@ -62,8 +56,6 @@ class UserProfile {
       address: map['address'],
       gender: map['gender'],
       profilePicture: map['profilePicture'],
-      firstName: map['firstName'],
-      lastName: map['lastName'],
     );
   }
 
@@ -85,8 +77,6 @@ class UserProfile {
     String? address,
     String? gender,
     String? profilePicture,
-    String? firstName,
-    String? lastName,
   }) {
     return UserProfile(
       uid: uid ?? this.uid,
@@ -99,8 +89,6 @@ class UserProfile {
       address: address ?? this.address,
       gender: gender ?? this.gender,
       profilePicture: profilePicture ?? this.profilePicture,
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
     );
   }
 }

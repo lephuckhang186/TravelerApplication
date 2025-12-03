@@ -138,8 +138,32 @@ class AuthValidationService {
   /// Kiểm tra email có tồn tại trong Firebase không (check duplicate)
   Future<ValidationResult> checkEmailExists(String email) async {
     try {
-      // fetchSignInMethodsForEmail đã deprecated, không kiểm tra duplicate nữa
-      return ValidationResult(true, 'Email có thể sử dụng');
+      // Thử đăng nhập với email và mật khẩu sai để kiểm tra email có tồn tại không
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: 'invalid_password_for_check_123456',
+      );
+      
+      // Nếu đăng nhập thành công (không nên xảy ra), đăng xuất ngay
+      await _auth.signOut();
+      return ValidationResult(false, 'Email này đã được sử dụng');
+      
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        // Mật khẩu sai nghĩa là email đã tồn tại
+        return ValidationResult(false, 'Email này đã được sử dụng');
+      } else if (e.code == 'user-not-found') {
+        // Email chưa được đăng ký
+        return ValidationResult(true, 'Email có thể sử dụng');
+      } else if (e.code == 'invalid-email') {
+        return ValidationResult(false, 'Email không hợp lệ');
+      } else if (e.code == 'too-many-requests') {
+        // Quá nhiều request, cho phép tiếp tục
+        return ValidationResult(true, '');
+      }
+      // Các lỗi khác, cho phép tiếp tục để không block user
+      print('Lỗi kiểm tra email: ${e.message}');
+      return ValidationResult(true, '');
     } catch (e) {
       // Nếu có lỗi network, cho phép tiếp tục
       print('Lỗi kiểm tra email: $e');
