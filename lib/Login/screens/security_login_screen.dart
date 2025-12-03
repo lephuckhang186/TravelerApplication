@@ -132,8 +132,6 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
     );
   }
 
-  // Biometric section removed as requested
-
   Widget _buildLoginHistorySection() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

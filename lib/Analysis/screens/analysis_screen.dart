@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:math';
 import '../../Core/theme/app_theme.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../../Expense/models/expense_models.dart';
@@ -767,11 +766,12 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
       return PieChartSectionData(
         value: categoryEntry.value,
-        title: '${percentage.toStringAsFixed(0)}%', // Chỉ hiển thị % thôi
+        title:
+            '${percentage.toStringAsFixed(0)}%\n${displayName.length > 8 ? '${displayName.substring(0, 8)}...' : displayName}',
         radius: 80, // Tăng radius lên 100 để pie chart to hơn
         color: colors[index % colors.length],
         titleStyle: GoogleFonts.quattrocento(
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),

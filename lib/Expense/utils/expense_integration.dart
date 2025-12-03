@@ -36,7 +36,6 @@ class ExpenseIntegration {
       case ActivityType.note:
       case ActivityType.direction:
       case ActivityType.map:
-      default:
         return 'miscellaneous';
     }
   }

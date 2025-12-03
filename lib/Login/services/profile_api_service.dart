@@ -123,8 +123,6 @@ class ProfileApiService {
 
   // Update a specific field
   Future<bool> updateField(String field, dynamic value) async {
-    final updateData = {field: value};
-
     switch (field) {
       case 'fullName':
         return updateUserProfile(fullName: value);
