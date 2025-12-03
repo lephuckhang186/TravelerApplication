@@ -217,11 +217,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                         const SizedBox(height: 12),
 
-                        // Quick Actions (4 icons)
-                        _buildQuickActions(),
-
-                        const SizedBox(height: 12),
-
                         // Utilities Section
                         _buildUtilitiesSection(),
 
@@ -558,122 +553,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Quick Actions Section (4 icons) - matching tôi1.jpg
-  Widget _buildQuickActions() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.06),
-            spreadRadius: 1,
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildQuickActionItem(
-            Icons.account_balance_wallet_outlined,
-            'Quản lý',
-            Colors.grey[600]!,
-            null,
-            () => _onExpenseManagement(),
-          ),
-          _buildQuickActionItem(
-            Icons.settings_outlined,
-            'Cài đặt\nthanh toán',
-            Colors.grey[600]!,
-            null,
-            () => _onPaymentSettings(),
-          ),
-          _buildQuickActionItem(
-            Icons.lock_outline,
-            'Đăng nhập\nvà bảo mật',
-            Colors.grey[600]!,
-            null,
-            () => _onSecuritySettings(),
-          ),
-          _buildQuickActionItem(
-            Icons.notifications_outlined,
-            'Cài đặt\nthông báo',
-            Colors.grey[600]!,
-            null,
-            () => _onNotificationSettings(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionItem(
-    IconData icon,
-    String label,
-    Color iconColor,
-    String? badge,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 20, color: iconColor),
-              ),
-              if (badge != null)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white, width: 1),
-                    ),
-                    child: Center(
-                      child: Text(
-                        badge,
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.quattrocento(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-            maxLines: 2,
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Utilities Section - 2 horizontal rows with synchronized scrolling
   Widget _buildUtilitiesSection() {
     final ScrollController scrollController = ScrollController();
@@ -692,9 +571,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Synchronized scrolling for both rows
+          // Synchronized scrolling for 2 rows with 4 utilities
           SizedBox(
-            height: 211, // Height for 3 rows + spacing (138 + 65 + 8)
+            height: 138, // Height for 2 rows + spacing (65 + 65 + 8)
             child: ListView(
               controller: scrollController,
               scrollDirection: Axis.horizontal,
@@ -706,17 +585,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Row(
                       children: [
                         _buildRectangularUtilityItem(
-                          Icons.monetization_on,
-                          'Trung Tâm Tài Chính',
+                          Icons.account_balance_wallet_outlined,
+                          'Quản lý chi tiêu',
                           const Color(0xFF2196F3), // Blue
-                          () => _onFinancialCenter(),
+                          () => _onExpenseManagement(),
                         ),
                         const SizedBox(width: 8),
                         _buildRectangularUtilityItem(
-                          Icons.receipt_long,
-                          'Thanh Toán Nhanh',
-                          const Color(0xFF00BCD4), // Cyan
-                          () => _onPaymentHistory(),
+                          Icons.lock_outline,
+                          'Đăng nhập và bảo mật',
+                          const Color(0xFF4CAF50), // Green
+                          () => _onSecuritySettings(),
                         ),
                       ],
                     ),
@@ -725,36 +604,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Row(
                       children: [
                         _buildRectangularUtilityItem(
-                          Icons.analytics,
-                          'Thống kê du lịch',
-                          const Color(0xFF00BCD4), // Cyan
-                          () => _onTravelStats(),
+                          Icons.currency_exchange,
+                          'Chuyển đổi tiền tệ',
+                          const Color(0xFFFF9800), // Orange
+                          () => _onCurrencyConverter(),
                         ),
                         const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.redeem,
-                          'Quà của tôi',
-                          const Color(0xFF8BC34A), // Green
-                          () => _onMoreGifts(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Third row - New utilities
-                    Row(
-                      children: [
                         _buildRectangularUtilityItem(
                           Icons.translate,
                           'Dịch văn bản',
                           const Color(0xFF9C27B0), // Purple
                           () => _onTranslation(),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.currency_exchange,
-                          'Chuyển đổi tiền tệ',
-                          const Color(0xFFFF9800), // Orange
-                          () => _onCurrencyConverter(),
                         ),
                       ],
                     ),
@@ -1020,8 +880,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             'Đổi hình nền',
             () => _onChangeBackground(),
           ),
-          _buildMenuDivider(),
-          _buildLanguageItem(),
         ],
       ),
     );
@@ -1228,6 +1086,19 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _onFinancialCenter() {
     // Financial center functionality
   }
+  void _onTranslation() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TranslationScreen()),
+    );
+  }
+
+  void _onCurrencyConverter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
+  }
 
   void _onChangeBackground() {
     showModalBottomSheet(
@@ -1422,18 +1293,4 @@ class _SettingsScreenState extends State<SettingsScreen>
     // Message display functionality
   }
 
-  // New utility handlers
-  void _onTranslation() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TranslationScreen()),
-    );
-  }
-
-  void _onCurrencyConverter() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
-    );
-  }
 }
