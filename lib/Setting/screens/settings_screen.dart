@@ -8,6 +8,7 @@ import '../../Login/services/auth_service.dart';
 import '../../Login/services/user_profile.dart';
 import '../../Login/screens/auth_screen.dart';
 import '../../Login/screens/help_center_screen.dart';
+import '../../Login/screens/security_login_screen.dart';
 import 'notification_settings_screen.dart';
 import 'share_feedback_screen.dart';
 import 'general_info_screen.dart';
@@ -36,7 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   final AuthService _authService = AuthService();
   UserProfile? _userProfile;
 
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
   @override
@@ -156,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      debugPrint('Error loading user data: $e');
       _setDefaultUserData();
     } finally {
       setState(() => _isLoading = false);
@@ -357,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 20),
 
           // QR Code section
-          Container(
+          SizedBox(
             width: double.infinity,
             child: GestureDetector(
               onTap: () {
@@ -973,6 +974,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  void _onSecuritySettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SecurityLoginScreen()),
+    );
+  }
+
   void _onHelpCenter() {
     Navigator.push(
       context,
@@ -994,23 +1002,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _onPaymentHistory() {
-    // Payment history functionality
-  }
-
-  void _onTranslation() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TranslationScreen()),
-    );
-  }
-
-  void _onCurrencyConverter() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
-    );
-  }
   void _onTranslation() {
     Navigator.push(
       context,
@@ -1099,6 +1090,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const Center(child: CircularProgressIndicator()),
               );
 
+              // Store navigator reference
+              final navigator = Navigator.of(context);
+
               // Logout user
               final userService = UserService();
               await userService.logout();
@@ -1106,14 +1100,16 @@ class _SettingsScreenState extends State<SettingsScreen>
               // Clear profile service cache
               _profileService.clearCache();
 
-              // Close loading dialog
-              Navigator.pop(context);
+              // Close loading dialog and navigate if widget is still mounted
+              if (mounted) {
+                navigator.pop();
 
-              // Navigate to auth screen
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const AuthScreen()),
-                (route) => false,
-              );
+                // Navigate to auth screen
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const AuthScreen()),
+                  (route) => false,
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
