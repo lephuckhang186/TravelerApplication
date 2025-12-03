@@ -106,6 +106,23 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Quản lý chi tiêu',
+          style: GoogleFonts.quattrocento(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Column(
           children: [

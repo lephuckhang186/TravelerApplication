@@ -11,10 +11,7 @@ class SecurityLoginScreen extends StatefulWidget {
 
 class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
   // Removed biometric settings as requested
-  bool _twoFactorEnabled = false;
   bool _loginNotifications = true;
-  bool _autoLock = true;
-  String _autoLockTime = '5 phút';
   String _lastLogin = '15/01/2024 - 14:30';
 
   @override
@@ -41,10 +38,6 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _buildSecurityOverviewCard(),
-          const SizedBox(height: 16),
-          _buildTwoFactorSection(),
-          const SizedBox(height: 16),
-          _buildAutoLockSection(),
           const SizedBox(height: 16),
           _buildLoginHistorySection(),
           const SizedBox(height: 16),
@@ -140,165 +133,6 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
   }
 
   // Biometric section removed as requested
-
-  Widget _buildTwoFactorSection() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.verified_user, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Xác thực 2 bước',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildSecurityItem(
-              'Xác thực 2 bước',
-              'Thêm lớp bảo mật cho tài khoản',
-              _twoFactorEnabled,
-              (value) => setState(() => _twoFactorEnabled = value),
-              icon: Icons.security,
-            ),
-            if (!_twoFactorEnabled) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber, size: 16, color: Colors.orange),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Khuyến nghị bật xác thực 2 bước để bảo mật tốt hơn',
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 12,
-                          color: Colors.orange[700],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _setupTwoFactor,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Thiết lập xác thực 2 bước',
-                    style: GoogleFonts.quattrocento(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAutoLockSection() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.lock_clock, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Tự động khóa',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildSecurityItem(
-              'Tự động khóa ứng dụng',
-              'Khóa ứng dụng khi không sử dụng',
-              _autoLock,
-              (value) => setState(() => _autoLock = value),
-              icon: Icons.lock,
-            ),
-            if (_autoLock) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Thời gian khóa:',
-                      style: GoogleFonts.quattrocento(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: _showAutoLockTimePicker,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.primary),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          _autoLockTime,
-                          style: GoogleFonts.quattrocento(
-                            fontSize: 12,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildLoginHistorySection() {
     return Card(
@@ -578,49 +412,6 @@ class _SecurityLoginScreenState extends State<SecurityLoginScreen> {
         ),
       ],
     );
-  }
-
-  void _showAutoLockTimePicker() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Thời gian tự động khóa',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ...['1 phút', '5 phút', '15 phút', '30 phút', '1 giờ']
-                .map(
-                  (time) => ListTile(
-                    title: Text(time),
-                    trailing: _autoLockTime == time
-                        ? const Icon(Icons.check, color: Colors.green)
-                        : null,
-                    onTap: () {
-                      setState(() => _autoLockTime = time);
-                      Navigator.pop(context);
-                    },
-                  ),
-                )
-                .toList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _setupTwoFactor() {
-    _showSnackBar('Đang thiết lập xác thực 2 bước...');
   }
 
   void _viewLoginHistory() {
