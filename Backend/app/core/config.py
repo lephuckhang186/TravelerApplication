@@ -70,7 +70,6 @@ class Settings(BaseSettings):
     
     # Development flags
     ENABLE_DOCS: bool = os.getenv("ENABLE_DOCS", "true").lower() == "true"
-    ENABLE_MOCK_AUTH: bool = os.getenv("ENABLE_MOCK_AUTH", "false").lower() == "true"
     
     class Config:
         env_file = ".env"

@@ -62,10 +62,9 @@ class FirebaseService:
             
         except Exception as e:
             print(f"Firebase initialization failed: {e}")
-            print("ERROR: Firebase credentials required for authentication")
-            print("Please provide valid Firebase service account credentials")
-            # Fail fast - don't allow app to start without proper Firebase setup
-            raise Exception("Firebase authentication is required but not properly configured")
+            print("WARNING: Firebase credentials not found, using fallback mode")
+            self.app = None
+            self.db = None
     
     async def verify_id_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
@@ -74,7 +73,7 @@ class FirebaseService:
         try:
             # Ensure Firebase is properly initialized
             if self.app is None:
-                raise Exception("Firebase is not properly initialized")
+                return None
             
             # Verify the ID token with Firebase
             decoded_token = auth.verify_id_token(token)
@@ -127,18 +126,12 @@ class FirebaseService:
                     first_name=user_data.get('first_name', ''),
                     last_name=user_data.get('last_name', ''),
                     profile_picture=picture,
-                    full_name=user_data.get('full_name', ''),
-                    phone=user_data.get('phone', ''),
-                    address=user_data.get('address', ''),
-                    gender=user_data.get('gender', ''),
-                    date_of_birth=user_data.get('date_of_birth'),
                     is_active=True,
                     is_verified=firebase_user_data.get('email_verified', False),
                     created_at=user_data.get('created_at', datetime.utcnow()),
                     last_login=datetime.utcnow(),
                     preferred_currency=user_data.get('preferred_currency', 'VND'),
                     preferred_language=user_data.get('preferred_language', 'en'),
-                    travel_preferences=user_data.get('travel_preferences', {})
                 )
             else:
                 # Create new user
@@ -151,12 +144,7 @@ class FirebaseService:
                     'username': email.split('@')[0] if email else f'user_{uid[:8]}',
                     'first_name': first_name,
                     'last_name': last_name,
-                    'full_name': name if name else '',
                     'profile_picture': picture,
-                    'phone': '',
-                    'address': '',
-                    'gender': '',
-                    'date_of_birth': None,
                     'is_active': True,
                     'is_verified': firebase_user_data.get('email_verified', False),
                     'created_at': datetime.utcnow(),
