@@ -290,6 +290,9 @@ class ExpenseManager:
         self.analytics: Optional[Analytics] = None
         self.trip: Optional[Trip] = None
         self._activity_expense_map: Dict[str, List[Expense]] = {}  # Fix: Initialize missing attribute
+        # NEW: Trip-specific expense tracking
+        self._trip_expenses: Dict[str, List[Expense]] = {}
+        self._expense_trip_map: Dict[str, str] = {}  # expense_id -> trip_id
     
     def set_trip(self, trip: Trip):
         """Set the current trip"""
@@ -316,6 +319,31 @@ class ExpenseManager:
         expense_id = f"exp_{len(self.expenses) + 1}_{int(datetime.now().timestamp())}"
         
         self.expenses.append(expense)
+        
+        # Update category budget spending
+        if self.trip_budget:
+            category_budget = self.trip_budget.get_category_budget(expense.category)
+            category_budget.spent_amount += expense.amount
+        
+        # Invalidate analytics cache
+        if self.analytics:
+            self.analytics.expenses = self.expenses
+            self.analytics.invalidate_cache()
+        
+        return expense_id
+    
+    def add_expense_for_trip(self, expense: Expense, trip_id: str = None) -> str:
+        """Add expense with trip association"""
+        expense_id = f"exp_{len(self.expenses) + 1}_{int(datetime.now().timestamp())}"
+        
+        self.expenses.append(expense)
+        
+        # Associate with trip if provided
+        if trip_id:
+            if trip_id not in self._trip_expenses:
+                self._trip_expenses[trip_id] = []
+            self._trip_expenses[trip_id].append(expense)
+            self._expense_trip_map[expense_id] = trip_id
         
         # Update category budget spending
         if self.trip_budget:
@@ -533,6 +561,56 @@ class ExpenseManager:
     def get_history_expenses(self) -> List[Expense]:
         """Get all historical expenses sorted by date"""
         return sorted(self.expenses, key=lambda x: x.date, reverse=True)
+    
+    def delete_trip_expenses(self, trip_id: str) -> int:
+        """Delete all expenses associated with a trip"""
+        if trip_id not in self._trip_expenses:
+            return 0
+        
+        trip_expenses = self._trip_expenses[trip_id]
+        deleted_count = 0
+        
+        for expense in trip_expenses[:]:  # Create copy to avoid modification during iteration
+            if expense in self.expenses:
+                self.expenses.remove(expense)
+                deleted_count += 1
+                
+                # Update category budget spending
+                if self.trip_budget:
+                    category_budget = self.trip_budget.get_category_budget(expense.category)
+                    category_budget.spent_amount = max(Decimal('0'), 
+                                                     category_budget.spent_amount - expense.amount)
+        
+        # Clean up trip mappings
+        del self._trip_expenses[trip_id]
+        
+        # Clean up expense-trip mappings
+        expense_ids_to_remove = [exp_id for exp_id, t_id in self._expense_trip_map.items() if t_id == trip_id]
+        for exp_id in expense_ids_to_remove:
+            del self._expense_trip_map[exp_id]
+        
+        # Invalidate analytics cache
+        if self.analytics:
+            self.analytics.expenses = self.expenses
+            self.analytics.invalidate_cache()
+        
+        return deleted_count
+    
+    def get_trip_expenses(self, trip_id: str) -> List[Expense]:
+        """Get all expenses for a specific trip"""
+        return self._trip_expenses.get(trip_id, [])
+    
+    def clear_all_data(self):
+        """Clear all expense data (useful for testing)"""
+        self.expenses.clear()
+        self._trip_expenses.clear()
+        self._expense_trip_map.clear()
+        self._activity_expense_map.clear()
+        self.trip_budget = None
+        self.trip = None
+        if self.analytics:
+            self.analytics.expenses = []
+            self.analytics.invalidate_cache()
     
     def _map_activity_type_to_expense_category(self, activity_type):
         """Map activity type to expense category"""
