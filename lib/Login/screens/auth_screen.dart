@@ -192,6 +192,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -219,6 +220,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void dispose() {
     _passwordController.removeListener(_updatePasswordStrength);
     // _emailController.removeListener(_checkEmailAvailability); // Đã tắt
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -234,18 +236,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _handleEmailSignUp() async {
+    final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
     setState(() => _isLoading = true);
     try {
+      // Kiểm tra username không được để trống
+      if (username.isEmpty) {
+        _showErrorMessage('Vui lòng nhập username');
+        return;
+      }
+
       // Advanced validation using validation service
       final validationResults = await _validationService.validateSignUpForm(
         email: email,
         password: password,
         confirmPassword: confirmPassword,
-        fullName: 'User', // Default name for basic signup
+        fullName: username, // Use username from form
         checkEmailExists: true,
       );
 
@@ -270,7 +279,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           await _firestoreService.createEmailUserProfile(
             uid: userCredential!.user!.uid,
             email: email,
-            fullName: 'New User', // Default name
+            fullName: username, // Use username from form
             dateOfBirth: DateTime(2000, 1, 1), // Default date
           );
           print('✅ Firestore user profile created successfully!'); // Debug log
@@ -283,7 +292,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
 
         if (mounted) {
-          _showSuccessMessage('Sign up successful!');
           Navigator.of(context).pushReplacementNamed('/home');
         }
       }
@@ -358,6 +366,56 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
 
                 const SizedBox(height: 20),
+
+                // Username input
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: TextField(
+                    controller: _usernameController,
+                    keyboardType: TextInputType.text,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontFamily: 'Urbanist-Regular',
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Username',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontFamily: 'Urbanist-Regular',
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.white,
+                          width: 2,
+                        ),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.person_outline,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ),
 
                 // Email input
                 Container(
@@ -741,6 +799,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _emailError;
   bool _hasEmailError = false;
+  bool _obscurePassword = true;
 
   Future<void> _handleSocialAuth(String provider) async {
     setState(() => _isLoading = true);
@@ -767,7 +826,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 );
               } else {
                 // Người dùng cũ - chuyển trực tiếp đến home
-                _showSuccessMessage('Đăng nhập thành công!');
                 Navigator.of(context).pushReplacementNamed('/home');
               }
             }
@@ -1122,7 +1180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   margin: const EdgeInsets.only(bottom: 12),
                   child: TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -1159,9 +1217,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         Icons.lock_outline,
                         color: Colors.white.withOpacity(0.8),
                       ),
-                      suffixIcon: Icon(
-                        Icons.visibility_outlined,
-                        color: Colors.white.withOpacity(0.8),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                        onPressed: () {
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,

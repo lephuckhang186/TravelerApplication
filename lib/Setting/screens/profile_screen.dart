@@ -54,7 +54,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Load data from Firestore
         _nameController.text = _userProfile!.fullName.isNotEmpty
             ? _userProfile!.fullName
-            : 'Người dùng mới';
+            : (currentUser.displayName?.isNotEmpty == true 
+                ? currentUser.displayName! 
+                : currentUser.email?.split('@').first ?? 'User');
         _emailController.text = _userProfile!.email;
         _phoneController.text = _userProfile!.phone ?? '';
         _addressController.text = _userProfile!.address ?? '';
@@ -63,7 +65,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _avatarPath = _userProfile!.profilePicture;
       } else {
         // Fallback to creating a basic profile
-        _nameController.text = currentUser.displayName ?? 'Người dùng mới';
+        _nameController.text = currentUser.displayName?.isNotEmpty == true
+            ? currentUser.displayName!
+            : currentUser.email?.split('@').first ?? 'User';
         _emailController.text = currentUser.email ?? '';
         _phoneController.text = '';
         _addressController.text = '';
@@ -72,10 +76,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _avatarPath = currentUser.photoURL;
 
         // Create initial profile in Firestore
+        final displayName = currentUser.displayName?.isNotEmpty == true
+            ? currentUser.displayName!
+            : currentUser.email?.split('@').first ?? 'User';
         await _createInitialProfile(
           currentUser.uid,
           currentUser.email ?? '',
-          currentUser.displayName ?? '',
+          displayName,
         );
       }
     } catch (e) {
@@ -96,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userProfile = UserProfile(
         uid: uid,
         email: email,
-        fullName: displayName.isNotEmpty ? displayName : 'Người dùng mới',
+        fullName: displayName,
         createdAt: now,
         updatedAt: now,
       );
@@ -109,8 +116,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _setDefaultUserData() {
     // Set meaningful default data instead of empty fields
-    _nameController.text = 'Người dùng Travel App';
-    _emailController.text = 'user@travelapp.com';
+    final currentUser = _authService.currentUser;
+    final fallbackName = currentUser?.displayName?.isNotEmpty == true
+        ? currentUser!.displayName!
+        : currentUser?.email?.split('@').first ?? 'User';
+    _nameController.text = fallbackName;
+    _emailController.text = currentUser?.email ?? 'user@example.com';
     _phoneController.text = '';
     _addressController.text = '';
     _gender = 'Chưa cập nhật';
@@ -247,7 +258,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               _nameController.text.isNotEmpty
                   ? _nameController.text
-                  : 'Người dùng Travel App',
+                  : 'User',
               style: GoogleFonts.quattrocento(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
