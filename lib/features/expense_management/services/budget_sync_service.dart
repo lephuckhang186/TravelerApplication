@@ -54,16 +54,39 @@ class BudgetSyncService {
   /// Sync all expenses for a trip and update budget status
   Future<TripModel> syncTripBudgetStatus(TripModel trip) async {
     try {
-      // Get all expenses for this trip's date range
-      final expenses = await _expenseService.getExpenses(
-        startDate: trip.startDate,
-        endDate: trip.endDate,
-      );
-
-      // Filter expenses that belong to this trip (by description or date match)
-      final tripExpenses = expenses.where((expense) {
-        return _isExpenseFromTrip(expense, trip);
-      }).toList();
+      // Get expenses directly by trip ID if available
+      List<Expense> tripExpenses = [];
+      
+      if (trip.id != null && trip.id!.isNotEmpty) {
+        // Get expenses by specific trip ID
+        try {
+          tripExpenses = await _expenseService.getExpenses(
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            tripId: trip.id!, // Filter by specific trip ID
+          );
+          debugPrint('Found ${tripExpenses.length} expenses for trip ${trip.id}');
+        } catch (e) {
+          debugPrint('Failed to get expenses by trip ID: $e');
+          // Fallback to date range and filtering
+          final allExpenses = await _expenseService.getExpenses(
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+          );
+          tripExpenses = allExpenses.where((expense) {
+            return _isExpenseFromTrip(expense, trip);
+          }).toList();
+        }
+      } else {
+        // Fallback to date range filtering for trips without ID
+        final allExpenses = await _expenseService.getExpenses(
+          startDate: trip.startDate,
+          endDate: trip.endDate,
+        );
+        tripExpenses = allExpenses.where((expense) {
+          return _isExpenseFromTrip(expense, trip);
+        }).toList();
+      }
 
       // Calculate total actual spent from expenses
       final totalActualSpent = tripExpenses.fold<double>(
@@ -115,32 +138,42 @@ class BudgetSyncService {
 
   /// Check if an expense belongs to a specific trip
   bool _isExpenseFromTrip(Expense expense, TripModel trip) {
-    // Check if expense description contains trip information
-    if (expense.description.contains('[Trip: ${trip.name}]') ||
-        expense.description.contains('[Trip: ${trip.id}]')) {
+    // Priority 1: Check if expense description contains exact trip ID
+    if (trip.id != null && expense.description.contains('[Trip: ${trip.id}]')) {
       return true;
     }
 
-    // Check if expense date falls within trip dates
-    final expenseDate = DateTime(
-      expense.expenseDate.year,
-      expense.expenseDate.month,
-      expense.expenseDate.day,
-    );
-    final tripStartDate = DateTime(
-      trip.startDate.year,
-      trip.startDate.month,
-      trip.startDate.day,
-    );
-    final tripEndDate = DateTime(
-      trip.endDate.year,
-      trip.endDate.month,
-      trip.endDate.day,
-    );
+    // Priority 2: Check if expense description contains trip name (less reliable)
+    if (expense.description.contains('[Trip: ${trip.name}]')) {
+      return true;
+    }
 
-    return expenseDate.isAtSameMomentAs(tripStartDate) ||
-           expenseDate.isAtSameMomentAs(tripEndDate) ||
-           (expenseDate.isAfter(tripStartDate) && expenseDate.isBefore(tripEndDate.add(const Duration(days: 1))));
+    // Priority 3 (Fallback): Check if expense date falls within trip dates
+    // Only use this if no trip ID matching is found
+    if (trip.id == null || trip.id!.isEmpty) {
+      final expenseDate = DateTime(
+        expense.expenseDate.year,
+        expense.expenseDate.month,
+        expense.expenseDate.day,
+      );
+      final tripStartDate = DateTime(
+        trip.startDate.year,
+        trip.startDate.month,
+        trip.startDate.day,
+      );
+      final tripEndDate = DateTime(
+        trip.endDate.year,
+        trip.endDate.month,
+        trip.endDate.day,
+      );
+
+      return expenseDate.isAtSameMomentAs(tripStartDate) ||
+             expenseDate.isAtSameMomentAs(tripEndDate) ||
+             (expenseDate.isAfter(tripStartDate) && expenseDate.isBefore(tripEndDate.add(const Duration(days: 1))));
+    }
+
+    // Default: not from this trip if no criteria match
+    return false;
   }
 
   /// Map activity type to expense category

@@ -439,6 +439,8 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       final trip = Trip(
         startDate: _startDate,
         endDate: _endDate,
+        name: _tripNameController.text.trim(),
+        destination: _destinationController.text.trim(),
       );
       await expenseService.createTrip(trip);
       

@@ -1898,13 +1898,31 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Update activity check-in status
   Future<void> _updateActivityCheckIn(ActivityModel updatedActivity) async {
+    debugPrint('Updating activity check-in: ${updatedActivity.title}, checkIn: ${updatedActivity.checkIn}');
+    
     final index = _activities.indexWhere((a) => a.id == updatedActivity.id);
-    if (index != -1) {
-      setState(() {
-        _activities[index] = updatedActivity;
-      });
-      await _persistTripChanges();
+    if (index == -1) {
+      debugPrint('Activity not found for check-in update');
+      return;
     }
+
+    // Try to update on server if activity has an ID and not local
+    if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+      try {
+        debugPrint('Syncing check-in to server for activity: ${updatedActivity.id}');
+        await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
+        debugPrint('Successfully synced check-in to server');
+      } catch (e) {
+        debugPrint('Failed to sync check-in to server: $e');
+        // Continue with local update even if server fails
+      }
+    }
+
+    setState(() {
+      _activities[index] = updatedActivity;
+    });
+    await _persistTripChanges();
+    debugPrint('Check-in status updated locally and persisted');
   }
 
   /// Create expense for checked-in activity

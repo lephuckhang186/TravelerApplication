@@ -48,26 +48,35 @@ class ExpenseService {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final token = await user.getIdToken();
+        final token = await user.getIdToken(true); // Force refresh token
         if (token != null) {
           _apiClient.setAuthToken(token);
           debugPrint(
             'DEBUG: ExpenseService - Refreshed auth token for user: ${user.uid}',
           );
+          debugPrint(
+            'DEBUG: ExpenseService - Token preview: ${token.substring(0, 50)}...',
+          );
         } else {
           debugPrint(
             'DEBUG: ExpenseService - Failed to refresh token for user: ${user.uid}',
           );
+          throw Exception('Failed to get authentication token');
         }
+      } else {
+        debugPrint('DEBUG: ExpenseService - No authenticated user found');
+        throw Exception('User not authenticated');
       }
     } catch (e) {
       debugPrint('DEBUG: ExpenseService - Failed to refresh auth: $e');
+      rethrow;
     }
   }
 
   /// Get current trip
   Future<Trip?> getCurrentTrip() async {
     try {
+      await _ensureAuthentication();
       final response = await _apiClient.get('/expenses/trip/current');
       if (response != null) {
         return Trip.fromJson(response as Map<String, dynamic>);
@@ -86,8 +95,9 @@ class ExpenseService {
   /// Create a new trip
   Future<Map<String, dynamic>> createTrip(Trip trip) async {
     try {
+      await _ensureAuthentication();
       final response = await _apiClient.post(
-        '/expenses/trip/create',
+        '/activities/trips',
         body: trip.toJson(),
       );
       return response as Map<String, dynamic>;
@@ -99,6 +109,7 @@ class ExpenseService {
   /// Create a budget
   Future<Map<String, dynamic>> createBudget(Budget budget) async {
     try {
+      await _ensureAuthentication();
       final response = await _apiClient.post(
         ApiConfig.createBudgetEndpoint,
         body: budget.toJson(),
@@ -209,6 +220,7 @@ class ExpenseService {
   /// Delete an expense
   Future<void> deleteExpense(String expenseId) async {
     try {
+      await _ensureAuthentication();
       await _apiClient.delete('${ApiConfig.expensesEndpoint}/$expenseId');
     } catch (e) {
       throw _handleException(e, 'Failed to delete expense');
@@ -218,6 +230,7 @@ class ExpenseService {
   /// Get budget status for a specific trip or current trip
   Future<BudgetStatus> getBudgetStatus({String? tripId}) async {
     try {
+      await _ensureAuthentication();
       final queryParams = tripId != null ? {'trip_id': tripId} : null;
       final response = await _apiClient.get(
         ApiConfig.budgetStatusEndpoint,
@@ -250,6 +263,7 @@ class ExpenseService {
   /// Get category status
   Future<List<CategoryStatus>> getCategoryStatus() async {
     try {
+      await _ensureAuthentication();
       final response = await _apiClient.get(ApiConfig.categoryStatusEndpoint);
 
       if (response is List) {
@@ -268,6 +282,7 @@ class ExpenseService {
   /// Get spending trends
   Future<SpendingTrends> getSpendingTrends() async {
     try {
+      await _ensureAuthentication();
       final response = await _apiClient.get(ApiConfig.spendingTrendsEndpoint);
       return SpendingTrends.fromJson(response as Map<String, dynamic>);
     } catch (e) {
@@ -278,7 +293,8 @@ class ExpenseService {
   /// Get expense summary
   Future<ExpenseSummary> getExpenseSummary({String? tripId}) async {
     try {
-      final queryParams = tripId != null ? {'planner_id': tripId} : null;
+      await _ensureAuthentication();
+      final queryParams = tripId != null ? {'trip_id': tripId} : null;
       final response = await _apiClient.get(
         ApiConfig.expenseSummaryEndpoint,
         queryParams: queryParams,
@@ -292,7 +308,8 @@ class ExpenseService {
   /// Export expense data
   Future<Map<String, dynamic>> exportExpenseData() async {
     try {
-      final response = await _apiClient.post(ApiConfig.exportDataEndpoint);
+      await _ensureAuthentication();
+      final response = await _apiClient.get(ApiConfig.exportExpenseEndpoint);
       return response as Map<String, dynamic>;
     } catch (e) {
       throw _handleException(e, 'Failed to export expense data');

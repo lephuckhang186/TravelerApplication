@@ -3,7 +3,8 @@ Activities Management API Endpoints with Integrated Expense Tracking
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Depends, Query, status
+from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import status
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
 from decimal import Decimal
@@ -245,8 +246,8 @@ def _ensure_user_record(user: User) -> None:
             
             db_manager.create_user(
                 user_id=user.id,
-                email=email,
-                username=username,
+                email=user.email,
+                username=user.username,
                 first_name=user.first_name,
                 last_name=user.last_name,
                 profile_picture=user.profile_picture
@@ -327,9 +328,17 @@ def activity_to_response(activity: Activity) -> ActivityResponse:
         # Get expense category
         category = travel_mgr.expense_manager._map_activity_type_to_expense_category(activity.activity_type)
         expense_info.expense_category = category.value
-    elif activity.budget and activity.budget.actual_cost:
-        expense_info.has_expense = False
-        expense_info.auto_synced = False
+    elif activity.budget:
+        # Handle budget as dict or object
+        actual_cost = None
+        if hasattr(activity.budget, 'actual_cost'):
+            actual_cost = activity.budget.actual_cost
+        elif isinstance(activity.budget, dict):
+            actual_cost = activity.budget.get('actual_cost')
+        
+        if actual_cost:
+            expense_info.has_expense = False
+            expense_info.auto_synced = False
     
     return ActivityResponse(
         id=activity.id,
@@ -341,14 +350,14 @@ def activity_to_response(activity: Activity) -> ActivityResponse:
         start_date=activity.start_time,
         end_date=activity.end_time,
         duration_minutes=None,
-        location=LocationResponse(**activity.location.__dict__) if activity.location else None,
+        location=LocationResponse(**activity.location) if isinstance(activity.location, dict) and activity.location else (LocationResponse(**activity.location.__dict__) if activity.location and hasattr(activity.location, '__dict__') else None),
         budget=BudgetResponse(
             estimated_cost=float(activity.budget.estimated_cost),
             actual_cost=float(activity.budget.actual_cost) if activity.budget.actual_cost else None,
             currency=activity.budget.currency,
             category=activity.budget.category
         ) if activity.budget else None,
-        contact=ContactResponse(**activity.contact.__dict__) if activity.contact else None,
+        contact=ContactResponse(**activity.contact) if isinstance(activity.contact, dict) and activity.contact else (ContactResponse(**activity.contact.__dict__) if activity.contact and hasattr(activity.contact, '__dict__') else None),
         notes=activity.notes,
         tags=activity.tags or [],
         attachments=[],
@@ -519,7 +528,7 @@ async def get_activities(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail=f"Failed to get activities: {str(e)}"
         )
 

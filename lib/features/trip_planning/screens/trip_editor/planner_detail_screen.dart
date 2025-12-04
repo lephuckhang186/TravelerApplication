@@ -66,20 +66,33 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     try {
       final serverActivities = await _tripService.getActivities(tripId: _trip.id);
       setState(() {
-        // Merge server activities with local ones, prioritizing server data
+        // Merge server activities with local ones, preserving local check-in status if newer
         final Map<String, ActivityModel> activityMap = {};
         
-        // First add local activities
-        for (final activity in _activities) {
+        // First add server activities as base
+        for (final activity in serverActivities) {
           if (activity.id != null) {
             activityMap[activity.id!] = activity;
           }
         }
         
-        // Then add/override with server activities
-        for (final activity in serverActivities) {
-          if (activity.id != null) {
-            activityMap[activity.id!] = activity;
+        // Then preserve local check-in status and recent updates
+        for (final localActivity in _activities) {
+          if (localActivity.id != null && activityMap.containsKey(localActivity.id!)) {
+            final serverActivity = activityMap[localActivity.id!]!;
+            final localUpdated = localActivity.updatedAt ?? DateTime(2000);
+            final serverUpdated = serverActivity.updatedAt ?? DateTime(2000);
+            
+            // If local activity is newer or has different check-in status, preserve local data
+            if (localUpdated.isAfter(serverUpdated) || 
+                localActivity.checkIn != serverActivity.checkIn ||
+                localActivity.budget?.actualCost != serverActivity.budget?.actualCost) {
+              debugPrint('Preserving local activity data for: ${localActivity.title} (check-in: ${localActivity.checkIn})');
+              activityMap[localActivity.id!] = localActivity;
+            }
+          } else if (localActivity.id != null) {
+            // Add local-only activities
+            activityMap[localActivity.id!] = localActivity;
           }
         }
         
@@ -1344,16 +1357,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         throw Exception('Activity not found');
       }
 
-      // Try to update on server if activity has an ID and not local
-      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
-        try {
-          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
-        } catch (e) {
-          debugPrint('Failed to update activity on server: $e');
-          // Continue with local update even if server fails
-        }
-      }
-      
+      // Update local state first
       setState(() {
         _activities[index] = updatedActivity;
         // Resort activities by start date
@@ -1364,7 +1368,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           return a.startDate!.compareTo(b.startDate!);
         });
       });
+      
+      // Save to local storage
       await _persistTripChanges();
+
+      // Try to update on server if activity has an ID and not local
+      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+        try {
+          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
+          debugPrint('Successfully synced activity update to server: ${updatedActivity.title}');
+        } catch (e) {
+          debugPrint('Failed to update activity on server: $e');
+          // Continue with local update even if server fails
+        }
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1862,7 +1879,32 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       setState(() {
         _activities[index] = updatedActivity;
       });
+      
+      // Save to local storage first
       await _persistTripChanges();
+      
+      // Then sync with server if activity has ID and not local
+      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+        try {
+          debugPrint('🔄 SYNC_CHECKIN: Syncing check-in status to server for activity: ${updatedActivity.id} - ${updatedActivity.title} (checkIn: ${updatedActivity.checkIn})');
+          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
+          debugPrint('✅ SYNC_SUCCESS: Successfully synced check-in status to server for activity: ${updatedActivity.title}');
+        } catch (e) {
+          debugPrint('❌ SYNC_ERROR: Failed to sync check-in status to server: $e');
+          // Show user notification about sync failure
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Check-in saved locally. Sync failed: $e'),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } else {
+        debugPrint('⚠️ LOCAL_ONLY: Activity ${updatedActivity.id} is local-only, not syncing to server');
+      }
     }
   }
 

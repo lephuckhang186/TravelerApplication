@@ -38,6 +38,8 @@ class DatabaseManager:
                 else:
                     # Check if expenses table needs schema update
                     self._update_expenses_schema()
+                    # Check if activities table needs check_in column
+                    self._update_activities_schema()
         except Exception as e:
             print(f"Error checking tables: {e}")
             self._create_tables()
@@ -83,6 +85,23 @@ class DatabaseManager:
                     
         except Exception as e:
             print(f"❌ SCHEMA_UPDATE_ERROR: {e}")
+
+    def _update_activities_schema(self):
+        """Update activities table schema to add check_in column"""
+        try:
+            with self.get_connection() as conn:
+                # Check if activities table has check_in column
+                cursor = conn.execute("PRAGMA table_info(activities)")
+                columns = [col[1] for col in cursor.fetchall()]
+                
+                if 'check_in' not in columns:
+                    print("🔧 SCHEMA_UPDATE: Adding check_in column to activities table")
+                    conn.execute("ALTER TABLE activities ADD COLUMN check_in BOOLEAN DEFAULT FALSE")
+                    conn.commit()
+                    print("✅ SCHEMA_UPDATE: Activities table updated with check_in column")
+                    
+        except Exception as e:
+            print(f"❌ ACTIVITIES_SCHEMA_UPDATE_ERROR: {e}")
             # If schema update fails, just continue - the constraint might not be enforced
 
     def _create_tables(self):
@@ -146,6 +165,7 @@ class DatabaseManager:
                     start_time TEXT,
                     end_time TEXT,
                     location TEXT,
+                    check_in BOOLEAN DEFAULT FALSE,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (planner_id) REFERENCES planners (id)
@@ -338,12 +358,13 @@ class DatabaseManager:
         
         with self.get_connection() as conn:
             conn.execute("""
-                INSERT INTO activities (id, planner_id, name, description, start_time, end_time, location)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO activities (id, planner_id, name, description, start_time, end_time, location, check_in)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 activity_id, planner_id, activity_data["name"], 
                 activity_data.get("description"), activity_data["start_time"],
-                activity_data["end_time"], activity_data.get("location")
+                activity_data["end_time"], activity_data.get("location"),
+                activity_data.get("check_in", False)
             ))
             conn.commit()
         
@@ -363,6 +384,78 @@ class DatabaseManager:
             cursor = conn.execute("SELECT * FROM activities WHERE id = ?", (activity_id,))
             row = cursor.fetchone()
             return dict(row) if row else None
+
+    def update_activity(self, activity_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update an existing activity"""
+        if not updates:
+            return self.get_activity(activity_id)
+            
+        # Build dynamic SQL UPDATE statement
+        set_clauses = []
+        values = []
+        
+        for field, value in updates.items():
+            if field in ['name', 'description', 'start_time', 'end_time', 'location', 'check_in']:
+                set_clauses.append(f"{field} = ?")
+                values.append(value)
+        
+        if not set_clauses:
+            return self.get_activity(activity_id)
+        
+        # Add updated_at timestamp
+        set_clauses.append("updated_at = CURRENT_TIMESTAMP")
+        values.append(activity_id)
+        
+        sql = f"UPDATE activities SET {', '.join(set_clauses)} WHERE id = ?"
+        
+        with self.get_connection() as conn:
+            cursor = conn.execute(sql, values)
+            if cursor.rowcount > 0:
+                conn.commit()
+                return self.get_activity(activity_id)
+            return None
+
+    def create_activity_with_fallback(self, activity_id: str, planner_id: str, activity_data: Dict[str, Any], user_id: str) -> Optional[Dict[str, Any]]:
+        """Create activity with automatic planner creation if needed"""
+        try:
+            # First try to create activity normally
+            return self.create_activity(planner_id, activity_data)
+        except Exception as e:
+            if "FOREIGN KEY constraint failed" in str(e):
+                print(f"⚠️ FK_CONSTRAINT: Planner {planner_id} doesn't exist, creating default planner")
+                
+                # Create a default planner for this user
+                try:
+                    # Ensure user exists
+                    if not self.get_user(user_id):
+                        print(f"🔧 USER_CREATE: Creating user {user_id} for planner creation")
+                        self.create_user(
+                            user_id=user_id,
+                            email=f"{user_id}@example.com",
+                            username=user_id
+                        )
+                    
+                    # Create default planner
+                    default_planner_data = {
+                        'name': f'Auto-generated for activity',
+                        'description': f'Auto-generated planner to support activity creation',
+                        'start_date': datetime.now().date().isoformat(),
+                        'end_date': datetime.now().date().isoformat()
+                    }
+                    
+                    created_planner = self.create_planner(user_id, default_planner_data)
+                    new_planner_id = created_planner['id']
+                    print(f"✅ PLANNER_CREATED: Created planner {new_planner_id}")
+                    
+                    # Now try to create the activity with the new planner
+                    return self.create_activity(new_planner_id, activity_data)
+                    
+                except Exception as fallback_e:
+                    print(f"❌ FALLBACK_ERROR: Failed to create planner and activity: {fallback_e}")
+                    return None
+            else:
+                print(f"❌ ACTIVITY_CREATE_ERROR: {e}")
+                return None
     
     # === EXPENSE METHODS ===
     def create_expense(self, planner_id: str, expense_data: Dict[str, Any]) -> Dict[str, Any]:

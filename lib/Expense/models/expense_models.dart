@@ -276,10 +276,14 @@ class Trip {
   final DateTime startDate;
   final DateTime endDate;
   final int? durationDays;
+  final String name;
+  final String destination;
 
   const Trip({
     required this.startDate,
     required this.endDate,
+    required this.name,
+    required this.destination,
     this.durationDays,
   });
 
@@ -319,12 +323,16 @@ class Trip {
     return Trip(
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: DateTime.parse(json['end_date'] as String),
+      name: json['name'] as String,
+      destination: json['destination'] as String,
       durationDays: json['duration_days'] as int?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'name': name,
+      'destination': destination,
       'start_date': startDate.toIso8601String().split('T')[0],
       'end_date': endDate.toIso8601String().split('T')[0],
     };

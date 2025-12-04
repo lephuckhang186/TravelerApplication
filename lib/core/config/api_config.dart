@@ -16,6 +16,7 @@ class ApiConfig {
   static const String spendingTrendsEndpoint = '/expenses/analytics/trends';
   static const String expenseSummaryEndpoint = '/expenses/analytics/summary';
   static const String exportDataEndpoint = '/expenses/export';
+  static const String exportExpenseEndpoint = '/expenses/export';
   
   // Request headers
   static Map<String, String> get defaultHeaders => {

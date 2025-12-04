@@ -131,7 +131,14 @@ class ExpenseProvider with ChangeNotifier {
   Future<bool> createTrip(DateTime startDate, DateTime endDate) async {
     _setLoading(true);
     try {
-      final trip = Trip(startDate: startDate, endDate: endDate);
+      // Create a trip with meaningful default name and destination
+      final tripName = 'Budget Trip ${startDate.day}/${startDate.month}/${startDate.year}';
+      final trip = Trip(
+        startDate: startDate, 
+        endDate: endDate,
+        name: tripName,
+        destination: 'Budget Destination'
+      );
       await _expenseService.createTrip(trip);
       _clearError();
       return true;
