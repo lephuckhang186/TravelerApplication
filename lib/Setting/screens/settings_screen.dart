@@ -592,10 +592,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Utilities Section - 2 horizontal rows with synchronized scrolling
+  /// Utilities Section - 3 items in 1 horizontal row
   Widget _buildUtilitiesSection() {
-    final ScrollController scrollController = ScrollController();
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -610,54 +608,31 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Synchronized scrolling for 2 rows with 4 utilities
-          SizedBox(
-            height: 138, // Height for 2 rows + spacing (65 + 65 + 8)
-            child: ListView(
-              controller: scrollController,
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
+          // Single row with 3 utilities
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
               children: [
-                Column(
-                  children: [
-                    // First row
-                    Row(
-                      children: [
-                        _buildRectangularUtilityItem(
-                          Icons.account_balance_wallet_outlined,
-                          'Quản lý chi tiêu',
-                          const Color(0xFF2196F3), // Blue
-                          () => _onExpenseManagement(),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.lock_outline,
-                          'Đăng nhập và bảo mật',
-                          const Color(0xFF4CAF50), // Green
-                          () => _onSecuritySettings(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Second row
-                    Row(
-                      children: [
-                        _buildRectangularUtilityItem(
-                          Icons.currency_exchange,
-                          'Chuyển đổi tiền tệ',
-                          const Color(0xFFFF9800), // Orange
-                          () => _onCurrencyConverter(),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.translate,
-                          'Dịch văn bản',
-                          const Color(0xFF9C27B0), // Purple
-                          () => _onTranslation(),
-                        ),
-                      ],
-                    ),
-                  ],
+                _buildRectangularUtilityItem(
+                  Icons.account_balance_wallet_outlined,
+                  'Quản lý chi tiêu',
+                  const Color(0xFF2196F3), // Blue
+                  () => _onExpenseManagement(),
+                ),
+                const SizedBox(width: 8),
+                _buildRectangularUtilityItem(
+                  Icons.currency_exchange,
+                  'Chuyển đổi tiền tệ',
+                  const Color(0xFFFF9800), // Orange
+                  () => _onCurrencyConverter(),
+                ),
+                const SizedBox(width: 8),
+                _buildRectangularUtilityItem(
+                  Icons.translate,
+                  'Dịch văn bản',
+                  const Color(0xFF9C27B0), // Purple
+                  () => _onTranslation(),
                 ),
                 const SizedBox(width: 16), // End padding
               ],
@@ -903,6 +878,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           _buildMenuDivider(),
           _buildMenuListItem(
+            Icons.lock_reset_outlined,
+            'Đổi mật khẩu',
+            () => _onChangePassword(),
+          ),
+          _buildMenuDivider(),
+          _buildMenuListItem(
             Icons.share_outlined,
             'Chia sẻ góp ý',
             () => _onShareFeedback(),
@@ -1058,6 +1039,29 @@ class _SettingsScreenState extends State<SettingsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
+  }
+
+  void _onChangePassword() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          'Đổi mật khẩu',
+          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Chức năng đổi mật khẩu sẽ được cập nhật trong phiên bản tiếp theo.',
+          style: GoogleFonts.quattrocento(),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK', style: GoogleFonts.quattrocento()),
+          ),
+        ],
+      ),
     );
   }
 
