@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
-import '../../Core/theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
 import '../../Login/services/user_profile_service.dart';
 import '../../Login/services/auth_service.dart';
@@ -15,8 +15,8 @@ import 'general_info_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
 import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
-import '../../Core/utils/translation/screens/translation_screen.dart';
-import '../../Core/utils/currency/screens/currency_converter_screen.dart';
+import '../../core/utils/translation/screens/translation_screen.dart';
+import '../../core/utils/currency/screens/currency_converter_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -110,20 +110,25 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _loadUserData() async {
     try {
       setState(() => _isLoading = true);
+      debugPrint('Settings: Starting to load user data...');
 
       // Get current user from Firebase Auth
       final currentUser = _authService.currentUser;
       if (currentUser == null) {
+        debugPrint('Settings: No current user found');
         _setDefaultUserData();
         return;
       }
+
+      debugPrint('Settings: Current user: ${currentUser.email}');
 
       // Get user profile from our integrated service
       _userProfile = await _profileService.getUserProfile();
 
       if (_userProfile != null) {
+        debugPrint('Settings: Profile found in Firestore: ${_userProfile!.fullName}');
         // Load real data from Firestore
-        final fullName = _userProfile!.fullName.trim();
+        final fullName = _userProfile!.fullName?.trim() ?? '';
 
         // Determine best display name
         String displayName = '';
@@ -135,6 +140,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           displayName = currentUser.email?.split('@').first ?? 'User';
         }
 
+        debugPrint('Settings: Using display name: $displayName');
+
         setState(() {
           _displayName = displayName;
           _currentUsername = displayName;
@@ -143,6 +150,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           _isVerified = currentUser.emailVerified;
         });
       } else {
+        debugPrint('Settings: No profile found, using Firebase Auth data as fallback');
         // Fallback to Firebase Auth data
         setState(() {
           final fallbackName = currentUser.displayName?.isNotEmpty == true
@@ -155,10 +163,11 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      debugPrint('Settings: Error loading user data: $e');
       _setDefaultUserData();
     } finally {
       setState(() => _isLoading = false);
+      debugPrint('Settings: Finished loading user data');
     }
   }
 
@@ -191,9 +200,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Đang tải thông tin...',
-                      style: GoogleFonts.quattrocento(
+                      style: GoogleFonts.urbanist(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -248,7 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildFullHeaderSection() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      decoration: const BoxDecoration(color: Color(0xFFF5F7FA)),
+      decoration: BoxDecoration(color: AppColors.surface),
       child: Column(
         children: [
           // Top right "Đổi ảnh nền" button
@@ -263,7 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: AppColors.support.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -272,14 +281,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                       Icon(
                         Icons.palette_outlined,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Đổi ảnh nền',
-                        style: GoogleFonts.quattrocento(
+                        style: GoogleFonts.urbanist(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -299,8 +308,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.grey[200],
-                  border: Border.all(color: Colors.white, width: 3),
+                  color: AppColors.support.withOpacity(0.3),
+                  border: Border.all(color: AppColors.background, width: 3),
                 ),
                 child: ClipOval(
                   child: _currentAvatarPath != null
@@ -327,11 +336,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                     decoration: BoxDecoration(
                       color: Colors.green,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: AppColors.background, width: 2),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check,
-                      color: Colors.white,
+                      color: AppColors.background,
                       size: 16,
                     ),
                   ),
@@ -345,10 +354,10 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             _displayName,
             textAlign: TextAlign.center,
-            style: GoogleFonts.quattrocento(
+            style: GoogleFonts.urbanist(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: AppColors.textPrimary,
             ),
           ),
 
@@ -377,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -1114,10 +1123,10 @@ class _SettingsScreenState extends State<SettingsScreen>
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.warning,
+              foregroundColor: AppColors.background,
             ),
-            child: Text('Đăng xuất', style: GoogleFonts.quattrocento()),
+            child: Text('Đăng xuất', style: GoogleFonts.urbanist()),
           ),
         ],
       ),
