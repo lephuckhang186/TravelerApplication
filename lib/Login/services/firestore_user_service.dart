@@ -38,13 +38,9 @@ class FirestoreUserService {
   // Kiểm tra người dùng đã có thông tin profile chưa
   Future<bool> hasUserProfile(String uid) async {
     try {
-      print('Checking if user $uid has profile...');
       final doc = await _firestore.collection(_collection).doc(uid).get();
-      final exists = doc.exists && doc.data() != null;
-      print('User $uid profile exists: $exists');
-      return exists;
+      return doc.exists && doc.data() != null;
     } catch (e) {
-      print('Error checking user profile: $e');
       return false;
     }
   }

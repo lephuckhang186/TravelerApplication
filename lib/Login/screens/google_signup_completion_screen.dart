@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/firestore_user_service.dart';
 import '../../Home/screens/home_screen.dart';
-import '../../core/theme/app_theme.dart';
 
 class GoogleSignupCompletionScreen extends StatefulWidget {
   final User user;
@@ -81,7 +79,7 @@ class _GoogleSignupCompletionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -92,51 +90,48 @@ class _GoogleSignupCompletionScreenState
               children: [
                 const SizedBox(height: 40),
                 // Header
-                Text(
+                const Text(
                   'Hoàn tất đăng ký',
-                  style: GoogleFonts.urbanist(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Color(0xFF2E3A59),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Vui lòng nhập họ tên để hoàn tất tài khoản',
-                  style: GoogleFonts.urbanist(
-                    fontSize: 16, 
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 40),
 
                 // Email (readonly)
                 Text(
                   'Email',
-                  style: GoogleFonts.urbanist(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    color: Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.support),
+                    border: Border.all(color: Colors.grey[300]!),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                      Icon(Icons.email_outlined, color: Colors.grey[500]),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           widget.user.email ?? '',
-                          style: GoogleFonts.urbanist(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: AppColors.textSecondary,
+                            color: Colors.grey[600],
                           ),
                         ),
                       ),
@@ -148,41 +143,32 @@ class _GoogleSignupCompletionScreenState
                 // Họ tên
                 Text(
                   'Họ và tên',
-                  style: GoogleFonts.urbanist(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    color: Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _fullNameController,
-                  style: GoogleFonts.urbanist(
-                    fontSize: 16,
-                    color: AppColors.textPrimary,
-                  ),
                   decoration: InputDecoration(
                     hintText: 'Nhập họ và tên',
-                    hintStyle: GoogleFonts.urbanist(
-                      color: AppColors.textSecondary,
-                    ),
                     prefixIcon: Icon(
                       Icons.person_outline,
-                      color: AppColors.textSecondary,
+                      color: Colors.grey[500],
                     ),
-                    filled: true,
-                    fillColor: AppColors.surface,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(color: AppColors.support),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(color: AppColors.support),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF0066FF)),
                     ),
                   ),
                   validator: (value) {
@@ -204,12 +190,11 @@ class _GoogleSignupCompletionScreenState
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _completeSignup,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.textOnAccent,
-                      elevation: 3,
-                      shadowColor: AppColors.primary.withOpacity(0.3),
+                      backgroundColor: const Color(0xFF0066FF),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: _isLoading
@@ -221,9 +206,9 @@ class _GoogleSignupCompletionScreenState
                               strokeWidth: 2,
                             ),
                           )
-                        : Text(
+                        : const Text(
                             'Hoàn tất đăng ký',
-                            style: GoogleFonts.urbanist(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),

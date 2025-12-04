@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
-import '../../core/theme/app_theme.dart';
+import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
 import '../../Login/services/user_profile_service.dart';
 import '../../Login/services/auth_service.dart';
@@ -15,8 +15,8 @@ import 'general_info_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
 import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
-import '../../core/utils/translation/screens/translation_screen.dart';
-import '../../core/utils/currency/screens/currency_converter_screen.dart';
+import '../../Core/utils/translation/screens/translation_screen.dart';
+import '../../Core/utils/currency/screens/currency_converter_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -110,25 +110,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _loadUserData() async {
     try {
       setState(() => _isLoading = true);
-      debugPrint('Settings: Starting to load user data...');
 
       // Get current user from Firebase Auth
       final currentUser = _authService.currentUser;
       if (currentUser == null) {
-        debugPrint('Settings: No current user found');
         _setDefaultUserData();
         return;
       }
-
-      debugPrint('Settings: Current user: ${currentUser.email}');
 
       // Get user profile from our integrated service
       _userProfile = await _profileService.getUserProfile();
 
       if (_userProfile != null) {
-        debugPrint('Settings: Profile found in Firestore: ${_userProfile!.fullName}');
         // Load real data from Firestore
-        final fullName = _userProfile!.fullName?.trim() ?? '';
+        final fullName = _userProfile!.fullName.trim();
 
         // Determine best display name
         String displayName = '';
@@ -140,8 +135,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           displayName = currentUser.email?.split('@').first ?? 'User';
         }
 
-        debugPrint('Settings: Using display name: $displayName');
-
         setState(() {
           _displayName = displayName;
           _currentUsername = displayName;
@@ -150,7 +143,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           _isVerified = currentUser.emailVerified;
         });
       } else {
-        debugPrint('Settings: No profile found, using Firebase Auth data as fallback');
         // Fallback to Firebase Auth data
         setState(() {
           final fallbackName = currentUser.displayName?.isNotEmpty == true
@@ -163,11 +155,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
       }
     } catch (e) {
-      debugPrint('Settings: Error loading user data: $e');
+      debugPrint('Error loading user data: $e');
       _setDefaultUserData();
     } finally {
       setState(() => _isLoading = false);
-      debugPrint('Settings: Finished loading user data');
     }
   }
 
@@ -200,9 +191,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Đang tải thông tin...',
-                      style: GoogleFonts.urbanist(
+                      style: GoogleFonts.quattrocento(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
@@ -257,7 +248,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildFullHeaderSection() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      decoration: BoxDecoration(color: AppColors.surface),
+      decoration: const BoxDecoration(color: Color(0xFFF5F7FA)),
       child: Column(
         children: [
           // Top right "Đổi ảnh nền" button
@@ -272,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.support.withOpacity(0.3),
+                    color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -281,14 +272,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                       Icon(
                         Icons.palette_outlined,
                         size: 16,
-                        color: AppColors.textSecondary,
+                        color: Colors.grey[600],
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Đổi ảnh nền',
-                        style: GoogleFonts.urbanist(
+                        style: GoogleFonts.quattrocento(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ],
@@ -308,20 +299,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.support.withOpacity(0.3),
-                  border: Border.all(color: AppColors.background, width: 3),
+                  color: Colors.grey[200],
+                  border: Border.all(color: Colors.white, width: 3),
                 ),
                 child: ClipOval(
                   child: _currentAvatarPath != null
-                      ? Image.file(
-                          File(_currentAvatarPath!),
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildDefaultAvatar();
-                          },
-                        )
+                      ? _buildAvatarImage(_currentAvatarPath!, 100)
                       : _buildDefaultAvatar(),
                 ),
               ),
@@ -336,11 +319,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                     decoration: BoxDecoration(
                       color: Colors.green,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.background, width: 2),
+                      border: Border.all(color: Colors.white, width: 2),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.check,
-                      color: AppColors.background,
+                      color: Colors.white,
                       size: 16,
                     ),
                   ),
@@ -354,10 +337,10 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             _displayName,
             textAlign: TextAlign.center,
-            style: GoogleFonts.urbanist(
+            style: GoogleFonts.quattrocento(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: Colors.black87,
             ),
           ),
 
@@ -386,7 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -446,15 +429,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
                 child: ClipOval(
                   child: _currentAvatarPath != null
-                      ? Image.file(
-                          File(_currentAvatarPath!),
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildDefaultAvatar(size: 40);
-                          },
-                        )
+                      ? _buildAvatarImage(_currentAvatarPath!, 40)
                       : _buildDefaultAvatar(size: 40),
                 ),
               ),
@@ -534,6 +509,65 @@ class _SettingsScreenState extends State<SettingsScreen>
         ],
       ),
     );
+  }
+
+  /// Build avatar image with proper error handling
+  Widget _buildAvatarImage(String imagePath, double size) {
+    try {
+      // Check if it's a network URL
+      if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return Image.network(
+          imagePath,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('Network image error: $error');
+            return _buildDefaultAvatar(size: size);
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+        );
+      } else {
+        // Local file
+        final file = File(imagePath);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('Local image error: $error');
+              return _buildDefaultAvatar(size: size);
+            },
+          );
+        } else {
+          debugPrint('Local image file does not exist: $imagePath');
+          return _buildDefaultAvatar(size: size);
+        }
+      }
+    } catch (e) {
+      debugPrint('Avatar image error: $e');
+      return _buildDefaultAvatar(size: size);
+    }
   }
 
   /// Build default avatar with user initial
@@ -1123,10 +1157,10 @@ class _SettingsScreenState extends State<SettingsScreen>
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warning,
-              foregroundColor: AppColors.background,
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
             ),
-            child: Text('Đăng xuất', style: GoogleFonts.urbanist()),
+            child: Text('Đăng xuất', style: GoogleFonts.quattrocento()),
           ),
         ],
       ),
