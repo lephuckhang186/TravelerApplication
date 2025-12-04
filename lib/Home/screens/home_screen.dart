@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import '../../Setting/screens/settings_screen.dart';
 import '../../Plan/screens/plan_screen.dart';
-import '../../features/expense_management/analysis_screen.dart';
+import '../../Analysis/screens/analysis_screen.dart';
 import '../../Core/theme/app_theme.dart';
 
 /// Home Screen - Travel & Tourism Dashboard

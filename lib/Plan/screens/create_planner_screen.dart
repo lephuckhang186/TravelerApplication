@@ -373,7 +373,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
               : null,
           budget: budgetAmount,
         );
-        
+
         // Create expense budget if budget amount is provided
         if (budgetAmount != null && createdTrip != null) {
           await _createExpenseBudget(createdTrip.id!, budgetAmount);
@@ -388,9 +388,9 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             : null,
         budget: budgetAmount,
       );
-      
+
       // Create expense budget if budget amount is provided and no provider was used
-      if (budgetAmount != null && createdTrip != null && provider == null) {
+      if (budgetAmount != null && provider == null) {
         await _createExpenseBudget(createdTrip.id!, budgetAmount);
       }
 
@@ -401,9 +401,9 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            budgetAmount != null 
+            budgetAmount != null
                 ? 'Trip "${createdTrip.name}" created with budget ${budgetAmount.toStringAsFixed(0)} VND!'
-                : 'Trip "${createdTrip.name}" created successfully!'
+                : 'Trip "${createdTrip.name}" created successfully!',
           ),
           backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
@@ -434,7 +434,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
   Future<void> _createExpenseBudget(String tripId, double budgetAmount) async {
     try {
       final expenseService = ExpenseService();
-      
+
       // Create trip for expense service
       final trip = Trip(
         startDate: _startDate,
@@ -443,18 +443,18 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         destination: _destinationController.text.trim(),
       );
       await expenseService.createTrip(trip);
-      
+
       // Create budget for the trip
-      final dailyLimit = budgetAmount / (_endDate.difference(_startDate).inDays + 1);
-      
-      final budget = Budget(
-        totalBudget: budgetAmount,
-        dailyLimit: dailyLimit,
-      );
-      
+      final dailyLimit =
+          budgetAmount / (_endDate.difference(_startDate).inDays + 1);
+
+      final budget = Budget(totalBudget: budgetAmount, dailyLimit: dailyLimit);
+
       await expenseService.createBudget(budget);
-      
-      debugPrint('Created expense budget for trip $tripId with amount $budgetAmount VND');
+
+      debugPrint(
+        'Created expense budget for trip $tripId with amount $budgetAmount VND',
+      );
     } catch (e) {
       debugPrint('Failed to create expense budget: $e');
       // Don't throw error as this is supplementary functionality

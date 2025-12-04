@@ -773,6 +773,84 @@ class IntegratedTravelManager:
         # Add to manager
         self.activity_manager.activities[activity.id] = activity
         
+        # ✅ CRITICAL FIX: Save activity to SQLite database for persistence
+        try:
+            from app.database import DatabaseManager
+            db_manager = DatabaseManager()
+            
+            # Get planner_id (trip_id) from activity
+            planner_id = str(getattr(activity, 'trip_id', '') or 'default')
+            
+            # ✅ ENSURE PLANNER EXISTS: Check if planner exists, create if not
+            try:
+                existing_planner = db_manager.get_planner(planner_id, created_by)
+                if not existing_planner:
+                    print(f"📝 CREATING_PLANNER: Planner {planner_id} doesn't exist, creating it")
+                    # Create minimal planner record for foreign key constraint
+                    planner_data = {
+                        'id': planner_id,
+                        'name': f"Auto-created trip {str(planner_id)[:8]}",
+                        'destination': 'Unknown',
+                        'start_date': activity.start_time.date().isoformat() if getattr(activity, 'start_time', None) else None,
+                        'end_date': activity.end_time.date().isoformat() if getattr(activity, 'end_time', None) else None,
+                        'budget': 0,
+                        'created_by': created_by
+                    }
+                    db_manager.create_planner(planner_data, created_by)
+                    print(f"✅ PLANNER_CREATED: Created planner {planner_id} for activity")
+            except Exception as planner_error:
+                print(f"⚠️ PLANNER_CHECK_ERROR: {planner_error}")
+                print(f"🚧 FALLBACK: Attempting to create planner {planner_id} anyway")
+                try:
+                    planner_data = {
+                        'id': planner_id,
+                        'name': f"Fallback trip {str(planner_id)[:8]}",
+                        'destination': 'Unknown',
+                        'start_date': None,
+                        'end_date': None,
+                        'budget': 0,
+                        'created_by': created_by
+                    }
+                    db_manager.create_planner(planner_data, created_by)
+                    print(f"✅ FALLBACK_PLANNER_CREATED: Created fallback planner {planner_id}")
+                except Exception as fallback_error:
+                    print(f"❌ FALLBACK_PLANNER_ERROR: {fallback_error}")
+                    return activity  # Skip SQLite save if planner creation fails
+            
+            # Prepare activity data for SQLite
+            activity_data = {
+                'id': str(activity.id),
+                'name': str(activity.name),
+                'description': str(getattr(activity, 'details', '') or ''),
+                'start_time': activity.start_time.isoformat() if getattr(activity, 'start_time', None) else None,
+                'end_time': activity.end_time.isoformat() if getattr(activity, 'end_time', None) else None,
+                'planner_id': planner_id,  # Use planner_id for database
+                'location': str(getattr(activity, 'location', '') or ''),
+                'check_in': bool(getattr(activity, 'check_in', False)),
+                'created_by': str(activity.created_by),
+                'created_at': activity.created_at.isoformat(),
+                'updated_at': activity.updated_at.isoformat(),
+            }
+            
+            # Handle activity_type conversion safely
+            if hasattr(activity.activity_type, 'value'):
+                activity_data['activity_type'] = str(activity.activity_type.value)
+            elif hasattr(activity.activity_type, 'name'):
+                activity_data['activity_type'] = str(activity.activity_type.name)
+            else:
+                activity_data['activity_type'] = str(activity.activity_type)
+            
+            # Save to SQLite using create_activity method
+            result = db_manager.create_activity(planner_id, activity_data)
+            success = result is not None
+            if success:
+                print(f"✅ ACTIVITY_SAVED: Activity {activity.id} saved to SQLite database with planner_id {planner_id}")
+            else:
+                print(f"⚠️ ACTIVITY_SAVE_WARNING: Failed to save activity {activity.id} to SQLite")
+                
+        except Exception as e:
+            print(f"❌ ACTIVITY_SAVE_ERROR: Failed to save activity {activity.id} to SQLite: {e}")
+        
         return activity
     
     def update_activity_with_expense_sync(self, activity_id: str, **updates):
