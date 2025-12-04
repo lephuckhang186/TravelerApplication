@@ -32,8 +32,6 @@ class GeneralInfoScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildFeaturesCard(),
           const SizedBox(height: 16),
-          _buildPrivacyCard(),
-          const SizedBox(height: 16),
           _buildContactCard(),
           const SizedBox(height: 16),
           _buildVersionCard(),
@@ -197,88 +195,6 @@ class GeneralInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPrivacyCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.security, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Bảo mật & Quyền riêng tư',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildInfoItem(
-              'Mã hóa dữ liệu',
-              'Tất cả dữ liệu được mã hóa SSL/TLS',
-            ),
-            _buildInfoItem(
-              'Quyền riêng tư',
-              'Chúng tôi không chia sẻ thông tin cá nhân',
-            ),
-            _buildInfoItem(
-              'Lưu trữ',
-              'Dữ liệu được lưu trữ an toàn trên cloud',
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _showDocument('Điều khoản sử dụng'),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Điều khoản',
-                      style: GoogleFonts.quattrocento(
-                        color: AppColors.primary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _showDocument('Chính sách bảo mật'),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Bảo mật',
-                      style: GoogleFonts.quattrocento(
-                        color: AppColors.primary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildContactCard() {
     return Card(
@@ -303,9 +219,8 @@ class GeneralInfoScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _buildContactItem(Icons.email, 'Email', 'support@tripwise.vn'),
-            _buildContactItem(Icons.phone, 'Hotline', '1900-1234 (24/7)'),
-            _buildContactItem(Icons.language, 'Website', 'www.tripwise.vn'),
+            _buildContactItem(Icons.email, 'Email', 'teamtripwise@gmail.com'),
+            _buildContactItem(Icons.phone, 'Hotline', '+84 898 999 033'),
             _buildContactItem(Icons.location_on, 'Địa chỉ', 'Tp HCM, Việt Nam'),
           ],
         ),

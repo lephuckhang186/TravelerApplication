@@ -17,6 +17,7 @@ import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
+import 'change_password_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -231,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         // Action Buttons
                         _buildActionButtons(),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
@@ -251,44 +252,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       decoration: const BoxDecoration(color: Color(0xFFF5F7FA)),
       child: Column(
         children: [
-          // Top right "Đổi ảnh nền" button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: _onChangeBackground,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.palette_outlined,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Đổi ảnh nền',
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
           const SizedBox(height: 20),
 
           // Centered Profile Avatar
@@ -494,18 +457,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
           const SizedBox(width: 4),
 
-          // "Đổi ảnh nền" button
-          GestureDetector(
-            onTap: _onChangeBackground,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.palette_outlined,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -592,10 +543,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Utilities Section - 2 horizontal rows with synchronized scrolling
+  /// Utilities Section - 3 items in 1 horizontal row
   Widget _buildUtilitiesSection() {
-    final ScrollController scrollController = ScrollController();
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -610,54 +559,31 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Synchronized scrolling for 2 rows with 4 utilities
-          SizedBox(
-            height: 138, // Height for 2 rows + spacing (65 + 65 + 8)
-            child: ListView(
-              controller: scrollController,
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
+          // Single row with 3 utilities
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
               children: [
-                Column(
-                  children: [
-                    // First row
-                    Row(
-                      children: [
-                        _buildRectangularUtilityItem(
-                          Icons.account_balance_wallet_outlined,
-                          'Quản lý chi tiêu',
-                          const Color(0xFF2196F3), // Blue
-                          () => _onExpenseManagement(),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.lock_outline,
-                          'Đăng nhập và bảo mật',
-                          const Color(0xFF4CAF50), // Green
-                          () => _onSecuritySettings(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Second row
-                    Row(
-                      children: [
-                        _buildRectangularUtilityItem(
-                          Icons.currency_exchange,
-                          'Chuyển đổi tiền tệ',
-                          const Color(0xFFFF9800), // Orange
-                          () => _onCurrencyConverter(),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRectangularUtilityItem(
-                          Icons.translate,
-                          'Dịch văn bản',
-                          const Color(0xFF9C27B0), // Purple
-                          () => _onTranslation(),
-                        ),
-                      ],
-                    ),
-                  ],
+                _buildRectangularUtilityItem(
+                  Icons.account_balance_wallet_outlined,
+                  'Quản lý chi tiêu',
+                  const Color(0xFF2196F3), // Blue
+                  () => _onExpenseManagement(),
+                ),
+                const SizedBox(width: 8),
+                _buildRectangularUtilityItem(
+                  Icons.currency_exchange,
+                  'Chuyển đổi tiền tệ',
+                  const Color(0xFFFF9800), // Orange
+                  () => _onCurrencyConverter(),
+                ),
+                const SizedBox(width: 8),
+                _buildRectangularUtilityItem(
+                  Icons.translate,
+                  'Dịch văn bản',
+                  const Color(0xFF9C27B0), // Purple
+                  () => _onTranslation(),
                 ),
                 const SizedBox(width: 16), // End padding
               ],
@@ -903,6 +829,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           _buildMenuDivider(),
           _buildMenuListItem(
+            Icons.lock_reset_outlined,
+            'Đổi mật khẩu',
+            () => _onChangePassword(),
+          ),
+          _buildMenuDivider(),
+          _buildMenuListItem(
             Icons.share_outlined,
             'Chia sẻ góp ý',
             () => _onShareFeedback(),
@@ -912,12 +844,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             Icons.info_outline,
             'Thông tin chung',
             () => _onGeneralInfo(),
-          ),
-          _buildMenuDivider(),
-          _buildMenuListItem(
-            Icons.palette_outlined,
-            'Đổi hình nền',
-            () => _onChangeBackground(),
           ),
         ],
       ),
@@ -1061,46 +987,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _onChangeBackground() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Chọn ảnh nền',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Chụp ảnh mới'),
-              onTap: () {
-                Navigator.pop(context);
-                // Camera functionality
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Chọn từ thư viện'),
-              onTap: () {
-                Navigator.pop(context);
-                // Photo library functionality
-              },
-            ),
-          ],
-        ),
-      ),
+  void _onChangePassword() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
     );
   }
+
 
   void _onLogout() {
     showDialog(

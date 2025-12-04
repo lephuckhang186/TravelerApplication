@@ -14,24 +14,24 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
 
   final List<Map<String, dynamic>> _helpCategories = [
     {
-      'title': 'Khám phá & Du lịch',
-      'icon': Icons.explore,
-      'color': AppColors.primary,
+      'title': 'Bắt đầu sử dụng',
+      'icon': Icons.rocket_launch,
+      'color': Colors.purple,
       'items': [
         {
-          'question': 'Làm thế nào để tìm kiếm địa điểm du lịch?',
+          'question': 'Ứng dụng có những tính năng gì?',
           'answer':
-              'Bạn có thể sử dụng tính năng tìm kiếm trên trang chủ để khám phá các địa điểm du lịch. Gõ tên thành phố hoặc loại hoạt động bạn muốn, ứng dụng sẽ gợi ý các địa điểm phù hợp với sở thích của bạn.',
+              'Ứng dụng có 3 tab chính:\n• Plan: Lập kế hoạch du lịch, tìm kiếm địa điểm, sử dụng AI Assistant\n• Analysis: Quản lý chi tiêu, xem báo cáo tài chính\n• Setting: Cài đặt tài khoản, tiện ích, hỗ trợ',
         },
         {
-          'question': 'Có thể xem thông tin chi tiết về điểm đến không?',
+          'question': 'Làm thế nào để điều hướng trong ứng dụng?',
           'answer':
-              'Có! Mỗi điểm đến đều có thông tin chi tiết bao gồm: mô tả, hình ảnh, đánh giá từ người dùng khác, giờ mở cửa, giá vé (nếu có), và cách di chuyển đến đó.',
+              'Sử dụng thanh điều hướng dưới cùng để chuyển đổi giữa 3 tab chính. Mỗi tab có các tính năng và màn hình con riêng biệt.',
         },
         {
-          'question': 'Làm sao để lưu địa điểm yêu thích?',
+          'question': 'Tôi nên bắt đầu từ đâu?',
           'answer':
-              'Bạn chỉ cần nhấn vào biểu tượng trái tim ❤️ ở góc phải trên của mỗi địa điểm. Các địa điểm đã lưu sẽ xuất hiện trong danh sách yêu thích của bạn.',
+              'Khuyến nghị bắt đầu từ tab "Plan" để tạo kế hoạch du lịch đầu tiên. Sau đó sử dụng tab "Analysis" để theo dõi chi phí và tab "Setting" để tùy chỉnh ứng dụng.',
         },
       ],
     },
@@ -87,12 +87,17 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         {
           'question': 'Cách thay đổi thông tin cá nhân?',
           'answer':
-              'Vào "Me" → nhấn vào avatar → "Chỉnh sửa hồ sơ". Bạn có thể cập nhật tên, ảnh đại diện, và thông tin liên hệ.',
+              'Vào tab "Setting" → nhấn vào "Trang cá nhân" hoặc avatar của bạn. Tại đây bạn có thể cập nhật tên, ảnh đại diện, và thông tin liên hệ.',
         },
         {
           'question': 'Dữ liệu của tôi có an toàn không?',
           'answer':
               'Chúng tôi sử dụng mã hóa SSL và lưu trữ dữ liệu trên server bảo mật. Thông tin cá nhân không được chia sẻ với bên thứ ba mà không có sự đồng ý của bạn.',
+        },
+        {
+          'question': 'Các tiện ích trong Setting có gì?',
+          'answer':
+              'Tab Setting cung cấp nhiều tiện ích hữu ích:\n• Chuyển đổi tiền tệ\n• Dịch văn bản\n• Quản lý chi tiêu\n• Travel Stats\n• Cài đặt thông báo\n• Thay đổi mật khẩu',
         },
       ],
     },

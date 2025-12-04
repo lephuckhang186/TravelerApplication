@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../Core/theme/app_theme.dart';
+import '../services/email_service_web.dart';
 
 class ShareFeedbackScreen extends StatefulWidget {
   const ShareFeedbackScreen({super.key});
@@ -365,8 +366,8 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               child: _buildQuickContactCard(
                 Icons.email,
                 'Email',
-                'support@tripwise.com',
-                () => _showSnackBar('Đang mở ứng dụng email...'),
+                'teamtripwise@gmail.com',
+                () => _openDirectEmail(),
               ),
             ),
             const SizedBox(width: 12),
@@ -374,7 +375,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               child: _buildQuickContactCard(
                 Icons.phone,
                 'Hotline',
-                '1900-1234',
+                '+84 898 999 033',
                 () => _showSnackBar('Đang gọi hotline...'),
               ),
             ),
@@ -439,31 +440,261 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
     }
   }
 
-  void _submitFeedback() {
-    // Simulate submission
+  void _submitFeedback() async {
+    if (_feedbackController.text.trim().isEmpty) {
+      _showSnackBar('Vui lòng nhập chi tiết góp ý trước khi gửi');
+      return;
+    }
+
+    // Hiển thị loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              'Đang gửi góp ý...',
+              style: GoogleFonts.quattrocento(),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Gửi email (mở email client)
+      final success = await EmailService.sendFeedbackEmail(
+        rating: _rating,
+        category: _selectedCategory,
+        feedback: _feedbackController.text.trim(),
+        userEmail: _emailController.text.trim().isNotEmpty 
+            ? _emailController.text.trim() 
+            : null,
+      );
+
+      // Đóng loading dialog
+      Navigator.pop(context);
+
+      if (success) {
+        // Hiển thị dialog thành công (email client đã mở)
+        _showEmailOpenedDialog();
+      } else {
+        // Hiển thị dialog fallback (copy content)
+        _showManualEmailDialog();
+      }
+    } catch (e) {
+      // Đóng loading dialog
+      Navigator.pop(context);
+      
+      // Hiển thị dialog fallback
+      _showManualEmailDialog();
+    }
+  }
+
+  void _showEmailOpenedDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 24),
+            Icon(Icons.email, color: Colors.green, size: 24),
             const SizedBox(width: 8),
             Text(
-              'Cảm ơn bạn!',
+              'Email đã mở!',
+              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Email client đã được mở với nội dung góp ý được điền sẵn.',
+              style: GoogleFonts.quattrocento(),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Vui lòng kiểm tra email client và nhấn Send để gửi góp ý đến team TripWise.',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 13,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showManualEmailDialog();
+            },
+            child: Text(
+              'Xem nội dung',
+              style: GoogleFonts.quattrocento(color: AppColors.primary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+              _resetForm();
+              _showSnackBar('Cảm ơn bạn đã gửi góp ý! 🎉');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: Text(
+              'Hoàn thành',
+              style: GoogleFonts.quattrocento(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(Icons.error, color: Colors.red, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              'Mở email client',
               style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
             ),
           ],
         ),
         content: Text(
-          'Góp ý của bạn đã được gửi thành công. Chúng tôi sẽ xem xét và cải thiện ứng dụng dựa trên phản hồi của bạn.',
+          'Ứng dụng sẽ mở email client với nội dung góp ý đã được điền sẵn. Bạn chỉ cần nhấn Send trong email client.',
           style: GoogleFonts.quattrocento(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Hủy',
+              style: GoogleFonts.quattrocento(color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showManualEmailDialog();
+            },
+            child: Text(
+              'Copy nội dung',
+              style: GoogleFonts.quattrocento(color: AppColors.primary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // Mở ứng dụng email với địa chỉ team
+              final success = await EmailService.sendFeedbackEmail(
+                rating: _rating,
+                category: _selectedCategory,
+                feedback: _feedbackController.text.trim(),
+                userEmail: _emailController.text.trim().isNotEmpty 
+                    ? _emailController.text.trim() 
+                    : null,
+              );
+              if (success) {
+                _showSnackBar('Đã mở email client. Vui lòng kiểm tra và gửi email.');
+              } else {
+                _showManualEmailDialog();
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: Text(
+              'Mở Email',
+              style: GoogleFonts.quattrocento(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showManualEmailDialog() {
+    final emailInfo = EmailService.getManualEmailInfo(
+      _rating,
+      _selectedCategory,
+      _feedbackController.text.trim(),
+      _emailController.text.trim().isNotEmpty 
+          ? _emailController.text.trim() 
+          : null,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(Icons.content_copy, color: AppColors.primary, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              'Thông tin Email',
+              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Nội dung email đã được copy vào clipboard. Bạn có thể paste vào email client:',
+                style: GoogleFonts.quattrocento(),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: SelectableText(
+                  emailInfo,
+                  style: GoogleFonts.courierPrime(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context);
+              _resetForm();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: Text(
@@ -474,6 +705,36 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
         ],
       ),
     );
+  }
+
+  void _resetForm() {
+    setState(() {
+      _rating = 5;
+      _selectedCategory = 'Tính năng mới';
+      _feedbackController.clear();
+      _emailController.clear();
+    });
+  }
+
+  void _openDirectEmail() async {
+    try {
+      final success = await EmailService.sendFeedbackEmail(
+        rating: _rating,
+        category: 'Liên hệ trực tiếp',
+        feedback: 'Người dùng muốn liên hệ trực tiếp với team',
+        userEmail: _emailController.text.trim().isNotEmpty 
+            ? _emailController.text.trim() 
+            : null,
+      );
+      
+      if (success) {
+        _showSnackBar('Đã mở ứng dụng email để liên hệ với team');
+      } else {
+        _showSnackBar('Không thể mở ứng dụng email');
+      }
+    } catch (e) {
+      _showSnackBar('Lỗi: Không thể mở email');
+    }
   }
 
   void _showSnackBar(String message) {
