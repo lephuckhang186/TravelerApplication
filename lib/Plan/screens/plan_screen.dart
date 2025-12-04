@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../Core/theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';
@@ -100,23 +100,24 @@ class _PlanScreenState extends State<PlanScreen>
         final remoteTrips = await _tripService.getTrips();
         print('DEBUG: Fetched ${remoteTrips.length} trips from API');
 
-      // Always sync with API result - if API returns empty, clear local cache
-      await _storageService.saveTrips(remoteTrips);
-      if (mounted) {
-        setState(() {
-          _trips
-            ..clear()
-            ..addAll(remoteTrips);
-        });
-        if (remoteTrips.isNotEmpty) {
-          print('DEBUG: Updated UI with ${_trips.length} remote trips');
-        } else {
-          print('DEBUG: API returned no trips - cleared local cache');
+        // Always sync with API result - if API returns empty, clear local cache
+        await _storageService.saveTrips(remoteTrips);
+        if (mounted) {
+          setState(() {
+            _trips
+              ..clear()
+              ..addAll(remoteTrips);
+          });
+          if (remoteTrips.isNotEmpty) {
+            print('DEBUG: Updated UI with ${_trips.length} remote trips');
+          } else {
+            print('DEBUG: API returned no trips - cleared local cache');
+          }
         }
+      } catch (e) {
+        print('DEBUG: Error loading trips: $e');
+        // Preserve whatever list we currently have and surface no UI error
       }
-    } catch (e) {
-      print('DEBUG: Error loading trips: $e');
-      // Preserve whatever list we currently have and surface no UI error
     } finally {
       if (mounted) {
         setState(() {
