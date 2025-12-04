@@ -118,6 +118,82 @@ class Activity:
 class ActivityManager:
     def __init__(self):
         self.activities: Dict[str, Activity] = {}
+        # ✅ CRITICAL FIX: Load existing activities from SQLite database
+        self._load_activities_from_database()
+    
+    def _load_activities_from_database(self):
+        """Load all activities from SQLite database into memory"""
+        try:
+            from app.database import DatabaseManager
+            db_manager = DatabaseManager()
+            from datetime import datetime
+            
+            # Get all activities from database
+            db_activities = db_manager.get_all_activities()
+            
+            if db_activities:
+                for db_activity in db_activities:
+                    try:
+                        # Convert database record to Activity object
+                        activity_data = {
+                            'id': db_activity.get('id'),
+                            'name': db_activity.get('name', ''),
+                            'activity_type': ActivityType(db_activity.get('activity_type', 'OTHER')),
+                            'details': db_activity.get('description', '') or db_activity.get('details', ''),
+                            'location': db_activity.get('location'),
+                            'contact': db_activity.get('contact'),
+                            'notes': db_activity.get('notes', ''),
+                            'tags': db_activity.get('tags', []) or [],
+                            'check_in': db_activity.get('check_in', False),
+                            'created_by': db_activity.get('created_by', ''),
+                        }
+                        
+                        # Handle datetime fields
+                        if db_activity.get('start_time'):
+                            try:
+                                activity_data['start_time'] = datetime.fromisoformat(db_activity['start_time'].replace('Z', '+00:00'))
+                            except:
+                                activity_data['start_time'] = None
+                                
+                        if db_activity.get('end_time'):
+                            try:
+                                activity_data['end_time'] = datetime.fromisoformat(db_activity['end_time'].replace('Z', '+00:00'))
+                            except:
+                                activity_data['end_time'] = None
+                                
+                        if db_activity.get('created_at'):
+                            try:
+                                activity_data['created_at'] = datetime.fromisoformat(db_activity['created_at'].replace('Z', '+00:00'))
+                            except:
+                                activity_data['created_at'] = datetime.now()
+                        else:
+                            activity_data['created_at'] = datetime.now()
+                            
+                        if db_activity.get('updated_at'):
+                            try:
+                                activity_data['updated_at'] = datetime.fromisoformat(db_activity['updated_at'].replace('Z', '+00:00'))
+                            except:
+                                activity_data['updated_at'] = datetime.now()
+                        else:
+                            activity_data['updated_at'] = datetime.now()
+                        
+                        # Add trip_id if available
+                        if db_activity.get('trip_id'):
+                            activity_data['trip_id'] = db_activity['trip_id']
+                        
+                        # Create Activity object and add to memory
+                        activity = Activity(**activity_data)
+                        self.activities[activity.id] = activity
+                        
+                    except Exception as e:
+                        print(f"⚠️ ACTIVITY_LOAD_WARNING: Failed to load activity {db_activity.get('id', 'unknown')}: {e}")
+                
+                print(f"✅ ACTIVITIES_LOADED: Loaded {len(self.activities)} activities from database into memory")
+            else:
+                print("ℹ️ ACTIVITIES_INIT: No activities found in database")
+                
+        except Exception as e:
+            print(f"❌ ACTIVITIES_LOAD_ERROR: Failed to load activities from database: {e}")
         
     def add_activity(self, activity: Activity) -> str:
         """Adds an activity to the manager and returns its ID."""

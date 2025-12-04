@@ -46,7 +46,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       _initializeExpenseProvider();
     });
   }
-  
+
   void _initializeExpenseProvider() {
     try {
       if (mounted) {
@@ -56,7 +56,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       }
     } catch (e) {
       // ExpenseProvider not available - continue without expense integration
-      debugPrint('ExpenseProvider not available, expense integration disabled: $e');
+      debugPrint(
+        'ExpenseProvider not available, expense integration disabled: $e',
+      );
       _expenseProvider = null;
     }
   }
@@ -543,15 +545,19 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   void _showEditActivityModal(ActivityModel activity) {
     final titleController = TextEditingController(text: activity.title);
-    final descriptionController = TextEditingController(text: activity.description ?? '');
-    final expectedCostController = TextEditingController(
-      text: activity.budget?.estimatedCost?.toString() ?? ''
+    final descriptionController = TextEditingController(
+      text: activity.description ?? '',
     );
-    dynamic selectedPlace = activity.location != null ? {
-      'display_name': activity.location!.name,
-      'lat': activity.location!.latitude?.toString() ?? '0',
-      'lon': activity.location!.longitude?.toString() ?? '0',
-    } : null;
+    final expectedCostController = TextEditingController(
+      text: activity.budget?.estimatedCost.toString() ?? '',
+    );
+    dynamic selectedPlace = activity.location != null
+        ? {
+            'display_name': activity.location!.name,
+            'lat': activity.location!.latitude?.toString() ?? '0',
+            'lon': activity.location!.longitude?.toString() ?? '0',
+          }
+        : null;
     ActivityType selectedType = activity.activityType;
     DateTime selectedDate = activity.startDate ?? _trip.startDate;
     TimeOfDay selectedTime = TimeOfDay(
@@ -575,8 +581,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           child: StatefulBuilder(
             builder: (context, setModalState) {
               return SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -636,8 +644,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           // Get category name from selected activity type
-                          String categoryName = _getActivityTypeSearchName(selectedType);
-                          
+                          String categoryName = _getActivityTypeSearchName(
+                            selectedType,
+                          );
+
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -652,7 +662,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             setModalState(() {
                               selectedPlace = result['place'];
                               titleController.text = result['category'];
-                              descriptionController.text = result['place']['display_name'];
+                              descriptionController.text =
+                                  result['place']['display_name'];
                             });
                           }
                         },
@@ -672,8 +683,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: expectedCostController,
-                      label: checkInStatus ? 'Real Cost (VND)' : 'Expected Cost (VND)',
-                      hint: checkInStatus 
+                      label: checkInStatus
+                          ? 'Real Cost (VND)'
+                          : 'Expected Cost (VND)',
+                      hint: checkInStatus
                           ? 'Enter actual cost spent'
                           : 'Enter estimated cost (optional)',
                       keyboardType: TextInputType.number,
@@ -724,7 +737,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         onPressed: () {
                           final title = titleController.text.trim();
                           if (title.isEmpty) return;
-                          
+
                           final startDate = DateTime(
                             selectedDate.year,
                             selectedDate.month,
@@ -732,26 +745,33 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             selectedTime.hour,
                             selectedTime.minute,
                           );
-                          final expectedCost = expectedCostController.text.trim().isEmpty 
-                              ? null 
-                              : double.tryParse(expectedCostController.text.trim());
-                          
+                          final expectedCost =
+                              expectedCostController.text.trim().isEmpty
+                              ? null
+                              : double.tryParse(
+                                  expectedCostController.text.trim(),
+                                );
+
                           // Create budget preserving actual cost if exists
                           BudgetModel? budget;
                           if (expectedCost != null) {
                             budget = BudgetModel(
                               estimatedCost: expectedCost,
-                              actualCost: activity.budget?.actualCost, // Preserve actual cost
+                              actualCost: activity
+                                  .budget
+                                  ?.actualCost, // Preserve actual cost
                               currency: 'VND',
                               category: activity.budget?.category,
                             );
                           } else if (activity.budget != null) {
-                            budget = activity.budget; // Keep existing budget if no new expected cost
+                            budget = activity
+                                .budget; // Keep existing budget if no new expected cost
                           }
-                          
+
                           final updatedActivity = activity.copyWith(
                             title: title,
-                            description: descriptionController.text.trim().isEmpty
+                            description:
+                                descriptionController.text.trim().isEmpty
                                 ? null
                                 : descriptionController.text.trim(),
                             activityType: selectedType,
@@ -761,8 +781,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             location: selectedPlace != null
                                 ? LocationModel(
                                     name: selectedPlace['display_name'],
-                                    latitude: double.tryParse(selectedPlace['lat']),
-                                    longitude: double.tryParse(selectedPlace['lon']),
+                                    latitude: double.tryParse(
+                                      selectedPlace['lat'],
+                                    ),
+                                    longitude: double.tryParse(
+                                      selectedPlace['lon'],
+                                    ),
                                   )
                                 : null,
                           );
@@ -885,8 +909,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           // Get category name from selected activity type
-                          String categoryName = _getActivityTypeSearchName(selectedType);
-                          
+                          String categoryName = _getActivityTypeSearchName(
+                            selectedType,
+                          );
+
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -922,8 +948,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: expectedCostController,
-                      label: checkInStatus ? 'Real Cost (VND)' : 'Expected Cost (VND)',
-                      hint: checkInStatus 
+                      label: checkInStatus
+                          ? 'Real Cost (VND)'
+                          : 'Expected Cost (VND)',
+                      hint: checkInStatus
                           ? 'Enter actual cost spent'
                           : 'Enter estimated cost (optional)',
                       keyboardType: TextInputType.number,
@@ -1261,10 +1289,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   void _showEditTripDialog() {
     final nameController = TextEditingController(text: _trip.name);
-    final destinationController = TextEditingController(text: _trip.destination);
-    final descriptionController = TextEditingController(text: _trip.description ?? '');
+    final destinationController = TextEditingController(
+      text: _trip.destination,
+    );
+    final descriptionController = TextEditingController(
+      text: _trip.description ?? '',
+    );
     final budgetController = TextEditingController(
-      text: _trip.budget?.estimatedCost?.toString() ?? ''
+      text: _trip.budget?.estimatedCost.toString() ?? '',
     );
 
     showDialog(
@@ -1388,15 +1420,19 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       }
 
       // Try to update on server if activity has an ID and not local
-      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+      if (updatedActivity.id != null &&
+          !updatedActivity.id!.startsWith('local_')) {
         try {
-          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
+          await _tripService.updateActivity(
+            updatedActivity.id!,
+            updatedActivity,
+          );
         } catch (e) {
           debugPrint('Failed to update activity on server: $e');
           // Continue with local update even if server fails
         }
       }
-      
+
       setState(() {
         _activities[index] = updatedActivity;
         // Resort activities by start date
@@ -1408,7 +1444,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         });
       });
       await _persistTripChanges();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1883,9 +1919,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     if (mounted) {
       String message = 'Checked in!';
       if (actualCost > 0) {
-        message += _expenseProvider != null ? ' Expense created.' : ' Cost recorded.';
+        message += _expenseProvider != null
+            ? ' Expense created.'
+            : ' Cost recorded.';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
@@ -1898,8 +1936,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Update activity check-in status
   Future<void> _updateActivityCheckIn(ActivityModel updatedActivity) async {
-    debugPrint('Updating activity check-in: ${updatedActivity.title}, checkIn: ${updatedActivity.checkIn}');
-    
+    debugPrint(
+      'Updating activity check-in: ${updatedActivity.title}, checkIn: ${updatedActivity.checkIn}',
+    );
+
     final index = _activities.indexWhere((a) => a.id == updatedActivity.id);
     if (index == -1) {
       debugPrint('Activity not found for check-in update');
@@ -1907,9 +1947,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
 
     // Try to update on server if activity has an ID and not local
-    if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+    if (updatedActivity.id != null &&
+        !updatedActivity.id!.startsWith('local_')) {
       try {
-        debugPrint('Syncing check-in to server for activity: ${updatedActivity.id}');
+        debugPrint(
+          'Syncing check-in to server for activity: ${updatedActivity.id}',
+        );
         await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
         debugPrint('Successfully synced check-in to server');
       } catch (e) {
@@ -1938,7 +1981,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       // Only try expense integration if provider is available
       if (_expenseProvider != null) {
         final success = await _integrationService.syncActivityExpense(activity);
-        
+
         if (!success) {
           // Fallback to direct expense service call
           await _expenseService.createExpenseFromActivity(
@@ -1949,198 +1992,18 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             tripId: _trip.id,
           );
         }
-        debugPrint('Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND)');
+        debugPrint(
+          'Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND)',
+        );
       } else {
         // Log activity cost without expense integration
-        debugPrint('Activity cost recorded (expense integration disabled): ${activity.title} (${activity.budget!.actualCost} VND)');
+        debugPrint(
+          'Activity cost recorded (expense integration disabled): ${activity.title} (${activity.budget!.actualCost} VND)',
+        );
       }
     } catch (e) {
       debugPrint('Failed to create expense for checked-in activity: $e');
       // Don't throw error - continue without expense integration
-    }
-  }
-
-  void _showRealCostInput(ActivityModel activity) {
-    final costController = TextEditingController();
-    if (activity.budget?.actualCost != null) {
-      costController.text = activity.budget!.actualCost!.toString();
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Add Real Cost',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Activity: ${activity.title}',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildTextField(
-                controller: costController,
-                label: 'Actual Cost (VND)',
-                hint: 'Enter the real cost spent',
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: GoogleFonts.inter(color: Colors.grey.shade600),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () =>
-                          _saveRealCost(activity, costController.text),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Save'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _saveRealCost(ActivityModel activity, String costText) async {
-    final cost = double.tryParse(costText.trim());
-    if (cost == null || cost < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid cost amount'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    Navigator.pop(context);
-
-    try {
-      // Update budget with actual cost
-      final existingBudget =
-          activity.budget ?? BudgetModel(estimatedCost: 0, currency: 'VND');
-      final updatedBudget = BudgetModel(
-        estimatedCost: existingBudget.estimatedCost,
-        actualCost: cost,
-        currency: existingBudget.currency,
-      );
-      final updatedActivity = activity.copyWith(budget: updatedBudget);
-
-      // Update in memory
-      final index = _activities.indexOf(activity);
-      if (index != -1) {
-        setState(() {
-          _activities[index] = updatedActivity;
-        });
-      }
-
-      await _persistTripChanges();
-
-      // Sync with expense management
-      await _syncExpense(updatedActivity);
-
-      if (mounted) {
-        String message = _expenseProvider != null 
-            ? 'Real cost saved and synced to expenses!' 
-            : 'Real cost saved successfully!';
-            
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save cost: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _syncExpense(ActivityModel activity) async {
-    if (activity.budget?.actualCost == null) return;
-
-    try {
-      // Only sync if expense provider is available
-      if (_expenseProvider != null) {
-        // Use integration service for better tracking
-        final success = await _integrationService.syncActivityExpense(activity);
-        
-        if (!success) {
-          // Fallback to direct service call if integration fails
-          await _expenseService.createExpenseFromActivity(
-            amount: activity.budget!.actualCost!,
-            category: activity.activityType.value,
-            description: '${activity.title}',
-            activityId: activity.id,
-            tripId: _trip.id,
-          );
-        }
-        debugPrint('Expense synced successfully for: ${activity.title}');
-      } else {
-        debugPrint('Expense sync skipped (provider not available) for: ${activity.title}');
-      }
-    } catch (e) {
-      debugPrint('Failed to sync expense: $e');
-      // Don't show error to user as this is background sync
     }
   }
 }

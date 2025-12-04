@@ -370,6 +370,20 @@ class DatabaseManager:
         
         return self.get_activity(activity_id)
     
+    def get_all_activities(self) -> List[Dict[str, Any]]:
+        """Get all activities from database"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute("""
+                    SELECT * FROM activities ORDER BY created_at DESC
+                """)
+                activities = [dict(row) for row in cursor.fetchall()]
+                print(f"✅ DB_ACTIVITIES_LOADED: Found {len(activities)} activities in database")
+                return activities
+        except Exception as e:
+            print(f"❌ DB_ACTIVITIES_ERROR: Failed to load activities: {e}")
+            return []
+    
     def get_planner_activities(self, planner_id: str) -> List[Dict[str, Any]]:
         """Get all activities for a planner"""
         with self.get_connection() as conn:

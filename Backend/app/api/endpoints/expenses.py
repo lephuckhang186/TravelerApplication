@@ -23,6 +23,7 @@ class ExpenseCreateRequest(BaseModel):
     category: ActivityType  = Field(..., description="Expense category")
     description: str = Field("", max_length=500, description="Optional expense description")
     expense_date: Optional[datetime] = Field(None, description="Expense date (defaults to now)")
+    planner_id: Optional[str] = Field(None, description="Trip/Planner ID to associate expense with")
 
 class ExpenseResponse(BaseModel):
     id: str
@@ -282,6 +283,8 @@ async def create_expense(
         print(f"  Amount: {expense_request.amount}")
         print(f"  Category: {expense_request.category}")
         print(f"  Trip ID provided: {trip_id}")
+        print(f"  Planner ID in request: {expense_request.planner_id}")
+        print(f"  Full request object: {expense_request.__dict__}")
         
         # Validate input
         if expense_request.amount <= 0:
@@ -297,8 +300,11 @@ async def create_expense(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Category is required"
             )
+        
+        # Determine trip_id: prioritize request body planner_id, then query parameter, then fallback
+        final_trip_id = expense_request.planner_id or trip_id
             
-        if not trip_id:
+        if not final_trip_id:
             print(f"📍 TRIP_LOOKUP: No trip_id provided, looking for user trips...")
             # Get user's most recent trip as fallback
             trips = db_manager.get_user_trips(current_user.id)
@@ -310,8 +316,10 @@ async def create_expense(
                     detail="No trips found. Please create a trip first before adding expenses."
                 )
             else:
-                trip_id = trips[0]['id']  # Use most recent trip
-                print(f"📝 AUTO_ASSIGN: Using most recent trip {trip_id} for expense")
+                final_trip_id = trips[0]['id']  # Use most recent trip
+                print(f"📝 AUTO_ASSIGN: Using most recent trip {final_trip_id} for expense")
+        else:
+            print(f"📝 TRIP_ASSIGNED: Using specified trip {final_trip_id} for expense")
         
         # Create expense data
         expense_data = {
@@ -323,10 +331,10 @@ async def create_expense(
         }
         
         # Create expense in database
-        print(f"💾 DATABASE_CREATE: Creating expense for trip {trip_id}")
+        print(f"💾 DATABASE_CREATE: Creating expense for trip {final_trip_id}")
         try:
-            expense = db_manager.create_expense_for_trip(trip_id, current_user.id, expense_data)
-            print(f"✅ SUCCESS: Created expense {expense['id']} for trip {trip_id}")
+            expense = db_manager.create_expense_for_trip(final_trip_id, current_user.id, expense_data)
+            print(f"✅ SUCCESS: Created expense {expense['id']} for trip {final_trip_id}")
         except ValueError as ve:
             print(f"❌ DATABASE_ERROR: {ve}")
             raise HTTPException(

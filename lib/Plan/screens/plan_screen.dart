@@ -6,8 +6,6 @@ import '../../Login/services/user_service.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';
 import '../models/trip_model.dart';
-import '../services/trip_planning_service.dart';
-import '../services/trip_storage_service.dart';
 import '../providers/trip_planning_provider.dart';
 
 class PlanScreen extends StatefulWidget {
@@ -20,22 +18,23 @@ class PlanScreen extends StatefulWidget {
 class _PlanScreenState extends State<PlanScreen>
     with AutomaticKeepAliveClientMixin {
   String _displayName = 'User';
-  final List<TripModel> _trips = [];
-  bool _isLoading = false;
-  final TripPlanningService _tripService = TripPlanningService();
-  final TripStorageService _storageService = TripStorageService();
 
-  // Add missing search variables
+  // 🎯 Đã loại bỏ List<TripModel> _trips và bool _isLoading
+  // 🎯 Đã loại bỏ TripPlanningService _tripService và TripStorageService _storageService
+
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  List<TripModel> get _visibleTrips {
+  // 🎯 Sửa: Thay thế getter _visibleTrips bằng một hàm nhận vào danh sách trips từ Provider
+  List<TripModel> _getVisibleTrips(List<TripModel> allTrips) {
     if (_searchQuery.isEmpty) {
-      print('DEBUG: No search query, returning all ${_trips.length} trips');
-      return _trips;
+      debugPrint(
+        'DEBUG: No search query, returning all ${allTrips.length} trips',
+      );
+      return allTrips;
     }
     final query = _searchQuery.toLowerCase();
-    final filtered = _trips.where((trip) {
+    final filtered = allTrips.where((trip) {
       final nameMatch = trip.name.toLowerCase().contains(query);
       final destinationMatch = trip.destination.toLowerCase().contains(query);
       final descriptionMatch = (trip.description ?? '').toLowerCase().contains(
@@ -43,20 +42,24 @@ class _PlanScreenState extends State<PlanScreen>
       );
       return nameMatch || destinationMatch || descriptionMatch;
     }).toList();
-    print(
-      'DEBUG: Search query "$_searchQuery" filtered ${_trips.length} trips to ${filtered.length}',
+    debugPrint(
+      'DEBUG: Search query "$_searchQuery" filtered ${allTrips.length} trips to ${filtered.length}',
     );
     return filtered;
   }
 
   @override
-  bool get wantKeepAlive => false;
+  bool get wantKeepAlive => true; // Thay đổi thành true để giữ trạng thái màn hình
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _loadTrips();
+
+    // 🎯 Sửa: Gọi initialize() của Provider trong initState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<TripPlanningProvider>(context, listen: false).initialize();
+    });
   }
 
   @override
@@ -70,66 +73,30 @@ class _PlanScreenState extends State<PlanScreen>
     final profile = userService.getUserProfile();
     final username = await userService.getDisplayName();
 
-    setState(() {
-      _displayName = profile['fullName']?.isNotEmpty == true
-          ? profile['fullName']!
-          : username;
-    });
-  }
-
-  void _loadTrips() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // First load from local storage for immediate display
-      final cachedTrips = await _storageService.loadTrips();
-      print('DEBUG: Loaded ${cachedTrips.length} cached trips');
-      if (mounted && cachedTrips.isNotEmpty) {
-        setState(() {
-          _trips
-            ..clear()
-            ..addAll(cachedTrips);
-        });
-        print('DEBUG: Displaying ${_trips.length} cached trips');
-      }
-
-      // Then fetch from API to get latest data
-      try {
-        final remoteTrips = await _tripService.getTrips();
-        print('DEBUG: Fetched ${remoteTrips.length} trips from API');
-
-      // Always sync with API result - if API returns empty, clear local cache
-      await _storageService.saveTrips(remoteTrips);
-      if (mounted) {
-        setState(() {
-          _trips
-            ..clear()
-            ..addAll(remoteTrips);
-        });
-        if (remoteTrips.isNotEmpty) {
-          print('DEBUG: Updated UI with ${_trips.length} remote trips');
-        } else {
-          print('DEBUG: API returned no trips - cleared local cache');
-        }
-      }
-    } catch (e) {
-      print('DEBUG: Error loading trips: $e');
-      // Preserve whatever list we currently have and surface no UI error
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        print('DEBUG: Final trip count: ${_trips.length}');
-      }
+    if (mounted) {
+      setState(() {
+        _displayName = profile['fullName']?.isNotEmpty == true
+            ? profile['fullName']!
+            : username;
+      });
     }
   }
+
+  // 🎯 Đã loại bỏ hàm _loadTrips() thủ công
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    // 🎯 Sửa: Sử dụng context.watch để lắng nghe thay đổi từ TripPlanningProvider
+    final tripProvider = context.watch<TripPlanningProvider>();
+    final allTrips = tripProvider.trips;
+    final isLoading = tripProvider.isLoading;
+    final visibleTrips = _getVisibleTrips(allTrips);
+
+    debugPrint(
+      'DEBUG: PlanScreen building - Total Trips: ${allTrips.length}, Visible Trips: ${visibleTrips.length}, IsLoading: $isLoading',
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -231,9 +198,9 @@ class _PlanScreenState extends State<PlanScreen>
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: _isLoading
+              child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _visibleTrips.isEmpty
+                  : visibleTrips.isEmpty
                   ? Center(
                       child: Text(
                         _searchQuery.isEmpty
@@ -246,10 +213,10 @@ class _PlanScreenState extends State<PlanScreen>
                       ),
                     )
                   : ListView.builder(
-                      itemCount: _visibleTrips.length,
+                      itemCount: visibleTrips.length,
                       itemBuilder: (context, index) {
-                        final trip = _visibleTrips[index];
-                        print(
+                        final trip = visibleTrips[index];
+                        debugPrint(
                           'DEBUG: Building trip card ${index + 1}: ${trip.name}',
                         );
                         return _buildTripCard(trip, index);
@@ -258,14 +225,14 @@ class _PlanScreenState extends State<PlanScreen>
             ),
           ),
 
-          // Fixed height spacer instead of flexible Spacer to ensure ListView gets proper space
+          // Fixed height spacer
           const SizedBox(height: 20),
         ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(
-          bottom: 50, // Đẩy nút + lên cao hơn để tránh Dynamic Island
-        ), // Đẩy nút + lên cao hơn để tránh dính chat box
+          bottom: 50, // Đẩy nút + lên cao hơn
+        ),
         child: FloatingActionButton(
           onPressed: () => _showCreateTripModal(context),
           backgroundColor: AppColors.primary,
@@ -392,12 +359,9 @@ class _PlanScreenState extends State<PlanScreen>
   }
 
   Future<void> _navigateToTripDetail(TripModel trip) async {
-    // Use Provider if available, otherwise navigate directly
-    try {
-      context.read<TripPlanningProvider>().setCurrentTrip(trip);
-    } catch (e) {
-      // Provider might not be available, continue with navigation
-    }
+    // 🎯 Sửa: Luôn sử dụng Provider để đặt trip hiện tại
+    final provider = context.read<TripPlanningProvider>();
+    provider.setCurrentTrip(trip);
 
     final result = await Navigator.push(
       context,
@@ -406,30 +370,11 @@ class _PlanScreenState extends State<PlanScreen>
 
     if (!mounted) return;
 
-    if (result == true) {
-      // Trip was deleted - provider already handled it, just refresh UI
-      final provider = context.read<TripPlanningProvider>();
+    if (result == true || result is TripModel) {
+      // Trip bị xóa (result == true) hoặc được update (result is TripModel)
+      // Gọi initialize để làm mới và đồng bộ lại danh sách trips
       await provider.initialize();
-      setState(() {
-        _trips.clear();
-        _trips.addAll(provider.trips);
-      });
-    } else if (result is TripModel) {
-      // Trip was updated
-      final index = _trips.indexWhere((t) => t.id == result.id);
-      if (index >= 0) {
-        setState(() {
-          _trips[index] = result;
-        });
-        await _storageService.saveTrips(_trips);
-      } else {
-        final provider = context.read<TripPlanningProvider>();
-        await provider.initialize();
-        setState(() {
-          _trips.clear();
-          _trips.addAll(provider.trips);
-        });
-      }
+      // Không cần setState vì UI đã watch Provider
     }
   }
 
@@ -439,14 +384,14 @@ class _PlanScreenState extends State<PlanScreen>
       MaterialPageRoute(builder: (context) => const CreatePlannerScreen()),
     );
 
-    // If a trip was created, refresh the list
+    // Nếu một trip được tạo thành công, Provider đã tự thêm và notifyListeners()
     if (result != null) {
-      final provider = context.read<TripPlanningProvider>();
-      await provider.addTrip(result);
-      setState(() {
-        _trips.clear();
-        _trips.addAll(provider.trips);
-      });
+      // Để đảm bảo trip mới được thêm vào và local-only trips được sync,
+      // chúng ta gọi initialize lần nữa sau khi tạo.
+      // 🎯 Sửa: Gọi initialize để đồng bộ hóa
+      Provider.of<TripPlanningProvider>(context, listen: false).initialize();
+      // Không cần gọi provider.addTrip(result);
+      // Không cần setState vì UI đã watch Provider
     }
   }
 

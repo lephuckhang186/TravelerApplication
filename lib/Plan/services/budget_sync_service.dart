@@ -1,16 +1,16 @@
 import 'package:flutter/foundation.dart';
-import '../../../Expense/models/expense_models.dart';
-import '../../../Expense/services/expense_service.dart';
-import '../../../Plan/models/trip_model.dart';
-import '../../../Plan/models/activity_models.dart';
-import '../../../Plan/providers/trip_planning_provider.dart';
+import '../../Expense/models/expense_models.dart';
+import '../../Expense/services/expense_service.dart';
+import '../models/trip_model.dart';
+import '../models/activity_models.dart';
+import '../providers/trip_planning_provider.dart';
 
 /// Service to sync expense data with trip budget status
 class BudgetSyncService {
   final ExpenseService _expenseService;
-  
-  BudgetSyncService({ExpenseService? expenseService}) 
-      : _expenseService = expenseService ?? ExpenseService();
+
+  BudgetSyncService({ExpenseService? expenseService})
+    : _expenseService = expenseService ?? ExpenseService();
 
   /// Create expense from activity and sync budget
   Future<void> createExpenseFromActivity({
@@ -24,7 +24,9 @@ class BudgetSyncService {
       // Create expense through expense service
       await _expenseService.createExpenseFromActivity(
         amount: actualCost,
-        category: _mapActivityTypeToExpenseCategory(activity.activityType).value,
+        category: _mapActivityTypeToExpenseCategory(
+          activity.activityType,
+        ).value,
         description: description ?? activity.title,
         activityId: activity.id,
         tripId: trip.id,
@@ -32,11 +34,13 @@ class BudgetSyncService {
 
       // Update activity budget with actual cost
       final updatedActivity = activity.copyWith(
-        budget: activity.budget?.copyWithActualCost(actualCost) ?? 
-                BudgetModel(
-                  estimatedCost: actualCost, // If no budget exists, set estimated to actual
-                  actualCost: actualCost,
-                ),
+        budget:
+            activity.budget?.copyWithActualCost(actualCost) ??
+            BudgetModel(
+              estimatedCost:
+                  actualCost, // If no budget exists, set estimated to actual
+              actualCost: actualCost,
+            ),
       );
 
       // Update trip through provider if available
@@ -44,7 +48,9 @@ class BudgetSyncService {
         await tripProvider.updateActivityInTrip(trip.id!, updatedActivity);
       }
 
-      debugPrint('Created expense and synced budget for activity: ${activity.title}');
+      debugPrint(
+        'Created expense and synced budget for activity: ${activity.title}',
+      );
     } catch (e) {
       debugPrint('Failed to create expense and sync budget: $e');
       throw Exception('Failed to sync expense with trip budget: $e');
@@ -56,7 +62,7 @@ class BudgetSyncService {
     try {
       // Get expenses directly by trip ID if available
       List<Expense> tripExpenses = [];
-      
+
       if (trip.id != null && trip.id!.isNotEmpty) {
         // Get expenses by specific trip ID
         try {
@@ -65,7 +71,9 @@ class BudgetSyncService {
             endDate: trip.endDate,
             tripId: trip.id!, // Filter by specific trip ID
           );
-          debugPrint('Found ${tripExpenses.length} expenses for trip ${trip.id}');
+          debugPrint(
+            'Found ${tripExpenses.length} expenses for trip ${trip.id}',
+          );
         } catch (e) {
           debugPrint('Failed to get expenses by trip ID: $e');
           // Fallback to date range and filtering
@@ -90,7 +98,7 @@ class BudgetSyncService {
 
       // Calculate total actual spent from expenses
       final totalActualSpent = tripExpenses.fold<double>(
-        0.0, 
+        0.0,
         (sum, expense) => sum + expense.amount,
       );
 
@@ -102,7 +110,7 @@ class BudgetSyncService {
         // Find expenses for this specific activity
         final activityExpenses = tripExpenses.where((expense) {
           return expense.description.contains(activity.title) ||
-                 expense.description.contains('[Activity: ${activity.id}]');
+              expense.description.contains('[Activity: ${activity.id}]');
         }).toList();
 
         final activityActualCost = activityExpenses.fold<double>(
@@ -112,13 +120,16 @@ class BudgetSyncService {
 
         // Update activity budget if it has expenses
         if (activityActualCost > 0) {
-          final updatedActivityBudget = activity.budget?.copyWithActualCost(activityActualCost) ??
-                                      BudgetModel(
-                                        estimatedCost: activityActualCost,
-                                        actualCost: activityActualCost,
-                                      );
-          
-          updatedActivities.add(activity.copyWith(budget: updatedActivityBudget));
+          final updatedActivityBudget =
+              activity.budget?.copyWithActualCost(activityActualCost) ??
+              BudgetModel(
+                estimatedCost: activityActualCost,
+                actualCost: activityActualCost,
+              );
+
+          updatedActivities.add(
+            activity.copyWith(budget: updatedActivityBudget),
+          );
         } else {
           updatedActivities.add(activity);
         }
@@ -129,7 +140,6 @@ class BudgetSyncService {
         newActualSpent: totalActualSpent,
         updatedActivities: updatedActivities,
       );
-      
     } catch (e) {
       debugPrint('Failed to sync trip budget status: $e');
       return trip; // Return original trip if sync fails
@@ -168,8 +178,9 @@ class BudgetSyncService {
       );
 
       return expenseDate.isAtSameMomentAs(tripStartDate) ||
-             expenseDate.isAtSameMomentAs(tripEndDate) ||
-             (expenseDate.isAfter(tripStartDate) && expenseDate.isBefore(tripEndDate.add(const Duration(days: 1))));
+          expenseDate.isAtSameMomentAs(tripEndDate) ||
+          (expenseDate.isAfter(tripStartDate) &&
+              expenseDate.isBefore(tripEndDate.add(const Duration(days: 1))));
     }
 
     // Default: not from this trip if no criteria match
@@ -214,7 +225,7 @@ class BudgetSyncService {
   Future<Map<String, dynamic>> getTripBudgetStatus(TripModel trip) async {
     try {
       final syncedTrip = await syncTripBudgetStatus(trip);
-      
+
       return {
         'totalBudget': syncedTrip.totalEstimatedBudget,
         'totalSpent': syncedTrip.totalActualSpent,

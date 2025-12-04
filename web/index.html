@@ -38,6 +38,23 @@
 <body>
   <!-- Google Sign-In JavaScript API -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <!-- Firebase connectivity check -->
+  <script>
+    // Check basic connectivity 
+    if ('navigator' in window && 'onLine' in navigator) {
+      console.log('Browser online status:', navigator.onLine);
+      
+      window.addEventListener('online', function() {
+        console.log('Browser came online - Firebase sync available');
+      });
+      
+      window.addEventListener('offline', function() {
+        console.log('Browser went offline - using local storage backup');
+      });
+    }
+  </script>
+  
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

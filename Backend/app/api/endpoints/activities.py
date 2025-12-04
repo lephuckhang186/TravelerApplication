@@ -543,9 +543,44 @@ async def create_trip(
 ):
     """Create a new trip with real data storage"""
     try:
-        print(f"🚀 TRIP_CREATE: User {current_user.id} creating trip '{trip_data.name}'")
+        from fastapi import Request
+        import inspect
+        
+        # Get request info for debugging
+        frame = inspect.currentframe()
+        request_info = "Unknown"
+        if frame and frame.f_back and 'request' in frame.f_back.f_locals:
+            request = frame.f_back.f_locals.get('request')
+            if hasattr(request, 'client'):
+                request_info = f"{request.client.host}:{request.client.port}"
+        
+        print(f"🚀 TRIP_CREATE: User {current_user.id} creating trip '{trip_data.name}' from {request_info}")
         print(f"  Destination: {trip_data.destination}")
         print(f"  Dates: {trip_data.start_date} to {trip_data.end_date}")
+        
+        # Check for recent duplicate trips (within 5 seconds)
+        import time
+        current_time = time.time()
+        if not hasattr(create_trip, '_recent_trips'):
+            create_trip._recent_trips = {}
+        
+        trip_key = f"{current_user.id}_{trip_data.name}_{trip_data.destination}_{trip_data.start_date}_{trip_data.end_date}"
+        if trip_key in create_trip._recent_trips:
+            time_diff = current_time - create_trip._recent_trips[trip_key]
+            if time_diff < 5:  # Within 5 seconds
+                print(f"🚫 DUPLICATE_TRIP_BLOCKED: Identical trip created {time_diff:.2f}s ago, blocking duplicate")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Duplicate trip creation blocked. Same trip created {time_diff:.2f}s ago."
+                )
+        
+        create_trip._recent_trips[trip_key] = current_time
+        
+        # Cleanup old entries (older than 30 seconds)
+        create_trip._recent_trips = {
+            k: v for k, v in create_trip._recent_trips.items() 
+            if current_time - v < 30
+        }
         
         # Validate required fields
         if not trip_data.name or trip_data.name.strip() == "":
