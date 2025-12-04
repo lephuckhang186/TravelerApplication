@@ -100,22 +100,19 @@ class _PlanScreenState extends State<PlanScreen>
         final remoteTrips = await _tripService.getTrips();
         print('DEBUG: Fetched ${remoteTrips.length} trips from API');
 
+      // Always sync with API result - if API returns empty, clear local cache
+      await _storageService.saveTrips(remoteTrips);
+      if (mounted) {
+        setState(() {
+          _trips
+            ..clear()
+            ..addAll(remoteTrips);
+        });
         if (remoteTrips.isNotEmpty) {
-          await _storageService.saveTrips(remoteTrips);
-          if (mounted) {
-            setState(() {
-              _trips
-                ..clear()
-                ..addAll(remoteTrips);
-            });
-            print('DEBUG: Updated UI with ${_trips.length} remote trips');
-          }
+          print('DEBUG: Updated UI with ${_trips.length} remote trips');
         } else {
-          print('DEBUG: No remote trips received, keeping cached trips');
+          print('DEBUG: API returned no trips - cleared local cache');
         }
-      } catch (e) {
-        print('DEBUG: API fetch failed: $e - keeping cached trips');
-        // Keep cached trips, don't clear them
       }
     } catch (e) {
       print('DEBUG: Error loading trips: $e');

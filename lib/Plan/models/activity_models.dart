@@ -126,6 +126,38 @@ class BudgetModel {
     this.category,
   });
 
+  /// Get remaining budget
+  double get remainingBudget => estimatedCost - (actualCost ?? 0);
+
+  /// Get budget usage percentage
+  double get usagePercentage {
+    if (estimatedCost <= 0) return 0.0;
+    return ((actualCost ?? 0) / estimatedCost * 100).clamp(0.0, 100.0);
+  }
+
+  /// Check if over budget
+  bool get isOverBudget => (actualCost ?? 0) > estimatedCost;
+
+  /// Get budget status
+  String get budgetStatus {
+    final percentage = usagePercentage;
+    if (isOverBudget) return 'Over Budget';
+    if (percentage >= 90) return 'Critical';
+    if (percentage >= 75) return 'Warning';
+    if (percentage >= 50) return 'On Track';
+    return 'Under Budget';
+  }
+
+  /// Update actual cost
+  BudgetModel copyWithActualCost(double newActualCost) {
+    return BudgetModel(
+      estimatedCost: estimatedCost,
+      actualCost: newActualCost,
+      currency: currency,
+      category: category,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'estimated_cost': estimatedCost,

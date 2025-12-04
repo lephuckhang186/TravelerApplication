@@ -131,7 +131,14 @@ class ExpenseProvider with ChangeNotifier {
   Future<bool> createTrip(DateTime startDate, DateTime endDate) async {
     _setLoading(true);
     try {
-      final trip = Trip(startDate: startDate, endDate: endDate);
+      // Create a trip with meaningful default name and destination
+      final tripName = 'Budget Trip ${startDate.day}/${startDate.month}/${startDate.year}';
+      final trip = Trip(
+        startDate: startDate, 
+        endDate: endDate,
+        name: tripName,
+        destination: 'Budget Destination'
+      );
       await _expenseService.createTrip(trip);
       _clearError();
       return true;
@@ -230,6 +237,7 @@ class ExpenseProvider with ChangeNotifier {
       amount,
       expenseCategory,
       description: description,
+      tripId: tripId,
     );
   }
 
@@ -239,6 +247,7 @@ class ExpenseProvider with ChangeNotifier {
     ExpenseCategory category, {
     String description = '',
     DateTime? expenseDate,
+    String? tripId,
   }) async {
     _setLoading(true);
     try {
@@ -247,6 +256,7 @@ class ExpenseProvider with ChangeNotifier {
         category: category,
         description: description,
         expenseDate: expenseDate,
+        tripId: tripId,
       );
 
       final newExpense = await _expenseService.createExpense(request);
@@ -254,7 +264,10 @@ class ExpenseProvider with ChangeNotifier {
       _clearError();
 
       // Refresh related data
-      await Future.wait([fetchBudgetStatus(), fetchExpenseSummary()]);
+      await Future.wait([
+        fetchBudgetStatus(tripId: tripId), 
+        fetchExpenseSummary(tripId: tripId)
+      ]);
 
       return true;
     } catch (e) {
@@ -270,6 +283,7 @@ class ExpenseProvider with ChangeNotifier {
     ExpenseCategory? category,
     DateTime? startDate,
     DateTime? endDate,
+    String? tripId,
   }) async {
     _setLoading(true);
     try {
@@ -281,6 +295,7 @@ class ExpenseProvider with ChangeNotifier {
         category: category,
         startDate: startDate,
         endDate: endDate,
+        tripId: tripId,
       );
       _clearError();
     } catch (e) {
@@ -311,16 +326,18 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   /// Fetch budget status
-  Future<void> fetchBudgetStatus() async {
+  /// Fetch budget status for a specific trip or current trip
+  Future<void> fetchBudgetStatus({String? tripId}) async {
     _isBudgetLoading = true;
     _budgetError = null;
     notifyListeners();
 
     try {
-      _budgetStatus = await _expenseService.getBudgetStatus();
+      _budgetStatus = await _expenseService.getBudgetStatus(tripId: tripId);
       _budgetError = null;
     } catch (e) {
       _budgetError = e.toString();
+      debugPrint('DEBUG: Failed to fetch budget status: $e');
     } finally {
       _isBudgetLoading = false;
       notifyListeners();
@@ -345,13 +362,13 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   /// Fetch expense summary
-  Future<void> fetchExpenseSummary() async {
+  Future<void> fetchExpenseSummary({String? tripId}) async {
     _isSummaryLoading = true;
     _summaryError = null;
     notifyListeners();
 
     try {
-      _expenseSummary = await _expenseService.getExpenseSummary();
+      _expenseSummary = await _expenseService.getExpenseSummary(tripId: tripId);
       _summaryError = null;
     } catch (e) {
       _summaryError = e.toString();

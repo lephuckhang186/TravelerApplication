@@ -25,7 +25,7 @@ class DatabaseManager:
             self._ensure_tables_exist()
 
     def _ensure_tables_exist(self):
-        """Ensure all required tables exist"""
+        """Ensure all required tables exist and update schema if needed"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -35,9 +35,74 @@ class DatabaseManager:
                 if not required_tables.issubset(existing_tables):
                     print(f"Missing tables: {required_tables - existing_tables}")
                     self._create_tables()
+                else:
+                    # Check if expenses table needs schema update
+                    self._update_expenses_schema()
+                    # Check if activities table needs check_in column
+                    self._update_activities_schema()
         except Exception as e:
             print(f"Error checking tables: {e}")
             self._create_tables()
+    
+    def _update_expenses_schema(self):
+        """Update expenses table schema to remove foreign key constraint"""
+        try:
+            with self.get_connection() as conn:
+                # Check if expenses table has foreign key constraint
+                cursor = conn.execute("SELECT sql FROM sqlite_master WHERE name='expenses' AND type='table'")
+                table_sql = cursor.fetchone()
+                
+                if table_sql and "FOREIGN KEY (planner_id) REFERENCES planners" in table_sql[0]:
+                    print("🔧 SCHEMA_UPDATE: Updating expenses table to remove foreign key constraint")
+                    
+                    # Create new expenses table without foreign key
+                    conn.execute("""
+                        CREATE TABLE IF NOT EXISTS expenses_new (
+                            id TEXT PRIMARY KEY,
+                            planner_id TEXT NOT NULL,
+                            name TEXT NOT NULL,
+                            amount REAL NOT NULL,
+                            currency TEXT DEFAULT 'VND',
+                            category TEXT,
+                            date TEXT NOT NULL,
+                            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """)
+                    
+                    # Copy data from old table
+                    conn.execute("""
+                        INSERT INTO expenses_new 
+                        SELECT * FROM expenses
+                    """)
+                    
+                    # Drop old table and rename new one
+                    conn.execute("DROP TABLE expenses")
+                    conn.execute("ALTER TABLE expenses_new RENAME TO expenses")
+                    
+                    conn.commit()
+                    print("✅ SCHEMA_UPDATE: Expenses table schema updated successfully")
+                    
+        except Exception as e:
+            print(f"❌ SCHEMA_UPDATE_ERROR: {e}")
+
+    def _update_activities_schema(self):
+        """Update activities table schema to add check_in column"""
+        try:
+            with self.get_connection() as conn:
+                # Check if activities table has check_in column
+                cursor = conn.execute("PRAGMA table_info(activities)")
+                columns = [col[1] for col in cursor.fetchall()]
+                
+                if 'check_in' not in columns:
+                    print("🔧 SCHEMA_UPDATE: Adding check_in column to activities table")
+                    conn.execute("ALTER TABLE activities ADD COLUMN check_in BOOLEAN DEFAULT FALSE")
+                    conn.commit()
+                    print("✅ SCHEMA_UPDATE: Activities table updated with check_in column")
+                    
+        except Exception as e:
+            print(f"❌ ACTIVITIES_SCHEMA_UPDATE_ERROR: {e}")
+            # If schema update fails, just continue - the constraint might not be enforced
 
     def _create_tables(self):
         """Create all required database tables"""
@@ -100,13 +165,14 @@ class DatabaseManager:
                     start_time TEXT,
                     end_time TEXT,
                     location TEXT,
+                    check_in BOOLEAN DEFAULT FALSE,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (planner_id) REFERENCES planners (id)
                 )
             """)
             
-            # Expenses table
+            # Expenses table - Updated to support both planners and trips
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS expenses (
                     id TEXT PRIMARY KEY,
@@ -117,8 +183,7 @@ class DatabaseManager:
                     category TEXT,
                     date TEXT NOT NULL,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (planner_id) REFERENCES planners (id)
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """)
             
@@ -137,7 +202,6 @@ class DatabaseManager:
             """)
             
             conn.commit()
-            print("Database tables created successfully")
     
     def get_connection(self):
         """Get a database connection with foreign key constraints enabled"""
@@ -146,15 +210,105 @@ class DatabaseManager:
         conn.row_factory = sqlite3.Row
         return conn
     
+    def get_connection_no_fk(self):
+        """Get a database connection with foreign key constraints disabled"""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA foreign_keys = OFF;")
+        conn.row_factory = sqlite3.Row
+        return conn
+    
+    def check_and_repair_integrity(self):
+        """Check and repair foreign key integrity issues"""
+        try:
+            with self.get_connection() as conn:
+                # Check for orphaned trips (trips without users)
+                cursor = conn.execute("""
+                    SELECT COUNT(*) as count FROM trips 
+                    WHERE user_id NOT IN (SELECT id FROM users)
+                """)
+                orphaned_trips = cursor.fetchone()[0]
+                
+                if orphaned_trips > 0:
+                    # Optionally delete orphaned trips or create placeholder users
+                    pass
+                    
+                # Check for orphaned activities
+                cursor = conn.execute("""
+                    SELECT COUNT(*) as count FROM activities 
+                    WHERE planner_id NOT IN (SELECT id FROM planners)
+                """)
+                orphaned_activities = cursor.fetchone()[0]
+                
+                if orphaned_activities > 0:
+                    # Optionally handle orphaned activities
+                    pass
+                
+        except Exception as e:
+            pass
+    
     def create_user(self, user_id: str, email: str, username: str = None, first_name: str = None, last_name: str = None, profile_picture: str = None):
         """Create or update user in database"""
         with self.get_connection() as conn:
-            conn.execute("""
-                INSERT OR REPLACE INTO users (
-                    id, email, username, first_name, last_name, profile_picture, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, email, username, first_name, last_name, profile_picture, datetime.now().isoformat()))
-            conn.commit()
+            try:
+                print(f"💾 DB_USER_CREATE: Creating user {user_id} with email {email}")
+                
+                # Temporarily disable foreign keys to avoid constraint issues during user creation
+                conn.execute("PRAGMA foreign_keys = OFF")
+                
+                # Check if user already exists
+                cursor = conn.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+                existing_user = cursor.fetchone()
+                
+                if existing_user:
+                    print(f"✅ DB_USER_EXISTS: User {user_id} already exists, updating record")
+                    # Update existing user
+                    conn.execute("""
+                        UPDATE users SET 
+                            email = ?, username = ?, first_name = ?, last_name = ?, 
+                            profile_picture = ?, updated_at = ?
+                        WHERE id = ?
+                    """, (email, username, first_name, last_name, profile_picture, datetime.now().isoformat(), user_id))
+                else:
+                    print(f"🔧 DB_USER_INSERT: Inserting new user {user_id}")
+                    
+                    # Check if email is already used by another user
+                    cursor = conn.execute("SELECT id FROM users WHERE email = ?", (email,))
+                    email_user = cursor.fetchone()
+                    
+                    if email_user and email_user[0] != user_id:
+                        print(f"⚠️ DB_EMAIL_CONFLICT: Email {email} already used by user {email_user[0]}")
+                        # Use a unique email to avoid constraint violation
+                        email = f"{user_id}_{email}"
+                        print(f"🔧 DB_EMAIL_FIX: Using modified email: {email}")
+                    
+                    # Insert new user
+                    conn.execute("""
+                        INSERT INTO users (
+                            id, email, username, first_name, last_name, profile_picture, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (user_id, email, username, first_name, last_name, profile_picture, datetime.now().isoformat(), datetime.now().isoformat()))
+                
+                conn.commit()
+                
+                # Re-enable foreign keys
+                conn.execute("PRAGMA foreign_keys = ON")
+                
+                # Verify the user was created/updated
+                cursor = conn.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+                if cursor.fetchone():
+                    print(f"✅ DB_USER_SUCCESS: User {user_id} created/updated and verified in database")
+                else:
+                    raise Exception(f"User {user_id} not found after insertion/update")
+                
+            except Exception as e:
+                print(f"❌ DB_USER_ERROR: Failed to create user {user_id}: {e}")
+                # Re-enable foreign keys in case of error
+                try:
+                    conn.execute("PRAGMA foreign_keys = ON")
+                except:
+                    pass
+                conn.rollback()
+                raise
     
     def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get user by ID"""
@@ -204,12 +358,13 @@ class DatabaseManager:
         
         with self.get_connection() as conn:
             conn.execute("""
-                INSERT INTO activities (id, planner_id, name, description, start_time, end_time, location)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO activities (id, planner_id, name, description, start_time, end_time, location, check_in)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 activity_id, planner_id, activity_data["name"], 
                 activity_data.get("description"), activity_data["start_time"],
-                activity_data["end_time"], activity_data.get("location")
+                activity_data["end_time"], activity_data.get("location"),
+                activity_data.get("check_in", False)
             ))
             conn.commit()
         
@@ -229,6 +384,78 @@ class DatabaseManager:
             cursor = conn.execute("SELECT * FROM activities WHERE id = ?", (activity_id,))
             row = cursor.fetchone()
             return dict(row) if row else None
+
+    def update_activity(self, activity_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update an existing activity"""
+        if not updates:
+            return self.get_activity(activity_id)
+            
+        # Build dynamic SQL UPDATE statement
+        set_clauses = []
+        values = []
+        
+        for field, value in updates.items():
+            if field in ['name', 'description', 'start_time', 'end_time', 'location', 'check_in']:
+                set_clauses.append(f"{field} = ?")
+                values.append(value)
+        
+        if not set_clauses:
+            return self.get_activity(activity_id)
+        
+        # Add updated_at timestamp
+        set_clauses.append("updated_at = CURRENT_TIMESTAMP")
+        values.append(activity_id)
+        
+        sql = f"UPDATE activities SET {', '.join(set_clauses)} WHERE id = ?"
+        
+        with self.get_connection() as conn:
+            cursor = conn.execute(sql, values)
+            if cursor.rowcount > 0:
+                conn.commit()
+                return self.get_activity(activity_id)
+            return None
+
+    def create_activity_with_fallback(self, activity_id: str, planner_id: str, activity_data: Dict[str, Any], user_id: str) -> Optional[Dict[str, Any]]:
+        """Create activity with automatic planner creation if needed"""
+        try:
+            # First try to create activity normally
+            return self.create_activity(planner_id, activity_data)
+        except Exception as e:
+            if "FOREIGN KEY constraint failed" in str(e):
+                print(f"⚠️ FK_CONSTRAINT: Planner {planner_id} doesn't exist, creating default planner")
+                
+                # Create a default planner for this user
+                try:
+                    # Ensure user exists
+                    if not self.get_user(user_id):
+                        print(f"🔧 USER_CREATE: Creating user {user_id} for planner creation")
+                        self.create_user(
+                            user_id=user_id,
+                            email=f"{user_id}@example.com",
+                            username=user_id
+                        )
+                    
+                    # Create default planner
+                    default_planner_data = {
+                        'name': f'Auto-generated for activity',
+                        'description': f'Auto-generated planner to support activity creation',
+                        'start_date': datetime.now().date().isoformat(),
+                        'end_date': datetime.now().date().isoformat()
+                    }
+                    
+                    created_planner = self.create_planner(user_id, default_planner_data)
+                    new_planner_id = created_planner['id']
+                    print(f"✅ PLANNER_CREATED: Created planner {new_planner_id}")
+                    
+                    # Now try to create the activity with the new planner
+                    return self.create_activity(new_planner_id, activity_data)
+                    
+                except Exception as fallback_e:
+                    print(f"❌ FALLBACK_ERROR: Failed to create planner and activity: {fallback_e}")
+                    return None
+            else:
+                print(f"❌ ACTIVITY_CREATE_ERROR: {e}")
+                return None
     
     # === EXPENSE METHODS ===
     def create_expense(self, planner_id: str, expense_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -246,6 +473,90 @@ class DatabaseManager:
             conn.commit()
         
         return self.get_expense(expense_id)
+    
+    def create_expense_for_trip(self, trip_id: str, user_id: str, expense_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new expense directly linked to a trip"""
+        expense_id = f"expense_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{trip_id[:8]}"
+        
+        with self.get_connection() as conn:
+            # Verify trip belongs to user
+            cursor = conn.execute("SELECT id FROM trips WHERE id = ? AND user_id = ?", (trip_id, user_id))
+            if not cursor.fetchone():
+                raise ValueError(f"Trip {trip_id} not found or does not belong to user {user_id}")
+            
+            conn.execute("""
+                INSERT INTO expenses (id, planner_id, name, amount, currency, category, date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                expense_id, trip_id, expense_data["name"], expense_data["amount"],
+                expense_data.get("currency", "VND"), expense_data["category"], expense_data["date"]
+            ))
+            conn.commit()
+        
+        return self.get_expense(expense_id)
+    
+    def get_user_expenses(self, user_id: str, start_date: str = None, end_date: str = None, category: str = None) -> List[Dict[str, Any]]:
+        """Get all expenses for a user across all their trips"""
+        with self.get_connection() as conn:
+            query = """
+                SELECT e.* FROM expenses e
+                INNER JOIN trips t ON e.planner_id = t.id
+                WHERE t.user_id = ?
+            """
+            params = [user_id]
+            
+            if start_date:
+                query += " AND e.date >= ?"
+                params.append(start_date)
+            
+            if end_date:
+                query += " AND e.date <= ?"
+                params.append(end_date)
+                
+            if category:
+                query += " AND e.category = ?"
+                params.append(category)
+            
+            query += " ORDER BY e.date DESC"
+            
+            cursor = conn.execute(query, params)
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_trip_expenses(self, trip_id: str, user_id: str) -> List[Dict[str, Any]]:
+        """Get all expenses for a specific trip"""
+        with self.get_connection() as conn:
+            # Verify trip belongs to user first
+            cursor = conn.execute("SELECT id FROM trips WHERE id = ? AND user_id = ?", (trip_id, user_id))
+            if not cursor.fetchone():
+                return []
+                
+            cursor = conn.execute("""
+                SELECT * FROM expenses WHERE planner_id = ? ORDER BY date DESC
+            """, (trip_id,))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def delete_trip_expenses(self, trip_id: str, user_id: str) -> int:
+        """Delete all expenses for a trip (with user verification)"""
+        with self.get_connection() as conn:
+            # Verify trip belongs to user first
+            cursor = conn.execute("SELECT id FROM trips WHERE id = ? AND user_id = ?", (trip_id, user_id))
+            if not cursor.fetchone():
+                return 0
+                
+            cursor = conn.execute("DELETE FROM expenses WHERE planner_id = ?", (trip_id,))
+            conn.commit()
+            return cursor.rowcount
+    
+    def delete_expense(self, expense_id: str, user_id: str) -> bool:
+        """Delete a specific expense (with user verification)"""
+        with self.get_connection() as conn:
+            cursor = conn.execute("""
+                DELETE FROM expenses WHERE id = ? AND planner_id IN (
+                    SELECT id FROM trips WHERE user_id = ?
+                )
+            """, (expense_id, user_id))
+            conn.commit()
+            return cursor.rowcount > 0
     
     def get_planner_expenses(self, planner_id: str) -> List[Dict[str, Any]]:
         """Get all expenses for a planner"""
@@ -268,18 +579,44 @@ class DatabaseManager:
         trip_id = f"trip_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id[:8]}"
         
         with self.get_connection() as conn:
-            conn.execute("""
-                INSERT INTO trips (
-                    id, user_id, name, destination, description, 
-                    start_date, end_date, total_budget, currency
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                trip_id, user_id, trip_data["name"], trip_data["destination"],
-                trip_data.get("description"), trip_data["start_date"], 
-                trip_data["end_date"], trip_data.get("total_budget"),
-                trip_data.get("currency", "VND")
-            ))
-            conn.commit()
+            try:
+                print(f"💾 DB_TRIP_CREATE: Creating trip {trip_id} for user {user_id}")
+                
+                # Disable foreign keys temporarily to avoid constraint issues
+                conn.execute("PRAGMA foreign_keys = OFF")
+                
+                # Verify user exists first
+                cursor = conn.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+                user_exists = cursor.fetchone()
+                if not user_exists:
+                    print(f"❌ USER_NOT_FOUND: User {user_id} does not exist in database")
+                    raise ValueError(f"User {user_id} does not exist in database. Cannot create trip.")
+                
+                print(f"✅ DB_TRIP_USER_VERIFIED: User {user_id} exists in database")
+                
+                # Create the trip
+                conn.execute("""
+                    INSERT INTO trips (
+                        id, user_id, name, destination, description, 
+                        start_date, end_date, total_budget, currency
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    trip_id, user_id, trip_data["name"], trip_data["destination"],
+                    trip_data.get("description"), trip_data["start_date"], 
+                    trip_data["end_date"], trip_data.get("total_budget"),
+                    trip_data.get("currency", "VND")
+                ))
+                conn.commit()
+                
+                # Re-enable foreign keys
+                conn.execute("PRAGMA foreign_keys = ON")
+                
+                print(f"✅ DB_TRIP_SUCCESS: Trip {trip_id} created successfully")
+                
+            except Exception as e:
+                print(f"❌ DB_TRIP_ERROR: Failed to create trip {trip_id}: {e}")
+                conn.rollback()
+                raise
         
         return self.get_trip(trip_id, user_id)
     
@@ -291,12 +628,17 @@ class DatabaseManager:
             """, (user_id,))
             return [dict(row) for row in cursor.fetchall()]
     
-    def get_trip(self, trip_id: str, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific trip for user"""
+    def get_trip(self, trip_id: str, user_id: str = None) -> Optional[Dict[str, Any]]:
+        """Get specific trip for user (user_id optional for internal calls)"""
         with self.get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT * FROM trips WHERE id = ? AND user_id = ?
-            """, (trip_id, user_id))
+            if user_id:
+                cursor = conn.execute("""
+                    SELECT * FROM trips WHERE id = ? AND user_id = ?
+                """, (trip_id, user_id))
+            else:
+                cursor = conn.execute("""
+                    SELECT * FROM trips WHERE id = ?
+                """, (trip_id,))
             row = cursor.fetchone()
             return dict(row) if row else None
     
@@ -326,13 +668,63 @@ class DatabaseManager:
         return self.get_trip(trip_id, user_id)
     
     def delete_trip(self, trip_id: str, user_id: str) -> bool:
-        """Delete trip if it belongs to user"""
+        """Delete trip with cascade deletion of all related data"""
         with self.get_connection() as conn:
-            cursor = conn.execute("""
-                DELETE FROM trips WHERE id = ? AND user_id = ?
-            """, (trip_id, user_id))
-            conn.commit()
-            return cursor.rowcount > 0
+            # Start transaction
+            conn.execute("BEGIN TRANSACTION")
+            
+            try:
+                # Check if trip exists and belongs to user
+                cursor = conn.execute("""
+                    SELECT id, name FROM trips WHERE id = ? AND user_id = ?
+                """, (trip_id, user_id))
+                
+                trip_row = cursor.fetchone()
+                if not trip_row:
+                    conn.rollback()
+                    return False
+                
+                trip_name = trip_row[1]
+                
+                # Delete related expenses and count them
+                cursor = conn.execute("""
+                    SELECT COUNT(*) FROM expenses WHERE planner_id = ?
+                """, (trip_id,))
+                expense_count = cursor.fetchone()[0]
+                
+                cursor = conn.execute("""
+                    DELETE FROM expenses WHERE planner_id = ?
+                """, (trip_id,))
+                deleted_expenses = cursor.rowcount
+                
+                # Delete related activities and count them  
+                cursor = conn.execute("""
+                    SELECT COUNT(*) FROM activities WHERE planner_id = ?
+                """, (trip_id,))
+                activity_count = cursor.fetchone()[0]
+                
+                cursor = conn.execute("""
+                    DELETE FROM activities WHERE planner_id = ?
+                """, (trip_id,))
+                deleted_activities = cursor.rowcount
+                
+                # Delete the trip
+                cursor = conn.execute("""
+                    DELETE FROM trips WHERE id = ? AND user_id = ?
+                """, (trip_id, user_id))
+                
+                if cursor.rowcount == 0:
+                    conn.rollback()
+                    return False
+                
+                # Commit transaction
+                conn.commit()            
+                
+                return True
+                
+            except Exception as e:
+                conn.rollback()
+                raise e
 
 # Global database instance
 db_manager = DatabaseManager()

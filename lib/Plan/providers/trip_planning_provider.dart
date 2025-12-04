@@ -3,11 +3,13 @@ import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../services/trip_planning_service.dart';
 import '../services/trip_storage_service.dart';
+import '../../features/expense_management/services/budget_sync_service.dart';
 
 /// Provider for managing trip planning state
 class TripPlanningProvider extends ChangeNotifier {
   final TripPlanningService _apiService = TripPlanningService();
   final TripStorageService _storageService = TripStorageService();
+  final BudgetSyncService _budgetSyncService = BudgetSyncService();
 
   List<TripModel> _trips = [];
   TripModel? _currentTrip;
@@ -63,13 +65,17 @@ class TripPlanningProvider extends ChangeNotifier {
       // Try to create on server first
       TripModel? createdTrip;
       try {
+        debugPrint('DEBUG: Attempting to create trip on server: ${trip.name} -> ${trip.destination}');
         createdTrip = await _apiService.createTrip(trip);
+        debugPrint('DEBUG: Trip created successfully on server with ID: ${createdTrip.id}');
       } catch (e) {
-        print('API Error creating trip: $e');
+        debugPrint('DEBUG: API Error creating trip: $e');
+        debugPrint('DEBUG: Trip data that failed: name="${trip.name}", dest="${trip.destination}", start=${trip.startDate}, end=${trip.endDate}');
         // If API fails, create locally with temporary ID
         createdTrip = trip.copyWith(
           id: 'local_${DateTime.now().millisecondsSinceEpoch}',
         );
+        debugPrint('DEBUG: Created local trip with ID: ${createdTrip.id}');
       }
 
       // Add to local list and storage
@@ -190,6 +196,120 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
+  /// Update an activity in a specific trip
+  Future<bool> updateActivityInTrip(String tripId, ActivityModel updatedActivity) async {
+    try {
+      final tripIndex = _trips.indexWhere((trip) => trip.id == tripId);
+      if (tripIndex == -1) {
+        _setError('Trip not found');
+        return false;
+      }
+
+      final trip = _trips[tripIndex];
+      final activityIndex = trip.activities.indexWhere((activity) => activity.id == updatedActivity.id);
+      if (activityIndex == -1) {
+        _setError('Activity not found in trip');
+        return false;
+      }
+
+      // Update the activity in the trip
+      final updatedActivities = List<ActivityModel>.from(trip.activities);
+      updatedActivities[activityIndex] = updatedActivity;
+
+      // Create updated trip with new activities
+      final updatedTrip = trip.copyWith(activities: updatedActivities);
+      _trips[tripIndex] = updatedTrip;
+
+      // Save to storage
+      await _storageService.saveTrips(_trips);
+
+      // Update current trip if it's the same
+      if (_currentTrip?.id == tripId) {
+        _currentTrip = updatedTrip;
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Failed to update activity: $e');
+      return false;
+    }
+  }
+
+  /// Sync trip budget status with expense data
+  Future<TripModel?> syncTripBudgetStatus(String tripId) async {
+    try {
+      final trip = getTripById(tripId);
+      if (trip == null) {
+        _setError('Trip not found');
+        return null;
+      }
+
+      // Use budget sync service to update trip budget
+      final syncedTrip = await _budgetSyncService.syncTripBudgetStatus(trip);
+      
+      // Update the trip in the list
+      final tripIndex = _trips.indexWhere((t) => t.id == tripId);
+      if (tripIndex != -1) {
+        _trips[tripIndex] = syncedTrip;
+        await _storageService.saveTrips(_trips);
+        
+        // Update current trip if it's the same
+        if (_currentTrip?.id == tripId) {
+          _currentTrip = syncedTrip;
+        }
+        
+        notifyListeners();
+      }
+
+      return syncedTrip;
+    } catch (e) {
+      _setError('Failed to sync budget status: $e');
+      return null;
+    }
+  }
+
+  /// Create expense from activity and sync budget
+  Future<bool> createExpenseFromActivity({
+    required ActivityModel activity,
+    required TripModel trip,
+    required double actualCost,
+    String? description,
+  }) async {
+    try {
+      await _budgetSyncService.createExpenseFromActivity(
+        activity: activity,
+        trip: trip,
+        actualCost: actualCost,
+        description: description,
+        tripProvider: this,
+      );
+      
+      // Sync the trip budget status after creating expense
+      await syncTripBudgetStatus(trip.id!);
+      
+      return true;
+    } catch (e) {
+      _setError('Failed to create expense from activity: $e');
+      return false;
+    }
+  }
+
+  /// Get budget status for a trip
+  Future<Map<String, dynamic>?> getTripBudgetStatus(String tripId) async {
+    try {
+      final trip = getTripById(tripId);
+      if (trip == null) {
+        return null;
+      }
+
+      return await _budgetSyncService.getTripBudgetStatus(trip);
+    } catch (e) {
+      _setError('Failed to get budget status: $e');
+      return null;
+    }
+  }
+
   /// Search trips
   List<TripModel> searchTrips(String query) {
     if (query.isEmpty) return _trips;
@@ -231,7 +351,8 @@ class TripPlanningProvider extends ChangeNotifier {
         );
 
         if (hasLocalOnlyTrips && !hasServerTrips) {
-          debugPrint('DEBUG: Only local trips found, keeping them');
+          debugPrint('DEBUG: Only local trips found, attempting to sync them to server');
+          await _syncLocalTripsToServer();
           return;
         } else if (hasServerTrips) {
           debugPrint(
@@ -302,5 +423,41 @@ class TripPlanningProvider extends ChangeNotifier {
   void _clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Sync local-only trips to server
+  Future<void> _syncLocalTripsToServer() async {
+    final localTrips = _trips.where((trip) => trip.id?.startsWith('local_') == true).toList();
+    
+    for (final localTrip in localTrips) {
+      try {
+        debugPrint('DEBUG: Syncing local trip to server: ${localTrip.name}');
+        
+        // Create a clean trip without the local ID
+        final cleanTrip = localTrip.copyWith(id: null);
+        final serverTrip = await _apiService.createTrip(cleanTrip);
+        
+        // Replace local trip with server trip
+        final index = _trips.indexOf(localTrip);
+        if (index != -1) {
+          _trips[index] = serverTrip;
+        }
+        
+        debugPrint('DEBUG: Successfully synced trip, new ID: ${serverTrip.id}');
+      } catch (e) {
+        debugPrint('DEBUG: Failed to sync local trip ${localTrip.name}: $e');
+        // Keep the local trip if sync fails
+      }
+    }
+    
+    // Save updated trips
+    await _storageService.saveTrips(_trips);
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _budgetSyncService.dispose();
+    super.dispose();
   }
 }

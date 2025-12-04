@@ -5,6 +5,7 @@ from decimal import Decimal, getcontext
 from dataclasses import dataclass
 from collections import defaultdict
 from app.services.activities_management import ActivityManager, Activity, ActivityType
+from app.database import DatabaseManager
 import json
 
 # Set high precision for financial calculations
@@ -17,6 +18,7 @@ class Expense:
     amount: Decimal
     category: ActivityType
     description: str = ""
+    date: datetime = None
     currency: str = "VND"
     date: Optional[datetime] = None
     
@@ -289,6 +291,9 @@ class ExpenseManager:
         self.analytics: Optional[Analytics] = None
         self.trip: Optional[Trip] = None
         self._activity_expense_map: Dict[str, List[Expense]] = {}  # Fix: Initialize missing attribute
+        # NEW: Trip-specific expense tracking
+        self._trip_expenses: Dict[str, List[Expense]] = {}
+        self._expense_trip_map: Dict[str, str] = {}  # expense_id -> trip_id
     
     def set_trip(self, trip: Trip):
         """Set the current trip"""
@@ -315,6 +320,31 @@ class ExpenseManager:
         expense_id = f"exp_{len(self.expenses) + 1}_{int(datetime.now().timestamp())}"
         
         self.expenses.append(expense)
+        
+        # Update category budget spending
+        if self.trip_budget:
+            category_budget = self.trip_budget.get_category_budget(expense.category)
+            category_budget.spent_amount += expense.amount
+        
+        # Invalidate analytics cache
+        if self.analytics:
+            self.analytics.expenses = self.expenses
+            self.analytics.invalidate_cache()
+        
+        return expense_id
+    
+    def add_expense_for_trip(self, expense: Expense, trip_id: str = None) -> str:
+        """Add expense with trip association"""
+        expense_id = f"exp_{len(self.expenses) + 1}_{int(datetime.now().timestamp())}"
+        
+        self.expenses.append(expense)
+        
+        # Associate with trip if provided
+        if trip_id:
+            if trip_id not in self._trip_expenses:
+                self._trip_expenses[trip_id] = []
+            self._trip_expenses[trip_id].append(expense)
+            self._expense_trip_map[expense_id] = trip_id
         
         # Update category budget spending
         if self.trip_budget:
@@ -477,6 +507,31 @@ class ExpenseManager:
             self.analytics = Analytics(self.expenses)
         return self.analytics
     
+    def sync_activity_to_expense(self, activity: Activity) -> Optional[str]:
+        """Sync activity to expense and return expense ID"""
+        if not activity.budget or not activity.budget.actual_cost:
+            return None
+        
+        # Create expense from activity
+        expense = Expense(
+            amount=activity.budget.actual_cost,
+            category=activity.activity_type,
+            description=f"{activity.name} [Activity: {activity.id}]",
+            date=activity.start_time or datetime.now()
+        )
+        
+        # Add expense
+        expense_id = self.add_expense(expense)
+        
+        # Map activity to expense
+        self._activity_expense_map[activity.id] = expense_id
+        
+        return expense_id
+    
+    def _map_activity_type_to_expense_category(self, activity_type: ActivityType) -> ActivityType:
+        """Map activity type to expense category"""
+        return activity_type  # Direct mapping for now
+    
     def export_data(self) -> Dict[str, any]:
         """Export all data for persistence or analysis"""
         return {
@@ -507,6 +562,56 @@ class ExpenseManager:
     def get_history_expenses(self) -> List[Expense]:
         """Get all historical expenses sorted by date"""
         return sorted(self.expenses, key=lambda x: x.date, reverse=True)
+    
+    def delete_trip_expenses(self, trip_id: str) -> int:
+        """Delete all expenses associated with a trip"""
+        if trip_id not in self._trip_expenses:
+            return 0
+        
+        trip_expenses = self._trip_expenses[trip_id]
+        deleted_count = 0
+        
+        for expense in trip_expenses[:]:  # Create copy to avoid modification during iteration
+            if expense in self.expenses:
+                self.expenses.remove(expense)
+                deleted_count += 1
+                
+                # Update category budget spending
+                if self.trip_budget:
+                    category_budget = self.trip_budget.get_category_budget(expense.category)
+                    category_budget.spent_amount = max(Decimal('0'), 
+                                                     category_budget.spent_amount - expense.amount)
+        
+        # Clean up trip mappings
+        del self._trip_expenses[trip_id]
+        
+        # Clean up expense-trip mappings
+        expense_ids_to_remove = [exp_id for exp_id, t_id in self._expense_trip_map.items() if t_id == trip_id]
+        for exp_id in expense_ids_to_remove:
+            del self._expense_trip_map[exp_id]
+        
+        # Invalidate analytics cache
+        if self.analytics:
+            self.analytics.expenses = self.expenses
+            self.analytics.invalidate_cache()
+        
+        return deleted_count
+    
+    def get_trip_expenses(self, trip_id: str) -> List[Expense]:
+        """Get all expenses for a specific trip"""
+        return self._trip_expenses.get(trip_id, [])
+    
+    def clear_all_data(self):
+        """Clear all expense data (useful for testing)"""
+        self.expenses.clear()
+        self._trip_expenses.clear()
+        self._expense_trip_map.clear()
+        self._activity_expense_map.clear()
+        self.trip_budget = None
+        self.trip = None
+        if self.analytics:
+            self.analytics.expenses = []
+            self.analytics.invalidate_cache()
     
     def _map_activity_type_to_expense_category(self, activity_type):
         """Map activity type to expense category"""
@@ -543,6 +648,7 @@ class IntegratedTravelManager:
         from .activities_management import ActivityManager
         self.activity_manager = ActivityManager()
         self.expense_manager = ExpenseManager()
+        self.db_manager = DatabaseManager()
     
     def get_activity_expense_summary(self, trip_id: str = None) -> dict:
         """Get summary of activities and their associated expenses"""
@@ -670,17 +776,127 @@ class IntegratedTravelManager:
         return activity
     
     def update_activity_with_expense_sync(self, activity_id: str, **updates):
-        """Update activity with expense sync"""
+        """Update activity with expense sync and database persistence"""
         activity = self.activity_manager.activities.get(activity_id)
         if not activity:
             return None
             
-        # Update fields
+        # Update in-memory activity fields
         for key, value in updates.items():
             if hasattr(activity, key):
                 setattr(activity, key, value)
         
         activity.updated_at = datetime.now()
+        
+        # Persist to SQLite database
+        try:
+            db_updates = {}
+            # Map activity fields to database columns
+            field_mapping = {
+                'name': 'name',
+                'title': 'name',  # Activity uses 'title', DB uses 'name'
+                'description': 'description',
+                'start_date': 'start_time',
+                'start_time': 'start_time', 
+                'end_date': 'end_time',
+                'end_time': 'end_time',
+                'location': 'location',
+                'check_in': 'check_in'
+            }
+            
+            for key, value in updates.items():
+                if key in field_mapping:
+                    db_field = field_mapping[key]
+                    if key in ['start_date', 'start_time', 'end_date', 'end_time'] and value:
+                        # Convert datetime to string for SQLite
+                        if isinstance(value, datetime):
+                            db_updates[db_field] = value.isoformat()
+                        else:
+                            db_updates[db_field] = str(value)
+                    elif key == 'location' and hasattr(value, 'name'):
+                        # Extract location name if it's a location object
+                        db_updates[db_field] = value.name
+                    elif key == 'location' and isinstance(value, dict) and 'name' in value:
+                        db_updates[db_field] = value['name']
+                    elif key == 'location' and isinstance(value, str):
+                        db_updates[db_field] = value
+                    else:
+                        db_updates[db_field] = value
+            
+            # Update in database if there are valid fields to update
+            if db_updates:
+                print(f"🔄 DB_UPDATE: Updating activity {activity_id} in SQLite with: {db_updates}")
+                updated_row = self.db_manager.update_activity(activity_id, db_updates)
+                if updated_row:
+                    print(f"✅ DB_UPDATE_SUCCESS: Activity {activity_id} updated in SQLite")
+                else:
+                    print(f"⚠️ DB_UPDATE_WARNING: Activity {activity_id} not found in SQLite database")
+                    # Try to create the activity in database if it doesn't exist
+                    try:
+                        # First, ensure planner/trip exists in database
+                        planner_id = activity.trip_id or 'default_trip'
+                        
+                        # Check if planner exists, if not create a default one
+                        existing_planner = self.db_manager.get_planner(planner_id, activity.created_by)
+                        if not existing_planner:
+                            # Create a default planner/trip for this activity
+                            print(f"🔧 DB_PLANNER_CREATE: Creating default planner {planner_id} for activity {activity_id}")
+                            default_planner_data = {
+                                'name': f'Auto-generated trip for {activity.name}',
+                                'description': f'Auto-generated to support activity: {activity.name}',
+                                'start_date': (activity.start_time.date() if activity.start_time else date.today()).isoformat(),
+                                'end_date': (activity.end_time.date() if activity.end_time else date.today()).isoformat()
+                            }
+                            
+                            try:
+                                # Ensure user exists first
+                                user = self.db_manager.get_user(activity.created_by)
+                                if not user:
+                                    print(f"🔧 DB_USER_CREATE: Creating user {activity.created_by} for activity")
+                                    self.db_manager.create_user(
+                                        user_id=activity.created_by,
+                                        email=f"{activity.created_by}@example.com",
+                                        username=activity.created_by
+                                    )
+                                
+                                # Use the database's create_planner method with proper ID generation
+                                created_planner = self.db_manager.create_planner(activity.created_by, default_planner_data)
+                                planner_id = created_planner['id']  # Use the actual generated ID
+                                print(f"✅ DB_PLANNER_SUCCESS: Created planner {planner_id}")
+                                
+                            except Exception as planner_e:
+                                print(f"❌ DB_PLANNER_ERROR: Failed to create planner: {planner_e}")
+                                # Skip activity creation if we can't create the planner
+                                return activity
+                        
+                        # Now create the activity with the valid planner_id
+                        activity_data = {
+                            'name': getattr(activity, 'name', activity.title if hasattr(activity, 'title') else 'Unknown Activity'),
+                            'description': getattr(activity, 'details', activity.description if hasattr(activity, 'description') else ''),
+                            'start_time': activity.start_time.isoformat() if activity.start_time else None,
+                            'end_time': activity.end_time.isoformat() if activity.end_time else None,
+                            'location': getattr(activity, 'location', {}).get('name') if hasattr(getattr(activity, 'location', None), 'get') else str(getattr(activity, 'location', '')) if getattr(activity, 'location', None) else '',
+                            'check_in': getattr(activity, 'check_in', False)
+                        }
+                        # Apply the updates to the new activity data
+                        activity_data.update(db_updates)
+                        
+                        # Use create_activity_with_fallback method which handles missing planners
+                        created_activity = self.db_manager.create_activity_with_fallback(
+                            activity_id, planner_id, activity_data, activity.created_by
+                        )
+                        if created_activity:
+                            print(f"✅ DB_CREATE_SUCCESS: Activity created in SQLite database with ID {created_activity['id']}")
+                        else:
+                            print(f"❌ DB_CREATE_ERROR: Failed to create activity {activity_id} in SQLite")
+                    except Exception as create_e:
+                        print(f"❌ DB_CREATE_ERROR: Exception creating activity {activity_id}: {create_e}")
+                        # Continue with in-memory activity even if DB creation fails
+            
+        except Exception as e:
+            print(f"❌ DB_UPDATE_ERROR: Failed to update activity {activity_id} in SQLite: {e}")
+            # Continue with in-memory update even if DB fails
+        
         return activity
     
     def delete_activity_with_expense_sync(self, activity_id: str) -> bool:

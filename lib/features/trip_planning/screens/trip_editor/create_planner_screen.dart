@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
-import '../models/trip_model.dart';
-import '../models/activity_models.dart';
-import '../providers/trip_planning_provider.dart';
-import '../services/trip_planning_service.dart';
-import '../services/trip_storage_service.dart';
-import '../../Expense/services/expense_service.dart';
-import '../../Expense/models/expense_models.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../Plan/models/trip_model.dart';
+import '../../../../Plan/models/activity_models.dart';
+import '../../../../Plan/providers/trip_planning_provider.dart';
+import '../../../../Plan/services/trip_planning_service.dart';
+import '../../../../Plan/services/trip_storage_service.dart';
+import '../../../../Expense/services/expense_service.dart';
+import '../../../../Expense/models/expense_models.dart';
+import '../../../../Login/services/auth_service.dart';
 
 class CreatePlannerScreen extends StatefulWidget {
   const CreatePlannerScreen({super.key});
@@ -88,43 +89,43 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-
+                    
                     // Trip Name Field
                     _buildInputField(
                       label: 'Trip Name',
                       controller: _tripNameController,
                       hintText: 'Enter trip name',
                     ),
-
+                    
                     const SizedBox(height: 30),
-
+                    
                     // Destination Field
                     _buildInputField(
                       label: 'Destination City*',
                       controller: _destinationController,
                       hintText: 'Where are you going?',
                     ),
-
+                    
                     const SizedBox(height: 30),
-
+                    
                     // Start Date
                     _buildDateField(
                       label: 'Start Date*',
                       date: _startDate,
                       onTap: () => _selectStartDate(),
                     ),
-
+                    
                     const SizedBox(height: 30),
-
+                    
                     // End Date
                     _buildDateField(
                       label: 'End Date*',
                       date: _endDate,
                       onTap: () => _selectEndDate(),
                     ),
-
+                    
                     const SizedBox(height: 30),
-
+                    
                     // Budget Field
                     _buildInputField(
                       label: 'Total Budget (VND)',
@@ -132,9 +133,9 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
                       hintText: 'Enter total budget',
                       keyboardType: TextInputType.number,
                     ),
-
+                    
                     const SizedBox(height: 30),
-
+                    
                     // Description Field
                     _buildInputField(
                       label: 'Description',
@@ -142,7 +143,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
                       hintText: 'Add trip description (optional)',
                       maxLines: 4,
                     ),
-
+                    
                     const SizedBox(height: 100), // Extra space for scrolling
                   ],
                 ),
@@ -228,7 +229,9 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey)),
+              border: Border(
+                bottom: BorderSide(color: Colors.grey),
+              ),
             ),
             child: Text(
               _formatDate(date),
@@ -246,26 +249,14 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
 
   String _formatDate(DateTime date) {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
     String dayName = days[date.weekday - 1];
     String day = date.day.toString();
     String month = months[date.month - 1];
     String year = date.year.toString();
-
+    
     return '$dayName, $day $month $year';
   }
 
@@ -292,7 +283,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         );
       },
     );
-
+    
     if (picked != null && picked != _startDate) {
       setState(() {
         _startDate = picked;
@@ -323,7 +314,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         );
       },
     );
-
+    
     if (picked != null && picked != _endDate) {
       setState(() {
         _endDate = picked;
@@ -344,12 +335,12 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
-
+    
     try {
       final tripName = _tripNameController.text.trim().isNotEmpty
           ? _tripNameController.text.trim()
           : _destinationController.text.trim();
-
+      
       final budgetAmount = _budgetController.text.trim().isNotEmpty
           ? double.tryParse(_budgetController.text.trim())
           : null;
@@ -390,7 +381,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       );
       
       // Create expense budget if budget amount is provided and no provider was used
-      if (budgetAmount != null && createdTrip != null && provider == null) {
+      if (createdTrip != null && provider == null && budgetAmount != null) {
         await _createExpenseBudget(createdTrip.id!, budgetAmount);
       }
 
@@ -409,7 +400,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-
+      
       Navigator.pop(context, createdTrip);
     } catch (e) {
       navigator.pop(); // close loading dialog
@@ -435,7 +426,17 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     try {
       final expenseService = ExpenseService();
       
-      // Create trip for expense service
+      // First set auth token to ensure authentication
+      final authService = AuthService();
+      final token = await authService.getIdToken();
+      if (token != null) {
+        expenseService.setAuthToken(token);
+      } else {
+        debugPrint('No auth token available for expense budget creation');
+        return;
+      }
+      
+      // Create trip in expense service
       final trip = Trip(
         startDate: _startDate,
         endDate: _endDate,
@@ -445,11 +446,9 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       await expenseService.createTrip(trip);
       
       // Create budget for the trip
-      final dailyLimit = budgetAmount / (_endDate.difference(_startDate).inDays + 1);
-      
       final budget = Budget(
         totalBudget: budgetAmount,
-        dailyLimit: dailyLimit,
+        dailyLimit: budgetAmount / (_endDate.difference(_startDate).inDays + 1), // Calculate daily limit
       );
       
       await expenseService.createBudget(budget);
@@ -458,6 +457,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     } catch (e) {
       debugPrint('Failed to create expense budget: $e');
       // Don't throw error as this is supplementary functionality
+      // The main trip creation should still succeed
     }
   }
 
@@ -475,21 +475,25 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       description: description,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      budget: budget != null
-          ? BudgetModel(estimatedCost: budget, currency: 'VND')
-          : null,
+      budget: budget != null ? BudgetModel(
+        estimatedCost: budget,
+        currency: 'VND',
+      ) : null,
     );
 
     try {
       final tripService = TripPlanningService();
       final createdTrip = await tripService.createTrip(trip);
       final storageService = TripStorageService();
-      return await storageService.saveTrip(createdTrip);
+      final savedTrip = await storageService.saveTrip(createdTrip);
+      return savedTrip;
     } catch (_) {
       final storageService = TripStorageService();
-      return await storageService.saveTrip(
-        trip.copyWith(id: 'local_${DateTime.now().millisecondsSinceEpoch}'),
+      final tripWithId = trip.copyWith(
+        id: 'local_${DateTime.now().millisecondsSinceEpoch}',
       );
+      final savedTrip = await storageService.saveTrip(tripWithId);
+      return savedTrip;
     }
   }
 }

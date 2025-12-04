@@ -145,6 +145,7 @@ class Expense {
   final DateTime date;
   final String description;
   final String currency;
+  final String? tripId; // Added trip ID support
 
   const Expense({
     required this.id,
@@ -153,6 +154,7 @@ class Expense {
     required this.date,
     this.description = '',
     this.currency = 'VND',
+    this.tripId,
   });
 
   /// Validate expense amount
@@ -166,6 +168,7 @@ class Expense {
       date: DateTime.parse(json['expense_date'] as String),
       description: json['description'] as String? ?? '',
       currency: json['currency'] as String? ?? 'VND',
+      tripId: json['planner_id'] as String?, // Map backend planner_id to tripId
     );
   }
 
@@ -177,6 +180,7 @@ class Expense {
       'date': date.toIso8601String(),
       'description': description,
       'currency': currency,
+      if (tripId != null) 'planner_id': tripId,
     };
   }
 
@@ -190,12 +194,14 @@ class ExpenseCreateRequest {
   final ExpenseCategory category;
   final String description;
   final DateTime? expenseDate;
+  final String? tripId; // Added trip ID support
 
   const ExpenseCreateRequest({
     required this.amount,
     required this.category,
     this.description = '',
     this.expenseDate,
+    this.tripId,
   });
 
   /// Validate request data
@@ -207,6 +213,7 @@ class ExpenseCreateRequest {
       'category': category.value,
       'description': description,
       if (expenseDate != null) 'expense_date': expenseDate!.toIso8601String(),
+      if (tripId != null) 'planner_id': tripId,
     };
   }
 }
@@ -269,10 +276,14 @@ class Trip {
   final DateTime startDate;
   final DateTime endDate;
   final int? durationDays;
+  final String name;
+  final String destination;
 
   const Trip({
     required this.startDate,
     required this.endDate,
+    required this.name,
+    required this.destination,
     this.durationDays,
   });
 
@@ -312,12 +323,16 @@ class Trip {
     return Trip(
       startDate: DateTime.parse(json['start_date'] as String),
       endDate: DateTime.parse(json['end_date'] as String),
+      name: json['name'] as String,
+      destination: json['destination'] as String,
       durationDays: json['duration_days'] as int?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'name': name,
+      'destination': destination,
       'start_date': startDate.toIso8601String().split('T')[0],
       'end_date': endDate.toIso8601String().split('T')[0],
     };

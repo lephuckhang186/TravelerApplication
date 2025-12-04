@@ -79,6 +79,66 @@ class TripModel {
     return total;
   }
 
+  /// Get remaining budget
+  double get remainingBudget => totalEstimatedBudget - totalActualSpent;
+
+  /// Get budget usage percentage
+  double get budgetUsagePercentage {
+    if (totalEstimatedBudget <= 0) return 0.0;
+    return (totalActualSpent / totalEstimatedBudget * 100).clamp(0.0, 100.0);
+  }
+
+  /// Check if over budget
+  bool get isOverBudget => totalActualSpent > totalEstimatedBudget;
+
+  /// Get budget status
+  String get budgetStatus {
+    if (totalEstimatedBudget <= 0) return 'No Budget Set';
+    final percentage = budgetUsagePercentage;
+    if (isOverBudget) return 'Over Budget';
+    if (percentage >= 90) return 'Critical';
+    if (percentage >= 75) return 'Warning';
+    if (percentage >= 50) return 'On Track';
+    return 'Under Budget';
+  }
+
+  /// Get recommended daily spending
+  double get recommendedDailySpending {
+    if (isCompleted) return 0.0;
+    final daysRemaining = endDate.difference(DateTime.now()).inDays;
+    if (daysRemaining <= 0) return remainingBudget;
+    return remainingBudget / daysRemaining;
+  }
+
+  /// Update trip with expense data
+  TripModel copyWithExpenseUpdate({
+    double? newActualSpent,
+    List<ActivityModel>? updatedActivities,
+  }) {
+    BudgetModel? updatedBudget;
+    if (newActualSpent != null && budget != null) {
+      updatedBudget = budget!.copyWithActualCost(newActualSpent);
+    }
+
+    return TripModel(
+      id: id,
+      name: name,
+      destination: destination,
+      startDate: startDate,
+      endDate: endDate,
+      description: description,
+      activities: updatedActivities ?? activities,
+      budget: updatedBudget ?? budget,
+      collaborators: collaborators,
+      coverImage: coverImage,
+      createdBy: createdBy,
+      createdAt: createdAt,
+      updatedAt: DateTime.now(),
+      isActive: isActive,
+      preferences: preferences,
+    );
+  }
+
   /// Get activities by type
   List<ActivityModel> getActivitiesByType(ActivityType type) {
     return activities.where((activity) => activity.activityType == type).toList();

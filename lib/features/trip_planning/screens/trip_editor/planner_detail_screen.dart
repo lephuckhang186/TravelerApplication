@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'search_place_screen.dart';
-import 'ai_assistant_screen.dart';
-import '../../Core/theme/app_theme.dart';
-import '../models/trip_model.dart';
-import '../models/activity_models.dart';
-import '../providers/trip_planning_provider.dart';
-import '../services/trip_planning_service.dart';
-import '../services/trip_storage_service.dart';
-import '../../Expense/services/expense_service.dart';
-import '../../Expense/providers/expense_provider.dart';
-import '../services/trip_expense_integration_service.dart';
+import '../../../../Plan/screens/search_place_screen.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../Plan/models/trip_model.dart';
+import '../../../../Plan/models/activity_models.dart';
+import '../../../../Plan/providers/trip_planning_provider.dart';
+import '../../../../Plan/services/trip_planning_service.dart';
+import '../../../../Plan/services/trip_storage_service.dart';
+import '../../../../Expense/services/expense_service.dart';
+import '../../../../Expense/providers/expense_provider.dart';
+import '../../../../Plan/services/trip_expense_integration_service.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -26,8 +25,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   final TripPlanningService _tripService = TripPlanningService();
   final TripStorageService _storageService = TripStorageService();
   final ExpenseService _expenseService = ExpenseService();
-  final TripExpenseIntegrationService _integrationService =
-      TripExpenseIntegrationService();
+  final TripExpenseIntegrationService _integrationService = TripExpenseIntegrationService();
   ExpenseProvider? _expenseProvider;
 
   late TripModel _trip;
@@ -64,29 +62,40 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   /// Load activities from server to ensure we have the latest data
   Future<void> _loadActivitiesFromServer() async {
     if (_trip.id == null) return;
-
+    
     try {
-      final serverActivities = await _tripService.getActivities(
-        tripId: _trip.id,
-      );
+      final serverActivities = await _tripService.getActivities(tripId: _trip.id);
       setState(() {
-        // Merge server activities with local ones, prioritizing server data
+        // Merge server activities with local ones, preserving local check-in status if newer
         final Map<String, ActivityModel> activityMap = {};
-
-        // First add local activities
-        for (final activity in _activities) {
-          if (activity.id != null) {
-            activityMap[activity.id!] = activity;
-          }
-        }
-
-        // Then add/override with server activities
+        
+        // First add server activities as base
         for (final activity in serverActivities) {
           if (activity.id != null) {
             activityMap[activity.id!] = activity;
           }
         }
-
+        
+        // Then preserve local check-in status and recent updates
+        for (final localActivity in _activities) {
+          if (localActivity.id != null && activityMap.containsKey(localActivity.id!)) {
+            final serverActivity = activityMap[localActivity.id!]!;
+            final localUpdated = localActivity.updatedAt ?? DateTime(2000);
+            final serverUpdated = serverActivity.updatedAt ?? DateTime(2000);
+            
+            // If local activity is newer or has different check-in status, preserve local data
+            if (localUpdated.isAfter(serverUpdated) || 
+                localActivity.checkIn != serverActivity.checkIn ||
+                localActivity.budget?.actualCost != serverActivity.budget?.actualCost) {
+              debugPrint('Preserving local activity data for: ${localActivity.title} (check-in: ${localActivity.checkIn})');
+              activityMap[localActivity.id!] = localActivity;
+            }
+          } else if (localActivity.id != null) {
+            // Add local-only activities
+            activityMap[localActivity.id!] = localActivity;
+          }
+        }
+        
         _activities = activityMap.values.toList();
         // Sort by start date
         _activities.sort((a, b) {
@@ -149,25 +158,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             Expanded(child: _buildTimeline()),
           ],
         ),
-        floatingActionButton: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // AI Assistant Button
-            FloatingActionButton(
-              heroTag: "ai_assistant_btn",
-              onPressed: _isDeleting ? null : _openAIAssistant,
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            // Add Activity Button
-            FloatingActionButton(
-              heroTag: "add_activity_btn",
-              onPressed: _isDeleting ? null : _showAddActivityModal,
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-          ],
+        floatingActionButton: FloatingActionButton(
+          onPressed: _isDeleting ? null : _showAddActivityModal,
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
     );
@@ -198,7 +192,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               borderRadius: BorderRadius.circular(14),
               color: AppColors.primary.withValues(alpha: 0.12),
             ),
-            child: const Icon(Icons.travel_explore, color: AppColors.primary),
+            child: const Icon(
+              Icons.travel_explore,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -224,11 +221,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: AppColors.primary,
-                    ),
+                    const Icon(Icons.calendar_today,
+                        size: 14, color: AppColors.primary),
                     const SizedBox(width: 4),
                     Text(
                       dateRange,
@@ -255,11 +249,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.hourglass_empty,
-                size: 48,
-                color: AppColors.primary,
-              ),
+              const Icon(Icons.hourglass_empty,
+                  size: 48, color: AppColors.primary),
               const SizedBox(height: 12),
               Text(
                 'No plans yet',
@@ -296,9 +287,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   Widget _buildTimelineItem(ActivityModel activity, int index) {
     final isLast = index == _activities.length - 1;
     final icon = _iconForType(activity.activityType);
-    final color = activity.checkIn
-        ? Colors
-              .green // Checked-in color
+    final color = activity.checkIn 
+        ? Colors.green // Checked-in color
         : _colorForType(activity.activityType);
     final timeLabel = activity.startDate != null
         ? _formatTime(activity.startDate!)
@@ -325,7 +315,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: Colors.white, size: 20),
             ),
             if (!isLast)
@@ -365,9 +358,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     // Check-in button
                     IconButton(
                       icon: Icon(
-                        activity.checkIn
-                            ? Icons.check_circle
-                            : Icons.check_circle_outline,
+                        activity.checkIn ? Icons.check_circle : Icons.check_circle_outline,
                         color: activity.checkIn ? Colors.green : Colors.grey,
                       ),
                       onPressed: () => _toggleCheckIn(activity),
@@ -391,7 +382,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           child: Text('Remove'),
                         ),
                       ],
-                    ),
+                    )
                   ],
                 ),
                 if (activity.description != null &&
@@ -410,11 +401,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: AppColors.primary,
-                      ),
+                      const Icon(Icons.location_on, size: 14, color: AppColors.primary),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -438,10 +425,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       // Before check-in: Show expected cost only
                       if (!activity.checkIn)
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
@@ -467,13 +451,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           ),
                         ),
                       // After check-in: Show actual cost
-                      if (activity.checkIn &&
-                          activity.budget!.actualCost != null)
+                      if (activity.checkIn && activity.budget!.actualCost != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
@@ -499,13 +479,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           ),
                         ),
                       // After check-in but no actual cost recorded
-                      if (activity.checkIn &&
-                          activity.budget!.actualCost == null)
+                      if (activity.checkIn && activity.budget!.actualCost == null)
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
@@ -545,7 +521,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final titleController = TextEditingController(text: activity.title);
     final descriptionController = TextEditingController(text: activity.description ?? '');
     final expectedCostController = TextEditingController(
-      text: activity.budget?.estimatedCost?.toString() ?? ''
+      text: activity.budget?.estimatedCost.toString() ?? ''
     );
     dynamic selectedPlace = activity.location != null ? {
       'display_name': activity.location!.name,
@@ -790,13 +766,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     );
   }
 
-  void _openAIAssistant() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
-    );
-  }
-
   void _showAddActivityModal() {
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
@@ -822,10 +791,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           child: StatefulBuilder(
             builder: (context, setModalState) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -901,8 +868,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             setModalState(() {
                               selectedPlace = result['place'];
                               titleController.text = result['category'];
-                              descriptionController.text =
-                                  result['place']['display_name'];
+                              descriptionController.text = result['place']['display_name'];
                             });
                           }
                         },
@@ -981,13 +947,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             selectedTime.hour,
                             selectedTime.minute,
                           );
-                          final expectedCost =
-                              expectedCostController.text.trim().isEmpty
-                              ? null
-                              : double.tryParse(
-                                  expectedCostController.text.trim(),
-                                );
-
+                          final expectedCost = expectedCostController.text.trim().isEmpty 
+                              ? null 
+                              : double.tryParse(expectedCostController.text.trim());
+                          
                           // Create budget if expected cost is provided
                           BudgetModel? budget;
                           if (expectedCost != null) {
@@ -996,12 +959,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               currency: 'VND',
                             );
                           }
-
+                          
                           final newActivity = ActivityModel(
-                            id: 'local_act_${DateTime.now().millisecondsSinceEpoch}',
+                            id:
+                                'local_act_${DateTime.now().millisecondsSinceEpoch}',
                             title: title,
-                            description:
-                                descriptionController.text.trim().isEmpty
+                            description: descriptionController.text.trim().isEmpty
                                 ? null
                                 : descriptionController.text.trim(),
                             activityType: selectedType,
@@ -1012,12 +975,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             location: selectedPlace != null
                                 ? LocationModel(
                                     name: selectedPlace['display_name'],
-                                    latitude: double.parse(
-                                      selectedPlace['lat'],
-                                    ),
-                                    longitude: double.parse(
-                                      selectedPlace['lon'],
-                                    ),
+                                    latitude: double.parse(selectedPlace['lat']),
+                                    longitude: double.parse(selectedPlace['lon']),
                                   )
                                 : null,
                           );
@@ -1057,7 +1016,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
         ),
         const SizedBox(height: 6),
         TextField(
@@ -1070,11 +1032,15 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(
+                color: Colors.grey.shade300,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(
+                color: Colors.grey.shade300,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1091,7 +1057,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Check-in Status',
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
         ),
         const Spacer(),
         Switch(
@@ -1104,9 +1073,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   Widget _buildTypeSelector(
-    ActivityType selected,
-    ValueChanged<ActivityType> onChanged,
-  ) {
+      ActivityType selected, ValueChanged<ActivityType> onChanged) {
     final types = ActivityType.values;
 
     return Column(
@@ -1114,7 +1081,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Category',
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -1264,7 +1234,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final destinationController = TextEditingController(text: _trip.destination);
     final descriptionController = TextEditingController(text: _trip.description ?? '');
     final budgetController = TextEditingController(
-      text: _trip.budget?.estimatedCost?.toString() ?? ''
+      text: _trip.budget?.estimatedCost.toString() ?? ''
     );
 
     showDialog(
@@ -1387,16 +1357,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         throw Exception('Activity not found');
       }
 
-      // Try to update on server if activity has an ID and not local
-      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
-        try {
-          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
-        } catch (e) {
-          debugPrint('Failed to update activity on server: $e');
-          // Continue with local update even if server fails
-        }
-      }
-      
+      // Update local state first
       setState(() {
         _activities[index] = updatedActivity;
         // Resort activities by start date
@@ -1407,7 +1368,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           return a.startDate!.compareTo(b.startDate!);
         });
       });
+      
+      // Save to local storage
       await _persistTripChanges();
+
+      // Try to update on server if activity has an ID and not local
+      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+        try {
+          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
+          debugPrint('Successfully synced activity update to server: ${updatedActivity.title}');
+        } catch (e) {
+          debugPrint('Failed to update activity on server: $e');
+          // Continue with local update even if server fails
+        }
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1441,14 +1415,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         // If server fails, continue with local storage only
         createdActivity = activity;
       }
-
+      
       setState(() {
         _activities.add(createdActivity);
       });
       await _persistTripChanges();
-
+      
       // Don't auto-create expense - only create on check-in
-
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1480,12 +1454,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           debugPrint('Failed to delete activity from server: $e');
         }
       }
-
+      
       setState(() {
         _activities.remove(activity);
       });
       await _persistTripChanges();
-
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1616,8 +1590,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete this trip?'),
         content: const Text(
-          'This action cannot be undone and will remove all activities.',
-        ),
+            'This action cannot be undone and will remove all activities.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1625,7 +1598,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -1730,7 +1706,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec',
+      'Dec'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -1742,8 +1718,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final normalizedHour = hours == 0
         ? 12
         : hours > 12
-        ? hours - 12
-        : hours;
+            ? hours - 12
+            : hours;
     return '$normalizedHour:$minutes $suffix';
   }
 
@@ -1760,7 +1736,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         // Checking out - just toggle status
         final updatedActivity = activity.copyWith(checkIn: false);
         await _updateActivityCheckIn(updatedActivity);
-
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1787,7 +1763,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   Future<void> _checkInWithActualCost(ActivityModel activity) async {
     final TextEditingController actualCostController = TextEditingController();
     final expectedCost = activity.budget?.estimatedCost;
-
+    
     // Pre-fill with expected cost if available
     if (expectedCost != null) {
       actualCostController.text = expectedCost.toStringAsFixed(0);
@@ -1804,7 +1780,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             if (expectedCost != null) ...[
               Text(
                 'Expected Cost: ${_formatCurrency(expectedCost)}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 16),
             ],
@@ -1856,10 +1835,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   /// Perform the actual check-in with cost
-  Future<void> _performCheckIn(
-    ActivityModel activity,
-    double actualCost,
-  ) async {
+  Future<void> _performCheckIn(ActivityModel activity, double actualCost) async {
     // Update activity with actual cost and check-in status
     final updatedBudget = BudgetModel(
       estimatedCost: activity.budget?.estimatedCost ?? actualCost,
@@ -1867,7 +1843,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       currency: activity.budget?.currency ?? 'VND',
       category: activity.budget?.category,
     );
-
+    
     final updatedActivity = activity.copyWith(
       checkIn: true,
       budget: updatedBudget,
@@ -1898,40 +1874,44 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Update activity check-in status
   Future<void> _updateActivityCheckIn(ActivityModel updatedActivity) async {
-    debugPrint('Updating activity check-in: ${updatedActivity.title}, checkIn: ${updatedActivity.checkIn}');
-    
     final index = _activities.indexWhere((a) => a.id == updatedActivity.id);
-    if (index == -1) {
-      debugPrint('Activity not found for check-in update');
-      return;
-    }
-
-    // Try to update on server if activity has an ID and not local
-    if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
-      try {
-        debugPrint('Syncing check-in to server for activity: ${updatedActivity.id}');
-        await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
-        debugPrint('Successfully synced check-in to server');
-      } catch (e) {
-        debugPrint('Failed to sync check-in to server: $e');
-        // Continue with local update even if server fails
+    if (index != -1) {
+      setState(() {
+        _activities[index] = updatedActivity;
+      });
+      
+      // Save to local storage first
+      await _persistTripChanges();
+      
+      // Then sync with server if activity has ID and not local
+      if (updatedActivity.id != null && !updatedActivity.id!.startsWith('local_')) {
+        try {
+          debugPrint('🔄 SYNC_CHECKIN: Syncing check-in status to server for activity: ${updatedActivity.id} - ${updatedActivity.title} (checkIn: ${updatedActivity.checkIn})');
+          await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
+          debugPrint('✅ SYNC_SUCCESS: Successfully synced check-in status to server for activity: ${updatedActivity.title}');
+        } catch (e) {
+          debugPrint('❌ SYNC_ERROR: Failed to sync check-in status to server: $e');
+          // Show user notification about sync failure
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Check-in saved locally. Sync failed: $e'),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } else {
+        debugPrint('⚠️ LOCAL_ONLY: Activity ${updatedActivity.id} is local-only, not syncing to server');
       }
     }
-
-    setState(() {
-      _activities[index] = updatedActivity;
-    });
-    await _persistTripChanges();
-    debugPrint('Check-in status updated locally and persisted');
   }
 
   /// Create expense for checked-in activity
-  Future<void> _createExpenseForCheckedInActivity(
-    ActivityModel activity,
-  ) async {
+  Future<void> _createExpenseForCheckedInActivity(ActivityModel activity) async {
     try {
-      if (activity.budget?.actualCost == null ||
-          activity.budget!.actualCost! <= 0) {
+      if (activity.budget?.actualCost == null || activity.budget!.actualCost! <= 0) {
         return;
       }
 
@@ -2024,14 +2004,15 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Cancel',
-                        style: GoogleFonts.inter(color: Colors.grey.shade600),
+                        style: GoogleFonts.inter(
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ),
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () =>
-                          _saveRealCost(activity, costController.text),
+                      onPressed: () => _saveRealCost(activity, costController.text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -2068,15 +2049,17 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
     try {
       // Update budget with actual cost
-      final existingBudget =
-          activity.budget ?? BudgetModel(estimatedCost: 0, currency: 'VND');
+      final existingBudget = activity.budget ?? BudgetModel(
+        estimatedCost: 0,
+        currency: 'VND',
+      );
       final updatedBudget = BudgetModel(
         estimatedCost: existingBudget.estimatedCost,
         actualCost: cost,
         currency: existingBudget.currency,
       );
       final updatedActivity = activity.copyWith(budget: updatedBudget);
-
+      
       // Update in memory
       final index = _activities.indexOf(activity);
       if (index != -1) {
@@ -2084,12 +2067,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           _activities[index] = updatedActivity;
         });
       }
-
+      
       await _persistTripChanges();
-
+      
       // Sync with expense management
       await _syncExpense(updatedActivity);
-
+      
       if (mounted) {
         String message = _expenseProvider != null 
             ? 'Real cost saved and synced to expenses!' 
@@ -2117,7 +2100,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _syncExpense(ActivityModel activity) async {
     if (activity.budget?.actualCost == null) return;
-
+    
     try {
       // Only sync if expense provider is available
       if (_expenseProvider != null) {
@@ -2143,4 +2126,5 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       // Don't show error to user as this is background sync
     }
   }
+
 }
