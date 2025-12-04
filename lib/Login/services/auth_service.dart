@@ -159,6 +159,30 @@ class AuthService {
     }
   }
 
+  // Đổi mật khẩu cho user hiện tại
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final user = currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('Không tìm thấy thông tin người dùng');
+      }
+
+      // Xác thực lại với mật khẩu hiện tại
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      
+      await user.reauthenticateWithCredential(credential);
+      
+      // Đổi mật khẩu mới
+      await user.updatePassword(newPassword);
+      
+    } on FirebaseAuthException catch (e) {
+      throw _handleFirebaseAuthException(e);
+    }
+  }
+
   // Đồng bộ user với backend
   Future<void> _syncUserWithBackend(User user) async {
     try {

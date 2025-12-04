@@ -17,6 +17,7 @@ import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
+import 'change_password_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -1043,25 +1044,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _onChangePassword() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          'Đổi mật khẩu',
-          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Chức năng đổi mật khẩu sẽ được cập nhật trong phiên bản tiếp theo.',
-          style: GoogleFonts.quattrocento(),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK', style: GoogleFonts.quattrocento()),
-          ),
-        ],
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
     );
   }
 
