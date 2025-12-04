@@ -57,7 +57,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      fontFamily: GoogleFonts.quattrocento().fontFamily,
+      fontFamily: GoogleFonts.urbanist().fontFamily,
       
       // Color Scheme
       colorScheme: const ColorScheme.light(
@@ -81,7 +81,7 @@ class AppTheme {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.quattrocento(
+        titleTextStyle: GoogleFonts.urbanist(
           color: AppColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w600,
@@ -90,15 +90,15 @@ class AppTheme {
       ),
 
       // Text Theme
-      textTheme: GoogleFonts.quattrocentoTextTheme().copyWith(
+      textTheme: GoogleFonts.urbanistTextTheme().copyWith(
         // Display styles
-        displayLarge: GoogleFonts.quattrocento(
+        displayLarge: GoogleFonts.urbanist(
           fontSize: 32,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.5,
           color: AppColors.textPrimary,
         ),
-        displayMedium: GoogleFonts.quattrocento(
+        displayMedium: GoogleFonts.urbanist(
           fontSize: 28,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.25,
@@ -106,48 +106,48 @@ class AppTheme {
         ),
 
         // Headline styles
-        headlineLarge: GoogleFonts.quattrocento(
+        headlineLarge: GoogleFonts.urbanist(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        headlineMedium: GoogleFonts.quattrocento(
+        headlineMedium: GoogleFonts.urbanist(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
 
         // Title styles
-        titleLarge: GoogleFonts.quattrocento(
+        titleLarge: GoogleFonts.urbanist(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        titleMedium: GoogleFonts.quattrocento(
+        titleMedium: GoogleFonts.urbanist(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: AppColors.textPrimary,
         ),
-        titleSmall: GoogleFonts.quattrocento(
+        titleSmall: GoogleFonts.urbanist(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: AppColors.textSecondary,
         ),
 
         // Body styles
-        bodyLarge: GoogleFonts.quattrocento(
+        bodyLarge: GoogleFonts.urbanist(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           height: 1.5,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: GoogleFonts.quattrocento(
+        bodyMedium: GoogleFonts.urbanist(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.43,
           color: AppColors.textPrimary,
         ),
-        bodySmall: GoogleFonts.quattrocento(
+        bodySmall: GoogleFonts.urbanist(
           fontSize: 12,
           fontWeight: FontWeight.w400,
           height: 1.33,
@@ -155,19 +155,19 @@ class AppTheme {
         ),
 
         // Label styles
-        labelLarge: GoogleFonts.quattrocento(
+        labelLarge: GoogleFonts.urbanist(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.1,
           color: AppColors.textPrimary,
         ),
-        labelMedium: GoogleFonts.quattrocento(
+        labelMedium: GoogleFonts.urbanist(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
           color: AppColors.textSecondary,
         ),
-        labelSmall: GoogleFonts.quattrocento(
+        labelSmall: GoogleFonts.urbanist(
           fontSize: 10,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
@@ -187,7 +187,7 @@ class AppTheme {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
-              textStyle: GoogleFonts.quattrocento(
+              textStyle: GoogleFonts.urbanist(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
@@ -209,7 +209,7 @@ class AppTheme {
         style:
             TextButton.styleFrom(
               foregroundColor: AppColors.primary,
-              textStyle: GoogleFonts.quattrocento(
+              textStyle: GoogleFonts.urbanist(
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
               ),
@@ -231,7 +231,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25),
           ),
-          textStyle: GoogleFonts.quattrocento(
+          textStyle: GoogleFonts.urbanist(
             fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
@@ -271,11 +271,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(color: AppColors.warning, width: 2),
         ),
-        labelStyle: GoogleFonts.quattrocento(
+        labelStyle: GoogleFonts.urbanist(
           color: AppColors.textSecondary,
           fontSize: 14,
         ),
-        hintStyle: GoogleFonts.quattrocento(
+        hintStyle: GoogleFonts.urbanist(
           color: AppColors.textSecondary,
           fontSize: 14,
         ),

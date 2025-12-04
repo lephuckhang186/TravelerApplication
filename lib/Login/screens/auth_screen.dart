@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_user_service.dart';
 import '../services/auth_validation_service.dart';
+import '../services/user_profile_service.dart';
 import 'google_signup_completion_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -13,6 +14,11 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   String _currentScreen = 'login'; // Bỏ welcome, chuyển thẳng đến login
+  
+  final AuthService _authService = AuthService();
+  final FirestoreUserService _firestoreService = FirestoreUserService();
+  final AuthValidationService _validationService = AuthValidationService();
+  final UserProfileService _profileService = UserProfileService();
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +27,19 @@ class _AuthScreenState extends State<AuthScreen> {
         return SignUpScreen(
           onBack: () => setState(() => _currentScreen = 'login'),
           onLogin: () => setState(() => _currentScreen = 'login'),
+          authService: _authService,
+          firestoreService: _firestoreService,
+          validationService: _validationService,
         );
       case 'login':
       default:
         return LoginScreen(
           onBack: () => Navigator.pop(context), // Quay lại màn hình trước đó
           onSignUp: () => setState(() => _currentScreen = 'signup'),
+          authService: _authService,
+          firestoreService: _firestoreService,
+          validationService: _validationService,
+          profileService: _profileService,
         );
     }
   }
@@ -184,8 +197,18 @@ class WelcomeScreen extends StatelessWidget {
 class SignUpScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onLogin;
+  final AuthService authService;
+  final FirestoreUserService firestoreService;
+  final AuthValidationService validationService;
 
-  const SignUpScreen({super.key, required this.onBack, required this.onLogin});
+  const SignUpScreen({
+    super.key, 
+    required this.onBack, 
+    required this.onLogin,
+    required this.authService,
+    required this.firestoreService,
+    required this.validationService,
+  });
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -202,10 +225,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int _passwordStrength = 0;
-
-  final AuthService _authService = AuthService();
-  final FirestoreUserService _firestoreService = FirestoreUserService();
-  final AuthValidationService _validationService = AuthValidationService();
 
   @override
   void initState() {
@@ -229,7 +248,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _updatePasswordStrength() {
     setState(() {
-      _passwordStrength = _validationService.getPasswordStrength(
+      _passwordStrength = widget.validationService.getPasswordStrength(
         _passwordController.text,
       );
     });
@@ -250,7 +269,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
 
       // Advanced validation using validation service
-      final validationResults = await _validationService.validateSignUpForm(
+      final validationResults = await widget.validationService.validateSignUpForm(
         email: email,
         password: password,
         confirmPassword: confirmPassword,
@@ -259,14 +278,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       // Kiểm tra có lỗi validation không
-      final firstError = _validationService.getFirstError(validationResults);
+      final firstError = widget.validationService.getFirstError(validationResults);
       if (firstError != null) {
         _showErrorMessage(firstError);
         return;
       }
 
       // Đăng ký với Firebase Auth
-      final userCredential = await _authService.signUpWithEmail(
+      final userCredential = await widget.authService.signUpWithEmail(
         email,
         password,
       );
@@ -276,7 +295,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         print('🔥 Starting Firestore user profile creation...'); // Debug log
 
         try {
-          await _firestoreService.createEmailUserProfile(
+          await widget.firestoreService.createEmailUserProfile(
             uid: userCredential!.user!.uid,
             email: email,
             fullName: username, // Use username from form
@@ -311,15 +330,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF40E0D0),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -729,10 +739,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildPasswordStrengthIndicator() {
-    final color = _validationService.getPasswordStrengthColor(
+    final color = widget.validationService.getPasswordStrengthColor(
       _passwordStrength,
     );
-    final text = _validationService.getPasswordStrengthText(_passwordStrength);
+    final text = widget.validationService.getPasswordStrengthText(_passwordStrength);
     final progress = _passwordStrength / 100.0;
 
     return Column(
@@ -783,17 +793,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
 class LoginScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onSignUp;
+  final AuthService authService;
+  final FirestoreUserService firestoreService;
+  final AuthValidationService validationService;
+  final UserProfileService profileService;
 
-  const LoginScreen({super.key, required this.onBack, required this.onSignUp});
+  const LoginScreen({
+    super.key, 
+    required this.onBack, 
+    required this.onSignUp,
+    required this.authService,
+    required this.firestoreService,
+    required this.validationService,
+    required this.profileService,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final AuthService _authService = AuthService();
-  final FirestoreUserService _firestoreService = FirestoreUserService();
-  final AuthValidationService _validationService = AuthValidationService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -807,28 +826,45 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       switch (provider) {
         case 'Google':
-          final userCredential = await _authService.signInWithGoogle();
+          final userCredential = await widget.authService.signInWithGoogle();
           if (userCredential?.user != null) {
+            debugPrint('Google sign-in successful for: ${userCredential!.user!.email}');
+            
             // Kiểm tra xem người dùng đã có profile trong Firestore chưa
-            final hasProfile = await _firestoreService.hasUserProfile(
-              userCredential!.user!.uid,
+            final hasProfile = await widget.firestoreService.hasUserProfile(
+              userCredential.user!.uid,
             );
+            
+            debugPrint('User has profile: $hasProfile');
 
             if (mounted) {
               if (!hasProfile) {
                 // Người dùng mới - chuyển đến màn hình bổ sung
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => GoogleSignupCompletionScreen(
-                      user: userCredential.user!,
+                debugPrint('Navigating to GoogleSignupCompletionScreen');
+                try {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => GoogleSignupCompletionScreen(
+                        user: userCredential.user!,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } catch (e) {
+                  debugPrint('Error navigating to completion screen: $e');
+                  // Fallback: go to home if navigation fails
+                  Navigator.of(context).pushReplacementNamed('/home');
+                }
               } else {
-                // Người dùng cũ - chuyển trực tiếp đến home
+                // Người dùng cũ - đảm bảo có profile data trước khi vào home
+                debugPrint('Existing user - ensuring profile data...');
+                await widget.profileService.syncAfterLogin();
+                debugPrint('Navigating to home screen');
                 Navigator.of(context).pushReplacementNamed('/home');
               }
             }
+          } else {
+            debugPrint('Google sign-in failed: userCredential is null');
+            _showErrorMessage('Đăng nhập Google không thành công');
           }
           break;
       }
@@ -866,7 +902,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     // Enhanced validation using validation service
-    final emailValidation = _validationService.validateEmail(email);
+    final emailValidation = widget.validationService.validateEmail(email);
     if (!emailValidation.isValid) {
       _showErrorMessage(emailValidation.message);
       return;
@@ -880,7 +916,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       // First try to login
-      final userCredential = await _authService.signInWithEmail(
+      final userCredential = await widget.authService.signInWithEmail(
         email,
         password,
       );
@@ -1023,7 +1059,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () async {
                         if (_emailController.text.isNotEmpty) {
                           try {
-                            await _authService.sendPasswordResetEmail(
+                            await widget.authService.sendPasswordResetEmail(
                               _emailController.text.trim(),
                             );
                             Navigator.pop(context);
