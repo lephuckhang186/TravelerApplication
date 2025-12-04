@@ -375,7 +375,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               child: _buildQuickContactCard(
                 Icons.phone,
                 'Hotline',
-                '1900-1234',
+                '+84 898 999 033',
                 () => _showSnackBar('Đang gọi hotline...'),
               ),
             ),

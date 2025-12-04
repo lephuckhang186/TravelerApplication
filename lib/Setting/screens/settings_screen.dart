@@ -232,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         // Action Buttons
                         _buildActionButtons(),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
@@ -252,44 +252,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       decoration: const BoxDecoration(color: Color(0xFFF5F7FA)),
       child: Column(
         children: [
-          // Top right "Đổi ảnh nền" button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: _onChangeBackground,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.palette_outlined,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Đổi ảnh nền',
-                        style: GoogleFonts.quattrocento(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
           const SizedBox(height: 20),
 
           // Centered Profile Avatar
@@ -495,18 +457,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
           const SizedBox(width: 4),
 
-          // "Đổi ảnh nền" button
-          GestureDetector(
-            onTap: _onChangeBackground,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.palette_outlined,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -895,12 +845,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             'Thông tin chung',
             () => _onGeneralInfo(),
           ),
-          _buildMenuDivider(),
-          _buildMenuListItem(
-            Icons.palette_outlined,
-            'Đổi hình nền',
-            () => _onChangeBackground(),
-          ),
         ],
       ),
     );
@@ -1050,46 +994,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _onChangeBackground() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Chọn ảnh nền',
-              style: GoogleFonts.quattrocento(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Chụp ảnh mới'),
-              onTap: () {
-                Navigator.pop(context);
-                // Camera functionality
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Chọn từ thư viện'),
-              onTap: () {
-                Navigator.pop(context);
-                // Photo library functionality
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _onLogout() {
     showDialog(
