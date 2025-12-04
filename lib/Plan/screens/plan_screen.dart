@@ -96,8 +96,9 @@ class _PlanScreenState extends State<PlanScreen>
       }
 
       // Then fetch from API to get latest data
-      final remoteTrips = await _tripService.getTrips();
-      print('DEBUG: Fetched ${remoteTrips.length} trips from API');
+      try {
+        final remoteTrips = await _tripService.getTrips();
+        print('DEBUG: Fetched ${remoteTrips.length} trips from API');
 
       // Always sync with API result - if API returns empty, clear local cache
       await _storageService.saveTrips(remoteTrips);

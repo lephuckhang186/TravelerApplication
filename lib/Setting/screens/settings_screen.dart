@@ -304,15 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
                 child: ClipOval(
                   child: _currentAvatarPath != null
-                      ? Image.file(
-                          File(_currentAvatarPath!),
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildDefaultAvatar();
-                          },
-                        )
+                      ? _buildAvatarImage(_currentAvatarPath!, 100)
                       : _buildDefaultAvatar(),
                 ),
               ),
@@ -437,15 +429,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
                 child: ClipOval(
                   child: _currentAvatarPath != null
-                      ? Image.file(
-                          File(_currentAvatarPath!),
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildDefaultAvatar(size: 40);
-                          },
-                        )
+                      ? _buildAvatarImage(_currentAvatarPath!, 40)
                       : _buildDefaultAvatar(size: 40),
                 ),
               ),
@@ -525,6 +509,65 @@ class _SettingsScreenState extends State<SettingsScreen>
         ],
       ),
     );
+  }
+
+  /// Build avatar image with proper error handling
+  Widget _buildAvatarImage(String imagePath, double size) {
+    try {
+      // Check if it's a network URL
+      if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return Image.network(
+          imagePath,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('Network image error: $error');
+            return _buildDefaultAvatar(size: size);
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+        );
+      } else {
+        // Local file
+        final file = File(imagePath);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('Local image error: $error');
+              return _buildDefaultAvatar(size: size);
+            },
+          );
+        } else {
+          debugPrint('Local image file does not exist: $imagePath');
+          return _buildDefaultAvatar(size: size);
+        }
+      }
+    } catch (e) {
+      debugPrint('Avatar image error: $e');
+      return _buildDefaultAvatar(size: size);
+    }
   }
 
   /// Build default avatar with user initial

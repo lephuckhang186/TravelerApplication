@@ -591,6 +591,12 @@ class TripPlanningService {
       final response = await http.get(
         Uri.parse('$baseUrl/activities/trips'),
         headers: headers,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('DEBUG: TripService.getTrips() - Request timed out');
+          throw Exception('Network timeout: Unable to connect to server');
+        },
       );
 
       debugPrint(
