@@ -527,6 +527,12 @@ class TripPlanningService {
       final response = await http.get(
         Uri.parse('$baseUrl/activities/trips'),
         headers: headers,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('DEBUG: TripService.getTrips() - Request timed out');
+          throw Exception('Network timeout: Unable to connect to server');
+        },
       );
 
       debugPrint(
@@ -572,13 +578,15 @@ class TripPlanningService {
 
         return trips;
       } else {
-        throw Exception(
-          'Failed to get trips: ${response.statusCode} - ${response.body}',
-        );
+        debugPrint('DEBUG: TripService.getTrips() - Server returned error ${response.statusCode}');
+        // Return empty list instead of throwing to prevent crashes
+        return [];
       }
     } catch (e) {
       debugPrint('DEBUG: TripService.getTrips() - Error: $e');
-      throw Exception('Error getting trips: $e');
+      // Return empty list instead of throwing to prevent crashes
+      debugPrint('DEBUG: TripService.getTrips() - Returning empty list due to error');
+      return [];
     }
   }
 

@@ -168,30 +168,18 @@ class UserProfileService {
   // Create profile from Firebase Auth data
   Future<UserProfile?> _createProfileFromAuthData(User user) async {
     try {
-      print('Creating profile from Firebase Auth data for user: ${user.email}');
       final now = DateTime.now();
-      
-      // Ensure we have a valid display name
-      String fullName = '';
-      if (user.displayName?.isNotEmpty == true) {
-        fullName = user.displayName!;
-      } else if (user.email?.isNotEmpty == true) {
-        fullName = user.email!.split('@').first;
-      } else {
-        fullName = 'User';
-      }
-      
       final profile = UserProfile(
         uid: user.uid,
         email: user.email ?? '',
-        fullName: fullName,
-        dateOfBirth: DateTime(1990, 1, 1), // Default date of birth
+        fullName: user.displayName?.isNotEmpty == true
+            ? user.displayName!
+            : user.email?.split('@').first ?? 'User',
         createdAt: now,
         updatedAt: now,
         profilePicture: user.photoURL,
       );
 
-      print('Created profile with fullName: $fullName');
       await _firestoreService.createOrUpdateUser(profile);
       return profile;
     } catch (e) {
