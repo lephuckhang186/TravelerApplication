@@ -48,7 +48,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       // Try to get user profile from Firestore
-      _userProfile = await _firestoreService.getUserProfile(currentUser.uid);
+      try {
+        _userProfile = await _firestoreService.getUserProfile(currentUser.uid);
+      } catch (firestoreError) {
+        print('Firestore error: $firestoreError');
+        _userProfile = null;
+      }
 
       if (_userProfile != null) {
         // Load data from Firestore
@@ -62,9 +67,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _addressController.text = _userProfile!.address ?? '';
         _gender = _userProfile!.gender ?? 'Chưa cập nhật';
         _birthDate = _userProfile!.dateOfBirth ?? DateTime(1990, 1, 1);
-        _avatarPath = _userProfile!.profilePicture;
+        _avatarPath = _userProfile!.profilePicture ?? currentUser.photoURL;
       } else {
-        // Fallback to creating a basic profile
+        // Fallback to using Firebase Auth data for Google users
         _nameController.text = currentUser.displayName?.isNotEmpty == true
             ? currentUser.displayName!
             : currentUser.email?.split('@').first ?? 'User';
@@ -75,21 +80,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _birthDate = DateTime(1990, 1, 1);
         _avatarPath = currentUser.photoURL;
 
-        // Create initial profile in Firestore
-        final displayName = currentUser.displayName?.isNotEmpty == true
-            ? currentUser.displayName!
-            : currentUser.email?.split('@').first ?? 'User';
-        await _createInitialProfile(
-          currentUser.uid,
-          currentUser.email ?? '',
-          displayName,
-        );
+        // Create initial profile in Firestore if user has basic info
+        if (currentUser.displayName?.isNotEmpty == true || currentUser.email?.isNotEmpty == true) {
+          final displayName = currentUser.displayName?.isNotEmpty == true
+              ? currentUser.displayName!
+              : currentUser.email?.split('@').first ?? 'User';
+          try {
+            await _createInitialProfile(
+              currentUser.uid,
+              currentUser.email ?? '',
+              displayName,
+            );
+          } catch (createError) {
+            print('Error creating initial profile: $createError');
+            // Không ném lỗi, vẫn hiển thị thông tin từ Firebase Auth
+          }
+        }
       }
     } catch (e) {
       print('Error loading user data: $e');
       _setDefaultUserData();
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -117,15 +131,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _setDefaultUserData() {
     // Set meaningful default data instead of empty fields
     final currentUser = _authService.currentUser;
-    final fallbackName = currentUser?.displayName?.isNotEmpty == true
-        ? currentUser!.displayName!
-        : currentUser?.email?.split('@').first ?? 'User';
-    _nameController.text = fallbackName;
-    _emailController.text = currentUser?.email ?? 'user@example.com';
-    _phoneController.text = '';
-    _addressController.text = '';
-    _gender = 'Chưa cập nhật';
-    _birthDate = DateTime(1995, 1, 1);
+    if (currentUser != null) {
+      final fallbackName = currentUser.displayName?.isNotEmpty == true
+          ? currentUser.displayName!
+          : currentUser.email?.split('@').first ?? 'User';
+      _nameController.text = fallbackName;
+      _emailController.text = currentUser.email ?? 'user@example.com';
+      _phoneController.text = '';
+      _addressController.text = '';
+      _gender = 'Chưa cập nhật';
+      _birthDate = DateTime(1995, 1, 1);
+      _avatarPath = currentUser.photoURL;
+    } else {
+      // Fallback when no user is authenticated
+      _nameController.text = 'User';
+      _emailController.text = 'user@example.com';
+      _phoneController.text = '';
+      _addressController.text = '';
+      _gender = 'Chưa cập nhật';
+      _birthDate = DateTime(1995, 1, 1);
+      _avatarPath = null;
+    }
   }
 
   String _getHintText(String label) {
@@ -218,15 +244,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: ClipOval(
                     child: _avatarPath != null
-                        ? Image.file(
-                            File(_avatarPath!),
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return _buildDefaultAvatar();
-                            },
-                          )
+                        ? _avatarPath!.startsWith('http')
+                            ? Image.network(
+                                _avatarPath!,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildDefaultAvatar();
+                                },
+                              )
+                            : Image.file(
+                                File(_avatarPath!),
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildDefaultAvatar();
+                                },
+                              )
                         : _buildDefaultAvatar(),
                   ),
                 ),
