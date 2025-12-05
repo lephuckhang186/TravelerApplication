@@ -8,7 +8,7 @@ import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../providers/trip_planning_provider.dart';
 import '../services/trip_planning_service.dart';
-import '../services/trip_storage_service.dart';
+import '../services/firebase_trip_service.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
@@ -24,7 +24,7 @@ class PlannerDetailScreen extends StatefulWidget {
 
 class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   final TripPlanningService _tripService = TripPlanningService();
-  final TripStorageService _storageService = TripStorageService();
+  final FirebaseTripService _firebaseService = FirebaseTripService();
   final ExpenseService _expenseService = ExpenseService();
   final TripExpenseIntegrationService _integrationService =
       TripExpenseIntegrationService();
@@ -789,6 +789,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                                     ),
                                   )
                                 : null,
+                            // Preserve expense info to maintain expense tracking
+                            expenseInfo: activity.expenseInfo,
                           );
                           Navigator.pop(context);
                           _updateActivity(updatedActivity);
@@ -1596,7 +1598,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       );
 
       // Save to storage
-      final storedTrip = await _storageService.saveTrip(updatedTrip);
+      await _firebaseService.saveTrip(updatedTrip);
+      final storedTrip = updatedTrip;
 
       // Try to update on server if trip has ID and not local
       if (storedTrip.id != null && !storedTrip.id!.startsWith('local_')) {
@@ -1638,7 +1641,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final updatedTrip = _trip.copyWith(
       activities: List<ActivityModel>.from(_activities),
     );
-    final storedTrip = await _storageService.saveTrip(updatedTrip);
+    await _firebaseService.saveTrip(updatedTrip);
+    final storedTrip = updatedTrip;
     setState(() {
       _trip = storedTrip;
       _hasChanges = true;
@@ -1693,7 +1697,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         } catch (_) {
           // ignore server failure, we'll still remove locally
         }
-        await _storageService.deleteTrip(_trip.id!);
+        await _firebaseService.deleteTrip(_trip.id!);
       }
 
       if (!mounted) return;
@@ -1793,19 +1797,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         // Checking in - prompt for actual cost
         await _checkInWithActualCost(activity);
       } else {
-        // Checking out - just toggle status
-        final updatedActivity = activity.copyWith(checkIn: false);
-        await _updateActivityCheckIn(updatedActivity);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Checked out'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        // Checking out - remove expense and toggle status
+        await _checkOutActivity(activity);
       }
     } catch (e) {
       if (mounted) {
@@ -1816,6 +1809,41 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ),
         );
       }
+    }
+  }
+
+  /// Handle checkout - remove expense if exists and toggle status
+  Future<void> _checkOutActivity(ActivityModel activity) async {
+    // Delete expense if it was synced and we have the expense ID
+    if (activity.expenseInfo.expenseSynced && 
+        activity.expenseInfo.expenseId != null) {
+      try {
+        if (_expenseProvider != null) {
+          await _expenseProvider!.deleteExpense(activity.expenseInfo.expenseId!);
+          debugPrint('Deleted expense: ${activity.expenseInfo.expenseId}');
+        }
+      } catch (e) {
+        debugPrint('Failed to delete expense on checkout: $e');
+        // Continue with checkout even if expense deletion fails
+      }
+    }
+
+    // Update activity: uncheck and clear expense info
+    final updatedActivity = activity.copyWith(
+      checkIn: false,
+      expenseInfo: ExpenseInfo(), // Reset expense info
+    );
+    
+    await _updateActivityCheckIn(updatedActivity);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Checked out'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -1978,22 +2006,49 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         return;
       }
 
+      // Check if expense already exists for this activity
+      if (activity.expenseInfo.expenseSynced && 
+          activity.expenseInfo.expenseId != null) {
+        debugPrint(
+          'Expense already exists for activity: ${activity.title} (expenseId: ${activity.expenseInfo.expenseId})',
+        );
+        return;
+      }
+
       // Only try expense integration if provider is available
       if (_expenseProvider != null) {
-        final success = await _integrationService.syncActivityExpense(activity);
+        // Create expense and get the expense ID
+        final expense = await _expenseService.createExpenseFromActivity(
+          amount: activity.budget!.actualCost!,
+          category: activity.activityType.value,
+          description: '${activity.title}',
+          activityId: activity.id,
+          tripId: _trip.id,
+        );
 
-        if (!success) {
-          // Fallback to direct expense service call
-          await _expenseService.createExpenseFromActivity(
-            amount: activity.budget!.actualCost!,
-            category: activity.activityType.value,
-            description: '${activity.title}',
-            activityId: activity.id,
-            tripId: _trip.id,
-          );
+        // Update activity with expense info
+        final updatedExpenseInfo = activity.expenseInfo.copyWith(
+          expenseId: expense.id,
+          hasExpense: true,
+          expenseCategory: activity.activityType.value,
+          expenseSynced: true,
+        );
+
+        final updatedActivity = activity.copyWith(
+          expenseInfo: updatedExpenseInfo,
+        );
+
+        // Update the activity in local state
+        final index = _activities.indexWhere((a) => a.id == activity.id);
+        if (index != -1) {
+          setState(() {
+            _activities[index] = updatedActivity;
+          });
+          await _persistTripChanges();
         }
+
         debugPrint(
-          'Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND)',
+          'Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND), expenseId: ${expense.id}',
         );
       } else {
         // Log activity cost without expense integration

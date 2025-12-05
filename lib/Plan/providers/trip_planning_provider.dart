@@ -2,14 +2,13 @@ import 'package:flutter/foundation.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../services/trip_planning_service.dart';
-import '../services/trip_storage_service.dart';
 import '../services/firebase_trip_service.dart';
 import '../services/budget_sync_service.dart';
 
-/// Provider for managing trip planning state
+/// Provider for managing trip planning state (Firestore-only version)
 class TripPlanningProvider extends ChangeNotifier {
   final TripPlanningService _apiService = TripPlanningService();
-  final TripStorageService _storageService = TripStorageService();
+  final FirebaseTripService _firebaseService = FirebaseTripService();
   final BudgetSyncService _budgetSyncService = BudgetSyncService();
 
   List<TripModel> _trips = [];
@@ -24,16 +23,16 @@ class TripPlanningProvider extends ChangeNotifier {
   String? get error => _error;
   bool get hasTrips => _trips.isNotEmpty;
 
-  /// Initialize the provider
+  /// Initialize the provider - Load directly from Firestore
   Future<void> initialize() async {
     _setLoading(true);
     try {
-      // First load from local storage for immediate display
-      await _loadTripsFromStorage();
-      // Then sync with API in background
-      await _syncWithAPI();
+      debugPrint('🔄 INIT: Loading trips from Firestore only...');
+      await _loadTripsFromFirestore();
+      debugPrint('✅ INIT: Loaded ${_trips.length} trips from Firestore');
     } catch (e) {
       _setError('Failed to initialize: $e');
+      debugPrint('❌ INIT: Failed to load trips: $e');
     } finally {
       _setLoading(false);
     }
@@ -85,12 +84,11 @@ class TripPlanningProvider extends ChangeNotifier {
         debugPrint('DEBUG: Created local trip with ID: ${createdTrip.id}');
       }
 
-      // Add to local list and save to HYBRID storage (local + Firebase)
+      // Add to local list and save to Firestore only
       _trips.add(createdTrip);
-      final savedTrips = await _storageService.saveTrips(_trips);
-      _trips = savedTrips; // Update with any Firebase IDs
+      await _firebaseService.saveTrip(createdTrip);
       debugPrint(
-        'DEBUG: HYBRID SAVE - Saved ${_trips.length} trips after creating: ${createdTrip.name}',
+        '✅ FIRESTORE_SAVE: Saved trip to Firestore: ${createdTrip.name} (${createdTrip.id})',
       );
 
       _clearError();
@@ -117,11 +115,10 @@ class TripPlanningProvider extends ChangeNotifier {
         _trips.add(trip);
       }
 
-      // Save to HYBRID storage (local + Firebase) IMMEDIATELY
-      final savedTrips = await _storageService.saveTrips(_trips);
-      _trips = savedTrips; // Update with any Firebase IDs
+      // Save to Firestore only
+      await _firebaseService.saveTrip(trip);
       debugPrint(
-        'DEBUG: HYBRID SAVE - Saved ${_trips.length} trips after adding: ${trip.name}',
+        '✅ FIRESTORE_SAVE: Saved trip to Firestore: ${trip.name} (${trip.id})',
       );
 
       _clearError();
@@ -178,24 +175,17 @@ class TripPlanningProvider extends ChangeNotifier {
         }
       }
 
-      // Proceed with local deletion
-      // Remove from local list and hybrid storage
-      debugPrint('DEBUG: Removing trip from hybrid storage');
+      // Proceed with deletion - Remove from Firestore only
+      debugPrint('DEBUG: Removing trip from Firestore');
       _trips.removeWhere((trip) => trip.id == tripId);
 
-      // Delete from Firebase if not local-only
-      if (!tripId.startsWith('local_')) {
-        try {
-          final firebaseService = FirebaseTripService();
-          await firebaseService.deleteTrip(tripId);
-          debugPrint('DEBUG: Deleted trip from Firebase: $tripId');
-        } catch (e) {
-          debugPrint('DEBUG: Failed to delete from Firebase: $e');
-        }
+      // Delete from Firebase
+      try {
+        await _firebaseService.deleteTrip(tripId);
+        debugPrint('✅ FIRESTORE_DELETE: Deleted trip from Firestore: $tripId');
+      } catch (e) {
+        debugPrint('❌ FIRESTORE_DELETE: Failed to delete from Firestore: $e');
       }
-
-      final savedTrips = await _storageService.saveTrips(_trips);
-      _trips = savedTrips;
 
       if (_currentTrip?.id == tripId) {
         _currentTrip = null;
@@ -259,8 +249,8 @@ class TripPlanningProvider extends ChangeNotifier {
       final updatedTrip = trip.copyWith(activities: updatedActivities);
       _trips[tripIndex] = updatedTrip;
 
-      // Save to storage
-      await _storageService.saveTrips(_trips);
+      // Save to Firestore
+      await _firebaseService.saveTrip(updatedTrip);
 
       // Update current trip if it's the same
       if (_currentTrip?.id == tripId) {
@@ -291,7 +281,7 @@ class TripPlanningProvider extends ChangeNotifier {
       final tripIndex = _trips.indexWhere((t) => t.id == tripId);
       if (tripIndex != -1) {
         _trips[tripIndex] = syncedTrip;
-        await _storageService.saveTrips(_trips);
+        await _firebaseService.saveTrip(syncedTrip);
 
         // Update current trip if it's the same
         if (_currentTrip?.id == tripId) {
@@ -362,125 +352,16 @@ class TripPlanningProvider extends ChangeNotifier {
   }
 
   // Private methods
-  Future<void> _loadTripsFromStorage() async {
+  Future<void> _loadTripsFromFirestore() async {
     try {
-      _trips = await _storageService.loadTrips();
+      _trips = await _firebaseService.loadTrips();
+      debugPrint(
+        '📥 FIRESTORE_LOAD: Loaded ${_trips.length} trips from Firestore',
+      );
       notifyListeners();
     } catch (e) {
-      debugPrint('Failed to load from storage: $e');
-    }
-  }
-
-  Future<void> _syncWithAPI() async {
-    try {
-      debugPrint('DEBUG: Fetched ${_trips.length} cached trips');
-
-      // Try to get trips from API with timeout protection
-      List<TripModel> apiTrips = [];
-
-      try {
-        apiTrips = await _apiService.getTrips();
-        debugPrint(
-          'DEBUG: Successfully fetched ${apiTrips.length} trips from API',
-        );
-      } catch (e) {
-        debugPrint('DEBUG: API call failed: $e');
-        // CRITICAL: If we have no trips AND API fails, this means fresh start
-        // Try to create a simple local trip to maintain user experience
-        if (_trips.isEmpty) {
-          debugPrint(
-            'DEBUG: No trips found and API failed - offering recovery options',
-          );
-          // Could show user a dialog to manually re-add trips or sync from another source
-        }
-        debugPrint('DEBUG: Keeping cached trips due to API failure');
-        return;
-      }
-
-      if (apiTrips.isEmpty && _trips.isNotEmpty) {
-        debugPrint(
-          'DEBUG: No remote trips received, but have ${_trips.length} cached trips',
-        );
-
-        // Check if cached trips are local-only
-        final hasLocalOnlyTrips = _trips.any(
-          (trip) => trip.id?.startsWith('local_') == true,
-        );
-        final hasServerTrips = _trips.any(
-          (trip) => trip.id?.startsWith('local_') != true,
-        );
-
-        if (hasLocalOnlyTrips && !hasServerTrips) {
-          debugPrint(
-            'DEBUG: Only local trips found, attempting to sync them to server',
-          );
-          await _syncLocalTripsToServer();
-          return;
-        } else if (hasServerTrips) {
-          debugPrint(
-            'DEBUG: Warning: Server returned empty but we have server trips cached',
-          );
-          debugPrint(
-            'DEBUG: This could be a server issue. Keeping cached trips for safety.',
-          );
-          // KEEP cached trips instead of deleting them
-          return;
-        }
-      }
-
-      // Merge API trips with local trips safely
-      final Map<String, TripModel> tripMap = {};
-
-      // First add all cached trips (both local and server)
-      for (final trip in _trips) {
-        if (trip.id != null) {
-          tripMap[trip.id!] = trip;
-        }
-      }
-
-      // Then add/update with API trips (these override cached server trips)
-      for (final trip in apiTrips) {
-        if (trip.id != null) {
-          debugPrint(
-            'DEBUG: Adding/updating API trip: ${trip.name} (${trip.id})',
-          );
-          tripMap[trip.id!] = trip;
-        }
-      }
-
-      // CONSERVATIVE: Only remove trips if we're confident they were deleted
-      // Don't remove trips just because API returned empty - could be temporary issue
-      if (apiTrips.isNotEmpty) {
-        // Only remove cached server trips that don't exist in a non-empty API response
-        final tripsToRemove = <String>[];
-        for (final trip in _trips) {
-          if (trip.id != null && !trip.id!.startsWith('local_')) {
-            final existsInAPI = apiTrips.any(
-              (apiTrip) => apiTrip.id == trip.id,
-            );
-            if (!existsInAPI) {
-              debugPrint(
-                'DEBUG: Trip ${trip.name} (${trip.id}) not found in non-empty API response - removing',
-              );
-              tripsToRemove.add(trip.id!);
-            }
-          }
-        }
-
-        for (final tripId in tripsToRemove) {
-          tripMap.remove(tripId);
-        }
-      }
-
-      _trips = tripMap.values.toList();
-      final savedTrips = await _storageService.saveTrips(_trips);
-      _trips = savedTrips; // Update with any Firebase IDs
-      notifyListeners();
-      debugPrint('DEBUG: Final trip count: ${_trips.length}');
-    } catch (e) {
-      debugPrint('Failed to sync with API: $e');
-      // Continue with local data if API fails
-      debugPrint('DEBUG: Continuing with ${_trips.length} cached trips');
+      debugPrint('❌ FIRESTORE_LOAD: Failed to load from Firestore: $e');
+      _trips = [];
     }
   }
 
@@ -497,44 +378,5 @@ class TripPlanningProvider extends ChangeNotifier {
   void _clearError() {
     _error = null;
     notifyListeners();
-  }
-
-  /// Sync local-only trips to server
-  Future<void> _syncLocalTripsToServer() async {
-    final localTrips = _trips
-        .where((trip) => trip.id?.startsWith('local_') == true)
-        .toList();
-
-    for (final localTrip in localTrips) {
-      try {
-        debugPrint('DEBUG: Syncing local trip to server: ${localTrip.name}');
-
-        // Create a clean trip without the local ID
-        final cleanTrip = localTrip.copyWith(id: null);
-        final serverTrip = await _apiService.createTrip(cleanTrip);
-
-        // Replace local trip with server trip
-        final index = _trips.indexOf(localTrip);
-        if (index != -1) {
-          _trips[index] = serverTrip;
-        }
-
-        debugPrint('DEBUG: Successfully synced trip, new ID: ${serverTrip.id}');
-      } catch (e) {
-        debugPrint('DEBUG: Failed to sync local trip ${localTrip.name}: $e');
-        // Keep the local trip if sync fails
-      }
-    }
-
-    // Save updated trips to hybrid storage
-    final savedTrips = await _storageService.saveTrips(_trips);
-    _trips = savedTrips; // Update with any Firebase IDs
-    notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _budgetSyncService.dispose();
-    super.dispose();
   }
 }

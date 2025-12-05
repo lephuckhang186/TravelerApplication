@@ -122,10 +122,10 @@ class ActivityManager:
         self._load_activities_from_database()
     
     def _load_activities_from_database(self):
-        """Load all activities from SQLite database into memory"""
+        """Load all activities from SQLite database into memory - DISABLED"""
         try:
-            from app.database import DatabaseManager
-            db_manager = DatabaseManager()
+            # Database removed - using Firebase only
+            return  # Skip database loading
             from datetime import datetime
             
             # Get all activities from database

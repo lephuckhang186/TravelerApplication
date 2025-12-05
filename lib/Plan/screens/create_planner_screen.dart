@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
+import '../../Core/theme/app_theme.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../providers/trip_planning_provider.dart';
 import '../services/trip_planning_service.dart';
-import '../services/trip_storage_service.dart';
+import '../services/firebase_trip_service.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/models/expense_models.dart';
 
@@ -483,13 +483,18 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     try {
       final tripService = TripPlanningService();
       final createdTrip = await tripService.createTrip(trip);
-      final storageService = TripStorageService();
-      return await storageService.saveTrip(createdTrip);
-    } catch (_) {
-      final storageService = TripStorageService();
-      return await storageService.saveTrip(
-        trip.copyWith(id: 'local_${DateTime.now().millisecondsSinceEpoch}'),
+      final firebaseService = FirebaseTripService();
+      await firebaseService.saveTrip(createdTrip);
+      return createdTrip;
+    } catch (e) {
+      debugPrint('❌ CREATE_TRIP: Failed to create trip: $e');
+      // If API fails, create with Firebase directly
+      final firebaseService = FirebaseTripService();
+      final tripWithId = trip.copyWith(
+        id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
       );
+      await firebaseService.saveTrip(tripWithId);
+      return tripWithId;
     }
   }
 }

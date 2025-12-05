@@ -457,10 +457,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text(
-              'Đang gửi góp ý...',
-              style: GoogleFonts.quattrocento(),
-            ),
+            Text('Đang gửi góp ý...', style: GoogleFonts.quattrocento()),
           ],
         ),
       ),
@@ -472,8 +469,8 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
         rating: _rating,
         category: _selectedCategory,
         feedback: _feedbackController.text.trim(),
-        userEmail: _emailController.text.trim().isNotEmpty 
-            ? _emailController.text.trim() 
+        userEmail: _emailController.text.trim().isNotEmpty
+            ? _emailController.text.trim()
             : null,
       );
 
@@ -490,7 +487,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
     } catch (e) {
       // Đóng loading dialog
       Navigator.pop(context);
-      
+
       // Hiển thị dialog fallback
       _showManualEmailDialog();
     }
@@ -574,79 +571,13 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
     );
   }
 
-  void _showErrorDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: [
-            Icon(Icons.error, color: Colors.red, size: 24),
-            const SizedBox(width: 8),
-            Text(
-              'Mở email client',
-              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        content: Text(
-          'Ứng dụng sẽ mở email client với nội dung góp ý đã được điền sẵn. Bạn chỉ cần nhấn Send trong email client.',
-          style: GoogleFonts.quattrocento(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Hủy',
-              style: GoogleFonts.quattrocento(color: Colors.grey),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showManualEmailDialog();
-            },
-            child: Text(
-              'Copy nội dung',
-              style: GoogleFonts.quattrocento(color: AppColors.primary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              // Mở ứng dụng email với địa chỉ team
-              final success = await EmailService.sendFeedbackEmail(
-                rating: _rating,
-                category: _selectedCategory,
-                feedback: _feedbackController.text.trim(),
-                userEmail: _emailController.text.trim().isNotEmpty 
-                    ? _emailController.text.trim() 
-                    : null,
-              );
-              if (success) {
-                _showSnackBar('Đã mở email client. Vui lòng kiểm tra và gửi email.');
-              } else {
-                _showManualEmailDialog();
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: Text(
-              'Mở Email',
-              style: GoogleFonts.quattrocento(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showManualEmailDialog() {
     final emailInfo = EmailService.getManualEmailInfo(
       _rating,
       _selectedCategory,
       _feedbackController.text.trim(),
-      _emailController.text.trim().isNotEmpty 
-          ? _emailController.text.trim() 
+      _emailController.text.trim().isNotEmpty
+          ? _emailController.text.trim()
           : null,
     );
 
@@ -722,11 +653,11 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
         rating: _rating,
         category: 'Liên hệ trực tiếp',
         feedback: 'Người dùng muốn liên hệ trực tiếp với team',
-        userEmail: _emailController.text.trim().isNotEmpty 
-            ? _emailController.text.trim() 
+        userEmail: _emailController.text.trim().isNotEmpty
+            ? _emailController.text.trim()
             : null,
       );
-      
+
       if (success) {
         _showSnackBar('Đã mở ứng dụng email để liên hệ với team');
       } else {

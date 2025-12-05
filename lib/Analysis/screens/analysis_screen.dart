@@ -39,9 +39,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   int _currentViewIndex = 0; // 0: Activities, 1: Statistic
   int _currentMonthIndex = DateTime.now().month - 1; // Current month (0-based)
   int _currentYear = DateTime.now().year;
-  int _chartTypeIndex = 0; // 0: Pie chart, 1: Bar chart
   int _categoryTabIndex = 0; // 0: Subcategory, 1: Category
-  int? _selectedBarIndex; // Index of selected bar in chart
   String? _selectedTripId; // Selected trip for filtering
   // Removed unused _budgetStatus field
 
@@ -81,11 +79,14 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     _categoryTabController = TabController(length: 2, vsync: this);
   }
 
+  bool _hasInitialized = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Initialize providers when dependencies are ready
-    if (_expenseProvider == null && mounted) {
+    // Initialize providers when dependencies are ready - ONLY ONCE
+    if (_expenseProvider == null && mounted && !_hasInitialized) {
+      _hasInitialized = true;
       _expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
       // Schedule initialization for next frame to avoid setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,25 +101,47 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   /// Initialize with authentication and load data
   Future<void> _initializeWithAuth() async {
     try {
+      debugPrint('AUTH_INIT: Starting authentication initialization...');
       final authService = AuthService();
       final token = await authService.getIdToken();
 
       if (token != null && _expenseProvider != null) {
+        debugPrint('AUTH_INIT: Token obtained, setting auth token...');
         expenseProvider.setAuthToken(token);
+        // Load trips first to get the selected trip ID
+        debugPrint('AUTH_INIT: Refreshing trip data...');
+        await _refreshTripData();
+        
+        // Set default trip if none selected and trips exist
+        if (mounted) {
+          final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+          if (_selectedTripId == null && tripProvider.trips.isNotEmpty) {
+            _selectedTripId = tripProvider.trips.first.id;
+            debugPrint('AUTH_INIT: Auto-selected first trip: $_selectedTripId');
+          } else if (tripProvider.trips.isEmpty) {
+            debugPrint('AUTH_INIT: No trips found, will load all expenses');
+          }
+        }
+        
+        // IMPORTANT: Only load data AFTER trip selection is done
+        debugPrint('AUTH_INIT: Loading expense data with tripId=$_selectedTripId...');
         await _loadData();
+        debugPrint('AUTH_INIT: Initialization complete');
       } else {
+        debugPrint('AUTH_INIT: No token found, redirecting to auth screen');
         // User not authenticated, redirect to auth screen
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/auth');
         }
       }
     } catch (e) {
-      debugPrint('Error initializing with auth: $e');
+      debugPrint('AUTH_INIT ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Authentication error: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -172,11 +195,12 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
 
     // Fetch data with trip-specific filtering where applicable
+    debugPrint('LOAD_DATA: Calling fetchExpenses with tripId=$_selectedTripId');
     await Future.wait([
       expenseProvider.fetchExpenses(
         startDate: startDate,
         endDate: endDate,
-        tripId: _selectedTripId, // Filter expenses by trip
+        tripId: _selectedTripId, // null = all trips, specific id = one trip
       ),
       expenseProvider.fetchExpenseSummary(tripId: _selectedTripId),
       expenseProvider.fetchCategoryStatus(),
@@ -184,10 +208,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       expenseProvider.fetchBudgetStatus(tripId: _selectedTripId),
     ]);
 
-    debugPrint('LOAD_DATA: Loaded ${expenseProvider.expenses.length} expenses');
+    debugPrint('LOAD_DATA: Loaded ${expenseProvider.expenses.length} expenses (tripId was: $_selectedTripId)');
   }
 
-  /// Refresh trip data
+  /// Refresh trip data with better error handling
   Future<void> _refreshTripData() async {
     try {
       if (!mounted) return;
@@ -197,16 +221,28 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       );
 
       debugPrint(
-        'TRIP_REFRESH: Starting trip data refresh, current trips: ${tripProvider.trips.length}',
+        'TRIP_REFRESH: Starting trip data refresh, current trips: ${tripProvider.trips.length}, selected: $_selectedTripId',
       );
 
-      // Only refresh if we're not currently loading
-      if (!tripProvider.isLoading) {
-        await tripProvider.initialize();
+      // Try to initialize trips with timeout protection
+      try {
+        await tripProvider.initialize().timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            debugPrint('TRIP_REFRESH: Trip initialization timed out after 20 seconds');
+            throw Exception('Trip loading timed out');
+          },
+        );
 
         debugPrint(
           'TRIP_REFRESH: After initialize, loaded trips: ${tripProvider.trips.length}',
         );
+        
+        // DON'T auto-select trip - let user choose or default to "All Trips"
+        // This prevents filtering out expenses without tripId
+        if (tripProvider.trips.isNotEmpty) {
+          debugPrint('TRIP_REFRESH: ${tripProvider.trips.length} trips available. Defaulting to "All Trips" view');
+        }
 
         // Always run cleanup if trip initialization completed successfully (even if result is 0 trips)
         // This ensures orphaned expenses from deleted trips get cleaned up
@@ -224,10 +260,25 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             'TRIP_REFRESH: Trip provider still loading, skipping cleanup',
           );
         }
-      } else {
-        debugPrint(
-          'TRIP_REFRESH: Trip provider is currently loading, skipping refresh',
-        );
+      } catch (timeoutError) {
+        debugPrint('TRIP_REFRESH: Timeout or error during initialization: $timeoutError');
+        // Don't crash the app - use cached trips if available
+        if (tripProvider.trips.isNotEmpty) {
+          debugPrint('TRIP_REFRESH: Using ${tripProvider.trips.length} cached trips due to timeout');
+          // Don't auto-select - let user choose
+        } else {
+          debugPrint('TRIP_REFRESH: No cached trips available, continuing without trip filter');
+          // Show a subtle error message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Unable to load trips. Showing all expenses.'),
+                backgroundColor: Colors.orange[700],
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       debugPrint('TRIP_REFRESH ERROR: $e');
@@ -239,6 +290,12 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     if (_expenseProvider == null || !mounted) return;
 
     try {
+      // Get trip provider from context
+      final tripProvider = Provider.of<TripPlanningProvider>(
+        context,
+        listen: false,
+      );
+      
       // Note: validTrips can be empty if user legitimately has no trips
       // This is now safe because we only call this after confirming trip loading was successful
       final allExpenses = expenseProvider.expenses;
@@ -313,9 +370,20 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         // Update the selected trip if it was deleted
         if (_selectedTripId != null &&
             !validTripIds.contains(_selectedTripId)) {
+          debugPrint('CLEANUP: Selected trip $_selectedTripId was deleted, selecting first trip');
+          // Trip was deleted, select first available trip instead of null
           if (mounted) {
             setState(() {
-              _selectedTripId = null;
+              _selectedTripId = tripProvider.trips.isNotEmpty ? tripProvider.trips.first.id : null;
+              debugPrint('CLEANUP: Reset to first trip: $_selectedTripId');
+            });
+          }
+        } else if (_selectedTripId == null && tripProvider.trips.isNotEmpty) {
+          // No trip selected yet, auto-select first trip
+          if (mounted) {
+            setState(() {
+              _selectedTripId = tripProvider.trips.first.id;
+              debugPrint('CLEANUP: Auto-selected first trip after refresh: $_selectedTripId');
             });
           }
         }
@@ -410,7 +478,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       if (mounted) {
         setState(() {
           // Force UI refresh
-          _selectedBarIndex = null;
         });
       }
 
@@ -674,26 +741,21 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               ),
               child: Column(
                 children: [
-                  // Chart area
+                  // Chart area - Pie chart only
                   Expanded(
-                    flex: _chartTypeIndex == 0 ? 2 : 3,
-                    child: _chartTypeIndex == 0
-                        ? _buildPieChart()
-                        : _buildBarChart(),
+                    flex: 2,
+                    child: _buildPieChart(),
                   ),
 
-                  // Only show category tabs and list for pie chart
-                  if (_chartTypeIndex == 0) ...[
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                    // Category tabs
-                    _buildCategoryTabs(),
+                  // Category tabs
+                  _buildCategoryTabs(),
 
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                    // Category list
-                    Expanded(child: _buildCategoryList()),
-                  ],
+                  // Category list
+                  Expanded(child: _buildCategoryList()),
                 ],
               ),
             ),
@@ -759,6 +821,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                           setState(() {
                             _selectedTripId = tripId;
                           });
+                          debugPrint('TRIP_FILTER: _selectedTripId now set to: $_selectedTripId');
                           // Force complete refresh when trip filter changes
                           await _forceRefreshAllData();
                         },
@@ -1416,38 +1479,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     return AnimatedBuilder(
       animation: expenseProvider,
       builder: (context, child) {
-        return Column(
-          children: [
-            // Chart toggle buttons
-            Row(
-              children: [
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => _toggleChartType(),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.bar_chart,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            Expanded(
-              child: Transform.translate(
-                offset: const Offset(0, -20), // Dịch pie chart lên trên 20px
-                child: _buildPieChartContent(),
-              ),
-            ),
-          ],
+        return Expanded(
+          child: Transform.translate(
+            offset: const Offset(0, -20), // Dịch pie chart lên trên 20px
+            child: _buildPieChartContent(),
+          ),
         );
       },
     );
@@ -1606,597 +1642,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-  /// Bar chart
-  Widget _buildBarChart() {
-    return Column(
-      children: [
-        // Chart toggle and spend info
-        Row(
-          children: [
-            const Spacer(),
-            GestureDetector(
-              onTap: () => _toggleChartType(),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.pie_chart, size: 16, color: Colors.grey[600]),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        Expanded(child: _buildCustomHorizontalBarChart()),
-
-        const SizedBox(height: 16),
-
-        // Spend info button
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.orange[400],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              '${_formatMoney(expenseProvider.expenseSummary?.totalAmount ?? 0)}₫',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.quattrocento(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-
-  /// Advanced animated bar chart with real data and beautiful decorations
-  Widget _buildCustomHorizontalBarChart() {
-    if (_expenseProvider == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    return AnimatedBuilder(
-      animation: expenseProvider,
-      builder: (context, child) {
-        // Get real data from spending trends or create mock data based on current month
-        List<Map<String, dynamic>> chartData = _generateChartData();
-
-        if (chartData.isEmpty) {
-          return _buildEmptyBarChart();
-        }
-
-        return _buildAnimatedBarChart(chartData);
-      },
-    );
-  }
-
-  /// Generate chart data from real expense data
-  List<Map<String, dynamic>> _generateChartData() {
-    // Use real expense data from provider
-    final expenses = expenseProvider.expenses;
-
-    if (expenses.isEmpty) {
-      return [];
-    }
-
-    // Group expenses by month
-    final monthlyData = <int, double>{};
-    for (final expense in expenses) {
-      final month = expense.date.month;
-      monthlyData[month] = (monthlyData[month] ?? 0) + expense.amount;
-    }
-
-    // If no monthly data, just return current month total
-    if (monthlyData.isEmpty) {
-      final currentTotal = expenseProvider.expenseSummary?.totalAmount ?? 0.0;
-      if (currentTotal > 0) {
-        return [
-          {
-            'month': _getShortMonthName(DateTime.now().month),
-            'amount': currentTotal,
-            'color': _getGradientColor(currentTotal, currentTotal),
-            'isCurrentMonth': true,
-          },
-        ];
-      }
-      return [];
-    }
-
-    final maxAmount = monthlyData.values.isNotEmpty
-        ? monthlyData.values.reduce((a, b) => a > b ? a : b)
-        : 1000000.0;
-
-    // Convert to chart data
-    return monthlyData.entries.map((entry) {
-      return {
-        'month': _getShortMonthName(entry.key),
-        'amount': entry.value,
-        'color': _getGradientColor(entry.value, maxAmount),
-        'isCurrentMonth': entry.key == DateTime.now().month,
-      };
-    }).toList()..sort(
-      (a, b) => _getMonthNumber(
-        a['month'] as String,
-      ).compareTo(_getMonthNumber(b['month'] as String)),
-    );
-  }
-
-  /// Build empty state for bar chart
-  Widget _buildEmptyBarChart() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.bar_chart, size: 48, color: Colors.grey[400]),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Chưa có dữ liệu xu hướng chi tiêu',
-            style: GoogleFonts.quattrocento(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Hãy thêm một số giao dịch để xem biểu đồ',
-            style: GoogleFonts.quattrocento(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build animated bar chart with beautiful decorations
-  Widget _buildAnimatedBarChart(List<Map<String, dynamic>> data) {
-    final maxAmount = data
-        .map((item) => item['amount'] as double)
-        .reduce((a, b) => a > b ? a : b);
-    final minAmount = data
-        .map((item) => item['amount'] as double)
-        .reduce((a, b) => a < b ? a : b);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey[50]!, Colors.white],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        children: [
-          // Chart title with trend info
-          _buildChartHeader(maxAmount, minAmount),
-
-          const SizedBox(height: 20),
-
-          // Main chart area
-          Expanded(
-            flex: 2,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Y-axis with dynamic labels
-                _buildYAxis(maxAmount),
-
-                const SizedBox(width: 16),
-
-                // Chart bars area
-                Expanded(child: _buildBarsArea(data, maxAmount)),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // X-axis labels with enhanced styling
-          _buildXAxis(data),
-
-          const SizedBox(height: 12),
-
-          // Chart legend
-          _buildChartLegend(),
-        ],
-      ),
-    );
-  }
-
-  /// Build chart header with trend information
-  Widget _buildChartHeader(double maxAmount, double minAmount) {
-    final trend = maxAmount > minAmount ? 'tăng' : 'giảm';
-    final trendIcon = maxAmount > minAmount
-        ? Icons.trending_up
-        : Icons.trending_down;
-    final trendColor = maxAmount > minAmount
-        ? Colors.green[600]
-        : Colors.red[600];
-
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Xu hướng chi tiêu 6 tháng',
-                style: GoogleFonts.quattrocento(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(trendIcon, size: 16, color: trendColor),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      'Xu hướng $trend',
-                      style: GoogleFonts.quattrocento(
-                        fontSize: 12,
-                        color: trendColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          flex: 2,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.insights, size: 14, color: Colors.blue[600]),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    'Cao nhất: ${_formatMoney(maxAmount)}₫',
-                    style: GoogleFonts.quattrocento(
-                      fontSize: 11,
-                      color: Colors.blue[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Build Y-axis with dynamic scaling
-  Widget _buildYAxis(double maxAmount) {
-    final intervals = _calculateYAxisIntervals(maxAmount);
-
-    return SizedBox(
-      width: 60,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: intervals.map((amount) {
-          return Container(
-            padding: const EdgeInsets.only(right: 8),
-            child: Text(
-              _formatMoney(amount),
-              style: GoogleFonts.quattrocento(
-                fontSize: 11,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  /// Build bars area with animations and hover effects
-  Widget _buildBarsArea(List<Map<String, dynamic>> data, double maxAmount) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: Colors.grey[300]!, width: 1.5),
-          bottom: BorderSide(color: Colors.grey[300]!, width: 1.5),
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Grid lines
-          _buildGridLines(),
-
-          // Animated bars
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: data.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                return Expanded(
-                  child: _buildAnimatedBar(item, maxAmount, index),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build individual animated bar with hover effect
-  Widget _buildAnimatedBar(
-    Map<String, dynamic> item,
-    double maxAmount,
-    int index,
-  ) {
-    final amount = item['amount'] as double;
-    final isSelected = _selectedBarIndex == index;
-    final percentage = amount / maxAmount;
-
-    // Determine colors based on selection state
-    final Color barColor;
-    if (isSelected) {
-      barColor = Colors.blue[600]!; // Blue when selected
-    } else {
-      barColor = Colors.grey[400]!; // Grey when not selected
-    }
-
-    return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: 800 + (index * 100)),
-      tween: Tween(begin: 0.0, end: percentage),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return MouseRegion(
-          onEnter: (_) => _showBarTooltip(item),
-          child: GestureDetector(
-            onTap: () => _onBarTap(index),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Container(
-                    width: constraints.maxWidth,
-                    height: 200 * value,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [barColor, barColor.withValues(alpha: 0.7)],
-                      ),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: barColor.withValues(alpha: 0.3),
-                          blurRadius: isSelected ? 12 : 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      border: null,
-                    ),
-                    child: null,
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Build grid lines for better readability
-  Widget _buildGridLines() {
-    return Column(
-      children: List.generate(5, (index) {
-        return Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.grey[200]!, width: 0.8),
-              ),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-
-  /// Build X-axis with enhanced month labels
-  Widget _buildXAxis(List<Map<String, dynamic>> data) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 76),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: data.map((item) {
-          final isCurrentMonth = item['isCurrentMonth'] as bool;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: isCurrentMonth
-                ? BoxDecoration(
-                    color: Colors.orange[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange[300]!),
-                  )
-                : null,
-            child: Text(
-              item['month'] as String,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.quattrocento(
-                fontSize: 12,
-                fontWeight: isCurrentMonth ? FontWeight.w600 : FontWeight.w500,
-                color: isCurrentMonth ? Colors.orange[800] : Colors.grey[700],
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  /// Build chart legend
-  Widget _buildChartLegend() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildLegendItem('Tháng hiện tại', Colors.orange[400]!, true),
-        const SizedBox(width: 16),
-        _buildLegendItem('Tháng khác', Colors.blue[400]!, false),
-      ],
-    );
-  }
-
-  /// Build legend item
-  Widget _buildLegendItem(String label, Color color, bool isCurrent) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-            border: isCurrent
-                ? Border.all(color: Colors.orange[600]!, width: 1.5)
-                : null,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: GoogleFonts.quattrocento(
-            fontSize: 11,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Calculate Y-axis intervals for better scaling
-  List<double> _calculateYAxisIntervals(double maxAmount) {
-    final roundedMax = (maxAmount * 1.1); // Add 10% padding
-    final interval = roundedMax / 4;
-
-    return [
-      roundedMax,
-      roundedMax - interval,
-      roundedMax - (interval * 2),
-      roundedMax - (interval * 3),
-      0,
-    ];
-  }
-
-  /// Get gradient color based on amount
-  Color _getGradientColor(double amount, double maxAmount) {
-    final percentage = amount / maxAmount;
-
-    if (percentage > 0.8) return Colors.red[400]!;
-    if (percentage > 0.6) return Colors.orange[400]!;
-    if (percentage > 0.4) return Colors.blue[400]!;
-    if (percentage > 0.2) return Colors.green[400]!;
-    return Colors.teal[400]!;
-  }
-
-  /// Get short month name
-  String _getShortMonthName(int monthNumber) {
-    const months = [
-      'T1',
-      'T2',
-      'T3',
-      'T4',
-      'T5',
-      'T6',
-      'T7',
-      'T8',
-      'T9',
-      'T10',
-      'T11',
-      'T12',
-    ];
-    return months[(monthNumber - 1) % 12];
-  }
-
-  /// Get month number from short month name (T1 -> 1, T2 -> 2, etc.)
-  int _getMonthNumber(String shortName) {
-    const months = [
-      'T1',
-      'T2',
-      'T3',
-      'T4',
-      'T5',
-      'T6',
-      'T7',
-      'T8',
-      'T9',
-      'T10',
-      'T11',
-      'T12',
-    ];
-    return months.indexOf(shortName) + 1;
-  }
-
-  /// Show tooltip for bar hover
-  void _showBarTooltip(Map<String, dynamic> item) {
-    // Tooltip disabled - no more showing month amount messages
-  }
-
-  /// Handle bar tap to select/deselect
-  void _onBarTap(int index) {
-    setState(() {
-      if (_selectedBarIndex == index) {
-        _selectedBarIndex = null; // Deselect if already selected
-      } else {
-        _selectedBarIndex = index; // Select the tapped bar
-      }
-    });
-  }
 
   /// Category tabs
   Widget _buildCategoryTabs() {
@@ -2553,11 +1998,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     _refreshTripData(); // Also refresh trip data to ensure calendar is up-to-date
   }
 
-  void _toggleChartType() {
-    setState(() {
-      _chartTypeIndex = _chartTypeIndex == 0 ? 1 : 0;
-    });
-  }
 
   void _onFilterTap() {
     _showMessage('Opening filters...');

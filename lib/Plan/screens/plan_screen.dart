@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
+import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';

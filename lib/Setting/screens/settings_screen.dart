@@ -8,7 +8,6 @@ import '../../Login/services/auth_service.dart';
 import '../../Login/services/user_profile.dart';
 import '../../Login/screens/auth_screen.dart';
 import '../../Login/screens/help_center_screen.dart';
-import '../../Login/screens/security_login_screen.dart';
 import 'notification_settings_screen.dart';
 import 'share_feedback_screen.dart';
 import 'general_info_screen.dart';
@@ -456,7 +455,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
 
           const SizedBox(width: 4),
-
         ],
       ),
     );
@@ -489,7 +487,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                            loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               ),
@@ -945,13 +943,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _onSecuritySettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SecurityLoginScreen()),
-    );
-  }
-
   void _onHelpCenter() {
     Navigator.push(
       context,
@@ -993,7 +984,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
     );
   }
-
 
   void _onLogout() {
     showDialog(

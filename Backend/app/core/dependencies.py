@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.services.firebase_service import firebase_service
 from app.core.config import get_settings
-from app.database import db_manager
+# Database removed - using Firebase only
 
 settings = get_settings()
 

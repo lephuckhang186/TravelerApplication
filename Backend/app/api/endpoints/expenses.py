@@ -32,6 +32,7 @@ class ExpenseResponse(BaseModel):
     description: str
     expense_date: datetime
     currency: str = "VND"
+    planner_id: Optional[str] = None  # Add planner_id field
     
     class Config:
         from_attributes = True
@@ -98,22 +99,18 @@ class CategoryStatusResponse(BaseModel):
     is_over_budget: bool
     status: str
 
-# Import database manager
-from app.database import db_manager
+# Import Firebase service
+from app.services.firebase_service import firebase_service
 
-# Remove in-memory expense managers - everything is now in SQLite database
-# expense_managers: dict = {} - REMOVED
-# def get_expense_manager() - REMOVED
-
-# Trip Management Endpoints - Now use SQLite database
+# Trip Management Endpoints - Now use Firebase Firestore
 @router.get("/trip/current", response_model=TripResponse)
 async def get_current_trip(
     current_user: User = Depends(get_current_user)
 ):
-    """Get the current active trip for the user (SQLite database)"""
+    """Get the current active trip for the user (Firebase Firestore)"""
     try:
-        # Get user's trips from database
-        trips = db_manager.get_user_trips(current_user.id)
+        # Get user's trips from Firestore
+        trips = await firebase_service.get_user_trips(current_user.id)
         
         if not trips:
             raise HTTPException(
@@ -147,7 +144,7 @@ async def get_current_trip(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/trip/create")
-async def create_trip(
+async def create_trip_endpoint(
     trip_request: TripCreateRequest,
     current_user: User = Depends(get_current_user)
 ):
@@ -180,16 +177,16 @@ async def create_budget(
             )
         
         # Verify trip exists and belongs to user
-        trip = db_manager.get_trip(trip_id, current_user.id)
+        trip = await firebase_service.get_trip(trip_id, current_user.id)
         if not trip:
             raise HTTPException(
                 status_code=404,
                 detail="Trip not found or does not belong to user."
             )
         
-        # Update trip budget in database
+        # Update trip budget in Firestore
         updates = {"total_budget": budget_request.total_budget}
-        updated_trip = db_manager.update_trip(trip_id, current_user.id, updates)
+        updated_trip = await firebase_service.update_trip(trip_id, current_user.id, updates)
         
         return {
             "message": "Budget created successfully",
@@ -211,21 +208,32 @@ async def get_trip_budget_status(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get budget status for a specific trip (SQLite database)"""
+    """Get budget status for a specific trip (Firebase Firestore)"""
     try:
-        # Get trip and expenses from database
-        trip = db_manager.get_trip(trip_id, current_user.id)
+        # Get trip and expenses from Firestore
+        trip = await firebase_service.get_trip(trip_id, current_user.id)
         if not trip:
             raise HTTPException(status_code=404, detail="Trip not found")
         
-        trip_expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+        trip_expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         
-        # Calculate budget statistics
-        total_budget = float(trip.get('total_budget', 0))
+        # Calculate budget statistics - handle None values
+        budget_value = trip.get('total_budget')
+        total_budget = float(budget_value) if budget_value is not None else 0.0
         total_spent = sum(float(exp['amount']) for exp in trip_expenses)
         
-        start_date = date.fromisoformat(trip['start_date'])
-        end_date = date.fromisoformat(trip['end_date'])
+        # Parse dates - handle both ISO format with time and date-only format
+        start_date_str = trip['start_date']
+        end_date_str = trip['end_date']
+        
+        # Remove time component if present (handle .000 milliseconds)
+        if 'T' in start_date_str:
+            start_date_str = start_date_str.split('T')[0]
+        if 'T' in end_date_str:
+            end_date_str = end_date_str.split('T')[0]
+        
+        start_date = date.fromisoformat(start_date_str)
+        end_date = date.fromisoformat(end_date_str)
         today = date.today()
         
         days_total = (end_date - start_date).days + 1
@@ -277,49 +285,39 @@ async def create_expense(
     trip_id: Optional[str] = Query(None, description="Associate expense with trip"),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new expense with trip association (SQLite database)"""
+    """Create a new expense with trip association (Firebase Firestore)"""
     try:
         print(f"💰 EXPENSE_CREATE: User {current_user.id} creating expense")
-        print(f"  Amount: {expense_request.amount}")
-        print(f"  Category: {expense_request.category}")
-        print(f"  Trip ID provided: {trip_id}")
-        print(f"  Planner ID in request: {expense_request.planner_id}")
-        print(f"  Full request object: {expense_request.__dict__}")
+        print(f"   Amount: {expense_request.amount}")
+        print(f"   Category: {expense_request.category}")
+        print(f"   Description: {expense_request.description}")
+        print(f"   Trip ID (query): {trip_id}")
+        print(f"   Planner ID (body): {expense_request.planner_id}")
         
         # Validate input
         if expense_request.amount <= 0:
-            print(f"❌ VALIDATION_ERROR: Invalid amount {expense_request.amount}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Amount must be greater than 0"
             )
             
         if not expense_request.category:
-            print(f"❌ VALIDATION_ERROR: Missing category")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Category is required"
             )
         
-        # Determine trip_id: prioritize request body planner_id, then query parameter, then fallback
+        # Determine trip_id
         final_trip_id = expense_request.planner_id or trip_id
             
         if not final_trip_id:
-            print(f"📍 TRIP_LOOKUP: No trip_id provided, looking for user trips...")
-            # Get user's most recent trip as fallback
-            trips = db_manager.get_user_trips(current_user.id)
-            print(f"📍 TRIP_LOOKUP: Found {len(trips)} trips for user")
+            trips = await firebase_service.get_user_trips(current_user.id)
             if not trips:
-                print(f"❌ NO_TRIPS: No trips found for user {current_user.id}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="No trips found. Please create a trip first before adding expenses."
                 )
-            else:
-                final_trip_id = trips[0]['id']  # Use most recent trip
-                print(f"📝 AUTO_ASSIGN: Using most recent trip {final_trip_id} for expense")
-        else:
-            print(f"📝 TRIP_ASSIGNED: Using specified trip {final_trip_id} for expense")
+            final_trip_id = trips[0]['id']
         
         # Create expense data
         expense_data = {
@@ -330,11 +328,15 @@ async def create_expense(
             "date": (expense_request.expense_date or datetime.now()).isoformat()
         }
         
-        # Create expense in database
-        print(f"💾 DATABASE_CREATE: Creating expense for trip {final_trip_id}")
+        # Create expense in Firestore
+        print(f"💾 FIRESTORE_SAVE: Saving expense to trip {final_trip_id}")
+        print(f"   Expense data: {expense_data}")
         try:
-            expense = db_manager.create_expense_for_trip(final_trip_id, current_user.id, expense_data)
-            print(f"✅ SUCCESS: Created expense {expense['id']} for trip {final_trip_id}")
+            expense = await firebase_service.create_expense(final_trip_id, expense_data)
+            print(f"✅ SUCCESS: Created expense {expense['id']}")
+            print(f"   Amount: {expense['amount']} {expense['currency']}")
+            print(f"   Category: {expense['category']}")
+            print(f"   Trip: {final_trip_id}")
         except ValueError as ve:
             print(f"❌ DATABASE_ERROR: {ve}")
             raise HTTPException(
@@ -354,7 +356,8 @@ async def create_expense(
             category=expense["category"],
             description=expense["name"],
             expense_date=datetime.fromisoformat(expense["date"]),
-            currency=expense["currency"]
+            currency=expense["currency"],
+            planner_id=final_trip_id  # Include the trip ID
         )
         
         print(f"🎉 EXPENSE_CREATED: {response.id} - {response.amount} {response.currency}")
@@ -378,29 +381,60 @@ async def get_expenses(
     category: Optional[ActivityType] = Query(None, description="Filter by category"),
     start_date: Optional[date] = Query(None, description="Filter from date"),
     end_date: Optional[date] = Query(None, description="Filter to date"),
+    planner_id: Optional[str] = Query(None, description="Filter by trip/planner ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all expenses with optional filters (SQLite database)"""
+    """Get all expenses with optional filters (Firebase Firestore)"""
     try:
-        # Get expenses from database
-        expenses = db_manager.get_user_expenses(
-            user_id=current_user.id,
-            start_date=start_date.isoformat() if start_date else None,
-            end_date=end_date.isoformat() if end_date else None,
-            category=category.value if category else None
-        )
+        print(f"📋 GET_EXPENSES: user={current_user.id}, planner_id={planner_id}, start_date={start_date}, end_date={end_date}")
         
-        return [
+        # Get expenses from Firestore - filter by trip if planner_id provided
+        if planner_id:
+            print(f"🔍 FILTER_BY_TRIP: Loading expenses for trip {planner_id}")
+            expenses = await firebase_service.get_trip_expenses(planner_id, current_user.id)
+            print(f"✅ TRIP_EXPENSES: Found {len(expenses)} expenses for trip {planner_id}")
+        else:
+            print(f"🔍 ALL_EXPENSES: Loading all user expenses (no trip filter)")
+            expenses = await firebase_service.get_user_expenses(
+                user_id=current_user.id,
+                start_date=start_date.isoformat() if start_date else None,
+                end_date=end_date.isoformat() if end_date else None,
+                category=category.value if category else None
+            )
+            print(f"✅ USER_EXPENSES: Found {len(expenses)} total expenses")
+        
+        # Apply additional filters if needed
+        filtered_expenses = expenses
+        
+        # Filter by date range if provided and not already filtered by trip
+        if not planner_id and (start_date or end_date):
+            filtered_expenses = [
+                exp for exp in expenses
+                if (not start_date or datetime.fromisoformat(exp["date"]).date() >= start_date) and
+                   (not end_date or datetime.fromisoformat(exp["date"]).date() <= end_date)
+            ]
+            print(f"📅 DATE_FILTER: {len(filtered_expenses)} expenses after date filtering")
+        
+        # Filter by category if provided
+        if category:
+            filtered_expenses = [exp for exp in filtered_expenses if exp["category"] == category.value]
+            print(f"🏷️ CATEGORY_FILTER: {len(filtered_expenses)} expenses after category filtering")
+        
+        result = [
             ExpenseResponse(
                 id=expense["id"],
                 amount=float(expense["amount"]),
                 category=expense["category"],
                 description=expense["name"],
                 expense_date=datetime.fromisoformat(expense["date"]),
-                currency=expense.get("currency", "VND")
+                currency=expense.get("currency", "VND"),
+                planner_id=planner_id if planner_id else None  # Include planner_id in response
             )
-            for expense in expenses
+            for expense in filtered_expenses
         ]
+        
+        print(f"🎯 FINAL_RESULT: Returning {len(result)} expenses")
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -411,7 +445,7 @@ async def delete_expense(
 ):
     """Delete an expense by ID (SQLite database)"""
     try:
-        success = db_manager.delete_expense(expense_id, current_user.id)
+        success = await firebase_service.delete_expense(expense_id, current_user.id)
         
         if not success:
             raise HTTPException(status_code=404, detail="Expense not found or does not belong to user")
@@ -431,26 +465,34 @@ async def get_budget_status(
 ):
     """Get current budget status - DEPRECATED: Use /budget/trip/{trip_id} instead"""
     try:
+        print(f"📊 BUDGET_STATUS_REQUEST: trip_id={trip_id}, user={current_user.id}")
+        
         if trip_id:
             # Redirect to the new trip-specific endpoint
             return await get_trip_budget_status(trip_id, current_user)
         else:
-            # Return default values when no trip specified
-            return BudgetStatusResponse(
-                total_budget=0.0,
-                total_spent=0.0,
-                percentage_used=0.0,
-                remaining_budget=0.0,
-                start_date=date.today(),
-                end_date=date.today(),
-                days_remaining=0,
-                days_total=0,
-                recommended_daily_spending=0.0,
-                average_daily_spending=0.0,
-                burn_rate_status="ON_TRACK",
-                is_over_budget=False,
-                category_overruns=[]
-            )
+            # If no trip_id, get first trip
+            trips = await firebase_service.get_user_trips(current_user.id)
+            if not trips:
+                print(f"⚠️ NO_TRIPS: User {current_user.id} has no trips")
+                return BudgetStatusResponse(
+                    total_budget=0.0,
+                    total_spent=0.0,
+                    percentage_used=0.0,
+                    remaining_budget=0.0,
+                    start_date=date.today(),
+                    end_date=date.today(),
+                    days_remaining=0,
+                    days_total=0,
+                    recommended_daily_spending=0.0,
+                    average_daily_spending=0.0,
+                    burn_rate_status="ON_TRACK",
+                    is_over_budget=False,
+                    category_overruns=[]
+                )
+            trip_id = trips[0]['id']
+            print(f"📍 USING_FIRST_TRIP: {trip_id}")
+            return await get_trip_budget_status(trip_id, current_user)
     except HTTPException:
         raise
     except Exception as e:
@@ -463,11 +505,11 @@ async def get_category_status(
 ):
     """Get spending status by category (SQLite database)"""
     try:
-        # Get expenses from database
+        # Get expenses from Firestore
         if trip_id:
-            expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+            expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         else:
-            expenses = db_manager.get_user_expenses(current_user.id)
+            expenses = await firebase_service.get_user_expenses(current_user.id)
         
         if not expenses:
             return []
@@ -504,11 +546,11 @@ async def get_spending_trends(
 ):
     """Get spending trends and patterns (SQLite database)"""
     try:
-        # Get expenses from database
+        # Get expenses from Firestore
         if trip_id:
-            expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+            expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         else:
-            expenses = db_manager.get_user_expenses(current_user.id)
+            expenses = await firebase_service.get_user_expenses(current_user.id)
         
         if not expenses:
             return {"daily_trends": [], "category_trends": {}, "spending_patterns": {}, "predictions": {}}
@@ -570,13 +612,13 @@ async def get_expense_summary(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get comprehensive expense summary (SQLite database)"""
+    """Get comprehensive expense summary (Firebase Firestore)"""
     try:
-        # Get expenses from database
+        # Get expenses from Firestore
         if trip_id:
-            expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+            expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         else:
-            expenses = db_manager.get_user_expenses(current_user.id)
+            expenses = await firebase_service.get_user_expenses(current_user.id)
         
         if not expenses:
             return {
@@ -619,11 +661,11 @@ async def export_data(
 ):
     """Export expense data (SQLite database)"""
     try:
-        # Get expenses from database
+        # Get expenses from Firestore
         if trip_id:
-            expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+            expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         else:
-            expenses = db_manager.get_user_expenses(current_user.id)
+            expenses = await firebase_service.get_user_expenses(current_user.id)
         
         expenses_data = [
             {
@@ -663,11 +705,11 @@ async def get_daily_analytics(
     try:
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         
-        # Get expenses from database
+        # Get expenses from Firestore
         if trip_id:
-            all_expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+            all_expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         else:
-            all_expenses = db_manager.get_user_expenses(current_user.id)
+            all_expenses = await firebase_service.get_user_expenses(current_user.id)
         
         # Filter for the specific date
         daily_expenses = [
@@ -714,11 +756,11 @@ async def get_monthly_analytics(
 ):
     """Get analytics for a specific month (SQLite database)"""
     try:
-        # Get expenses from database
+        # Get expenses from Firestore
         if trip_id:
-            all_expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+            all_expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         else:
-            all_expenses = db_manager.get_user_expenses(current_user.id)
+            all_expenses = await firebase_service.get_user_expenses(current_user.id)
         
         # Filter for the specific month
         monthly_expenses = [
@@ -767,11 +809,11 @@ async def get_category_analytics(
 ):
     """Get analytics for a specific category (SQLite database)"""
     try:
-        # Get expenses from database
+        # Get expenses from Firestore
         if trip_id:
-            all_expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+            all_expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         else:
-            all_expenses = db_manager.get_user_expenses(current_user.id)
+            all_expenses = await firebase_service.get_user_expenses(current_user.id)
         
         # Filter for the specific category
         category_expenses = [
@@ -831,7 +873,7 @@ async def get_trip_expenses(
 ):
     """Get all expenses for a specific trip (SQLite database)"""
     try:
-        trip_expenses = db_manager.get_trip_expenses(trip_id, current_user.id)
+        trip_expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         
         return [
             ExpenseResponse(
@@ -840,7 +882,8 @@ async def get_trip_expenses(
                 category=expense["category"],
                 description=expense["name"],
                 expense_date=datetime.fromisoformat(expense["date"]),
-                currency=expense.get("currency", "VND")
+                currency=expense.get("currency", "VND"),
+                planner_id=trip_id  # Include the trip ID
             )
             for expense in trip_expenses
         ]
@@ -854,7 +897,7 @@ async def delete_trip_expenses(
 ):
     """Delete all expenses associated with a trip (SQLite database)"""
     try:
-        deleted_count = db_manager.delete_trip_expenses(trip_id, current_user.id)
+        deleted_count = await firebase_service.delete_trip_expenses(trip_id, current_user.id)
         
         print(f"🗑️ EXPENSE_CLEANUP: User {current_user.id} deleted {deleted_count} expenses for trip {trip_id}")
         
@@ -873,13 +916,12 @@ async def clear_all_expense_data(
     """Clear all expense data for the current user (SQLite database)"""
     try:
         # Delete all expenses for the user across all their trips
-        with db_manager.get_connection() as conn:
-            cursor = conn.execute("""
-                DELETE FROM expenses 
-                WHERE planner_id IN (SELECT id FROM trips WHERE user_id = ?)
-            """, (current_user.id,))
-            deleted_count = cursor.rowcount
-            conn.commit()
+        # Delete all user expenses from Firestore
+        trips = await firebase_service.get_user_trips(current_user.id)
+        deleted_count = 0
+        for trip in trips:
+            count = await firebase_service.delete_trip_expenses(trip['id'], current_user.id)
+            deleted_count += count
         
         print(f"🧹 CLEAR_ALL: User {current_user.id} cleared {deleted_count} expenses")
         
@@ -894,26 +936,13 @@ async def clear_all_expense_data(
 # Health check endpoint
 @router.get("/health")
 async def health_check():
-    """Health check for expenses service (SQLite database)"""
+    """Health check for expenses service (Firebase Firestore)"""
     try:
-        # Check database connectivity
-        with db_manager.get_connection() as conn:
-            cursor = conn.execute("SELECT COUNT(*) FROM expenses")
-            total_expenses = cursor.fetchone()[0]
-            
-            cursor = conn.execute("SELECT COUNT(*) FROM trips")
-            total_trips = cursor.fetchone()[0]
-        
         return {
             "status": "healthy",
             "service": "expenses",
-            "storage": "SQLite database",
-            "timestamp": datetime.now().isoformat(),
-            "database_stats": {
-                "total_expenses": total_expenses,
-                "total_trips": total_trips,
-                "connection": "ok"
-            }
+            "storage": "Firebase Firestore",
+            "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         return {

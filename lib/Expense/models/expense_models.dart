@@ -1,4 +1,6 @@
 ///Định nghĩa các data models cho expense management
+
+import 'package:flutter/foundation.dart';
 /// Expense category enumeration matching backend
 enum ExpenseCategory {
   // Core categories matching backend ActivityType
@@ -161,7 +163,7 @@ class Expense {
   bool get isValid => amount >= 0;
 
   factory Expense.fromJson(Map<String, dynamic> json) {
-    return Expense(
+    final expense = Expense(
       id: json['id'] as String,
       amount: (json['amount'] as num).toDouble(),
       category: ExpenseCategoryExtension.fromString(json['category'] as String),
@@ -170,6 +172,10 @@ class Expense {
       currency: json['currency'] as String? ?? 'VND',
       tripId: json['planner_id'] as String?, // Map backend planner_id to tripId
     );
+    
+    debugPrint('DEBUG: Expense.fromJson - ID: ${expense.id}, TripId: ${expense.tripId}, planner_id from backend: ${json['planner_id']}');
+    
+    return expense;
   }
 
   Map<String, dynamic> toJson() {
