@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../Setting/screens/settings_screen.dart';
 import '../../Plan/screens/plan_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
+import '../../Map/screens/map_screen.dart';
 import '../../Core/theme/app_theme.dart';
 
 /// Home Screen - Travel & Tourism Dashboard
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> get _screens => [
     const PlanScreen(),
     const AnalysisScreen(),
+    const MapScreen(),
     const SettingsScreen(),
   ];
 
@@ -94,10 +96,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     isSelected: _currentIndex == 1,
                   ),
                   _buildDynamicNavItem(
-                    iconPath: 'images/account.png',
-                    label: 'Me',
+                    iconPath: 'images/compass.png',
+                    label: 'Map',
                     index: 2,
                     isSelected: _currentIndex == 2,
+                  ),
+                  _buildDynamicNavItem(
+                    iconPath: 'images/account.png',
+                    label: 'Me',
+                    index: 3,
+                    isSelected: _currentIndex == 3,
                   ),
                 ],
               ),
