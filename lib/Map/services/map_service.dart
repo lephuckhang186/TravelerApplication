@@ -8,12 +8,25 @@ class MapService {
   // 1. OpenRouteService - Free API key at: https://openrouteservice.org/dev/#/signup (2,000 requests/month)
   // 2. OSRM (Open Source Routing Machine) - https://router.project-osrm.org/ (free, no key)
 
-  Future<List<LatLng>?> getDirections(LatLng origin, LatLng destination) async {
+  /// Get directions with advanced routing constraints
+  Future<List<LatLng>?> getDirections(
+    LatLng origin,
+    LatLng destination, {
+    String profile = 'driving-car',
+    List<String> avoidFeatures = const [],
+    Map<String, dynamic> vehicleOptions = const {},
+  }) async {
     // Try real routing APIs first for actual driving directions
     try {
       // Priority 1: OpenRouteService (free, reliable)
       print('Trying OpenRouteService for real driving directions...');
-      final orsRoute = await _getOpenRouteServiceDirections(origin, destination);
+      final orsRoute = await _getOpenRouteServiceDirections(
+        origin,
+        destination,
+        profile: profile,
+        avoidFeatures: avoidFeatures,
+        vehicleOptions: vehicleOptions,
+      );
       if (orsRoute != null && orsRoute.isNotEmpty) {
         print('OpenRouteService routing successful: ${orsRoute.length} points');
         return orsRoute;
@@ -50,7 +63,13 @@ class MapService {
 
   // OpenRouteService (Free routing API with generous limits)
   // Sign up at: https://openrouteservice.org/dev/#/signup
-  Future<List<LatLng>?> _getOpenRouteServiceDirections(LatLng origin, LatLng destination) async {
+  Future<List<LatLng>?> _getOpenRouteServiceDirections(
+    LatLng origin,
+    LatLng destination, {
+    String profile = 'driving-car',
+    List<String> avoidFeatures = const [],
+    Map<String, dynamic> vehicleOptions = const {},
+  }) async {
     // 🚀 HƯỚNG DẪN LẤY API KEY MIỄN PHÍ:
     // 1. Vào: https://openrouteservice.org/dev/#/signup
     // 2. Đăng ký tài khoản miễn phí
@@ -60,14 +79,36 @@ class MapService {
 
     const String orsApiKey = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImE5NGY4ZmVmOWM4NjQwOTdhMTIzOWE0NDQzMWM4ZWMxIiwiaCI6Im11cm11cjY0In0='; // 🔑 OpenRouteService API Key
 
-    // Try the correct OpenRouteService format
-    final url = 'https://api.openrouteservice.org/v2/directions/driving-car?api_key=$orsApiKey&start=${origin.longitude},${origin.latitude}&end=${destination.longitude},${destination.latitude}';
+    // Build URL with advanced parameters
+    final baseUrl = 'https://api.openrouteservice.org/v2/directions/$profile';
+    final params = {
+      'api_key': orsApiKey,
+      'start': '${origin.longitude},${origin.latitude}',
+      'end': '${destination.longitude},${destination.latitude}',
+      'format': 'geojson',
+      'profile': profile,
+      'geometry_simplify': 'false',
+      'continue_straight': 'false', // Handle one-way streets properly
+    };
+
+    // Add avoid features if specified
+    if (avoidFeatures.isNotEmpty) {
+      params['options'] = json.encode({
+        'avoid_features': avoidFeatures,
+        'profile_params': vehicleOptions.isNotEmpty ? {
+          'restrictions': vehicleOptions,
+        } : null,
+      });
+    }
+
+    final uri = Uri.parse(baseUrl).replace(queryParameters: params);
+    final url = uri.toString();
 
     print('OpenRouteService API Key being used: ${orsApiKey.substring(0, 20)}...');
     print('Request URL: $url');
+    print('Profile: $profile, Avoid features: $avoidFeatures, Vehicle options: $vehicleOptions');
 
     try {
-      final uri = Uri.parse(url);
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
 
       print('OpenRouteService Response status: ${response.statusCode}');
@@ -83,6 +124,7 @@ class MapService {
           if (geometry != null && geometry['coordinates'] != null) {
             final coordinates = geometry['coordinates'] as List;
             print('OpenRouteService Success: Found ${coordinates.length} coordinates');
+            print('Route avoids: ${avoidFeatures.join(", ")}');
             return coordinates.map((coord) => LatLng(coord[1], coord[0])).toList();
           }
         } else if (data['routes'] != null && data['routes'].isNotEmpty) {
@@ -91,11 +133,19 @@ class MapService {
           if (geometry != null && geometry['coordinates'] != null) {
             final coordinates = geometry['coordinates'] as List;
             print('OpenRouteService Success (alt format): Found ${coordinates.length} coordinates');
+            print('Route avoids: ${avoidFeatures.join(", ")}');
             return coordinates.map((coord) => LatLng(coord[1], coord[0])).toList();
           }
         }
 
         print('OpenRouteService response format unexpected: ${data.keys.join(', ')}');
+      } else if (response.statusCode == 400) {
+        // Handle specific error cases
+        final errorData = json.decode(response.body);
+        print('OpenRouteService Bad Request: ${errorData}');
+        if (errorData['error'] != null && errorData['error']['message'] != null) {
+          print('Error message: ${errorData['error']['message']}');
+        }
       } else {
         print('OpenRouteService HTTP error ${response.statusCode}: ${response.body}');
       }
@@ -429,5 +479,96 @@ class MapService {
   String _stripHtmlTags(String htmlString) {
     final RegExp exp = RegExp(r'<[^>]*>');
     return htmlString.replaceAll(exp, '');
+  }
+
+  /// Get directions for cars (default)
+  Future<List<LatLng>?> getCarDirections(
+    LatLng origin,
+    LatLng destination, {
+    List<String> avoidFeatures = const [],
+  }) {
+    return getDirections(
+      origin,
+      destination,
+      profile: 'driving-car',
+      avoidFeatures: avoidFeatures,
+    );
+  }
+
+  /// Get directions for trucks with restrictions
+  Future<List<LatLng>?> getTruckDirections(
+    LatLng origin,
+    LatLng destination, {
+    double? weight,
+    double? height,
+    double? width,
+    List<String> avoidFeatures = const ['highways', 'tollways'],
+  }) {
+    final vehicleOptions = <String, dynamic>{};
+    if (weight != null) vehicleOptions['weight'] = weight;
+    if (height != null) vehicleOptions['height'] = height;
+    if (width != null) vehicleOptions['width'] = width;
+
+    return getDirections(
+      origin,
+      destination,
+      profile: 'driving-hgv', // Heavy goods vehicle
+      avoidFeatures: avoidFeatures,
+      vehicleOptions: vehicleOptions,
+    );
+  }
+
+  /// Get directions for bicycles
+  Future<List<LatLng>?> getBicycleDirections(
+    LatLng origin,
+    LatLng destination, {
+    List<String> avoidFeatures = const ['steps', 'ferries'],
+  }) {
+    return getDirections(
+      origin,
+      destination,
+      profile: 'cycling-regular',
+      avoidFeatures: avoidFeatures,
+    );
+  }
+
+  /// Get directions for pedestrians
+  Future<List<LatLng>?> getWalkingDirections(
+    LatLng origin,
+    LatLng destination, {
+    List<String> avoidFeatures = const ['ferries', 'highways'],
+  }) {
+    return getDirections(
+      origin,
+      destination,
+      profile: 'foot-walking',
+      avoidFeatures: avoidFeatures,
+    );
+  }
+
+  /// Get directions avoiding toll roads
+  Future<List<LatLng>?> getTollFreeDirections(
+    LatLng origin,
+    LatLng destination,
+  ) {
+    return getDirections(
+      origin,
+      destination,
+      profile: 'driving-car',
+      avoidFeatures: ['tollways'],
+    );
+  }
+
+  /// Get directions avoiding highways
+  Future<List<LatLng>?> getHighwayFreeDirections(
+    LatLng origin,
+    LatLng destination,
+  ) {
+    return getDirections(
+      origin,
+      destination,
+      profile: 'driving-car',
+      avoidFeatures: ['highways'],
+    );
   }
 }

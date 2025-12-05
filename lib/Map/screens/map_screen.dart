@@ -28,6 +28,7 @@ class _MapScreenState extends State<MapScreen> {
   List<flutter_map.Polyline> _flutterPolylines = [];
   int _currentActivityIndex = 0;
   bool _isLoading = false;
+  bool _isMapReady = false;
 
   final MapService _mapService = MapService();
 
@@ -82,7 +83,6 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _selectTrip(TripModel trip) async {
     setState(() {
       _selectedTrip = trip;
-      _currentActivityIndex = 0;
       _googleMarkers.clear();
       _googlePolylines.clear();
       _flutterMarkers.clear();
@@ -109,6 +109,18 @@ class _MapScreenState extends State<MapScreen> {
       );
       return;
     }
+
+    // Find the first unchecked activity
+    int firstUncheckedIndex = 0;
+    for (int i = 0; i < activities.length; i++) {
+      if (!activities[i].checkIn) {
+        firstUncheckedIndex = i;
+        break;
+      }
+    }
+    _currentActivityIndex = firstUncheckedIndex;
+
+    print('Loaded trip with ${activities.length} activities, current index: $_currentActivityIndex');
 
     // Add markers for activities
     if (!kIsWeb) {
@@ -319,6 +331,12 @@ class _MapScreenState extends State<MapScreen> {
       final success = await tripProvider.updateActivityInTrip(_selectedTrip!.id!, updatedActivity);
 
       if (success) {
+        // Update selected trip from provider to reflect changes
+        final updatedTrip = tripProvider.getTripById(_selectedTrip!.id!);
+        if (updatedTrip != null) {
+          _selectedTrip = updatedTrip;
+        }
+
         // Move to next activity
         setState(() {
           _currentActivityIndex++;
@@ -329,18 +347,41 @@ class _MapScreenState extends State<MapScreen> {
           }
         });
 
-        if (_currentActivityIndex < activities.length) {
-          await _loadRoute(activities[_currentActivityIndex], activities[_currentActivityIndex]);
-          // Update marker colors
-          _updateMarkers(activities);
-        }
+        // Get updated activities from the updated trip
+        final updatedActivities = _selectedTrip!.activities.where((activity) =>
+          activity.location?.latitude != null && activity.location?.longitude != null
+        ).toList();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã check-in ${updatedActivity.title}!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (_currentActivityIndex < updatedActivities.length) {
+          await _loadRoute(updatedActivities[_currentActivityIndex], updatedActivities[_currentActivityIndex + 1]);
+          // Update marker colors
+          _updateMarkers(updatedActivities);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã check-in ${updatedActivity.title}!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // Trip completed - clear all polylines and update markers
+          setState(() {
+            if (!kIsWeb) {
+              _googlePolylines.clear();
+            } else {
+              _flutterPolylines.clear();
+            }
+          });
+          _updateMarkers(updatedActivities);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('🎉 Chúc mừng! Bạn đã hoàn thành chuyến đi!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -370,22 +411,36 @@ class _MapScreenState extends State<MapScreen> {
 
     // Center map on first activity
     if (!kIsWeb) {
-      _googleMapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
-          15, // Closer zoom for better view
-        ),
-      );
+      if (_googleMapController != null) {
+        _googleMapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
+            15, // Closer zoom for better view
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bản đồ chưa sẵn sàng')),
+        );
+        return;
+      }
     } else {
-      _flutterMapController?.move(
-        latlong.LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
-        15, // Closer zoom for better view
-      );
+      if (_flutterMapController != null) {
+        _flutterMapController!.move(
+          latlong.LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
+          15, // Closer zoom for better view
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bản đồ chưa sẵn sàng')),
+        );
+        return;
+      }
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Đã về điểm xuất phát: ${firstActivity.title}'),
+        content: Text('Đã về điểm xuất phát: ${_getStartingPointText()}'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -393,6 +448,40 @@ class _MapScreenState extends State<MapScreen> {
 
   String _formatCurrency(double amount) {
     return '${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',')} VND';
+  }
+
+  String _getStartingPointText() {
+    if (_selectedTrip == null) return '';
+
+    final activities = _selectedTrip!.activities.where((activity) =>
+      activity.location?.latitude != null && activity.location?.longitude != null
+    ).toList();
+
+    if (activities.isEmpty || _currentActivityIndex >= activities.length) return '';
+
+    final currentActivity = activities[_currentActivityIndex];
+    // Display location name or address instead of activity title
+    return currentActivity.location?.name ??
+           currentActivity.location?.address ??
+           currentActivity.title;
+  }
+
+  String _getNextDestinationText() {
+    if (_selectedTrip == null) return '';
+
+    final activities = _selectedTrip!.activities.where((activity) =>
+      activity.location?.latitude != null && activity.location?.longitude != null
+    ).toList();
+
+    if (_currentActivityIndex >= activities.length - 1) {
+      return 'Hoàn thành chuyến đi';
+    }
+
+    final nextActivity = activities[_currentActivityIndex + 1];
+    // Display location name or address instead of activity title
+    return nextActivity.location?.name ??
+           nextActivity.location?.address ??
+           nextActivity.title;
   }
 
   void _updateMarkers(List<ActivityModel> activities) {
@@ -475,7 +564,12 @@ class _MapScreenState extends State<MapScreen> {
               ),
               markers: _googleMarkers,
               polylines: _googlePolylines,
-              onMapCreated: (controller) => _googleMapController = controller,
+              onMapCreated: (controller) {
+                _googleMapController = controller;
+                setState(() {
+                  _isMapReady = true;
+                });
+              },
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
             )
@@ -485,6 +579,11 @@ class _MapScreenState extends State<MapScreen> {
               options: flutter_map.MapOptions(
                 initialCenter: latlong.LatLng(10.8231, 106.6297), // Default to Ho Chi Minh City
                 initialZoom: 10,
+                onMapReady: () {
+                  setState(() {
+                    _isMapReady = true;
+                  });
+                },
               ),
               children: [
                 flutter_map.TileLayer(
@@ -518,21 +617,93 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
             ),
+          // Location info overlay
+          if (_selectedTrip != null)
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Starting point
+                    Row(
+                      children: [
+                        Icon(Icons.play_circle_fill, color: Colors.green, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: TextEditingController(
+                              text: _getStartingPointText(),
+                            ),
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Điểm xuất phát',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              isDense: true,
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Next destination
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.blue, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: TextEditingController(
+                              text: _getNextDestinationText(),
+                            ),
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Điểm tiếp theo',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              isDense: true,
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
       floatingActionButton: _selectedTrip != null ? Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Center to first activity button
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: FloatingActionButton.small(
-              onPressed: _centerToFirstActivity,
-              backgroundColor: Colors.white,
-              child: const Icon(Icons.my_location, color: AppColors.navyBlue),
-              tooltip: 'Về điểm xuất phát',
+          // Center to first activity button - only show when map is ready
+          if (_isMapReady)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: FloatingActionButton.small(
+                onPressed: _centerToFirstActivity,
+                backgroundColor: Colors.white,
+                child: const Icon(Icons.my_location, color: AppColors.navyBlue),
+                tooltip: 'Về điểm xuất phát',
+              ),
             ),
-          ),
           // Check-in button
           Container(
             margin: const EdgeInsets.only(bottom: 80), // Add margin to avoid navigation bar
