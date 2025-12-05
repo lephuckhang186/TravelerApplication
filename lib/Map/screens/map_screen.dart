@@ -216,40 +216,183 @@ class _MapScreenState extends State<MapScreen> {
       activity.location?.latitude != null && activity.location?.longitude != null
     ).toList();
 
-    if (_currentActivityIndex >= activities.length - 1) {
+    if (_currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã hoàn thành tất cả hoạt động')),
       );
       return;
     }
 
-    // Mark current activity as checked in
-    final updatedActivity = activities[_currentActivityIndex].copyWith(checkIn: true);
+    final currentActivity = activities[_currentActivityIndex];
 
-    final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
-    final success = await tripProvider.updateActivityInTrip(_selectedTrip!.id!, updatedActivity);
+    // Show dialog to input actual cost (same as Plan screen)
+    final result = await _showCheckInCostDialog(currentActivity);
 
-    if (success) {
-      // Move to next activity
-      setState(() {
-        _currentActivityIndex++;
-        if (!kIsWeb) {
-          _googlePolylines.clear();
-        } else {
-          _flutterPolylines.clear();
+    if (result != null) {
+      await _performCheckIn(currentActivity, result, activities);
+    }
+  }
+
+  Future<double?> _showCheckInCostDialog(ActivityModel activity) async {
+    final TextEditingController actualCostController = TextEditingController();
+    final expectedCost = activity.budget?.estimatedCost;
+
+    // Pre-fill with expected cost if available
+    if (expectedCost != null) {
+      actualCostController.text = expectedCost.toStringAsFixed(0);
+    }
+
+    return await showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Check-in: ${activity.title}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (expectedCost != null) ...[
+              Text(
+                'Expected Cost: ${_formatCurrency(expectedCost)}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+            ],
+            const Text('Enter actual cost:'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: actualCostController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Actual cost (VND)',
+                border: OutlineInputBorder(),
+                prefixText: 'VND ',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final costText = actualCostController.text.trim();
+              if (costText.isNotEmpty) {
+                final cost = double.tryParse(costText);
+                if (cost != null && cost >= 0) {
+                  Navigator.pop(context, cost);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid cost')),
+                  );
+                }
+              } else {
+                // Allow check-in without cost
+                Navigator.pop(context, 0.0);
+              }
+            },
+            child: const Text('Check In'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performCheckIn(ActivityModel activity, double actualCost, List<ActivityModel> activities) async {
+    try {
+      // Update activity with actual cost and check-in status
+      final updatedBudget = BudgetModel(
+        estimatedCost: activity.budget?.estimatedCost ?? actualCost,
+        actualCost: actualCost,
+        currency: activity.budget?.currency ?? 'VND',
+        category: activity.budget?.category,
+      );
+
+      final updatedActivity = activity.copyWith(
+        checkIn: true,
+        budget: updatedBudget,
+      );
+
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      final success = await tripProvider.updateActivityInTrip(_selectedTrip!.id!, updatedActivity);
+
+      if (success) {
+        // Move to next activity
+        setState(() {
+          _currentActivityIndex++;
+          if (!kIsWeb) {
+            _googlePolylines.clear();
+          } else {
+            _flutterPolylines.clear();
+          }
+        });
+
+        if (_currentActivityIndex < activities.length) {
+          await _loadRoute(activities[_currentActivityIndex], activities[_currentActivityIndex]);
+          // Update marker colors
+          _updateMarkers(activities);
         }
-      });
 
-      if (_currentActivityIndex < activities.length - 1) {
-        await _loadRoute(activities[_currentActivityIndex], activities[_currentActivityIndex + 1]);
-        // Update marker colors
-        _updateMarkers(activities);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã check-in ${updatedActivity.title}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
-
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã check-in ${updatedActivity.title}')),
+        SnackBar(
+          content: Text('Lỗi check-in: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
+  }
+
+  void _centerToFirstActivity() {
+    if (_selectedTrip == null) return;
+
+    final activities = _selectedTrip!.activities.where((activity) =>
+      activity.location?.latitude != null && activity.location?.longitude != null
+    ).toList();
+
+    if (activities.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không có hoạt động nào có vị trí')),
+      );
+      return;
+    }
+
+    final firstActivity = activities[0];
+
+    // Center map on first activity
+    if (!kIsWeb) {
+      _googleMapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
+          15, // Closer zoom for better view
+        ),
+      );
+    } else {
+      _flutterMapController?.move(
+        latlong.LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
+        15, // Closer zoom for better view
+      );
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã về điểm xuất phát: ${firstActivity.title}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _formatCurrency(double amount) {
+    return '${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',')} VND';
   }
 
   void _updateMarkers(List<ActivityModel> activities) {
@@ -309,10 +452,16 @@ class _MapScreenState extends State<MapScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.list, color: AppColors.navyBlue),
+            onPressed: _loadTrips,
+            tooltip: 'Chọn chuyến đi',
+          ),
           if (_selectedTrip != null)
             IconButton(
               icon: const Icon(Icons.refresh, color: AppColors.navyBlue),
               onPressed: () => _loadTrips(),
+              tooltip: 'Chọn lại chuyến đi',
             ),
         ],
       ),
@@ -371,10 +520,30 @@ class _MapScreenState extends State<MapScreen> {
             ),
         ],
       ),
-      floatingActionButton: _selectedTrip != null ? FloatingActionButton(
-        onPressed: _checkIn,
-        backgroundColor: AppColors.skyBlue,
-        child: const Icon(Icons.check_circle, color: Colors.white),
+      floatingActionButton: _selectedTrip != null ? Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Center to first activity button
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            child: FloatingActionButton.small(
+              onPressed: _centerToFirstActivity,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location, color: AppColors.navyBlue),
+              tooltip: 'Về điểm xuất phát',
+            ),
+          ),
+          // Check-in button
+          Container(
+            margin: const EdgeInsets.only(bottom: 80), // Add margin to avoid navigation bar
+            child: FloatingActionButton(
+              onPressed: _checkIn,
+              backgroundColor: AppColors.skyBlue,
+              child: const Icon(Icons.check_circle, color: Colors.white),
+              tooltip: 'Check-in',
+            ),
+          ),
+        ],
       ) : null,
     );
   }
