@@ -101,6 +101,11 @@ class ApiClient {
       final response = await _client.get(
         Uri.parse(url),
         headers: _getHeaders(additionalHeaders: headers),
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw NetworkException('Request timed out after 15 seconds');
+        },
       );
 
       return _handleResponse(response);
@@ -122,6 +127,11 @@ class ApiClient {
         Uri.parse(_buildUrl(endpoint)),
         headers: _getHeaders(additionalHeaders: headers),
         body: body != null ? json.encode(body) : null,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw NetworkException('Request timed out after 15 seconds');
+        },
       );
 
       return _handleResponse(response);
@@ -143,6 +153,11 @@ class ApiClient {
         Uri.parse(_buildUrl(endpoint)),
         headers: _getHeaders(additionalHeaders: headers),
         body: body != null ? json.encode(body) : null,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw NetworkException('Request timed out after 15 seconds');
+        },
       );
 
       return _handleResponse(response);
@@ -162,6 +177,11 @@ class ApiClient {
       final response = await _client.delete(
         Uri.parse(_buildUrl(endpoint)),
         headers: _getHeaders(additionalHeaders: headers),
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw NetworkException('Request timed out after 15 seconds');
+        },
       );
 
       return _handleResponse(response);

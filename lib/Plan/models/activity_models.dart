@@ -206,12 +206,14 @@ class ExpenseInfo {
   final bool hasExpense;
   final String? expenseCategory;
   final bool autoSynced;
+  final bool expenseSynced; // Track if expense was successfully synced
 
   ExpenseInfo({
     this.expenseId,
     this.hasExpense = false,
     this.expenseCategory,
     this.autoSynced = false,
+    this.expenseSynced = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -220,6 +222,7 @@ class ExpenseInfo {
       'has_expense': hasExpense,
       'expense_category': expenseCategory,
       'auto_synced': autoSynced,
+      'expense_synced': expenseSynced,
     };
   }
 
@@ -229,6 +232,23 @@ class ExpenseInfo {
       hasExpense: json['has_expense'] ?? false,
       expenseCategory: json['expense_category'],
       autoSynced: json['auto_synced'] ?? false,
+      expenseSynced: json['expense_synced'] ?? false,
+    );
+  }
+
+  ExpenseInfo copyWith({
+    String? expenseId,
+    bool? hasExpense,
+    String? expenseCategory,
+    bool? autoSynced,
+    bool? expenseSynced,
+  }) {
+    return ExpenseInfo(
+      expenseId: expenseId ?? this.expenseId,
+      hasExpense: hasExpense ?? this.hasExpense,
+      expenseCategory: expenseCategory ?? this.expenseCategory,
+      autoSynced: autoSynced ?? this.autoSynced,
+      expenseSynced: expenseSynced ?? this.expenseSynced,
     );
   }
 }

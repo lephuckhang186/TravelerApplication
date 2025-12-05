@@ -1,11 +1,12 @@
 """
-Firebase Authentication Service for TravelPro
+Firebase Authentication and Firestore Service for TravelPro
 """
 import os
 import json
 import sys
-from typing import Optional, Dict, Any
-from datetime import datetime
+from typing import Optional, Dict, Any, List
+from datetime import datetime, date
+from decimal import Decimal
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -234,6 +235,503 @@ class FirebaseService:
             return True
         except Exception as e:
             print(f"Error deleting user: {e}")
+            return False
+    
+    # ============= TRIP MANAGEMENT =============
+    
+    async def create_trip(self, user_id: str, trip_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new trip in Firestore"""
+        try:
+            trip_id = f"trip_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id[:8]}"
+            
+            trip_doc = {
+                'id': trip_id,
+                'user_id': user_id,
+                'name': trip_data['name'],
+                'destination': trip_data['destination'],
+                'description': trip_data.get('description', ''),
+                'start_date': trip_data['start_date'],
+                'end_date': trip_data['end_date'],
+                'total_budget': trip_data.get('total_budget', 0.0),
+                'currency': trip_data.get('currency', 'VND'),
+                'is_active': True,
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            self.db.collection('trips').document(trip_id).set(trip_doc)
+            print(f"✅ FIRESTORE: Created trip {trip_id}")
+            return trip_doc
+        except Exception as e:
+            print(f"❌ FIRESTORE_TRIP_ERROR: {e}")
+            raise
+    
+    async def get_user_trips(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all trips for a user - supports multiple storage patterns"""
+        try:
+            trips = []
+            
+            # Pattern 1: users/{userId}/trips/{tripId} (Flutter app structure)
+            try:
+                user_trips_ref = (self.db.collection('users')
+                                 .document(user_id)
+                                 .collection('trips')
+                                 .stream())
+                user_trips = []
+                for doc in user_trips_ref:
+                    trip_data = doc.to_dict()
+                    trip_data['id'] = doc.id  # Ensure ID is set
+                    user_trips.append(trip_data)
+                
+                if user_trips:
+                    print(f"✅ FOUND_USER_TRIPS: Found {len(user_trips)} trips in users/{user_id}/trips")
+                    trips.extend(user_trips)
+            except Exception as e:
+                print(f"⚠️ Error loading from users/{user_id}/trips: {e}")
+            
+            # Pattern 2: trips/{tripId} with user_id field (Backend structure)
+            try:
+                backend_trips_ref = self.db.collection('trips').where('user_id', '==', user_id).stream()
+                backend_trips = [doc.to_dict() for doc in backend_trips_ref]
+                if backend_trips:
+                    print(f"✅ FOUND_BACKEND_TRIPS: Found {len(backend_trips)} trips in trips collection")
+                    trips.extend(backend_trips)
+            except Exception as e:
+                print(f"⚠️ Error loading from trips collection: {e}")
+            
+            # Remove duplicates based on trip ID
+            unique_trips = {}
+            for trip in trips:
+                trip_id = trip.get('id')
+                if trip_id and trip_id not in unique_trips:
+                    unique_trips[trip_id] = trip
+            
+            result = list(unique_trips.values())
+            print(f"📊 GET_USER_TRIPS: Returning {len(result)} unique trips for user {user_id}")
+            return sorted(result, key=lambda x: x.get('created_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_TRIPS_ERROR: {e}")
+            return []
+    
+    async def get_trip(self, trip_id: str, user_id: str = None) -> Optional[Dict[str, Any]]:
+        """Get specific trip - supports multiple storage patterns"""
+        try:
+            print(f"🔍 FIRESTORE_GET_TRIP: Looking for trip {trip_id}, user={user_id}")
+            
+            # Pattern 1: users/{userId}/trips/{tripId} (Flutter app structure)
+            if user_id:
+                user_trip_doc = self.db.collection('users').document(user_id).collection('trips').document(trip_id).get()
+                if user_trip_doc.exists:
+                    trip_data = user_trip_doc.to_dict()
+                    trip_data['id'] = trip_id  # Ensure ID is set
+                    print(f"✅ TRIP_FOUND in users/{user_id}/trips: {trip_data.get('name')}")
+                    return trip_data
+            
+            # Pattern 2: trips/{tripId} (Backend structure)
+            trip_doc = self.db.collection('trips').document(trip_id).get()
+            if trip_doc.exists:
+                trip_data = trip_doc.to_dict()
+                print(f"✅ TRIP_FOUND in trips collection: {trip_data.get('name')} - Owner: {trip_data.get('user_id')}")
+                if user_id and trip_data.get('user_id') != user_id:
+                    print(f"❌ TRIP_OWNER_MISMATCH: Trip belongs to {trip_data.get('user_id')}, not {user_id}")
+                    return None
+                return trip_data
+            
+            # Pattern 3: planners/{plannerId} (Alternative structure)
+            planner_doc = self.db.collection('planners').document(trip_id).get()
+            if planner_doc.exists:
+                planner_data = planner_doc.to_dict()
+                print(f"✅ FOUND_AS_PLANNER: Trip {trip_id} exists in 'planners' collection")
+                if user_id and planner_data.get('user_id') != user_id:
+                    print(f"❌ PLANNER_OWNER_MISMATCH: Planner belongs to {planner_data.get('user_id')}, not {user_id}")
+                    return None
+                return planner_data
+            
+            print(f"❌ TRIP_NOT_FOUND: Trip {trip_id} not found in any collection")
+            return None
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_TRIP_ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+    
+    async def update_trip(self, trip_id: str, user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update trip"""
+        try:
+            trip_ref = self.db.collection('trips').document(trip_id)
+            trip_doc = trip_ref.get()
+            
+            if not trip_doc.exists or trip_doc.to_dict().get('user_id') != user_id:
+                return None
+            
+            updates['updated_at'] = datetime.utcnow().isoformat()
+            trip_ref.update(updates)
+            
+            return await self.get_trip(trip_id, user_id)
+        except Exception as e:
+            print(f"❌ FIRESTORE_UPDATE_TRIP_ERROR: {e}")
+            return None
+    
+    async def delete_trip(self, trip_id: str, user_id: str) -> bool:
+        """Delete trip and all related data"""
+        try:
+            trip_doc = await self.get_trip(trip_id, user_id)
+            if not trip_doc:
+                return False
+            
+            # Delete related expenses
+            expenses_ref = self.db.collection('expenses').where('planner_id', '==', trip_id).stream()
+            for exp_doc in expenses_ref:
+                exp_doc.reference.delete()
+            
+            # Delete related activities
+            activities_ref = self.db.collection('activities').where('planner_id', '==', trip_id).stream()
+            for act_doc in activities_ref:
+                act_doc.reference.delete()
+            
+            # Delete trip
+            self.db.collection('trips').document(trip_id).delete()
+            
+            print(f"✅ FIRESTORE: Deleted trip {trip_id}")
+            return True
+        except Exception as e:
+            print(f"❌ FIRESTORE_DELETE_TRIP_ERROR: {e}")
+            return False
+    
+    # ============= PLANNER MANAGEMENT =============
+    
+    async def create_planner(self, user_id: str, planner_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new planner in Firestore"""
+        try:
+            planner_id = f"planner_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id[:8]}"
+            
+            planner_doc = {
+                'id': planner_id,
+                'user_id': user_id,
+                'name': planner_data['name'],
+                'description': planner_data.get('description', ''),
+                'start_date': planner_data['start_date'],
+                'end_date': planner_data['end_date'],
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            self.db.collection('planners').document(planner_id).set(planner_doc)
+            print(f"✅ FIRESTORE: Created planner {planner_id}")
+            return planner_doc
+        except Exception as e:
+            print(f"❌ FIRESTORE_PLANNER_ERROR: {e}")
+            raise
+    
+    async def get_user_planners(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all planners for a user"""
+        try:
+            planners_ref = self.db.collection('planners').where('user_id', '==', user_id).stream()
+            planners = [doc.to_dict() for doc in planners_ref]
+            return sorted(planners, key=lambda x: x.get('created_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_PLANNERS_ERROR: {e}")
+            return []
+    
+    async def get_planner(self, planner_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific planner"""
+        try:
+            planner_doc = self.db.collection('planners').document(planner_id).get()
+            if planner_doc.exists:
+                planner_data = planner_doc.to_dict()
+                if planner_data.get('user_id') != user_id:
+                    return None
+                return planner_data
+            return None
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_PLANNER_ERROR: {e}")
+            return None
+    
+    # ============= ACTIVITY MANAGEMENT =============
+    
+    async def create_activity(self, planner_id: str, activity_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new activity"""
+        try:
+            activity_id = f"activity_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{planner_id[:8]}"
+            
+            activity_doc = {
+                'id': activity_id,
+                'planner_id': planner_id,
+                'name': activity_data['name'],
+                'description': activity_data.get('description', ''),
+                'start_time': activity_data['start_time'],
+                'end_time': activity_data['end_time'],
+                'location': activity_data.get('location', ''),
+                'check_in': activity_data.get('check_in', False),
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            self.db.collection('activities').document(activity_id).set(activity_doc)
+            print(f"✅ FIRESTORE: Created activity {activity_id}")
+            return activity_doc
+        except Exception as e:
+            print(f"❌ FIRESTORE_ACTIVITY_ERROR: {e}")
+            raise
+    
+    async def get_planner_activities(self, planner_id: str) -> List[Dict[str, Any]]:
+        """Get all activities for a planner"""
+        try:
+            activities_ref = self.db.collection('activities').where('planner_id', '==', planner_id).stream()
+            activities = [doc.to_dict() for doc in activities_ref]
+            return sorted(activities, key=lambda x: x.get('start_time', ''))
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_ACTIVITIES_ERROR: {e}")
+            return []
+    
+    async def get_activity(self, activity_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific activity"""
+        try:
+            activity_doc = self.db.collection('activities').document(activity_id).get()
+            if activity_doc.exists:
+                return activity_doc.to_dict()
+            return None
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_ACTIVITY_ERROR: {e}")
+            return None
+    
+    async def update_activity(self, activity_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update activity"""
+        try:
+            activity_ref = self.db.collection('activities').document(activity_id)
+            activity_doc = activity_ref.get()
+            
+            if not activity_doc.exists:
+                return None
+            
+            updates['updated_at'] = datetime.utcnow().isoformat()
+            activity_ref.update(updates)
+            
+            return await self.get_activity(activity_id)
+        except Exception as e:
+            print(f"❌ FIRESTORE_UPDATE_ACTIVITY_ERROR: {e}")
+            return None
+    
+    async def get_all_activities(self) -> List[Dict[str, Any]]:
+        """Get all activities"""
+        try:
+            activities_ref = self.db.collection('activities').stream()
+            activities = [doc.to_dict() for doc in activities_ref]
+            return sorted(activities, key=lambda x: x.get('created_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_ALL_ACTIVITIES_ERROR: {e}")
+            return []
+    
+    # ============= EXPENSE MANAGEMENT =============
+    
+    async def create_expense(self, planner_id: str, expense_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new expense - supports multiple storage patterns"""
+        try:
+            expense_id = f"expense_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{planner_id[:8]}"
+            
+            expense_doc = {
+                'id': expense_id,
+                'planner_id': planner_id,
+                'name': expense_data['name'],
+                'amount': float(expense_data['amount']),
+                'currency': expense_data.get('currency', 'VND'),
+                'category': expense_data['category'],
+                'date': expense_data['date'],
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            # Save to main expenses collection
+            self.db.collection('expenses').document(expense_id).set(expense_doc)
+            print(f"✅ FIRESTORE: Created expense {expense_id} in expenses collection")
+            print(f"   - Amount: {expense_doc['amount']} {expense_doc['currency']}")
+            print(f"   - Category: {expense_doc['category']}")
+            print(f"   - Planner ID: {planner_id}")
+            
+            return expense_doc
+        except Exception as e:
+            print(f"❌ FIRESTORE_EXPENSE_ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+    
+    async def get_trip_expenses(self, trip_id: str, user_id: str = None) -> List[Dict[str, Any]]:
+        """Get all expenses for a trip - supports multiple storage patterns"""
+        try:
+            print(f"📊 FIRESTORE_GET_EXPENSES: Loading expenses for trip {trip_id}, user={user_id}")
+            
+            # Verify trip belongs to user if user_id provided
+            if user_id:
+                trip = await self.get_trip(trip_id, user_id)
+                if not trip:
+                    print(f"⚠️ TRIP_VERIFICATION_FAILED: Trip {trip_id} not found for user {user_id}")
+                    print(f"   Trying to load expenses anyway (trip might exist in different collection)...")
+            
+            # Pattern 1: Load from main expenses collection
+            expenses_ref = self.db.collection('expenses').where('planner_id', '==', trip_id).stream()
+            expenses = [doc.to_dict() for doc in expenses_ref]
+            print(f"✅ LOADED_EXPENSES from expenses collection: Found {len(expenses)} expenses")
+            
+            # Pattern 2: Also check users/{userId}/trips/{tripId}/expenses if user_id provided
+            if user_id and len(expenses) == 0:
+                print(f"🔍 CHECKING ALTERNATIVE: users/{user_id}/trips/{trip_id}/expenses")
+                user_expenses_ref = (self.db.collection('users')
+                                    .document(user_id)
+                                    .collection('trips')
+                                    .document(trip_id)
+                                    .collection('expenses')
+                                    .stream())
+                user_expenses = [doc.to_dict() for doc in user_expenses_ref]
+                if user_expenses:
+                    print(f"✅ FOUND_ALTERNATIVE: Found {len(user_expenses)} expenses in user's trip subcollection")
+                    expenses.extend(user_expenses)
+            
+            if expenses:
+                for exp in expenses:
+                    print(f"   - {exp.get('id')}: {exp.get('amount')} {exp.get('currency')} - {exp.get('name')}")
+            else:
+                print(f"   ⚠️ No expenses found for trip {trip_id}")
+                print(f"   💡 TIP: Create an expense through the API: POST /api/v1/expenses/")
+                print(f"         with planner_id={trip_id}")
+            
+            return sorted(expenses, key=lambda x: x.get('date', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_EXPENSES_ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    
+    async def get_user_expenses(self, user_id: str, start_date: str = None, end_date: str = None, category: str = None) -> List[Dict[str, Any]]:
+        """Get all expenses for a user across all trips"""
+        try:
+            # Get all user trips
+            trips = await self.get_user_trips(user_id)
+            trip_ids = [trip['id'] for trip in trips]
+            
+            if not trip_ids:
+                return []
+            
+            # Get expenses for all trips
+            all_expenses = []
+            for trip_id in trip_ids:
+                expenses_ref = self.db.collection('expenses').where('planner_id', '==', trip_id).stream()
+                for doc in expenses_ref:
+                    expense = doc.to_dict()
+                    
+                    # Apply filters
+                    if start_date and expense.get('date', '') < start_date:
+                        continue
+                    if end_date and expense.get('date', '') > end_date:
+                        continue
+                    if category and expense.get('category') != category:
+                        continue
+                    
+                    all_expenses.append(expense)
+            
+            return sorted(all_expenses, key=lambda x: x.get('date', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_USER_EXPENSES_ERROR: {e}")
+            return []
+    
+    async def get_expense(self, expense_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific expense"""
+        try:
+            expense_doc = self.db.collection('expenses').document(expense_id).get()
+            if expense_doc.exists:
+                return expense_doc.to_dict()
+            return None
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_EXPENSE_ERROR: {e}")
+            return None
+    
+    async def delete_expense(self, expense_id: str, user_id: str) -> bool:
+        """Delete expense with user verification"""
+        try:
+            expense = await self.get_expense(expense_id)
+            if not expense:
+                return False
+            
+            # Verify trip belongs to user
+            trip = await self.get_trip(expense['planner_id'], user_id)
+            if not trip:
+                return False
+            
+            self.db.collection('expenses').document(expense_id).delete()
+            print(f"✅ FIRESTORE: Deleted expense {expense_id}")
+            return True
+        except Exception as e:
+            print(f"❌ FIRESTORE_DELETE_EXPENSE_ERROR: {e}")
+            return False
+    
+    async def delete_trip_expenses(self, trip_id: str, user_id: str) -> int:
+        """Delete all expenses for a trip"""
+        try:
+            trip = await self.get_trip(trip_id, user_id)
+            if not trip:
+                return 0
+            
+            expenses_ref = self.db.collection('expenses').where('planner_id', '==', trip_id).stream()
+            count = 0
+            for doc in expenses_ref:
+                doc.reference.delete()
+                count += 1
+            
+            print(f"✅ FIRESTORE: Deleted {count} expenses for trip {trip_id}")
+            return count
+        except Exception as e:
+            print(f"❌ FIRESTORE_DELETE_EXPENSES_ERROR: {e}")
+            return 0
+    
+    async def get_planner_expenses(self, planner_id: str) -> List[Dict[str, Any]]:
+        """Get all expenses for a planner"""
+        try:
+            expenses_ref = self.db.collection('expenses').where('planner_id', '==', planner_id).stream()
+            expenses = [doc.to_dict() for doc in expenses_ref]
+            return sorted(expenses, key=lambda x: x.get('date', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_PLANNER_EXPENSES_ERROR: {e}")
+            return []
+    
+    # ============= COLLABORATOR MANAGEMENT =============
+    
+    async def create_collaborator(self, planner_id: str, user_id: str, role: str = 'viewer') -> Dict[str, Any]:
+        """Create a new collaborator"""
+        try:
+            collab_id = f"collab_{planner_id}_{user_id}"
+            
+            collab_doc = {
+                'id': collab_id,
+                'planner_id': planner_id,
+                'user_id': user_id,
+                'role': role,
+                'created_at': datetime.utcnow().isoformat()
+            }
+            
+            self.db.collection('collaborators').document(collab_id).set(collab_doc)
+            print(f"✅ FIRESTORE: Created collaborator {collab_id}")
+            return collab_doc
+        except Exception as e:
+            print(f"❌ FIRESTORE_COLLABORATOR_ERROR: {e}")
+            raise
+    
+    async def get_planner_collaborators(self, planner_id: str) -> List[Dict[str, Any]]:
+        """Get all collaborators for a planner"""
+        try:
+            collabs_ref = self.db.collection('collaborators').where('planner_id', '==', planner_id).stream()
+            return [doc.to_dict() for doc in collabs_ref]
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_COLLABORATORS_ERROR: {e}")
+            return []
+    
+    async def delete_collaborator(self, planner_id: str, user_id: str) -> bool:
+        """Delete a collaborator"""
+        try:
+            collab_id = f"collab_{planner_id}_{user_id}"
+            self.db.collection('collaborators').document(collab_id).delete()
+            print(f"✅ FIRESTORE: Deleted collaborator {collab_id}")
+            return True
+        except Exception as e:
+            print(f"❌ FIRESTORE_DELETE_COLLABORATOR_ERROR: {e}")
             return False
 
 # Global Firebase service instance

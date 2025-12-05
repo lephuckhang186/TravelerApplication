@@ -19,7 +19,7 @@ from app.services.activities_management import (
 from app.services.annalytics_service import (
     IntegratedTravelManager
 )
-from app.database import db_manager
+from app.services.firebase_service import firebase_service
 from app.models.user import User
 
 # Create router - Remove prefix to avoid double prefixing
@@ -233,27 +233,23 @@ class TripResponse(BaseModel):
 
 # ============= HELPER UTILITIES =============
 
-def _ensure_user_record(user: User) -> None:
-    """Ensure the current user exists inside the local SQLite store."""
+async def _ensure_user_record(user: User) -> None:
+    """Ensure the current user exists in Firestore."""
     try:
         print(f"👤 USER_SYNC: Checking user record for {user.id}")
-        existing_user = db_manager.get_user(user.id)
+        existing_user = await firebase_service.get_user_by_id(user.id)
         
         if not existing_user:
             print(f"👤 USER_CREATE: Creating new user record for {user.id}")
-            print(f"  Email: {user.email}")
-            print(f"  Username: {user.username}")
-            
-            db_manager.create_user(
-                user_id=user.id,
-                email=user.email,
-                username=user.username,
-                first_name=user.first_name,
-                last_name=user.last_name,
-                profile_picture=user.profile_picture
-            )
+            # User will be auto-created via Firebase service
+            user_data = {
+                'uid': user.id,
+                'email': user.email,
+                'name': f"{user.first_name or ''} {user.last_name or ''}".strip(),
+                'picture': user.profile_picture
+            }
+            await firebase_service.get_or_create_user(user_data)
     except Exception as exc:
-        # Surface a clearer error if we cannot sync user data
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to sync user profile: {exc}"
@@ -621,10 +617,10 @@ async def create_trip(
             "currency": trip_data.currency,
         }
         
-        # Store trip in database
-        print(f"💾 DATABASE_CREATE: Creating trip in SQLite database")
+        # Store trip in Firestore
+        print(f"💾 FIRESTORE_CREATE: Creating trip in Firestore")
         try:
-            stored_trip = db_manager.create_trip(current_user.id, trip_data_dict)
+            stored_trip = await firebase_service.create_trip(current_user.id, trip_data_dict)
             print(f"✅ TRIP_CREATED: Trip {stored_trip['id']} created successfully")
         except Exception as db_error:
             print(f"❌ DATABASE_ERROR: {db_error}")
@@ -674,8 +670,8 @@ async def get_trips(
     try:
         _ensure_user_record(current_user)
 
-        # Get user's trips from database
-        stored_trips = db_manager.get_user_trips(current_user.id)
+        # Get user's trips from Firestore
+        stored_trips = await firebase_service.get_user_trips(current_user.id)
         
         # Convert to response models
         trips = []
@@ -703,9 +699,9 @@ async def get_trip(
 ):
     """Get a specific trip by ID"""
     try:
-        _ensure_user_record(current_user)
+        await _ensure_user_record(current_user)
 
-        stored_trip = db_manager.get_trip(trip_id, current_user.id)
+        stored_trip = await firebase_service.get_trip(trip_id, current_user.id)
         if stored_trip:
             return _trip_row_to_response(stored_trip)
 
@@ -745,8 +741,8 @@ async def delete_trip(
             if travel_mgr.delete_activity_with_expense_sync(activity_id):
                 deleted_activities_count += 1
         
-        # Delete trip from SQLite database (this will cascade delete all expenses and activities)
-        success = db_manager.delete_trip(trip_id, current_user.id)
+        # Delete trip from Firestore (this will cascade delete all expenses and activities)
+        success = await firebase_service.delete_trip(trip_id, current_user.id)
         
         # Also try to delete from JSON file storage (for mobile app compatibility)
         try:
@@ -803,7 +799,7 @@ async def update_activity(
     activity_data: ActivityUpdate,
     current_user: User = Depends(get_current_user)
 ):
-    """Update an existing activity with automatic expense sync"""
+    """Update an existing activity with automatic expense sync on check-in"""
     travel_mgr = get_travel_manager()
     activity = travel_mgr.activity_manager.get_activity(activity_id)
     
@@ -821,6 +817,22 @@ async def update_activity(
         )
 
     try:
+        print(f"🔄 ACTIVITY_UPDATE: Updating activity {activity_id}")
+        print(f"   User: {current_user.id}")
+        print(f"   Updates: {activity_data.dict(exclude_unset=True)}")
+        
+        # Check if this is a check-in action
+        is_checking_in = activity_data.check_in is True and not activity.check_in
+        
+        if is_checking_in:
+            print(f"✅ CHECK_IN_DETECTED: Activity {activity_id} is being checked in")
+            print(f"   Activity: {activity.name}")
+            print(f"   Type: {activity.activity_type}")
+            print(f"   Has budget: {activity.budget is not None}")
+            if activity.budget:
+                print(f"   Estimated cost: {activity.budget.estimated_cost}")
+                print(f"   Actual cost: {activity.budget.actual_cost}")
+        
         # Prepare updates
         updates = {}
         for field, value in activity_data.dict(exclude_unset=True).items():
@@ -846,10 +858,43 @@ async def update_activity(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Failed to update activity"
             )
+        
+        # If checking in, create expense in Firebase
+        if is_checking_in and updated_activity.trip_id:
+            print(f"💰 AUTO_EXPENSE: Creating expense for checked-in activity")
             
+            # Determine amount - use actual cost if available, otherwise estimated cost
+            amount = 0.0
+            if updated_activity.budget:
+                if updated_activity.budget.actual_cost:
+                    amount = float(updated_activity.budget.actual_cost)
+                elif updated_activity.budget.estimated_cost:
+                    amount = float(updated_activity.budget.estimated_cost)
+            
+            if amount > 0:
+                expense_data = {
+                    "name": f"{updated_activity.name} - Check-in",
+                    "amount": amount,
+                    "currency": updated_activity.budget.currency if updated_activity.budget else "VND",
+                    "category": updated_activity.activity_type.value,
+                    "date": datetime.now().isoformat()
+                }
+                
+                try:
+                    expense = await firebase_service.create_expense(updated_activity.trip_id, expense_data)
+                    print(f"✅ EXPENSE_CREATED: {expense['id']} - {amount} {expense_data['currency']}")
+                    print(f"   Linked to activity: {activity_id}")
+                    print(f"   Trip: {updated_activity.trip_id}")
+                except Exception as exp_error:
+                    print(f"❌ EXPENSE_CREATE_ERROR: {exp_error}")
+                    # Don't fail the activity update if expense creation fails
+            else:
+                print(f"⚠️ NO_EXPENSE_AMOUNT: Activity has no cost to create expense")
+        
         return activity_to_response(updated_activity)
 
     except Exception as e:
+        print(f"❌ ACTIVITY_UPDATE_ERROR: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to update activity: {str(e)}"
@@ -1267,60 +1312,9 @@ async def get_activity_priorities():
 # ============= DEBUG & DATA SYNCHRONIZATION ENDPOINTS =============
 
 @router.get("/debug/user-status")
-async def get_user_debug_status(
-    current_user: User = Depends(get_current_user)
-):
-    """Get detailed user and database status for debugging"""
-    try:
-        print(f"🔍 DEBUG_USER_STATUS: Checking status for user {current_user.id}")
-        
-        # Check if user exists in database
-        existing_user = db_manager.get_user(current_user.id)
-        
-        # Check database tables
-        with db_manager.get_connection() as conn:
-            # Check if users table exists
-            cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-            users_table_exists = cursor.fetchone() is not None
-            
-            # Check if trips table exists
-            cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='trips'")
-            trips_table_exists = cursor.fetchone() is not None
-            
-            # Count total users
-            cursor = conn.execute("SELECT COUNT(*) FROM users")
-            total_users = cursor.fetchone()[0]
-            
-            # Count user trips
-            cursor = conn.execute("SELECT COUNT(*) FROM trips WHERE user_id = ?", (current_user.id,))
-            user_trip_count = cursor.fetchone()[0]
-            
-            # Get user trips
-            cursor = conn.execute("SELECT id, name, created_at FROM trips WHERE user_id = ? LIMIT 5", (current_user.id,))
-            user_trips = [dict(row) for row in cursor.fetchall()]
-        
-        return {
-            "user_id": current_user.id,
-            "user_email": current_user.email,
-            "user_in_database": existing_user is not None,
-            "user_record": existing_user,
-            "database_status": {
-                "users_table_exists": users_table_exists,
-                "trips_table_exists": trips_table_exists,
-                "total_users_in_db": total_users,
-                "user_trip_count": user_trip_count,
-                "user_recent_trips": user_trips
-            },
-            "debug_time": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        print(f"❌ DEBUG_ERROR: {e}")
-        return {
-            "error": f"Debug check failed: {str(e)}",
-            "user_id": current_user.id,
-            "debug_time": datetime.now().isoformat()
-        }
+async def get_user_debug_status(current_user: User = Depends(get_current_user)):
+    """DEPRECATED - Use Firebase only"""
+    return {"message": "This endpoint is deprecated. All data is now in Firebase Firestore."}
 
 @router.post("/debug/force-user-creation")
 async def force_user_creation(
@@ -1331,10 +1325,10 @@ async def force_user_creation(
         print(f"🔧 FORCE_USER_CREATE: Creating user {current_user.id}")
         
         # Force user creation
-        _ensure_user_record(current_user)
+        await _ensure_user_record(current_user)
         
         # Verify creation
-        existing_user = db_manager.get_user(current_user.id)
+        existing_user = await firebase_service.get_user_by_id(current_user.id)
         
         return {
             "message": "User creation forced",
@@ -1361,12 +1355,12 @@ async def quick_trip_setup(
         
         # Step 1: Ensure user exists
         print(f"🔧 SETUP_STEP1: Ensuring user record exists...")
-        _ensure_user_record(current_user)
+        await _ensure_user_record(current_user)
         print(f"✅ SETUP_STEP1: User record verified")
         
         # Step 2: Check if user already has trips
         print(f"🔧 SETUP_STEP2: Checking existing trips...")
-        existing_trips = db_manager.get_user_trips(current_user.id)
+        existing_trips = await firebase_service.get_user_trips(current_user.id)
         print(f"📊 SETUP_STEP2: Found {len(existing_trips)} existing trips")
         
         if existing_trips:
@@ -1392,7 +1386,7 @@ async def quick_trip_setup(
         }
         
         print(f"📋 SETUP_STEP3: Trip data prepared: {default_trip_data}")
-        created_trip = db_manager.create_trip(current_user.id, default_trip_data)
+        created_trip = await firebase_service.create_trip(current_user.id, default_trip_data)
         print(f"✅ SETUP_STEP3: Trip created successfully: {created_trip['id']}")
         
         return {
@@ -1416,298 +1410,25 @@ async def quick_trip_setup(
         )
 
 @router.post("/trips/test-creation")
-async def test_trip_creation(
-    current_user: User = Depends(get_current_user)
-):
-    """Test trip creation in isolation"""
-    try:
-        print(f"🧪 TEST_CREATION: Testing trip creation for user {current_user.id}")
-        
-        # Ensure user first
-        _ensure_user_record(current_user)
-        
-        # Simple trip data
-        from datetime import date, timedelta
-        today = date.today()
-        test_trip_data = {
-            "name": f"Test Trip {today}",
-            "destination": "Test Location",
-            "description": "Test trip creation",
-            "start_date": today.isoformat(),
-            "end_date": (today + timedelta(days=3)).isoformat(),
-            "total_budget": 1000000,
-            "currency": "VND"
-        }
-        
-        print(f"📋 TEST_DATA: {test_trip_data}")
-        
-        # Test direct database creation
-        result = db_manager.create_trip(current_user.id, test_trip_data)
-        
-        return {
-            "message": "Test trip creation successful",
-            "created_trip": result,
-            "test_status": "PASSED"
-        }
-        
-    except Exception as e:
-        print(f"❌ TEST_ERROR: {e}")
-        import traceback
-        print(f"❌ TRACEBACK: {traceback.format_exc()}")
-        
-        return {
-            "message": "Test trip creation failed",
-            "error": str(e),
-            "error_type": type(e).__name__,
-            "test_status": "FAILED"
-        }
+async def test_trip_creation(current_user: User = Depends(get_current_user)):
+    """DEPRECATED"""
+    return {"message": "DEPRECATED - Use POST /activities/trips instead"}
 
 @router.post("/sync/cleanup-orphaned-data")
-async def cleanup_orphaned_data(
-    current_user: User = Depends(get_current_user)
-):
-    """Clean up orphaned expenses that don't belong to any existing trips"""
-    try:
-        _ensure_user_record(current_user)
-        
-        # Get all valid trip IDs from both storage systems
-        db_trips = db_manager.get_user_trips(current_user.id)
-        from app.services.trip_storage_service import trip_storage
-        json_trips = trip_storage.get_user_trips(current_user.id)
-        
-        valid_trip_ids = set()
-        for trip in db_trips:
-            valid_trip_ids.add(trip['id'])
-        for trip in json_trips:
-            valid_trip_ids.add(trip['id'])
-        
-        # Get expense manager and find orphaned expenses
-        from app.api.endpoints.expenses import get_expense_manager
-        expense_manager = get_expense_manager(current_user.id)
-        
-        orphaned_expenses_cleaned = 0
-        
-        # Clean up trip-specific expense mappings
-        if hasattr(expense_manager, '_trip_expenses'):
-            orphaned_trip_ids = []
-            for trip_id in expense_manager._trip_expenses.keys():
-                if trip_id not in valid_trip_ids:
-                    orphaned_trip_ids.append(trip_id)
-            
-            for trip_id in orphaned_trip_ids:
-                deleted_count = expense_manager.delete_trip_expenses(trip_id)
-                orphaned_expenses_cleaned += deleted_count
-        
-        # Clean up orphaned database expenses
-        db_expenses_cleaned = 0
-        try:
-            with db_manager.get_connection() as conn:
-                # Find expenses linked to non-existent trips
-                cursor = conn.execute("""
-                    DELETE FROM expenses 
-                    WHERE planner_id NOT IN (SELECT id FROM trips WHERE user_id = ?)
-                """, (current_user.id,))
-                db_expenses_cleaned = cursor.rowcount
-                
-                # Find activities linked to non-existent trips
-                cursor = conn.execute("""
-                    DELETE FROM activities 
-                    WHERE planner_id NOT IN (SELECT id FROM trips WHERE user_id = ?)
-                """, (current_user.id,))
-                db_activities_cleaned = cursor.rowcount
-                
-                conn.commit()
-        except Exception as e:
-            print(f"Database cleanup error: {e}")
-            db_activities_cleaned = 0
-        
-        # Clean up activity manager
-        travel_mgr = get_travel_manager()
-        activities_cleaned = 0
-        orphaned_activities = []
-        
-        for activity_id, activity in list(travel_mgr.activity_manager.activities.items()):
-            if (activity.created_by == current_user.id and 
-                activity.trip_id and 
-                activity.trip_id not in valid_trip_ids):
-                orphaned_activities.append(activity_id)
-        
-        for activity_id in orphaned_activities:
-            if travel_mgr.delete_activity_with_expense_sync(activity_id):
-                activities_cleaned += 1
-        
-        return {
-            "message": "Orphaned data cleanup completed",
-            "user_id": current_user.id,
-            "valid_trips": len(valid_trip_ids),
-            "cleanup_results": {
-                "orphaned_expenses_cleaned": orphaned_expenses_cleaned,
-                "db_expenses_cleaned": db_expenses_cleaned,
-                "db_activities_cleaned": db_activities_cleaned,
-                "activities_cleaned": activities_cleaned
-            },
-            "valid_trip_ids": list(valid_trip_ids)
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to cleanup orphaned data: {str(e)}"
-        )
+async def cleanup_orphaned_data(current_user: User = Depends(get_current_user)):
+    """DEPRECATED"""
+    return {"message": "DEPRECATED - Firestore handles data integrity automatically"}
 
 @router.post("/sync/force-sync-storage")
-async def force_sync_storage_systems(
-    current_user: User = Depends(get_current_user)
-):
-    """Force synchronization between SQLite database and JSON storage"""
-    try:
-        _ensure_user_record(current_user)
-        
-        # Get trips from both storage systems
-        db_trips = db_manager.get_user_trips(current_user.id)
-        from app.services.trip_storage_service import trip_storage
-        json_trips = trip_storage.get_user_trips(current_user.id)
-        
-        # Create sets for comparison
-        db_trip_ids = {trip['id'] for trip in db_trips}
-        json_trip_ids = {trip['id'] for trip in json_trips}
-        
-        synced_to_json = 0
-        synced_to_db = 0
-        
-        # Sync DB trips to JSON
-        for trip in db_trips:
-            if trip['id'] not in json_trip_ids:
-                try:
-                    # Convert trip format and add to JSON storage
-                    trip_data = {
-                        "name": trip['name'],
-                        "destination": trip['destination'], 
-                        "description": trip.get('description'),
-                        "start_date": trip['start_date'],
-                        "end_date": trip['end_date'],
-                        "total_budget": trip.get('total_budget'),
-                        "currency": trip.get('currency', 'VND')
-                    }
-                    trip_storage.create_trip(current_user.id, trip_data)
-                    synced_to_json += 1
-                except Exception as e:
-                    print(f"Failed to sync trip {trip['id']} to JSON: {e}")
-        
-        # Sync JSON trips to DB  
-        for trip in json_trips:
-            if trip['id'] not in db_trip_ids:
-                try:
-                    # Convert trip format and add to DB
-                    trip_data = {
-                        "name": trip['name'],
-                        "destination": trip['destination'],
-                        "description": trip.get('description'),
-                        "start_date": trip['start_date'],
-                        "end_date": trip['end_date'],
-                        "total_budget": trip.get('total_budget'),
-                        "currency": trip.get('currency', 'VND')
-                    }
-                    db_manager.create_trip(current_user.id, trip_data)
-                    synced_to_db += 1
-                except Exception as e:
-                    print(f"Failed to sync trip {trip['id']} to DB: {e}")
-        
-        # Get final counts
-        final_db_trips = len(db_manager.get_user_trips(current_user.id))
-        final_json_trips = len(trip_storage.get_user_trips(current_user.id))
-        
-        return {
-            "message": "Storage systems synchronized",
-            "user_id": current_user.id,
-            "sync_results": {
-                "synced_to_json": synced_to_json,
-                "synced_to_db": synced_to_db,
-                "final_db_trips": final_db_trips,
-                "final_json_trips": final_json_trips
-            },
-            "before": {
-                "db_trips": len(db_trips),
-                "json_trips": len(json_trips)
-            }
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to sync storage systems: {str(e)}"
-        )
+async def force_sync_storage_systems(current_user: User = Depends(get_current_user)):
+    """DEPRECATED"""
+    return {"message": "DEPRECATED - Using Firebase Firestore only"}
 
 @router.get("/debug/storage-status")
-async def get_storage_status(
-    current_user: User = Depends(get_current_user)
-):
-    """Get detailed status of all storage systems for debugging"""
-    try:
-        _ensure_user_record(current_user)
-        
-        # SQLite Database status
-        db_trips = db_manager.get_user_trips(current_user.id)
-        
-        # JSON Storage status  
-        from app.services.trip_storage_service import trip_storage
-        json_trips = trip_storage.get_user_trips(current_user.id)
-        
-        # Expense Manager status
-        from app.api.endpoints.expenses import get_expense_manager
-        expense_manager = get_expense_manager(current_user.id)
-        
-        # Activity Manager status
-        travel_mgr = get_travel_manager()
-        user_activities = travel_mgr.activity_manager.get_activities_by_user(current_user.id)
-        
-        # Check for orphaned data
-        db_trip_ids = {trip['id'] for trip in db_trips}
-        json_trip_ids = {trip['id'] for trip in json_trips}
-        
-        expense_trip_ids = set()
-        if hasattr(expense_manager, '_trip_expenses'):
-            expense_trip_ids = set(expense_manager._trip_expenses.keys())
-        
-        activity_trip_ids = {activity.trip_id for activity in user_activities if activity.trip_id}
-        
-        return {
-            "user_id": current_user.id,
-            "storage_systems": {
-                "sqlite_database": {
-                    "trip_count": len(db_trips),
-                    "trip_ids": [trip['id'] for trip in db_trips],
-                    "status": "active"
-                },
-                "json_storage": {
-                    "trip_count": len(json_trips),
-                    "trip_ids": [trip['id'] for trip in json_trips],
-                    "status": "active"
-                },
-                "expense_manager": {
-                    "total_expenses": len(expense_manager.expenses),
-                    "trip_expense_mappings": len(expense_trip_ids),
-                    "tracked_trip_ids": list(expense_trip_ids),
-                    "status": "active"
-                },
-                "activity_manager": {
-                    "total_activities": len(user_activities),
-                    "activities_with_trips": len([a for a in user_activities if a.trip_id]),
-                    "activity_trip_ids": list(activity_trip_ids),
-                    "status": "active"
-                }
-            },
-            "synchronization_status": {
-                "db_json_sync": db_trip_ids == json_trip_ids,
-                "orphaned_expense_trips": expense_trip_ids - db_trip_ids - json_trip_ids,
-                "orphaned_activity_trips": activity_trip_ids - db_trip_ids - json_trip_ids,
-                "missing_from_json": db_trip_ids - json_trip_ids,
-                "missing_from_db": json_trip_ids - db_trip_ids
-            }
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get storage status: {str(e)}"
-        )
+async def get_storage_status(current_user: User = Depends(get_current_user)):
+    """Get Firebase storage status"""
+    trips = await firebase_service.get_user_trips(current_user.id)
+    return {"storage": "Firebase Firestore", "trip_count": len(trips), "status": "active"}
+
+
+

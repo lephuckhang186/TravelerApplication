@@ -173,9 +173,15 @@ class ExpenseService {
     );
 
     debugPrint(
-      'DEBUG: Creating expense from activity with amount: $amount, category: $category, description: $enhancedDescription',
+      'DEBUG: Creating expense from activity with amount: $amount, category: $category, tripId: $tripId, description: $enhancedDescription',
     );
-    return await createExpense(request);
+    debugPrint('DEBUG: ExpenseCreateRequest.toJson(): ${request.toJson()}');
+    
+    final createdExpense = await createExpense(request);
+    
+    debugPrint('DEBUG: Created expense - ID: ${createdExpense.id}, TripId: ${createdExpense.tripId}, Description: ${createdExpense.description}');
+    
+    return createdExpense;
   }
 
   /// Get all expenses with optional filters
@@ -186,6 +192,8 @@ class ExpenseService {
     String? tripId,
   }) async {
     try {
+      debugPrint('ExpenseService.getExpenses: tripId=$tripId, startDate=$startDate, endDate=$endDate');
+      
       final queryParams = <String, String>{};
 
       if (category != null) {
@@ -199,6 +207,9 @@ class ExpenseService {
       }
       if (tripId != null) {
         queryParams['planner_id'] = tripId;
+        debugPrint('ExpenseService.getExpenses: Adding planner_id=$tripId to query');
+      } else {
+        debugPrint('ExpenseService.getExpenses: No tripId, loading ALL user expenses');
       }
 
       final response = await _apiClient.get(
@@ -207,12 +218,15 @@ class ExpenseService {
       );
 
       if (response is List) {
-        return response
+        final expenses = response
             .map((item) => Expense.fromJson(item as Map<String, dynamic>))
             .toList();
+        debugPrint('ExpenseService.getExpenses: Loaded ${expenses.length} expenses');
+        return expenses;
       }
       return [];
     } catch (e) {
+      debugPrint('ExpenseService.getExpenses: Error - $e');
       throw _handleException(e, 'Failed to fetch expenses');
     }
   }

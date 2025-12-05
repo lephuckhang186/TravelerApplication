@@ -5,7 +5,7 @@ from decimal import Decimal, getcontext
 from dataclasses import dataclass
 from collections import defaultdict
 from app.services.activities_management import ActivityManager, Activity, ActivityType
-from app.database import DatabaseManager
+# Database removed - using Firebase only
 import json
 
 # Set high precision for financial calculations
@@ -648,7 +648,8 @@ class IntegratedTravelManager:
         from .activities_management import ActivityManager
         self.activity_manager = ActivityManager()
         self.expense_manager = ExpenseManager()
-        self.db_manager = DatabaseManager()
+        # Database removed - using Firebase only
+        self.db_manager = None
     
     def get_activity_expense_summary(self, trip_id: str = None) -> dict:
         """Get summary of activities and their associated expenses"""
@@ -773,10 +774,10 @@ class IntegratedTravelManager:
         # Add to manager
         self.activity_manager.activities[activity.id] = activity
         
-        # ✅ CRITICAL FIX: Save activity to SQLite database for persistence
+        # Database removed - activities now saved to Firebase only
+        # SQLite database persistence disabled
         try:
-            from app.database import DatabaseManager
-            db_manager = DatabaseManager()
+            return  # Skip database operations
             
             # Get planner_id (trip_id) from activity
             planner_id = str(getattr(activity, 'trip_id', '') or 'default')

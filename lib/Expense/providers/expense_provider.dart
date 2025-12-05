@@ -291,14 +291,25 @@ class ExpenseProvider with ChangeNotifier {
       _startDate = startDate;
       _endDate = endDate;
 
+      debugPrint('FETCH_EXPENSES: Fetching with tripId=$tripId, start=$startDate, end=$endDate');
+      
       _expenses = await _expenseService.getExpenses(
         category: category,
         startDate: startDate,
         endDate: endDate,
         tripId: tripId,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          debugPrint('FETCH_EXPENSES: Request timed out after 15 seconds');
+          throw Exception('Request timed out. Please check your connection.');
+        },
       );
+      
+      debugPrint('FETCH_EXPENSES: Successfully loaded ${_expenses.length} expenses');
       _clearError();
     } catch (e) {
+      debugPrint('FETCH_EXPENSES ERROR: $e');
       _setError(e.toString());
     } finally {
       _setLoading(false);
@@ -411,12 +422,18 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   /// Load all data based on current trip
-  Future<void> loadData() async {
+  Future<void> loadData({String? tripId}) async {
     _setLoading(true);
 
     try {
-      // First get the current trip
-      await fetchCurrentTrip();
+      debugPrint('LOAD_DATA: Loading expenses for tripId: $tripId, startDate: $_startDate, endDate: $_endDate, forceRefresh: false');
+      
+      // Note: Trip model from expense service doesn't have ID
+      // tripId must be passed from calling code
+      if (tripId == null) {
+        await fetchCurrentTrip();
+        // _currentTrip doesn't have id field - caller must provide tripId
+      }
 
       if (_currentTrip != null) {
         // Set date range based on trip
@@ -425,18 +442,23 @@ class ExpenseProvider with ChangeNotifier {
         _selectedMonth = _currentTrip!.startDate;
       }
 
-      // Load all expense data
+      debugPrint('LOAD_DATA: Using tripId: $tripId for loading data');
+
+      // Load all expense data with tripId
       await Future.wait([
         fetchExpenses(
           category: _selectedCategory,
           startDate: _startDate,
           endDate: _endDate,
+          tripId: tripId,
         ),
-        fetchBudgetStatus(),
+        fetchBudgetStatus(tripId: tripId),
         fetchCategoryStatus(),
-        fetchExpenseSummary(),
+        fetchExpenseSummary(tripId: tripId),
         fetchSpendingTrends(),
       ]);
+      
+      debugPrint('LOAD_DATA: Loaded ${_expenses.length} expenses');
     } catch (e) {
       _setError('Failed to load data: ${e.toString()}');
     } finally {
