@@ -195,7 +195,6 @@ class GeneralInfoScreen extends StatelessWidget {
     );
   }
 
-
   Widget _buildContactCard() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -339,11 +338,6 @@ class GeneralInfoScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  void _showDocument(String title) {
-    // Simulate showing document
-    print('Opening $title document...');
   }
 
   void _checkForUpdates() {
