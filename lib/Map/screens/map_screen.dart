@@ -20,7 +20,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _googleMapController;
-  flutter_map.MapController? _flutterMapController;
+  late flutter_map.MapController _flutterMapController;
   TripModel? _selectedTrip;
   Set<Marker> _googleMarkers = {};
   Set<Polyline> _googlePolylines = {};
@@ -35,6 +35,8 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize Flutter Map controller
+    _flutterMapController = flutter_map.MapController();
   }
 
   Future<void> _loadTrips() async {
@@ -135,8 +137,10 @@ class _MapScreenState extends State<MapScreen> {
             snippet: activity.description ?? '',
           ),
           icon: i == _currentActivityIndex
-              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)
-              : BitmapDescriptor.defaultMarker,
+              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)  // Starting point - blue
+              : i == _currentActivityIndex + 1
+                  ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)   // Next destination - red
+                  : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow), // Others - yellow
         );
         _googleMarkers.add(marker);
       }
@@ -149,10 +153,10 @@ class _MapScreenState extends State<MapScreen> {
           child: Icon(
             Icons.location_on,
             color: i == _currentActivityIndex
-                ? Colors.blue
-                : i < _currentActivityIndex
-                    ? Colors.green
-                    : Colors.red,
+                ? Colors.blue       // Starting point - blue
+                : i == _currentActivityIndex + 1
+                    ? Colors.red    // Next destination - red
+                    : Colors.yellow, // Others - yellow
             size: 40,
           ),
         );
@@ -352,7 +356,7 @@ class _MapScreenState extends State<MapScreen> {
           activity.location?.latitude != null && activity.location?.longitude != null
         ).toList();
 
-        if (_currentActivityIndex < updatedActivities.length) {
+        if (_currentActivityIndex < updatedActivities.length - 1) {
           await _loadRoute(updatedActivities[_currentActivityIndex], updatedActivities[_currentActivityIndex + 1]);
           // Update marker colors
           _updateMarkers(updatedActivities);
@@ -393,32 +397,42 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _centerToFirstActivity() {
+  void _centerToCurrentStartingPoint() {
     if (_selectedTrip == null) return;
+
+    // Debug logs
+    print('Center to current starting point called');
+    print('isMapReady: $_isMapReady');
+    print('kIsWeb: $kIsWeb');
+    print('Current activity index: $_currentActivityIndex');
+    print('Google controller: ${_googleMapController != null}');
+    print('Flutter controller: ${_flutterMapController != null}');
 
     final activities = _selectedTrip!.activities.where((activity) =>
       activity.location?.latitude != null && activity.location?.longitude != null
     ).toList();
 
-    if (activities.isEmpty) {
+    if (activities.isEmpty || _currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không có hoạt động nào có vị trí')),
       );
       return;
     }
 
-    final firstActivity = activities[0];
+    final currentStartingActivity = activities[_currentActivityIndex];
 
-    // Center map on first activity
+    // Center map on current starting point with maximum zoom for clarity
     if (!kIsWeb) {
       if (_googleMapController != null) {
+        print('Animating Google Maps camera to current starting point');
         _googleMapController!.animateCamera(
           CameraUpdate.newLatLngZoom(
-            LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
-            15, // Closer zoom for better view
+            LatLng(currentStartingActivity.location!.latitude!, currentStartingActivity.location!.longitude!),
+            18, // Maximum zoom for clearest view
           ),
         );
       } else {
+        print('Google Maps controller is null!');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Bản đồ chưa sẵn sàng')),
         );
@@ -426,11 +440,13 @@ class _MapScreenState extends State<MapScreen> {
       }
     } else {
       if (_flutterMapController != null) {
+        print('Moving Flutter Map to current starting point');
         _flutterMapController!.move(
-          latlong.LatLng(firstActivity.location!.latitude!, firstActivity.location!.longitude!),
-          15, // Closer zoom for better view
+          latlong.LatLng(currentStartingActivity.location!.latitude!, currentStartingActivity.location!.longitude!),
+          18, // Maximum zoom for clearest view
         );
       } else {
+        print('Flutter Map controller is null!');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Bản đồ chưa sẵn sàng')),
         );
@@ -497,10 +513,10 @@ class _MapScreenState extends State<MapScreen> {
             snippet: activity.description ?? '',
           ),
           icon: i == _currentActivityIndex
-              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)
-              : i < _currentActivityIndex
-                  ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
-                  : BitmapDescriptor.defaultMarker,
+              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)  // Starting point - blue
+              : i == _currentActivityIndex + 1
+                  ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)   // Next destination - red
+                  : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow), // Others - yellow
         );
         _googleMarkers.add(marker);
       }
@@ -513,10 +529,10 @@ class _MapScreenState extends State<MapScreen> {
           child: Icon(
             Icons.location_on,
             color: i == _currentActivityIndex
-                ? Colors.blue
-                : i < _currentActivityIndex
-                    ? Colors.green
-                    : Colors.red,
+                ? Colors.blue       // Starting point - blue
+                : i == _currentActivityIndex + 1
+                    ? Colors.red    // Next destination - red
+                    : Colors.yellow, // Others - yellow
             size: 40,
           ),
         );
@@ -642,7 +658,7 @@ class _MapScreenState extends State<MapScreen> {
                     // Starting point
                     Row(
                       children: [
-                        Icon(Icons.play_circle_fill, color: Colors.green, size: 20),
+                        Icon(Icons.play_circle_fill, color: Colors.blue, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: TextField(
@@ -665,7 +681,7 @@ class _MapScreenState extends State<MapScreen> {
                     // Next destination
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: Colors.blue, size: 20),
+                        Icon(Icons.location_on, color: Colors.red, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: TextField(
@@ -698,7 +714,7 @@ class _MapScreenState extends State<MapScreen> {
             Container(
               margin: const EdgeInsets.only(bottom: 16),
               child: FloatingActionButton.small(
-                onPressed: _centerToFirstActivity,
+              onPressed: _centerToCurrentStartingPoint,
                 backgroundColor: Colors.white,
                 child: const Icon(Icons.my_location, color: AppColors.navyBlue),
                 tooltip: 'Về điểm xuất phát',
