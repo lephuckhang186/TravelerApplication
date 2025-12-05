@@ -64,6 +64,11 @@ dependencies:
   flutter_tts: ^4.2.3
   speech_to_text: ^7.0.2
 
+  # Maps
+  google_maps_flutter: ^2.6.1
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
