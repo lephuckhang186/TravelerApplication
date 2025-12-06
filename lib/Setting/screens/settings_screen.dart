@@ -16,6 +16,7 @@ import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
 import 'change_password_screen.dart';
+import '../../Login/services/firestore_statistics_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,7 +35,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   final UserProfileService _profileService = UserProfileService();
   final AuthService _authService = AuthService();
+  final FirestoreStatisticsService _statisticsService = FirestoreStatisticsService();
   UserProfile? _userProfile;
+  UserTravelStats _stats = UserTravelStats.empty();
 
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
@@ -46,12 +49,22 @@ class _SettingsScreenState extends State<SettingsScreen>
   void initState() {
     super.initState();
     _loadUserData();
+    _loadStatistics();
     _scrollController.addListener(_onScroll);
 
     // Set up real-time listener for profile changes
     _profileService.getUserProfileStream().listen((profile) {
       if (mounted && profile != null) {
         _updateDisplayData(profile);
+      }
+    });
+
+    // Set up real-time listener for statistics
+    _statisticsService.getUserStatisticsStream().listen((stats) {
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+        });
       }
     });
   }
@@ -84,7 +97,12 @@ class _SettingsScreenState extends State<SettingsScreen>
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _statisticsService.dispose();
     super.dispose();
+  }
+
+  void _loadStatistics() {
+    // Statistics will be loaded via stream listener
   }
 
   void _onScroll() {
@@ -651,7 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  /// Travel Statistics Card
+  /// Travel Statistics Card with Real Data
   Widget _buildTravelStatsCard() {
     return GestureDetector(
       onTap: () => _onTravelStats(),
@@ -675,6 +693,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             // Header Row
             Row(
               children: [
+                Icon(Icons.analytics, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
                 Text(
                   'Travel Stats',
                   style: TextStyle(fontFamily: 'Urbanist-Regular', 
@@ -697,7 +717,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
             const SizedBox(height: 16),
 
-            // Total Trips Section
+            // Total Trips Section with Real Data
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -717,8 +737,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '0',
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                    _stats.completedTrips.toString(),
+                    style: GoogleFonts.quattrocento(
                       fontSize: 48,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -726,61 +746,33 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   const SizedBox(height: 16),
 
-                  // Simple timeline
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      Expanded(child: Container(height: 2, color: Colors.blue)),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      Expanded(child: Container(height: 2, color: Colors.blue)),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                  ),
+                  // Dynamic Chart based on real data
+                  _buildTravelTimelineChart(),
 
                   const SizedBox(height: 16),
 
-                  // Years
+                  // Current year progress
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '2023',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      Text(
                         '2024',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
                       Text(
-                        '2025',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        '2025: ${_stats.completedTrips2025} trips',
+                        style: GoogleFonts.quattrocento(
+                          fontSize: 14,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '2026',
+                        style: GoogleFonts.quattrocento(
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -793,6 +785,105 @@ class _SettingsScreenState extends State<SettingsScreen>
           ],
         ),
       ),
+    );
+  }
+
+  /// Build travel timeline chart with real data
+  Widget _buildTravelTimelineChart() {
+    final currentYear = DateTime.now().year;
+    final maxTrips = _stats.completedTrips > 0 ? _stats.completedTrips : 5;
+    
+    // Calculate column heights based on data
+    final trips2024 = 0; // Could add this to stats if needed
+    final trips2025 = _stats.completedTrips2025;
+    final trips2026 = 0; // Future trips
+    
+    return Container(
+      height: 60,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // 2024 column
+          Expanded(
+            child: _buildTimelineColumn(
+              trips2024, 
+              maxTrips,
+              Colors.grey[400]!,
+              '24'
+            ),
+          ),
+          const SizedBox(width: 8),
+          // 2025 column (current year)
+          Expanded(
+            child: _buildTimelineColumn(
+              trips2025,
+              maxTrips, 
+              Colors.blue,
+              '25'
+            ),
+          ),
+          const SizedBox(width: 8),
+          // 2026 column
+          Expanded(
+            child: _buildTimelineColumn(
+              trips2026,
+              maxTrips,
+              Colors.grey[300]!,
+              '26'
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build individual timeline column
+  Widget _buildTimelineColumn(int trips, int maxTrips, Color color, String year) {
+    final heightPercentage = maxTrips > 0 ? (trips / maxTrips).clamp(0.0, 1.0) : 0.0;
+    final minHeight = trips > 0 ? 0.2 : 0.05; // Minimum height for visibility
+    final finalHeight = (heightPercentage < minHeight ? minHeight : heightPercentage);
+    
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        // Trip count (only show if > 0)
+        Container(
+          height: 16,
+          alignment: Alignment.center,
+          child: trips > 0 ? Text(
+            trips.toString(),
+            style: GoogleFonts.quattrocento(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ) : null,
+        ),
+        // Column bar
+        Container(
+          width: double.infinity,
+          height: 36 * finalHeight,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+            gradient: trips > 0 ? LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [color, color.withOpacity(0.7)],
+            ) : null,
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Year label
+        Text(
+          year,
+          style: GoogleFonts.quattrocento(
+            fontSize: 10,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 

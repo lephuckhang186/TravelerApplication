@@ -17,14 +17,14 @@ load_dotenv()
 
 # Handle both relative and absolute imports
 try:
-    from .api.endpoints import expenses, auth, planners, collaborators, activities
+    from .api.endpoints import expenses, auth, planners, collaborators, activities, firestore_statistics
     from .core.config import get_settings
 except ImportError:
     # Fallback for direct execution or ASGI
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from api.endpoints import expenses, auth, planners, collaborators, activities
+    from api.endpoints import expenses, auth, planners, collaborators, activities, firestore_statistics
     from core.config import get_settings
 
 # Import travel_agent
@@ -145,6 +145,7 @@ app.include_router(expenses.router, prefix=settings.API_V1_STR)
 app.include_router(activities.router, prefix=f"{settings.API_V1_STR}/activities")
 app.include_router(planners.router, prefix=f"{settings.API_V1_STR}/planners")
 app.include_router(collaborators.router, prefix=f"{settings.API_V1_STR}/collaborators")
+app.include_router(firestore_statistics.router, prefix=f"{settings.API_V1_STR}/firestore")
 if travel_agent:
     app.include_router(travel_agent.router, prefix=settings.API_V1_STR)
     logger.info("Travel agent endpoints enabled")

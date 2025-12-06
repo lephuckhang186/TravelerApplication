@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../Login/services/firestore_statistics_service.dart';
+import '../../Login/services/auth_service.dart';
+import 'dart:async';
 
 class TravelStatsScreen extends StatefulWidget {
   const TravelStatsScreen({super.key});
@@ -10,16 +14,46 @@ class TravelStatsScreen extends StatefulWidget {
 class _TravelStatsScreenState extends State<TravelStatsScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  final FirestoreStatisticsService _statisticsService = FirestoreStatisticsService();
+  final AuthService _authService = AuthService();
+  
+  UserTravelStats _stats = UserTravelStats.empty();
+  bool _isLoading = true;
+  StreamSubscription<UserTravelStats>? _statsSubscription;
   
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadStatistics();
+  }
+
+  void _loadStatistics() {
+    _statsSubscription = _statisticsService.getUserStatisticsStream().listen(
+      (stats) {
+        if (mounted) {
+          setState(() {
+            _stats = stats;
+            _isLoading = false;
+          });
+        }
+      },
+      onError: (error) {
+        print('Error loading statistics: $error');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _statsSubscription?.cancel();
+    _statisticsService.dispose();
     super.dispose();
   }
 
@@ -102,6 +136,12 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
   }
 
   Widget _buildAllStatsTab() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -117,6 +157,11 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           
           const SizedBox(height: 20),
           
+          // All Time Progress Chart
+          _buildAllTimeProgressChart(),
+          
+          const SizedBox(height: 20),
+          
           // Bottom Illustration
           _buildBottomIllustration(),
         ],
@@ -125,18 +170,29 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
   }
 
   Widget _buildYearStatsTab() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Distance Traveled Section
-          _buildDistanceTraveledSection(),
+          // Distance Traveled Section (for 2025, show proportional distance)
+          _buildDistanceTraveledSection(isYear2025: true),
           
           const SizedBox(height: 20),
           
-          // Stats List
-          _buildStatsList(),
+          // Stats List for 2025
+          _buildStatsList(isYear2025: true),
+          
+          const SizedBox(height: 20),
+          
+          // 2025 Progress Chart
+          _build2025ProgressChart(),
           
           const SizedBox(height: 20),
           
@@ -147,15 +203,20 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
     );
   }
 
-  Widget _buildDistanceTraveledSection() {
+  Widget _buildDistanceTraveledSection({bool isYear2025 = false}) {
+    // Calculate distance based on total days (estimated 100km per day)
+    final distance = isYear2025 
+        ? (_stats.totalDays2025 * 100.0).toInt()
+        : _stats.totalDistance.toInt();
+    
     return Container(
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Distance Traveled',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            isYear2025 ? 'Distance Traveled (2025)' : 'Distance Traveled',
+            style: GoogleFonts.quattrocento(
               fontSize: 16,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
@@ -163,40 +224,42 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           ),
           const SizedBox(height: 8),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '0',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  fontSize: 48,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  'km',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                    fontSize: 24,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    distance.toString(),
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'km',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey[400],
+                    size: 24,
+                  ),
+                ],
               ),
-              const Spacer(),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[400],
-                size: 24,
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
           Text(
-            'You haven\'t traveled yet. TripIt will update your travel stats every time you complete a trip.',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            isYear2025 
+                ? 'Distance is calculated from your 2025 trips. Continue planning and traveling!'
+                : 'Distance is calculated from your completed trips. Start traveling to see real data!',
+            style: GoogleFonts.quattrocento(
               fontSize: 14,
               color: Colors.grey[600],
               height: 1.4,
@@ -207,16 +270,32 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
     );
   }
 
-  Widget _buildStatsGrid() {
-    final stats = [
-      {'icon': Icons.calendar_today, 'title': 'Total Days', 'value': '0'},
-      {'icon': Icons.card_travel, 'title': 'Total Trips', 'value': '0'},
-      {'icon': Icons.public, 'title': 'Countries/Regions Visited', 'value': '0'},
-      {'icon': Icons.location_city, 'title': 'Cities Visited', 'value': '0'},
+  Widget _buildStatsGrid({bool isYear2025 = false}) {
+    final statsData = [
+      {
+        'icon': Icons.calendar_today, 
+        'title': 'Total Days', 
+        'value': isYear2025 ? _stats.totalDays2025.toString() : _stats.totalDays.toString()
+      },
+      {
+        'icon': Icons.card_travel, 
+        'title': 'Total Trips', 
+        'value': isYear2025 ? _stats.completedTrips2025.toString() : _stats.completedTrips.toString()
+      },
+      {
+        'icon': Icons.location_on, 
+        'title': 'Locations Visited', 
+        'value': isYear2025 ? _stats.checkedInLocations2025.toString() : _stats.checkedInLocations.toString()
+      },
+      {
+        'icon': Icons.event_note, 
+        'title': 'Total Plans', 
+        'value': isYear2025 ? _stats.totalPlans2025.toString() : _stats.totalPlans.toString()
+      },
     ];
 
     return Column(
-      children: stats.map((stat) => _buildStatItem(
+      children: statsData.map((stat) => _buildStatItem(
         stat['icon'] as IconData,
         stat['title'] as String,
         stat['value'] as String,
@@ -224,61 +303,77 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
     );
   }
 
-  Widget _buildStatsList() {
-    final stats = [
-      {'icon': Icons.calendar_today, 'title': 'Total Days', 'value': '0'},
-      {'icon': Icons.card_travel, 'title': 'Total Trips', 'value': '0'},
-      {'icon': Icons.public, 'title': 'Countries/Regions Visited', 'value': '0'},
-      {'icon': Icons.location_city, 'title': 'Cities Visited', 'value': '0'},
+  Widget _buildStatsList({bool isYear2025 = false}) {
+    final statsData = [
+      {
+        'icon': Icons.calendar_today, 
+        'title': 'Total Days', 
+        'value': isYear2025 ? _stats.totalDays2025.toString() : _stats.totalDays.toString()
+      },
+      {
+        'icon': Icons.card_travel, 
+        'title': 'Total Trips', 
+        'value': isYear2025 ? _stats.completedTrips2025.toString() : _stats.completedTrips.toString()
+      },
+      {
+        'icon': Icons.location_on, 
+        'title': 'Locations Visited', 
+        'value': isYear2025 ? _stats.checkedInLocations2025.toString() : _stats.checkedInLocations.toString()
+      },
+      {
+        'icon': Icons.event_note, 
+        'title': 'Total Plans', 
+        'value': isYear2025 ? _stats.totalPlans2025.toString() : _stats.totalPlans.toString()
+      },
     ];
 
     return Column(
-      children: stats.map((stat) => Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                stat['icon'] as IconData,
-                color: Colors.blue,
-                size: 20,
-              ),
+          children: statsData.map((stat) => Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[200]!),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                stat['title'] as String,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    stat['icon'] as IconData,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    stat['title'] as String,
+                    style: GoogleFonts.quattrocento(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                Text(
+                  stat['value'] as String,
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              stat['value'] as String,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      )).toList(),
-    );
+          )).toList(),
+        );
   }
 
   Widget _buildStatItem(IconData icon, String title, String value) {
@@ -432,6 +527,285 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAllTimeProgressChart() {
+    if (_isLoading) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.analytics, color: Colors.green, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'All Time Progress',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Chart - using real data, auto-scaling
+            Container(
+              height: 200,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildChartColumn(
+                    'Plans',
+                    _stats.totalPlans,
+                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
+                    Icons.event_note,
+                    Colors.blue,
+                  ),
+                  _buildChartColumn(
+                    'Days',
+                    _stats.totalDays,
+                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
+                    Icons.calendar_today,
+                    Colors.green,
+                  ),
+                  _buildChartColumn(
+                    'Locations',
+                    _stats.checkedInLocations,
+                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
+                    Icons.location_on,
+                    Colors.orange,
+                  ),
+                  _buildChartColumn(
+                    'Trips',
+                    _stats.completedTrips,
+                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
+                    Icons.flight,
+                    Colors.purple,
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.green[700], size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Your complete travel journey! Track all your adventures from the beginning.',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 12,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _build2025ProgressChart() {
+    if (_isLoading) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.trending_up, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '2025 Progress',
+                  style: GoogleFonts.quattrocento(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Chart - using real 2025 data, auto-scaling
+            Container(
+              height: 200,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildChartColumn(
+                    'Plans',
+                    _stats.totalPlans2025,
+                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    Icons.event_note,
+                    Colors.blue,
+                  ),
+                  _buildChartColumn(
+                    'Days',
+                    _stats.totalDays2025,
+                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    Icons.calendar_today,
+                    Colors.green,
+                  ),
+                  _buildChartColumn(
+                    'Locations',
+                    _stats.checkedInLocations2025,
+                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    Icons.location_on,
+                    Colors.orange,
+                  ),
+                  _buildChartColumn(
+                    'Trips',
+                    _stats.completedTrips2025,
+                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    Icons.flight,
+                    Colors.purple,
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[700], size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Track your 2025 travel achievements! Each bar shows your progress this year.',
+                      style: GoogleFonts.quattrocento(
+                        fontSize: 12,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  int _getMaxValue(List<int> values) {
+    if (values.isEmpty) return 10;
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    return maxValue > 0 ? maxValue : 10; // Minimum scale
+  }
+
+  Widget _buildChartColumn(String label, int value, int maxValue, IconData icon, Color color) {
+    // Calculate height percentage (minimum 10% for visibility, maximum 100%)
+    double heightPercentage = maxValue > 0 ? (value / maxValue).clamp(0.0, 1.0) : 0.0;
+    if (value > 0 && heightPercentage < 0.1) {
+      heightPercentage = 0.1; // Minimum height for visibility
+    }
+    
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // Value label
+            Container(
+              height: 24,
+              alignment: Alignment.center,
+              child: Text(
+                value.toString(),
+                style: GoogleFonts.quattrocento(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            
+            // Chart bar
+            Container(
+              height: 140 * heightPercentage,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    color,
+                    color.withOpacity(0.6),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: value > 0 ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ] : null,
+              ),
+              child: value > 0 ? Center(
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: heightPercentage > 0.3 ? 20 : 16,
+                ),
+              ) : null,
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Label
+            Text(
+              label,
+              style: GoogleFonts.quattrocento(
+                fontSize: 11,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
