@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Core/theme/app_theme.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
@@ -33,7 +32,7 @@ class _NotificationSettingsScreenState
         ),
         title: Text(
           'Cài đặt thông báo',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -96,7 +95,7 @@ class _NotificationSettingsScreenState
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: GoogleFonts.quattrocento(
+        style: TextStyle(fontFamily: 'Urbanist-Regular', 
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
@@ -138,7 +137,7 @@ class _NotificationSettingsScreenState
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
@@ -147,7 +146,7 @@ class _NotificationSettingsScreenState
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 12,
                           color: Colors.grey[600],
                         ),
@@ -185,7 +184,7 @@ class _NotificationSettingsScreenState
           const SizedBox(width: 8),
           Text(
             'Nhắc nhở trước:',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 12,
               color: Colors.grey[700],
             ),
@@ -201,7 +200,7 @@ class _NotificationSettingsScreenState
               ),
               child: Text(
                 _reminderTime,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 12,
                   color: AppColors.primary,
                   fontWeight: FontWeight.w500,
@@ -227,7 +226,7 @@ class _NotificationSettingsScreenState
           const SizedBox(width: 8),
           Text(
             'Cảnh báo khi chi tiêu vượt:',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 12,
               color: Colors.grey[700],
             ),
@@ -243,7 +242,7 @@ class _NotificationSettingsScreenState
               ),
               child: Text(
                 _expenseLimit,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 12,
                   color: Colors.orange,
                   fontWeight: FontWeight.w500,
@@ -271,7 +270,7 @@ class _NotificationSettingsScreenState
             ),
             child: Text(
               'Bật tất cả',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
               ),
@@ -291,7 +290,7 @@ class _NotificationSettingsScreenState
             ),
             child: Text(
               'Tắt tất cả',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 color: Colors.grey[700],
                 fontWeight: FontWeight.w500,
               ),
@@ -315,7 +314,7 @@ class _NotificationSettingsScreenState
           children: [
             Text(
               'Nhắc nhở trước chuyến đi',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -360,7 +359,7 @@ class _NotificationSettingsScreenState
           children: [
             Text(
               'Ngưỡng cảnh báo chi tiêu',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),

@@ -355,7 +355,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
 
                 // Username input
                 Container(
@@ -820,10 +820,14 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             }
           }
+          // User cancelled - không làm gì cả
           break;
       }
     } catch (e) {
-      _showErrorMessage(e.toString());
+      // Chỉ hiển thị lỗi nếu không phải popup_closed
+      if (!e.toString().contains('popup_closed')) {
+        _showErrorMessage(e.toString());
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -1314,7 +1318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 10),
                 // OR divider
                 Row(
                   children: [
@@ -1343,7 +1347,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 10),
                 // Social login icons
                 Center(
                   child: GestureDetector(

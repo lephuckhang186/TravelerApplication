@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Core/theme/app_theme.dart';
 import '../services/email_service_web.dart';
 
@@ -40,7 +39,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
         ),
         title: Text(
           'Chia sẻ góp ý',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -102,7 +101,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                 Expanded(
                   child: Text(
                     'Góp ý của bạn rất quan trọng!',
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -114,7 +113,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             const SizedBox(height: 12),
             Text(
               'Chúng tôi luôn lắng nghe và cải thiện ứng dụng để mang đến trải nghiệm du lịch tuyệt vời nhất cho bạn.',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 14,
                 color: Colors.grey[700],
                 height: 1.5,
@@ -136,7 +135,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             Text(
               'Đánh giá ứng dụng',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -163,7 +162,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             Center(
               child: Text(
                 _getRatingText(),
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   color: AppColors.primary,
                   fontWeight: FontWeight.w500,
@@ -186,7 +185,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             Text(
               'Loại góp ý',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -216,7 +215,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                     ),
                     child: Text(
                       category,
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 12,
                         color: isSelected ? Colors.white : Colors.grey[700],
                         fontWeight: FontWeight.w500,
@@ -242,7 +241,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             Text(
               'Chi tiết góp ý',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -259,11 +258,11 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                 maxLines: 6,
                 decoration: InputDecoration(
                   hintText: 'Hãy chia sẻ chi tiết về trải nghiệm của bạn...',
-                  hintStyle: GoogleFonts.quattrocento(color: Colors.grey[500]),
+                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[500]),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
                 ),
-                style: GoogleFonts.quattrocento(fontSize: 14),
+                style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
               ),
             ),
           ],
@@ -282,7 +281,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             Text(
               'Thông tin liên hệ (tùy chọn)',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -291,7 +290,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             const SizedBox(height: 8),
             Text(
               'Để chúng tôi có thể phản hồi nếu cần',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
@@ -301,7 +300,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               controller: _emailController,
               decoration: InputDecoration(
                 hintText: 'Email của bạn',
-                hintStyle: GoogleFonts.quattrocento(color: Colors.grey[500]),
+                hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[500]),
                 prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[400]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -312,7 +311,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                   borderSide: BorderSide(color: AppColors.primary),
                 ),
               ),
-              style: GoogleFonts.quattrocento(fontSize: 14),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
             ),
           ],
         ),
@@ -336,7 +335,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           const SizedBox(width: 8),
           Text(
             'Gửi góp ý',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -353,7 +352,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
       children: [
         Text(
           'Hoặc liên hệ trực tiếp',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -403,7 +402,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               const SizedBox(height: 8),
               Text(
                 title,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -411,7 +410,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               ),
               Text(
                 subtitle,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 10,
                   color: Colors.grey[600],
                 ),
@@ -457,7 +456,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text('Đang gửi góp ý...', style: GoogleFonts.quattrocento()),
+            Text('Đang gửi góp ý...', style: TextStyle(fontFamily: 'Urbanist-Regular', )),
           ],
         ),
       ),
@@ -504,7 +503,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             const SizedBox(width: 8),
             Text(
               'Email đã mở!',
-              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -514,7 +513,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             Text(
               'Email client đã được mở với nội dung góp ý được điền sẵn.',
-              style: GoogleFonts.quattrocento(),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             const SizedBox(height: 12),
             Container(
@@ -531,7 +530,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                   Expanded(
                     child: Text(
                       'Vui lòng kiểm tra email client và nhấn Send để gửi góp ý đến team TripWise.',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 13,
                         color: Colors.blue[700],
                       ),
@@ -550,7 +549,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             },
             child: Text(
               'Xem nội dung',
-              style: GoogleFonts.quattrocento(color: AppColors.primary),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', color: AppColors.primary),
             ),
           ),
           ElevatedButton(
@@ -563,7 +562,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: Text(
               'Hoàn thành',
-              style: GoogleFonts.quattrocento(color: Colors.white),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.white),
             ),
           ),
         ],
@@ -591,7 +590,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             const SizedBox(width: 8),
             Text(
               'Thông tin Email',
-              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -602,7 +601,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             children: [
               Text(
                 'Nội dung email đã được copy vào clipboard. Bạn có thể paste vào email client:',
-                style: GoogleFonts.quattrocento(),
+                style: TextStyle(fontFamily: 'Urbanist-Regular', ),
               ),
               const SizedBox(height: 16),
               Container(
@@ -614,7 +613,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                 ),
                 child: SelectableText(
                   emailInfo,
-                  style: GoogleFonts.courierPrime(fontSize: 12),
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 12),
                 ),
               ),
             ],
@@ -630,7 +629,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: Text(
               'Đóng',
-              style: GoogleFonts.quattrocento(color: Colors.white),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.white),
             ),
           ),
         ],

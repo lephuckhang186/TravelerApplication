@@ -31,7 +31,7 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
     if (widget.prefilledCategory != null) {
       _categoryController.text = widget.prefilledCategory!;
     }
-    
+
     // Auto-search if both fields are filled
     if (widget.prefilledLocation != null && widget.prefilledCategory != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -59,7 +59,8 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
     }
 
     final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=15');
+      'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=15',
+    );
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -77,8 +78,8 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Auto Pick Activities'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 2,
       ),
       body: Column(
@@ -102,9 +103,15 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.blue[600]!, width: 2),
+                      borderSide: BorderSide(
+                        color: Colors.blue[600]!,
+                        width: 2,
+                      ),
                     ),
-                    prefixIcon: Icon(Icons.location_on, color: Colors.blue[600]),
+                    prefixIcon: Icon(
+                      Icons.location_on,
+                      color: Colors.blue[600],
+                    ),
                     filled: true,
                     fillColor: Colors.blue[50],
                   ),
@@ -125,7 +132,10 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.orange[600]!, width: 2),
+                      borderSide: BorderSide(
+                        color: Colors.orange[600]!,
+                        width: 2,
+                      ),
                     ),
                     prefixIcon: Icon(Icons.category, color: Colors.orange[600]),
                     filled: true,
@@ -140,7 +150,7 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
                     onPressed: _searchPlaces,
                     child: const Text('Auto search'),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -177,7 +187,10 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     itemCount: _places.length,
                     itemBuilder: (context, index) {
                       final place = _places[index];
@@ -190,16 +203,11 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: Colors.blue[100],
-                            child: Icon(
-                              Icons.place,
-                              color: Colors.blue[600],
-                            ),
+                            child: Icon(Icons.place, color: Colors.blue[600]),
                           ),
                           title: Text(
                             place['display_name'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                           subtitle: place['type'] != null
                               ? Text(

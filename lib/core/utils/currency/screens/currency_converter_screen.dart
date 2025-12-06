@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_theme.dart';
 import '../models/currency_models.dart';
 import '../services/currency_service.dart';
@@ -64,7 +63,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         ),
         title: Text(
           'Chuyển đổi tiền tệ',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
@@ -178,7 +177,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                 Expanded(
                   child: Text(
                     currency.code,
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -195,7 +194,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             const SizedBox(height: 4),
             Text(
               currency.name,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
@@ -226,7 +225,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         children: [
           Text(
             'Số tiền cần chuyển đổi',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Colors.grey[700],
@@ -237,7 +236,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             children: [
               Text(
                 _fromCurrency.symbol,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF7B61FF),
@@ -257,13 +256,13 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                   ],
                   decoration: InputDecoration(
                     hintText: '0.00',
-                    hintStyle: GoogleFonts.quattrocento(
+                    hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                       color: Colors.grey[400],
                       fontSize: 24,
                     ),
                     border: InputBorder.none,
                   ),
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -301,7 +300,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               const SizedBox(width: 8),
               Text(
                 'Kết quả chuyển đổi',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF7B61FF),
@@ -314,7 +313,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             children: [
               Text(
                 _toCurrency.symbol,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF7B61FF),
@@ -326,7 +325,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                   _currencyService
                       .formatCurrency(_convertedAmount, _toCurrency)
                       .replaceFirst(_toCurrency.symbol, ''),
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF7B61FF),
@@ -340,7 +339,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             const SizedBox(height: 8),
             Text(
               '1 ${_fromCurrency.code} = ${_exchangeRate.toStringAsFixed(4)} ${_toCurrency.code}',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
@@ -374,7 +373,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               const SizedBox(width: 8),
               Text(
                 'Thông tin tỷ giá',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.blue[600],
@@ -388,14 +387,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             children: [
               Text(
                 'Tỷ giá hiện tại:',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 13,
                   color: Colors.grey[700],
                 ),
               ),
               Text(
                 '1 ${_fromCurrency.code} = ${_exchangeRate.toStringAsFixed(4)} ${_toCurrency.code}',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -409,14 +408,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             children: [
               Text(
                 'Cập nhật lúc:',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 13,
                   color: Colors.grey[700],
                 ),
               ),
               Text(
                 '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -526,7 +525,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               const SizedBox(height: 20),
               Text(
                 'Chọn tiền tệ',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -551,7 +550,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                         children: [
                           Text(
                             currency.code,
-                            style: GoogleFonts.quattrocento(
+                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
                             ),
@@ -559,7 +558,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                           const SizedBox(width: 8),
                           Text(
                             currency.symbol,
-                            style: GoogleFonts.quattrocento(
+                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                               color: const Color(0xFF7B61FF),
                               fontWeight: FontWeight.w600,
                             ),
@@ -568,7 +567,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                       ),
                       subtitle: Text(
                         '${currency.name} • ${currency.country}',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           color: Colors.grey[600],
                           fontSize: 12,
                         ),

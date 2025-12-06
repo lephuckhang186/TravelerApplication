@@ -70,7 +70,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         ),
         title: Text(
           'Travel Stats',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -105,11 +105,11 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               labelColor: Colors.blue,
               unselectedLabelColor: Colors.grey[600],
               indicatorColor: Colors.blue,
-              labelStyle: GoogleFonts.quattrocento(
+              labelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
-              unselectedLabelStyle: GoogleFonts.quattrocento(
+              unselectedLabelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
@@ -404,7 +404,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
@@ -413,7 +413,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           ),
           Text(
             value,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: Colors.black87,

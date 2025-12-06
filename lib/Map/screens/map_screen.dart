@@ -4,7 +4,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart' as flutter_map;
 import 'package:latlong2/latlong.dart' as latlong;
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Plan/providers/trip_planning_provider.dart';
 import '../../Plan/models/trip_model.dart';
 import '../../Plan/models/activity_models.dart';
@@ -40,7 +39,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadTrips() async {
-    final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+    final tripProvider = Provider.of<TripPlanningProvider>(
+      context,
+      listen: false,
+    );
     if (tripProvider.trips.isNotEmpty) {
       _showTripSelectionDialog(tripProvider.trips);
     }
@@ -52,7 +54,10 @@ class _MapScreenState extends State<MapScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           'Chọn chuyến đi',
-          style: GoogleFonts.quattrocento(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: SizedBox(
           width: double.maxFinite,
@@ -63,7 +68,9 @@ class _MapScreenState extends State<MapScreen> {
               final trip = trips[index];
               return ListTile(
                 title: Text(trip.name),
-                subtitle: Text('${trip.destination} - ${trip.startDate.toString().split(' ')[0]}'),
+                subtitle: Text(
+                  '${trip.destination} - ${trip.startDate.toString().split(' ')[0]}',
+                ),
                 onTap: () {
                   Navigator.of(context).pop();
                   _selectTrip(trip);
@@ -101,9 +108,13 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _loadTripData() async {
     if (_selectedTrip == null) return;
 
-    final activities = _selectedTrip!.activities.where((activity) =>
-      activity.location?.latitude != null && activity.location?.longitude != null
-    ).toList();
+    final activities = _selectedTrip!.activities
+        .where(
+          (activity) =>
+              activity.location?.latitude != null &&
+              activity.location?.longitude != null,
+        )
+        .toList();
 
     if (activities.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +133,9 @@ class _MapScreenState extends State<MapScreen> {
     }
     _currentActivityIndex = firstUncheckedIndex;
 
-    print('Loaded trip with ${activities.length} activities, current index: $_currentActivityIndex');
+    print(
+      'Loaded trip with ${activities.length} activities, current index: $_currentActivityIndex',
+    );
 
     // Add markers for activities
     if (!kIsWeb) {
@@ -131,16 +144,25 @@ class _MapScreenState extends State<MapScreen> {
         final activity = activities[i];
         final marker = Marker(
           markerId: MarkerId(activity.id ?? 'activity_$i'),
-          position: LatLng(activity.location!.latitude!, activity.location!.longitude!),
+          position: LatLng(
+            activity.location!.latitude!,
+            activity.location!.longitude!,
+          ),
           infoWindow: InfoWindow(
             title: activity.title,
             snippet: activity.description ?? '',
           ),
           icon: i == _currentActivityIndex
-              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)  // Starting point - blue
+              ? BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueBlue,
+                ) // Starting point - blue
               : i == _currentActivityIndex + 1
-                  ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)   // Next destination - red
-                  : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow), // Others - yellow
+              ? BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueRed,
+                ) // Next destination - red
+              : BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueYellow,
+                ), // Others - yellow
         );
         _googleMarkers.add(marker);
       }
@@ -149,14 +171,19 @@ class _MapScreenState extends State<MapScreen> {
       for (int i = 0; i < activities.length; i++) {
         final activity = activities[i];
         final marker = flutter_map.Marker(
-          point: latlong.LatLng(activity.location!.latitude!, activity.location!.longitude!),
+          point: latlong.LatLng(
+            activity.location!.latitude!,
+            activity.location!.longitude!,
+          ),
           child: Icon(
             Icons.location_on,
             color: i == _currentActivityIndex
-                ? Colors.blue       // Starting point - blue
+                ? Colors
+                      .blue // Starting point - blue
                 : i == _currentActivityIndex + 1
-                    ? Colors.red    // Next destination - red
-                    : Colors.yellow, // Others - yellow
+                ? Colors
+                      .red // Next destination - red
+                : Colors.yellow, // Others - yellow
             size: 40,
           ),
         );
@@ -166,7 +193,10 @@ class _MapScreenState extends State<MapScreen> {
 
     // Get route for current segment
     if (_currentActivityIndex < activities.length - 1) {
-      await _loadRoute(activities[_currentActivityIndex], activities[_currentActivityIndex + 1]);
+      await _loadRoute(
+        activities[_currentActivityIndex],
+        activities[_currentActivityIndex + 1],
+      );
     }
 
     // Center map on first activity
@@ -174,13 +204,19 @@ class _MapScreenState extends State<MapScreen> {
       if (!kIsWeb) {
         _googleMapController?.animateCamera(
           CameraUpdate.newLatLngZoom(
-            LatLng(activities[0].location!.latitude!, activities[0].location!.longitude!),
+            LatLng(
+              activities[0].location!.latitude!,
+              activities[0].location!.longitude!,
+            ),
             12,
           ),
         );
       } else {
-        _flutterMapController?.move(
-          latlong.LatLng(activities[0].location!.latitude!, activities[0].location!.longitude!),
+        _flutterMapController.move(
+          latlong.LatLng(
+            activities[0].location!.latitude!,
+            activities[0].location!.longitude!,
+          ),
           12,
         );
       }
@@ -190,8 +226,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadRoute(ActivityModel from, ActivityModel to) async {
-    if (from.location?.latitude == null || from.location?.longitude == null ||
-        to.location?.latitude == null || to.location?.longitude == null) {
+    if (from.location?.latitude == null ||
+        from.location?.longitude == null ||
+        to.location?.latitude == null ||
+        to.location?.longitude == null) {
       return;
     }
 
@@ -211,9 +249,9 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       } else {
-        final flutterPoints = route.map((point) =>
-          latlong.LatLng(point.latitude, point.longitude)
-        ).toList();
+        final flutterPoints = route
+            .map((point) => latlong.LatLng(point.latitude, point.longitude))
+            .toList();
         _flutterPolylines.add(
           flutter_map.Polyline(
             points: flutterPoints,
@@ -228,9 +266,13 @@ class _MapScreenState extends State<MapScreen> {
   void _checkIn() async {
     if (_selectedTrip == null) return;
 
-    final activities = _selectedTrip!.activities.where((activity) =>
-      activity.location?.latitude != null && activity.location?.longitude != null
-    ).toList();
+    final activities = _selectedTrip!.activities
+        .where(
+          (activity) =>
+              activity.location?.latitude != null &&
+              activity.location?.longitude != null,
+        )
+        .toList();
 
     if (_currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -316,7 +358,11 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Future<void> _performCheckIn(ActivityModel activity, double actualCost, List<ActivityModel> activities) async {
+  Future<void> _performCheckIn(
+    ActivityModel activity,
+    double actualCost,
+    List<ActivityModel> activities,
+  ) async {
     try {
       // Update activity with actual cost and check-in status
       final updatedBudget = BudgetModel(
@@ -331,8 +377,14 @@ class _MapScreenState extends State<MapScreen> {
         budget: updatedBudget,
       );
 
-      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
-      final success = await tripProvider.updateActivityInTrip(_selectedTrip!.id!, updatedActivity);
+      final tripProvider = Provider.of<TripPlanningProvider>(
+        context,
+        listen: false,
+      );
+      final success = await tripProvider.updateActivityInTrip(
+        _selectedTrip!.id!,
+        updatedActivity,
+      );
 
       if (success) {
         // Update selected trip from provider to reflect changes
@@ -352,12 +404,19 @@ class _MapScreenState extends State<MapScreen> {
         });
 
         // Get updated activities from the updated trip
-        final updatedActivities = _selectedTrip!.activities.where((activity) =>
-          activity.location?.latitude != null && activity.location?.longitude != null
-        ).toList();
+        final updatedActivities = _selectedTrip!.activities
+            .where(
+              (activity) =>
+                  activity.location?.latitude != null &&
+                  activity.location?.longitude != null,
+            )
+            .toList();
 
         if (_currentActivityIndex < updatedActivities.length - 1) {
-          await _loadRoute(updatedActivities[_currentActivityIndex], updatedActivities[_currentActivityIndex + 1]);
+          await _loadRoute(
+            updatedActivities[_currentActivityIndex],
+            updatedActivities[_currentActivityIndex + 1],
+          );
           // Update marker colors
           _updateMarkers(updatedActivities);
 
@@ -406,11 +465,14 @@ class _MapScreenState extends State<MapScreen> {
     print('kIsWeb: $kIsWeb');
     print('Current activity index: $_currentActivityIndex');
     print('Google controller: ${_googleMapController != null}');
-    print('Flutter controller: ${_flutterMapController != null}');
 
-    final activities = _selectedTrip!.activities.where((activity) =>
-      activity.location?.latitude != null && activity.location?.longitude != null
-    ).toList();
+    final activities = _selectedTrip!.activities
+        .where(
+          (activity) =>
+              activity.location?.latitude != null &&
+              activity.location?.longitude != null,
+        )
+        .toList();
 
     if (activities.isEmpty || _currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -427,29 +489,18 @@ class _MapScreenState extends State<MapScreen> {
         print('Animating Google Maps camera to current starting point');
         _googleMapController!.animateCamera(
           CameraUpdate.newLatLngZoom(
-            LatLng(currentStartingActivity.location!.latitude!, currentStartingActivity.location!.longitude!),
+            LatLng(
+              currentStartingActivity.location!.latitude!,
+              currentStartingActivity.location!.longitude!,
+            ),
             18, // Maximum zoom for clearest view
           ),
         );
       } else {
         print('Google Maps controller is null!');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bản đồ chưa sẵn sàng')),
-        );
-        return;
-      }
-    } else {
-      if (_flutterMapController != null) {
-        print('Moving Flutter Map to current starting point');
-        _flutterMapController!.move(
-          latlong.LatLng(currentStartingActivity.location!.latitude!, currentStartingActivity.location!.longitude!),
-          18, // Maximum zoom for clearest view
-        );
-      } else {
-        print('Flutter Map controller is null!');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bản đồ chưa sẵn sàng')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Bản đồ chưa sẵn sàng')));
         return;
       }
     }
@@ -469,25 +520,34 @@ class _MapScreenState extends State<MapScreen> {
   String _getStartingPointText() {
     if (_selectedTrip == null) return '';
 
-    final activities = _selectedTrip!.activities.where((activity) =>
-      activity.location?.latitude != null && activity.location?.longitude != null
-    ).toList();
+    final activities = _selectedTrip!.activities
+        .where(
+          (activity) =>
+              activity.location?.latitude != null &&
+              activity.location?.longitude != null,
+        )
+        .toList();
 
-    if (activities.isEmpty || _currentActivityIndex >= activities.length) return '';
+    if (activities.isEmpty || _currentActivityIndex >= activities.length)
+      return '';
 
     final currentActivity = activities[_currentActivityIndex];
     // Display location name or address instead of activity title
     return currentActivity.location?.name ??
-           currentActivity.location?.address ??
-           currentActivity.title;
+        currentActivity.location?.address ??
+        currentActivity.title;
   }
 
   String _getNextDestinationText() {
     if (_selectedTrip == null) return '';
 
-    final activities = _selectedTrip!.activities.where((activity) =>
-      activity.location?.latitude != null && activity.location?.longitude != null
-    ).toList();
+    final activities = _selectedTrip!.activities
+        .where(
+          (activity) =>
+              activity.location?.latitude != null &&
+              activity.location?.longitude != null,
+        )
+        .toList();
 
     if (_currentActivityIndex >= activities.length - 1) {
       return 'Hoàn thành chuyến đi';
@@ -496,8 +556,8 @@ class _MapScreenState extends State<MapScreen> {
     final nextActivity = activities[_currentActivityIndex + 1];
     // Display location name or address instead of activity title
     return nextActivity.location?.name ??
-           nextActivity.location?.address ??
-           nextActivity.title;
+        nextActivity.location?.address ??
+        nextActivity.title;
   }
 
   void _updateMarkers(List<ActivityModel> activities) {
@@ -507,16 +567,25 @@ class _MapScreenState extends State<MapScreen> {
         final activity = activities[i];
         final marker = Marker(
           markerId: MarkerId(activity.id ?? 'activity_$i'),
-          position: LatLng(activity.location!.latitude!, activity.location!.longitude!),
+          position: LatLng(
+            activity.location!.latitude!,
+            activity.location!.longitude!,
+          ),
           infoWindow: InfoWindow(
             title: activity.title,
             snippet: activity.description ?? '',
           ),
           icon: i == _currentActivityIndex
-              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)  // Starting point - blue
+              ? BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueBlue,
+                ) // Starting point - blue
               : i == _currentActivityIndex + 1
-                  ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)   // Next destination - red
-                  : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow), // Others - yellow
+              ? BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueRed,
+                ) // Next destination - red
+              : BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueYellow,
+                ), // Others - yellow
         );
         _googleMarkers.add(marker);
       }
@@ -525,14 +594,19 @@ class _MapScreenState extends State<MapScreen> {
       for (int i = 0; i < activities.length; i++) {
         final activity = activities[i];
         final marker = flutter_map.Marker(
-          point: latlong.LatLng(activity.location!.latitude!, activity.location!.longitude!),
+          point: latlong.LatLng(
+            activity.location!.latitude!,
+            activity.location!.longitude!,
+          ),
           child: Icon(
             Icons.location_on,
             color: i == _currentActivityIndex
-                ? Colors.blue       // Starting point - blue
+                ? Colors
+                      .blue // Starting point - blue
                 : i == _currentActivityIndex + 1
-                    ? Colors.red    // Next destination - red
-                    : Colors.yellow, // Others - yellow
+                ? Colors
+                      .red // Next destination - red
+                : Colors.yellow, // Others - yellow
             size: 40,
           ),
         );
@@ -548,7 +622,7 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: Text(
           'Bản đồ',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: AppColors.navyBlue,
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -575,7 +649,10 @@ class _MapScreenState extends State<MapScreen> {
           if (!kIsWeb)
             GoogleMap(
               initialCameraPosition: const CameraPosition(
-                target: LatLng(10.8231, 106.6297), // Default to Ho Chi Minh City
+                target: LatLng(
+                  10.8231,
+                  106.6297,
+                ), // Default to Ho Chi Minh City
                 zoom: 10,
               ),
               markers: _googleMarkers,
@@ -593,7 +670,10 @@ class _MapScreenState extends State<MapScreen> {
             flutter_map.FlutterMap(
               mapController: _flutterMapController,
               options: flutter_map.MapOptions(
-                initialCenter: latlong.LatLng(10.8231, 106.6297), // Default to Ho Chi Minh City
+                initialCenter: latlong.LatLng(
+                  10.8231,
+                  106.6297,
+                ), // Default to Ho Chi Minh City
                 initialZoom: 10,
                 onMapReady: () {
                   setState(() {
@@ -610,10 +690,7 @@ class _MapScreenState extends State<MapScreen> {
                 flutter_map.PolylineLayer(polylines: _flutterPolylines),
               ],
             ),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
           if (_selectedTrip == null)
             Center(
               child: Column(
@@ -623,7 +700,10 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Chọn chuyến đi để xem bản đồ',
-                    style: GoogleFonts.quattrocento(fontSize: 18, color: Colors.grey),
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -658,7 +738,11 @@ class _MapScreenState extends State<MapScreen> {
                     // Starting point
                     Row(
                       children: [
-                        Icon(Icons.play_circle_fill, color: Colors.blue, size: 20),
+                        Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: TextField(
@@ -669,7 +753,10 @@ class _MapScreenState extends State<MapScreen> {
                             decoration: const InputDecoration(
                               labelText: 'Điểm xuất phát',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               isDense: true,
                             ),
                             style: const TextStyle(fontSize: 14),
@@ -692,7 +779,10 @@ class _MapScreenState extends State<MapScreen> {
                             decoration: const InputDecoration(
                               labelText: 'Điểm tiếp theo',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               isDense: true,
                             ),
                             style: const TextStyle(fontSize: 14),
@@ -706,32 +796,39 @@ class _MapScreenState extends State<MapScreen> {
             ),
         ],
       ),
-      floatingActionButton: _selectedTrip != null ? Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Center to first activity button - only show when map is ready
-          if (_isMapReady)
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: FloatingActionButton.small(
-              onPressed: _centerToCurrentStartingPoint,
-                backgroundColor: Colors.white,
-                child: const Icon(Icons.my_location, color: AppColors.navyBlue),
-                tooltip: 'Về điểm xuất phát',
-              ),
-            ),
-          // Check-in button
-          Container(
-            margin: const EdgeInsets.only(bottom: 80), // Add margin to avoid navigation bar
-            child: FloatingActionButton(
-              onPressed: _checkIn,
-              backgroundColor: AppColors.skyBlue,
-              child: const Icon(Icons.check_circle, color: Colors.white),
-              tooltip: 'Check-in',
-            ),
-          ),
-        ],
-      ) : null,
+      floatingActionButton: _selectedTrip != null
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Center to first activity button - only show when map is ready
+                if (_isMapReady)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: FloatingActionButton.small(
+                      onPressed: _centerToCurrentStartingPoint,
+                      backgroundColor: Colors.white,
+                      child: const Icon(
+                        Icons.my_location,
+                        color: AppColors.navyBlue,
+                      ),
+                      tooltip: 'Về điểm xuất phát',
+                    ),
+                  ),
+                // Check-in button
+                Container(
+                  margin: const EdgeInsets.only(
+                    bottom: 80,
+                  ), // Add margin to avoid navigation bar
+                  child: FloatingActionButton(
+                    onPressed: _checkIn,
+                    backgroundColor: AppColors.skyBlue,
+                    child: const Icon(Icons.check_circle, color: Colors.white),
+                    tooltip: 'Check-in',
+                  ),
+                ),
+              ],
+            )
+          : null,
     );
   }
 }

@@ -5,11 +5,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'Login/screens/splash_screen.dart';
-import 'Login/screens/loading_screen.dart';
 import 'Login/screens/auth_screen.dart';
 import 'Home/screens/home_screen.dart';
 import 'Login/services/user_service.dart';
-import 'Login/services/auth_service.dart';
 import 'Core/theme/app_theme.dart';
 import 'Plan/providers/trip_planning_provider.dart';
 import 'Expense/providers/expense_provider.dart';
@@ -51,61 +49,9 @@ class MyApp extends StatelessWidget {
         routes: {
           '/auth': (context) => const AuthScreen(),
           '/home': (context) => const HomeScreen(),
-          '/loading': (context) => const LoadingScreen(),
         },
       ),
     );
   }
 }
 
-// Widget để kiểm tra trạng thái authentication
-class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
-}
-
-class _AuthWrapperState extends State<AuthWrapper> {
-  final AuthService _authService = AuthService();
-  late final Stream<bool> _authStateStream;
-
-  @override
-  void initState() {
-    super.initState();
-    // Tạo stream một lần để tránh rebuild không cần thiết
-    _authStateStream = _authService.authStateChanges.map(
-      (user) => user != null,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<bool>(
-      stream: _authStateStream,
-      builder: (context, snapshot) {
-        // Hiển thị loading screen khi đang kết nối
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const LoadingScreen();
-        }
-
-        // Kiểm tra lỗi
-        if (snapshot.hasError) {
-          // Có thể thêm ErrorScreen ở đây hoặc fallback về AuthScreen
-          debugPrint('Authentication error: ${snapshot.error}');
-          return const AuthScreen();
-        }
-
-        // Điều hướng dựa trên trạng thái đăng nhập
-        final isLoggedIn = snapshot.data ?? false;
-        return isLoggedIn ? const HomeScreen() : const AuthScreen();
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    // Đảm bảo cleanup nếu cần
-    super.dispose();
-  }
-}

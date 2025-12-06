@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
@@ -110,7 +109,8 @@ class _PlanScreenState extends State<PlanScreen>
           children: [
             Text(
               'Hello, $_displayName',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 color: AppColors.textSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -118,7 +118,8 @@ class _PlanScreenState extends State<PlanScreen>
             ),
             Text(
               'Trips',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 color: AppColors.textPrimary,
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -127,23 +128,6 @@ class _PlanScreenState extends State<PlanScreen>
           ],
         ),
         centerTitle: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: IconButton(
-              icon: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.skyBlue,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.more_horiz, color: Colors.white),
-              ),
-              onPressed: () => _showOptionsMenu(context),
-            ),
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -316,7 +300,8 @@ class _PlanScreenState extends State<PlanScreen>
                   children: [
                     Text(
                       trip.name,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -325,7 +310,8 @@ class _PlanScreenState extends State<PlanScreen>
                     const SizedBox(height: 4),
                     Text(
                       dateRange,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 14,
                         color: Colors.grey.shade600,
                       ),
@@ -341,7 +327,8 @@ class _PlanScreenState extends State<PlanScreen>
                         const SizedBox(width: 4),
                         Text(
                           status,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
                             fontSize: 12,
                             color: Colors.grey.shade500,
                           ),
@@ -393,111 +380,5 @@ class _PlanScreenState extends State<PlanScreen>
       // Không cần gọi provider.addTrip(result);
       // Không cần setState vì UI đã watch Provider
     }
-  }
-
-  void _showOptionsMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('Create New Trip'),
-              onTap: () {
-                Navigator.pop(context);
-                _showCreateTripModal(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.group_outlined),
-              title: const Text('Collaborations'),
-              subtitle: const Text('Uh oh! There is not anyone yet!'),
-              onTap: () {
-                Navigator.pop(context);
-                _showCollaborationsDialog();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle settings
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCollaborationsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.group_outlined),
-            SizedBox(width: 12),
-            Text('Collaborations'),
-          ],
-        ),
-        content: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 48,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Uh oh! There is not anyone yet!',
-                style: GoogleFonts.quattrocento(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Handle invite collaborators
-            },
-            child: const Text('Invite'),
-          ),
-        ],
-      ),
-    );
   }
 }

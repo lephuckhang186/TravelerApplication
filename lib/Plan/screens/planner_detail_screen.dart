@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'search_place_screen.dart';
 import 'ai_assistant_screen.dart';
@@ -12,6 +11,7 @@ import '../services/firebase_trip_service.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
+import '../utils/activity_scheduling_validator.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -89,14 +89,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           }
         }
 
-        _activities = activityMap.values.toList();
-        // Sort by start date
-        _activities.sort((a, b) {
-          if (a.startDate == null && b.startDate == null) return 0;
-          if (a.startDate == null) return 1;
-          if (b.startDate == null) return -1;
-          return a.startDate!.compareTo(b.startDate!);
-        });
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
+          activityMap.values.toList(),
+        );
       });
     } catch (e) {
       debugPrint('Failed to load activities from server: $e');
@@ -129,7 +124,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 'Private',
-                style: GoogleFonts.inter(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   color: Colors.black,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -209,7 +204,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               children: [
                 Text(
                   _trip.name,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -218,7 +213,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _trip.destination,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 14,
                     color: Colors.grey.shade600,
                   ),
@@ -234,7 +229,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     const SizedBox(width: 4),
                     Text(
                       dateRange,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 13,
                         color: Colors.grey.shade700,
                       ),
@@ -265,7 +260,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               const SizedBox(height: 12),
               Text(
                 'No plans yet',
-                style: GoogleFonts.inter(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -275,7 +270,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               Text(
                 'Start building your itinerary by adding flights, meals, visits or custom notes.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   color: Colors.grey.shade600,
                 ),
@@ -314,7 +309,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           child: activity.startDate != null
               ? Text(
                   timeLabel,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -357,7 +352,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     Expanded(
                       child: Text(
                         activity.title,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
@@ -401,7 +396,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   const SizedBox(height: 4),
                   Text(
                     activity.description!,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 14,
                       color: Colors.grey.shade600,
                       height: 1.4,
@@ -421,7 +416,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       Expanded(
                         child: Text(
                           activity.location!.name,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 13,
                             color: Colors.grey.shade700,
                           ),
@@ -459,7 +454,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'Expected: ${_formatCurrency(activity.budget!.estimatedCost)}',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 12,
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
@@ -491,7 +486,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'Spent: ${_formatCurrency(activity.budget!.actualCost!)}',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 12,
                                   color: Colors.green,
                                   fontWeight: FontWeight.w500,
@@ -523,7 +518,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'No cost recorded',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 12,
                                   color: Colors.orange,
                                   fontWeight: FontWeight.w500,
@@ -604,7 +599,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                               color: AppColors.primary,
                               fontSize: 16,
                             ),
@@ -612,7 +607,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         ),
                         Text(
                           'Edit Activity',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -871,7 +866,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                               color: AppColors.primary,
                               fontSize: 16,
                             ),
@@ -879,7 +874,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         ),
                         Text(
                           'Add a plan',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -1087,7 +1082,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
         ),
         const SizedBox(height: 6),
         TextField(
@@ -1121,7 +1116,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Check-in Status',
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
         ),
         const Spacer(),
         Switch(
@@ -1144,7 +1139,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Category',
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -1157,7 +1152,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               selected: isSelected,
               onSelected: (_) => onChanged(type),
               selectedColor: AppColors.primary.withValues(alpha: 0.15),
-              labelStyle: GoogleFonts.inter(
+              labelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                 color: isSelected ? AppColors.primary : Colors.black,
                 fontWeight: FontWeight.w600,
               ),
@@ -1269,7 +1264,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           children: [
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey.shade600,
               ),
@@ -1277,7 +1272,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             const SizedBox(height: 4),
             Text(
               value,
-              style: GoogleFonts.inter(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
@@ -1421,6 +1416,25 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         throw Exception('Activity not found');
       }
 
+      // Validate time conflicts (exclude the current activity being updated)
+      final validationResult = ActivitySchedulingValidator.validateActivityTime(
+        updatedActivity,
+        _activities,
+        excludeActivityId: updatedActivity.id,
+      );
+
+      if (validationResult.hasConflicts) {
+        // Show conflict dialog
+        final shouldContinue = await _showTimeConflictDialog(
+          validationResult.message,
+          validationResult.conflictingActivities,
+        );
+        
+        if (!shouldContinue) {
+          return; // User chose not to continue
+        }
+      }
+
       // Try to update on server if activity has an ID and not local
       if (updatedActivity.id != null &&
           !updatedActivity.id!.startsWith('local_')) {
@@ -1470,6 +1484,24 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _addActivity(ActivityModel activity) async {
     try {
+      // Validate time conflicts
+      final validationResult = ActivitySchedulingValidator.validateActivityTime(
+        activity,
+        _activities,
+      );
+
+      if (validationResult.hasConflicts) {
+        // Show conflict dialog
+        final shouldContinue = await _showTimeConflictDialog(
+          validationResult.message,
+          validationResult.conflictingActivities,
+        );
+        
+        if (!shouldContinue) {
+          return; // User chose not to continue
+        }
+      }
+
       // First, try to create the activity on the server
       ActivityModel createdActivity;
       try {
@@ -1482,6 +1514,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
       setState(() {
         _activities.add(createdActivity);
+        // Sort activities chronologically
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
       });
       await _persistTripChanges();
 
@@ -1991,6 +2025,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
     setState(() {
       _activities[index] = updatedActivity;
+      // Re-sort activities chronologically
+      _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
     });
     await _persistTripChanges();
     debugPrint('Check-in status updated locally and persisted');
@@ -2060,5 +2096,118 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       debugPrint('Failed to create expense for checked-in activity: $e');
       // Don't throw error - continue without expense integration
     }
+  }
+
+  /// Show time conflict dialog
+  Future<bool> _showTimeConflictDialog(
+    String message,
+    List<ActivityModel> conflictingActivities,
+  ) async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber, color: Colors.orange.shade600),
+              const SizedBox(width: 8),
+              const Text('Xung đột thời gian'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              if (conflictingActivities.isNotEmpty) ...[
+                const Text(
+                  'Hoạt động bị trùng:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                ...conflictingActivities.map((activity) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.circle, size: 6, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${activity.title} (${_formatActivityTime(activity)})',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                )).toList(),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline, 
+                           size: 16, color: Colors.blue.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Gợi ý: Chọn thời gian khác để tránh xung đột',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Quay lại',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade600,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Tiếp tục'),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+  }
+
+  /// Format activity time for display
+  String _formatActivityTime(ActivityModel activity) {
+    if (activity.startDate == null) return '';
+    
+    final start = activity.startDate!;
+    final startStr = '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+    
+    if (activity.endDate != null) {
+      final end = activity.endDate!;
+      final endStr = '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+      return '$startStr - $endStr';
+    }
+    
+    return startStr;
   }
 }
