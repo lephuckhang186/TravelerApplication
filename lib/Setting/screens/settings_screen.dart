@@ -15,6 +15,7 @@ import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
+import '../../core/utils/weather/screens/weather_screen.dart';
 import 'change_password_screen.dart';
 import '../../Login/services/firestore_statistics_service.dart';
 
@@ -574,33 +575,42 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Single row with 3 utilities
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
+          // Horizontal scrollable utilities
+          SizedBox(
+            height: 85, // Fixed height for the scroll area
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 8, right: 16), // Reduce left padding
               children: [
-                _buildRectangularUtilityItem(
-                  Icons.account_balance_wallet_outlined,
-                  'Quản lý chi tiêu',
-                  const Color(0xFF2196F3), // Blue
-                  () => _onExpenseManagement(),
+                SizedBox(
+                  width: 180, // Fixed width per utility item
+                  child: _buildRectangularUtilityItem(
+                    Icons.currency_exchange,
+                    'Chuyển đổi tiền tệ',
+                    const Color(0xFFFF9800), // Orange
+                    () => _onCurrencyConverter(),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _buildRectangularUtilityItem(
-                  Icons.currency_exchange,
-                  'Chuyển đổi tiền tệ',
-                  const Color(0xFFFF9800), // Orange
-                  () => _onCurrencyConverter(),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 160, // Fixed width per utility item
+                  child: _buildRectangularUtilityItem(
+                    Icons.translate,
+                    'Dịch văn bản',
+                    const Color(0xFF9C27B0), // Purple
+                    () => _onTranslation(),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _buildRectangularUtilityItem(
-                  Icons.translate,
-                  'Dịch văn bản',
-                  const Color(0xFF9C27B0), // Purple
-                  () => _onTranslation(),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 160, // Fixed width per utility item
+                  child: _buildRectangularUtilityItem(
+                    Icons.cloud,
+                    'Thời tiết',
+                    const Color(0xFF2196F3), // Blue
+                    () => _onWeather(),
+                  ),
                 ),
-                const SizedBox(width: 16), // End padding
               ],
             ),
           ),
@@ -619,8 +629,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 140, // Rectangular width
-        height: 65,
+        height: 75, // Fixed height
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -653,7 +662,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Text(
                 label,
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  fontSize: 10, // Slightly smaller font
+                  fontSize: 12, // Larger font for better readability
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                   height: 1.2, // Line height for better spacing
@@ -738,7 +747,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(height: 8),
                   Text(
                     _stats.completedTrips.toString(),
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 48,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -757,14 +767,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                     children: [
                       Text(
                         '2024',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
                       Text(
                         '2025: ${_stats.completedTrips2025} trips',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.blue,
                           fontWeight: FontWeight.w600,
@@ -772,7 +784,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       Text(
                         '2026',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -852,7 +865,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           alignment: Alignment.center,
           child: trips > 0 ? Text(
             trips.toString(),
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: color,
@@ -877,7 +891,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         // Year label
         Text(
           year,
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 10,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
@@ -1065,6 +1080,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
+  }
+
+  void _onWeather() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const WeatherScreen()),
     );
   }
 

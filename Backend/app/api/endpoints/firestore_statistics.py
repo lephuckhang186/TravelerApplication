@@ -4,7 +4,7 @@ Cung cấp các API để lấy thống kê thời gian thực từ Firestore
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from firebase_admin import auth
+#from firebase_admin import auth
 from typing import Dict, List
 import logging
 
