@@ -17,6 +17,7 @@ import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
 import '../../core/utils/weather/screens/weather_screen.dart';
+import '../../core/utils/world_clock/screens/world_clock_screen.dart';
 import 'change_password_screen.dart';
 import '../../Login/services/firestore_statistics_service.dart';
 
@@ -130,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     
     final scrollOffset = _utilitiesScrollController.offset;
     const itemWidth = 180.0; // Width of first item + spacing
-    const itemWidth2 = 172.0; // Width of second/third items + spacing (160 + 12)
+    const itemWidth2 = 172.0; // Width of second/third/fourth items + spacing (160 + 12)
     
     int newIndex = 0;
     if (scrollOffset < itemWidth * 0.5) {
@@ -138,7 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     } else if (scrollOffset < itemWidth + itemWidth2 * 0.5) {
       newIndex = 1; // Second item
     } else {
-      newIndex = 2; // Third item
+      newIndex = 2; // Third item (covers weather & world clock)
     }
     
     if (newIndex != _currentUtilityIndex) {
@@ -650,6 +651,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                         () => _onWeather(),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 160, // Fixed width per utility item
+                      child: _buildRectangularUtilityItem(
+                        Icons.access_time,
+                        'Múi giờ thế giới',
+                        const Color(0xFF4CAF50), // Green
+                        () => _onWorldClock(),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -694,7 +706,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
         const SizedBox(width: 6),
-        // Dot 3 - Weather
+        // Dot 3 - Weather & World Clock
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           width: _currentUtilityIndex == 2 ? 8 : 6,
@@ -1178,6 +1190,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const WeatherScreen()),
+    );
+  }
+
+  void _onWorldClock() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const WorldClockScreen()),
     );
   }
 
