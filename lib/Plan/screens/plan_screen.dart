@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
-import '../../Login/services/user_service.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';
 import '../models/trip_model.dart';
@@ -16,13 +15,12 @@ class PlanScreen extends StatefulWidget {
 
 class _PlanScreenState extends State<PlanScreen>
     with AutomaticKeepAliveClientMixin {
-  String _displayName = 'User';
-
   // 🎯 Đã loại bỏ List<TripModel> _trips và bool _isLoading
   // 🎯 Đã loại bỏ TripPlanningService _tripService và TripStorageService _storageService
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isPrivateMode = true; // true = Private, false = Collaboration
 
   // 🎯 Sửa: Thay thế getter _visibleTrips bằng một hàm nhận vào danh sách trips từ Provider
   List<TripModel> _getVisibleTrips(List<TripModel> allTrips) {
@@ -53,7 +51,6 @@ class _PlanScreenState extends State<PlanScreen>
   @override
   void initState() {
     super.initState();
-    _loadUserData();
 
     // 🎯 Sửa: Gọi initialize() của Provider trong initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -65,20 +62,6 @@ class _PlanScreenState extends State<PlanScreen>
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _loadUserData() async {
-    final userService = UserService();
-    final profile = userService.getUserProfile();
-    final username = await userService.getDisplayName();
-
-    if (mounted) {
-      setState(() {
-        _displayName = profile['fullName']?.isNotEmpty == true
-            ? profile['fullName']!
-            : username;
-      });
-    }
   }
 
   // 🎯 Đã loại bỏ hàm _loadTrips() thủ công
@@ -99,80 +82,147 @@ class _PlanScreenState extends State<PlanScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: null,
-        automaticallyImplyLeading: false,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hello, $_displayName',
-              style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            Text(
-              'Trips',
-              style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                color: AppColors.textPrimary,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: false,
-      ),
       body: Column(
         children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.skyBlue.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.steelBlue.withValues(alpha: 0.3),
-                  width: 1,
-                ),
+          // Gradient Header with Search Bar
+          Container(
+            padding: const EdgeInsets.only(bottom: 30.0),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.skyBlue.withValues(alpha: 0.9),
+                  AppColors.steelBlue.withValues(alpha: 0.8),
+                  AppColors.dodgerBlue.withValues(alpha: 0.7),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Places, dates, travel plans...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 16,
-                  ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey.shade600),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0.0),
+                child: Row(
+                  children: [
+                    // Search Bar
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontFamily: 'Urbanist-Regular',
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Places, dates, travel plans...',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontFamily: 'Urbanist-Regular',
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.15),
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.only(left: 7),
+                            child: Icon(
+                              Icons.search,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                          prefixIconConstraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 24,
+                          ),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.only(
+                            left: 0,
+                            right: 16,
+                            top: 16,
+                            bottom: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Private/Collaboration Toggle Button
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _isPrivateMode = !_isPrivateMode;
+                        });
+                      },
+                      child: Container(
+                        height: 56,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              _isPrivateMode
+                                  ? 'images/private.png'
+                                  : 'images/collaboration.png',
+                              width: 24,
+                              height: 24,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isPrivateMode ? 'Private' : 'Collaboration',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Urbanist-Regular',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -180,32 +230,35 @@ class _PlanScreenState extends State<PlanScreen>
 
           // Trip Cards
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : visibleTrips.isEmpty
-                  ? Center(
-                      child: Text(
-                        _searchQuery.isEmpty
-                            ? 'No trips yet. Create your first trip!'
-                            : 'No trips match “$_searchQuery”.',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
+            child: Transform.translate(
+              offset: const Offset(0, -34),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0.0),
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : visibleTrips.isEmpty
+                    ? Center(
+                        child: Text(
+                          _searchQuery.isEmpty
+                              ? 'No trips yet. Create your first trip!'
+                              : 'No trips match "$_searchQuery".',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
                         ),
+                      )
+                    : ListView.builder(
+                        itemCount: visibleTrips.length,
+                        itemBuilder: (context, index) {
+                          final trip = visibleTrips[index];
+                          debugPrint(
+                            'DEBUG: Building trip card ${index + 1}: ${trip.name}',
+                          );
+                          return _buildTripCard(trip, index);
+                        },
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: visibleTrips.length,
-                      itemBuilder: (context, index) {
-                        final trip = visibleTrips[index];
-                        debugPrint(
-                          'DEBUG: Building trip card ${index + 1}: ${trip.name}',
-                        );
-                        return _buildTripCard(trip, index);
-                      },
-                    ),
+              ),
             ),
           ),
 
@@ -213,15 +266,8 @@ class _PlanScreenState extends State<PlanScreen>
           const SizedBox(height: 20),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: 50, // Đẩy nút + lên cao hơn
-        ),
-        child: FloatingActionButton(
-          onPressed: () => _showCreateTripModal(context),
-          backgroundColor: AppColors.primary,
-          child: const Icon(Icons.add, color: Colors.white, size: 28),
-        ),
+      floatingActionButton: _AddButton(
+        onTap: () => _showCreateTripModal(context),
       ),
     );
   }
@@ -242,106 +288,11 @@ class _PlanScreenState extends State<PlanScreen>
     final dateRange =
         '${trip.startDate.day}/${trip.startDate.month}/${trip.startDate.year} - ${trip.endDate.day}/${trip.endDate.month}/${trip.endDate.year}';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => _navigateToTripDetail(trip),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Trip Image
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: AppColors.skyBlue.withValues(alpha: 0.3),
-                ),
-                child: trip.coverImage != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          trip.coverImage!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.travel_explore,
-                              color: AppColors.primary,
-                              size: 30,
-                            );
-                          },
-                        ),
-                      )
-                    : const Icon(
-                        Icons.travel_explore,
-                        color: AppColors.primary,
-                        size: 30,
-                      ),
-              ),
-              const SizedBox(width: 16),
-
-              // Trip Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      trip.name,
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dateRange,
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          status,
-                          style: TextStyle(
-                            fontFamily: 'Urbanist-Regular',
-                            fontSize: 12,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return _TripCard(
+      trip: trip,
+      status: status,
+      dateRange: dateRange,
+      onTap: () => _navigateToTripDetail(trip),
     );
   }
 
@@ -365,20 +316,243 @@ class _PlanScreenState extends State<PlanScreen>
     }
   }
 
-  void _showCreateTripModal(BuildContext context) async {
-    final result = await Navigator.push<TripModel>(
-      context,
+  Future<void> _showCreateTripModal(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final provider = Provider.of<TripPlanningProvider>(context, listen: false);
+
+    final result = await navigator.push<TripModel>(
       MaterialPageRoute(builder: (context) => const CreatePlannerScreen()),
     );
+
+    if (!mounted) return;
 
     // Nếu một trip được tạo thành công, Provider đã tự thêm và notifyListeners()
     if (result != null) {
       // Để đảm bảo trip mới được thêm vào và local-only trips được sync,
       // chúng ta gọi initialize lần nữa sau khi tạo.
       // 🎯 Sửa: Gọi initialize để đồng bộ hóa
-      Provider.of<TripPlanningProvider>(context, listen: false).initialize();
+      provider.initialize();
       // Không cần gọi provider.addTrip(result);
       // Không cần setState vì UI đã watch Provider
     }
+  }
+}
+
+class _AddButton extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _AddButton({required this.onTap});
+
+  @override
+  State<_AddButton> createState() => _AddButtonState();
+}
+
+class _AddButtonState extends State<_AddButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        bottom: 50, // Đẩy nút + lên cao hơn
+      ),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedScale(
+          scale: _isHovered ? 1.1 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onTap,
+              customBorder: const CircleBorder(),
+              splashColor: Colors.white.withValues(alpha: 0.1),
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.skyBlue.withValues(alpha: 0.9),
+                      AppColors.steelBlue.withValues(alpha: 0.8),
+                      AppColors.dodgerBlue.withValues(alpha: 0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 28),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TripCard extends StatefulWidget {
+  final TripModel trip;
+  final String status;
+  final String dateRange;
+  final VoidCallback onTap;
+
+  const _TripCard({
+    required this.trip,
+    required this.status,
+    required this.dateRange,
+    required this.onTap,
+  });
+
+  @override
+  State<_TripCard> createState() => _TripCardState();
+}
+
+class _TripCardState extends State<_TripCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 1.05 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        child: AnimatedContainer(
+          duration: const Duration(seconds: 9),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: _isHovered
+                  ? [
+                      AppColors.dodgerBlue.withValues(alpha: 0.9),
+                      AppColors.steelBlue.withValues(alpha: 0.8),
+                      AppColors.skyBlue.withValues(alpha: 0.7),
+                    ]
+                  : [
+                      AppColors.skyBlue.withValues(alpha: 0.9),
+                      AppColors.steelBlue.withValues(alpha: 0.8),
+                      AppColors.dodgerBlue.withValues(alpha: 0.7),
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: _isHovered ? 0.25 : 0.9),
+                blurRadius: _isHovered ? 15 : 10,
+                offset: const Offset(0, 3),
+                spreadRadius: _isHovered ? 2 : 1,
+              ),
+            ],
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    // Trip Image
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.skyBlue.withValues(alpha: 0.3),
+                      ),
+                      child: widget.trip.coverImage != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                widget.trip.coverImage!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.travel_explore,
+                                    color: AppColors.primary,
+                                    size: 36,
+                                  );
+                                },
+                              ),
+                            )
+                          : const Icon(
+                              Icons.travel_explore,
+                              color: AppColors.primary,
+                              size: 36,
+                            ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Trip Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            widget.trip.name,
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            widget.dateRange,
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                widget.status,
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
