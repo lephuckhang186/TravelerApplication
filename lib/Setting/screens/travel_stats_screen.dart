@@ -216,7 +216,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         children: [
           Text(
             isYear2025 ? 'Distance Traveled (2025)' : 'Distance Traveled',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 16,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
@@ -228,7 +229,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 children: [
                   Text(
                     distance.toString(),
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 48,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -239,7 +241,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
                       'km',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 24,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
@@ -259,7 +262,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
             isYear2025 
                 ? 'Distance is calculated from your 2025 trips. Continue planning and traveling!'
                 : 'Distance is calculated from your completed trips. Start traveling to see real data!',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               color: Colors.grey[600],
               height: 1.4,
@@ -355,7 +359,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 Expanded(
                   child: Text(
                     stat['title'] as String,
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -364,7 +369,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 ),
                 Text(
                   stat['value'] as String,
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -550,7 +556,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 const SizedBox(width: 8),
                 Text(
                   'All Time Progress',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -613,7 +620,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                   Expanded(
                     child: Text(
                       'Your complete travel journey! Track all your adventures from the beginning.',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
                         color: Colors.green[700],
                       ),
@@ -647,7 +655,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 const SizedBox(width: 8),
                 Text(
                   '2025 Progress',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -710,7 +719,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                   Expanded(
                     child: Text(
                       'Track your 2025 travel achievements! Each bar shows your progress this year.',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
                         color: Colors.blue[700],
                       ),
@@ -750,7 +760,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               alignment: Alignment.center,
               child: Text(
                 value.toString(),
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: color,
@@ -795,7 +806,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
             // Label
             Text(
               label,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 11,
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,

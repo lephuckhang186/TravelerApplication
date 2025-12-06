@@ -17,6 +17,7 @@ import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
 import 'change_password_screen.dart';
 import '../../Login/services/firestore_statistics_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -738,7 +739,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(height: 8),
                   Text(
                     _stats.completedTrips.toString(),
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 48,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -757,14 +759,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                     children: [
                       Text(
                         '2024',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
                       Text(
                         '2025: ${_stats.completedTrips2025} trips',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.blue,
                           fontWeight: FontWeight.w600,
@@ -772,7 +776,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       Text(
                         '2026',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -852,7 +857,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           alignment: Alignment.center,
           child: trips > 0 ? Text(
             trips.toString(),
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: color,
@@ -877,7 +883,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         // Year label
         Text(
           year,
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 10,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
