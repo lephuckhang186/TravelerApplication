@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
 import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
@@ -41,7 +42,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   UserTravelStats _stats = UserTravelStats.empty();
 
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _utilitiesScrollController = ScrollController();
   bool _isScrolled = false;
+  int _currentUtilityIndex = 0;
 
   @override
   bool get wantKeepAlive => false;
@@ -52,6 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     _loadUserData();
     _loadStatistics();
     _scrollController.addListener(_onScroll);
+    _utilitiesScrollController.addListener(_onUtilitiesScroll);
 
     // Set up real-time listener for profile changes
     _profileService.getUserProfileStream().listen((profile) {
@@ -98,6 +102,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _utilitiesScrollController.removeListener(_onUtilitiesScroll);
+    _utilitiesScrollController.dispose();
     _statisticsService.dispose();
     super.dispose();
   }
@@ -115,6 +121,32 @@ class _SettingsScreenState extends State<SettingsScreen>
     } else if (_scrollController.offset <= scrollThreshold && _isScrolled) {
       setState(() {
         _isScrolled = false;
+      });
+    }
+  }
+
+  void _onUtilitiesScroll() {
+    if (!_utilitiesScrollController.hasClients) return;
+    
+    final scrollOffset = _utilitiesScrollController.offset;
+    const itemWidth = 180.0; // Width of first item + spacing
+    const itemWidth2 = 172.0; // Width of second/third items + spacing (160 + 12)
+    
+    int newIndex = 0;
+    if (scrollOffset < itemWidth * 0.5) {
+      newIndex = 0; // First item
+    } else if (scrollOffset < itemWidth + itemWidth2 * 0.5) {
+      newIndex = 1; // Second item
+    } else {
+      newIndex = 2; // Third item
+    }
+    
+    if (newIndex != _currentUtilityIndex) {
+      // Haptic feedback when changing utility
+      HapticFeedback.selectionClick();
+      
+      setState(() {
+        _currentUtilityIndex = newIndex;
       });
     }
   }
@@ -575,47 +607,106 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Horizontal scrollable utilities
-          SizedBox(
-            height: 85, // Fixed height for the scroll area
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(left: 8, right: 16), // Reduce left padding
-              children: [
-                SizedBox(
-                  width: 180, // Fixed width per utility item
-                  child: _buildRectangularUtilityItem(
-                    Icons.currency_exchange,
-                    'Chuyển đổi tiền tệ',
-                    const Color(0xFFFF9800), // Orange
-                    () => _onCurrencyConverter(),
-                  ),
+          // Horizontal scrollable utilities with enhanced UX
+          Column(
+            children: [
+              SizedBox(
+                height: 85, // Fixed height for the scroll area
+                child: ListView(
+                  controller: _utilitiesScrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(left: 8, right: 16), // Reduce left padding
+                  physics: const BouncingScrollPhysics(), // iOS-style bouncing animation
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 180, // Fixed width per utility item
+                      child: _buildRectangularUtilityItem(
+                        Icons.currency_exchange,
+                        'Chuyển đổi tiền tệ',
+                        const Color(0xFFFF9800), // Orange
+                        () => _onCurrencyConverter(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 160, // Fixed width per utility item
+                      child: _buildRectangularUtilityItem(
+                        Icons.translate,
+                        'Dịch văn bản',
+                        const Color(0xFF9C27B0), // Purple
+                        () => _onTranslation(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 160, // Fixed width per utility item
+                      child: _buildRectangularUtilityItem(
+                        Icons.cloud,
+                        'Thời tiết',
+                        const Color(0xFF2196F3), // Blue
+                        () => _onWeather(),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 160, // Fixed width per utility item
-                  child: _buildRectangularUtilityItem(
-                    Icons.translate,
-                    'Dịch văn bản',
-                    const Color(0xFF9C27B0), // Purple
-                    () => _onTranslation(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 160, // Fixed width per utility item
-                  child: _buildRectangularUtilityItem(
-                    Icons.cloud,
-                    'Thời tiết',
-                    const Color(0xFF2196F3), // Blue
-                    () => _onWeather(),
-                  ),
-                ),
-              ],
-            ),
+              ),
+              // Scroll indicator dots
+              const SizedBox(height: 8),
+              _buildScrollIndicator(),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  /// Dynamic Scroll Indicator - dots showing current scroll position
+  Widget _buildScrollIndicator() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Dot 1 - Currency Converter
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: _currentUtilityIndex == 0 ? 8 : 6,
+          height: _currentUtilityIndex == 0 ? 8 : 6,
+          decoration: BoxDecoration(
+            color: _currentUtilityIndex == 0 
+                ? const Color(0xFF7B61FF) 
+                : Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        // Dot 2 - Translation
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: _currentUtilityIndex == 1 ? 8 : 6,
+          height: _currentUtilityIndex == 1 ? 8 : 6,
+          decoration: BoxDecoration(
+            color: _currentUtilityIndex == 1 
+                ? const Color(0xFF7B61FF) 
+                : Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        // Dot 3 - Weather
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: _currentUtilityIndex == 2 ? 8 : 6,
+          height: _currentUtilityIndex == 2 ? 8 : 6,
+          decoration: BoxDecoration(
+            color: _currentUtilityIndex == 2 
+                ? const Color(0xFF7B61FF) 
+                : Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+        ),
+      ],
     );
   }
 
