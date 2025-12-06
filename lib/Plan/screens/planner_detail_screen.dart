@@ -11,6 +11,7 @@ import '../services/firebase_trip_service.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
+import '../utils/activity_scheduling_validator.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -88,14 +89,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           }
         }
 
-        _activities = activityMap.values.toList();
-        // Sort by start date
-        _activities.sort((a, b) {
-          if (a.startDate == null && b.startDate == null) return 0;
-          if (a.startDate == null) return 1;
-          if (b.startDate == null) return -1;
-          return a.startDate!.compareTo(b.startDate!);
-        });
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
+          activityMap.values.toList(),
+        );
       });
     } catch (e) {
       debugPrint('Failed to load activities from server: $e');
@@ -1420,6 +1416,25 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         throw Exception('Activity not found');
       }
 
+      // Validate time conflicts (exclude the current activity being updated)
+      final validationResult = ActivitySchedulingValidator.validateActivityTime(
+        updatedActivity,
+        _activities,
+        excludeActivityId: updatedActivity.id,
+      );
+
+      if (validationResult.hasConflicts) {
+        // Show conflict dialog
+        final shouldContinue = await _showTimeConflictDialog(
+          validationResult.message,
+          validationResult.conflictingActivities,
+        );
+        
+        if (!shouldContinue) {
+          return; // User chose not to continue
+        }
+      }
+
       // Try to update on server if activity has an ID and not local
       if (updatedActivity.id != null &&
           !updatedActivity.id!.startsWith('local_')) {
@@ -1469,6 +1484,24 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _addActivity(ActivityModel activity) async {
     try {
+      // Validate time conflicts
+      final validationResult = ActivitySchedulingValidator.validateActivityTime(
+        activity,
+        _activities,
+      );
+
+      if (validationResult.hasConflicts) {
+        // Show conflict dialog
+        final shouldContinue = await _showTimeConflictDialog(
+          validationResult.message,
+          validationResult.conflictingActivities,
+        );
+        
+        if (!shouldContinue) {
+          return; // User chose not to continue
+        }
+      }
+
       // First, try to create the activity on the server
       ActivityModel createdActivity;
       try {
@@ -1481,6 +1514,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
       setState(() {
         _activities.add(createdActivity);
+        // Sort activities chronologically
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
       });
       await _persistTripChanges();
 
@@ -1990,6 +2025,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
     setState(() {
       _activities[index] = updatedActivity;
+      // Re-sort activities chronologically
+      _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
     });
     await _persistTripChanges();
     debugPrint('Check-in status updated locally and persisted');
@@ -2059,5 +2096,118 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       debugPrint('Failed to create expense for checked-in activity: $e');
       // Don't throw error - continue without expense integration
     }
+  }
+
+  /// Show time conflict dialog
+  Future<bool> _showTimeConflictDialog(
+    String message,
+    List<ActivityModel> conflictingActivities,
+  ) async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber, color: Colors.orange.shade600),
+              const SizedBox(width: 8),
+              const Text('Xung đột thời gian'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              if (conflictingActivities.isNotEmpty) ...[
+                const Text(
+                  'Hoạt động bị trùng:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                ...conflictingActivities.map((activity) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.circle, size: 6, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${activity.title} (${_formatActivityTime(activity)})',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                )).toList(),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline, 
+                           size: 16, color: Colors.blue.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Gợi ý: Chọn thời gian khác để tránh xung đột',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Quay lại',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade600,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Tiếp tục'),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+  }
+
+  /// Format activity time for display
+  String _formatActivityTime(ActivityModel activity) {
+    if (activity.startDate == null) return '';
+    
+    final start = activity.startDate!;
+    final startStr = '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+    
+    if (activity.endDate != null) {
+      final end = activity.endDate!;
+      final endStr = '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+      return '$startStr - $endStr';
+    }
+    
+    return startStr;
   }
 }
