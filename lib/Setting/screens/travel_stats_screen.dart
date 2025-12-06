@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Login/services/firestore_statistics_service.dart';
-import '../../Login/services/auth_service.dart';
+//import '../../Login/services/auth_service.dart';
 import 'dart:async';
 
 class TravelStatsScreen extends StatefulWidget {
@@ -15,7 +14,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
   final FirestoreStatisticsService _statisticsService = FirestoreStatisticsService();
-  final AuthService _authService = AuthService();
+  //final AuthService _authService = AuthService();
   
   UserTravelStats _stats = UserTravelStats.empty();
   bool _isLoading = true;

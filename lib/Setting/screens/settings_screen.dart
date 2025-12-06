@@ -17,7 +17,6 @@ import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
 import 'change_password_screen.dart';
 import '../../Login/services/firestore_statistics_service.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -575,33 +574,28 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Single row with 3 utilities
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
+          // Two utilities spanning full width
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                _buildRectangularUtilityItem(
-                  Icons.account_balance_wallet_outlined,
-                  'Quản lý chi tiêu',
-                  const Color(0xFF2196F3), // Blue
-                  () => _onExpenseManagement(),
+                Expanded(
+                  child: _buildRectangularUtilityItem(
+                    Icons.currency_exchange,
+                    'Chuyển đổi tiền tệ',
+                    const Color(0xFFFF9800), // Orange
+                    () => _onCurrencyConverter(),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _buildRectangularUtilityItem(
-                  Icons.currency_exchange,
-                  'Chuyển đổi tiền tệ',
-                  const Color(0xFFFF9800), // Orange
-                  () => _onCurrencyConverter(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildRectangularUtilityItem(
+                    Icons.translate,
+                    'Dịch văn bản',
+                    const Color(0xFF9C27B0), // Purple
+                    () => _onTranslation(),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _buildRectangularUtilityItem(
-                  Icons.translate,
-                  'Dịch văn bản',
-                  const Color(0xFF9C27B0), // Purple
-                  () => _onTranslation(),
-                ),
-                const SizedBox(width: 16), // End padding
               ],
             ),
           ),
@@ -620,8 +614,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 140, // Rectangular width
-        height: 65,
+        width: double.infinity, // Use full available width
+        height: 75, // Taller for better proportion
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -654,7 +648,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Text(
                 label,
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  fontSize: 10, // Slightly smaller font
+                  fontSize: 12, // Larger font for better readability
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                   height: 1.2, // Line height for better spacing
