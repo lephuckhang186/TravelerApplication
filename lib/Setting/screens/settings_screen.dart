@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
@@ -7,7 +6,7 @@ import '../../Login/services/user_profile_service.dart';
 import '../../Login/services/auth_service.dart';
 import '../../Login/services/user_profile.dart';
 import '../../Login/screens/auth_screen.dart';
-import '../../Login/screens/help_center_screen.dart';
+import 'help_center_screen.dart';
 import 'notification_settings_screen.dart';
 import 'share_feedback_screen.dart';
 import 'general_info_screen.dart';
@@ -191,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Đang tải thông tin...',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 14,
                         color: Colors.grey[600],
                       ),
@@ -299,7 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             _displayName,
             textAlign: TextAlign.center,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 24,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -340,7 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(width: 6),
                     Text(
                       'Trang cá nhân',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 12,
                         color: Colors.grey[700],
                       ),
@@ -428,7 +427,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 Text(
                   _displayName,
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -531,7 +530,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       child: Center(
         child: Text(
           _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'N',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: size * 0.4,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -550,7 +549,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           Text(
             'Tiện ích',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -635,7 +634,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Flexible(
               child: Text(
                 label,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 10, // Slightly smaller font
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -678,7 +677,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 Text(
                   'Travel Stats',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -687,7 +686,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 const Spacer(),
                 Text(
                   'Show All',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 14,
                     color: Colors.blue,
                     fontWeight: FontWeight.w500,
@@ -710,7 +709,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 children: [
                   Text(
                     'Total Trips',
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -719,7 +718,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(height: 8),
                   Text(
                     '0',
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 48,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -767,21 +766,21 @@ class _SettingsScreenState extends State<SettingsScreen>
                     children: [
                       Text(
                         '2023',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
                       Text(
                         '2024',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
                       ),
                       Text(
                         '2025',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -860,7 +859,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -907,7 +906,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: Text(
               'Đăng xuất',
               textAlign: TextAlign.center,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.red[600],
@@ -992,18 +991,18 @@ class _SettingsScreenState extends State<SettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đăng xuất',
-          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
-          style: GoogleFonts.quattrocento(),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: GoogleFonts.quattrocento(color: Colors.grey[600]),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[600]),
             ),
           ),
           ElevatedButton(
@@ -1043,7 +1042,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Đăng xuất', style: GoogleFonts.quattrocento()),
+            child: Text('Đăng xuất', style: TextStyle(fontFamily: 'Urbanist-Regular', )),
           ),
         ],
       ),

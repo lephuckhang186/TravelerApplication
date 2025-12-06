@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class TravelStatsScreen extends StatefulWidget {
   const TravelStatsScreen({super.key});
@@ -37,7 +36,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         ),
         title: Text(
           'Travel Stats',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -72,11 +71,11 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               labelColor: Colors.blue,
               unselectedLabelColor: Colors.grey[600],
               indicatorColor: Colors.blue,
-              labelStyle: GoogleFonts.quattrocento(
+              labelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
-              unselectedLabelStyle: GoogleFonts.quattrocento(
+              unselectedLabelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
@@ -156,7 +155,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         children: [
           Text(
             'Distance Traveled',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 16,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
@@ -168,7 +167,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
             children: [
               Text(
                 '0',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 48,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
@@ -179,7 +178,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   'km',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 24,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
@@ -197,7 +196,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           const SizedBox(height: 16),
           Text(
             'You haven\'t traveled yet. TripIt will update your travel stats every time you complete a trip.',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 14,
               color: Colors.grey[600],
               height: 1.4,
@@ -261,7 +260,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
             Expanded(
               child: Text(
                 stat['title'] as String,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -270,7 +269,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
             ),
             Text(
               stat['value'] as String,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
@@ -310,7 +309,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
@@ -319,7 +318,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           ),
           Text(
             value,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: Colors.black87,

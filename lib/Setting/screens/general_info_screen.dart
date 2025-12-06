@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Core/theme/app_theme.dart';
 
 class GeneralInfoScreen extends StatelessWidget {
@@ -18,7 +17,7 @@ class GeneralInfoScreen extends StatelessWidget {
         ),
         title: Text(
           'Thông tin chung',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -69,7 +68,7 @@ class GeneralInfoScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Travel Planner',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
@@ -77,7 +76,7 @@ class GeneralInfoScreen extends StatelessWidget {
                       ),
                       Text(
                         'Ứng dụng lập kế hoạch du lịch thông minh',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -90,7 +89,7 @@ class GeneralInfoScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Travel Planner là ứng dụng giúp bạn khám phá, lên kế hoạch và quản lý chuyến du lịch một cách dễ dàng và thông minh. Với sự hỗ trợ của AI, chúng tôi mang đến trải nghiệm du lịch tuyệt vời nhất cho bạn.',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 14,
                 color: Colors.grey[700],
                 height: 1.6,
@@ -135,7 +134,7 @@ class GeneralInfoScreen extends StatelessWidget {
           children: [
             Text(
               'Tính năng chính',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -168,7 +167,7 @@ class GeneralInfoScreen extends StatelessWidget {
                             children: [
                               Text(
                                 feature['title'] as String,
-                                style: GoogleFonts.quattrocento(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black87,
@@ -176,7 +175,7 @@ class GeneralInfoScreen extends StatelessWidget {
                               ),
                               Text(
                                 feature['description'] as String,
-                                style: GoogleFonts.quattrocento(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 12,
                                   color: Colors.grey[600],
                                 ),
@@ -209,7 +208,7 @@ class GeneralInfoScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Liên hệ & Hỗ trợ',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -237,7 +236,7 @@ class GeneralInfoScreen extends StatelessWidget {
           children: [
             Text(
               'Thông tin phiên bản',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -262,7 +261,7 @@ class GeneralInfoScreen extends StatelessWidget {
                 ),
                 child: Text(
                   'Kiểm tra cập nhật',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     color: AppColors.primary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -285,17 +284,17 @@ class GeneralInfoScreen extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
           ),
-          Text(': ', style: GoogleFonts.quattrocento(color: Colors.grey[600])),
+          Text(': ', style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[600])),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.black87,
                 fontWeight: FontWeight.w500,
@@ -318,17 +317,17 @@ class GeneralInfoScreen extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
           ),
-          Text(': ', style: GoogleFonts.quattrocento(color: Colors.grey[600])),
+          Text(': ', style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[600])),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.black87,
                 fontWeight: FontWeight.w500,

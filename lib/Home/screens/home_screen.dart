@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Setting/screens/settings_screen.dart';
 import '../../Plan/screens/plan_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
@@ -170,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 opacity: isSelected ? 1.0 : 0.0,
                 child: Text(
                   label,
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     color: AppColors.navyBlue,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

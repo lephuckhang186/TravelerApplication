@@ -91,32 +91,22 @@ class AuthService {
   // Đăng nhập bằng Google
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      debugPrint('Bắt đầu đăng nhập Google...');
-
       // Đăng xuất trước để đảm bảo prompt chọn tài khoản
       await _googleSignIn.signOut();
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        debugPrint('Người dùng đã hủy đăng nhập Google');
-        throw Exception('Đăng nhập Google đã bị hủy');
+        return null; // User cancelled
       }
-
-      debugPrint('Đăng nhập Google thành công cho: ${googleUser.email}');
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-
-      // DEBUG: In ra thông tin token
-      debugPrint('Access Token: ${googleAuth.accessToken}');
-      debugPrint('ID Token: ${googleAuth.idToken}');
 
       // CHỈ CẦN accessToken là đủ, idToken có thể null trên web
       if (googleAuth.accessToken == null) {
         throw Exception('Không thể lấy token từ Google');
       }
-      debugPrint('Đã lấy token từ Google');
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -125,17 +115,16 @@ class AuthService {
 
       final userCredential = await _auth.signInWithCredential(credential);
 
-      debugPrint('Đăng nhập Firebase thành công cho: ${userCredential.user?.email}');
-
       // Đồng bộ với backend
       await _syncUserWithBackend(userCredential.user!);
 
-      debugPrint('Đồng bộ với backend hoàn tất');
-
       return userCredential;
     } catch (e) {
-      debugPrint('Lỗi đăng nhập Google: ${e.toString()}');
-      throw Exception('Lỗi đăng nhập Google: ${e.toString()}');
+      // Chỉ throw lỗi nếu không phải popup_closed
+      if (!e.toString().contains('popup_closed')) {
+        rethrow;
+      }
+      return null;
     }
   }
 

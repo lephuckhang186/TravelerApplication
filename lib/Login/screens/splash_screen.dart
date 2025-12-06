@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../../main.dart';
+import '../services/auth_service.dart';
+import 'auth_screen.dart';
+import '../../Home/screens/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,28 +13,19 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+  late AnimationController _animationController;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
 
-    // Tạo animation controller cho fade in
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 2),
       vsync: this,
-    );
+    )..repeat();
 
-    // Tạo animation fade in
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-
-    // Bắt đầu animation
-    _fadeController.forward();
-
-    // Tự động chuyển màn hình sau 3 giây
+    // Navigate to auth/home screen after 3 seconds
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
         _navigateToMain();
@@ -41,52 +34,73 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToMain() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AuthWrapper()),
+    // Check auth state
+    final isLoggedIn = _authService.isLoggedIn;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            isLoggedIn ? const HomeScreen() : const AuthScreen(),
+      ),
     );
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background image
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('images/loading.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('images/loading_screen.png'),
+            fit: BoxFit.cover,
           ),
-          // Loading indicator with animation
-          AnimatedBuilder(
-            animation: _fadeAnimation,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _fadeAnimation.value,
-                child: Center(
-                  child: Transform.scale(
-                    scale: 1.5, // Tăng kích thước lên 1.5 lần
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      strokeWidth: 4, // Cũng tăng độ dày của vòng tròn
+        ),
+        child: Stack(
+          children: [
+            // Loading text and animated spinner
+            Positioned(
+              top: 250,
+              left: 20,
+              right: 0,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Loading',
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
+                      fontSize: 24,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                  const SizedBox(width: 16),
+                  RotationTransition(
+                    turns: _animationController,
+                    child: const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

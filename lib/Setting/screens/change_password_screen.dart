@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Login/services/auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -46,7 +45,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(
             content: Text(
               'Đổi mật khẩu thành công!',
-              style: GoogleFonts.quattrocento(),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             backgroundColor: Colors.green,
           ),
@@ -59,7 +58,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(
             content: Text(
               e.toString(),
-              style: GoogleFonts.quattrocento(),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             backgroundColor: Colors.red,
           ),
@@ -79,7 +78,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         SnackBar(
           content: Text(
             'Không tìm thấy email người dùng',
-            style: GoogleFonts.quattrocento(),
+            style: TextStyle(fontFamily: 'Urbanist-Regular', ),
           ),
           backgroundColor: Colors.red,
         ),
@@ -96,11 +95,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             title: Text(
               'Email đặt lại mật khẩu đã được gửi',
-              style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
             ),
             content: Text(
               'Chúng tôi đã gửi link đặt lại mật khẩu đến email ${user.email}. Vui lòng kiểm tra hộp thư của bạn.',
-              style: GoogleFonts.quattrocento(),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             actions: [
               ElevatedButton(
@@ -116,7 +115,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 child: Text(
                   'OK',
-                  style: GoogleFonts.quattrocento(color: Colors.white),
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.white),
                 ),
               ),
             ],
@@ -129,7 +128,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(
             content: Text(
               e.toString(),
-              style: GoogleFonts.quattrocento(),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             backgroundColor: Colors.red,
           ),
@@ -181,7 +180,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
         title: Text(
           'Đổi mật khẩu',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -201,7 +200,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               // Mật khẩu hiện tại
               Text(
                 'Mật khẩu hiện tại',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -212,10 +211,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 controller: _currentPasswordController,
                 obscureText: !_isCurrentPasswordVisible,
                 validator: _validateCurrentPassword,
-                style: GoogleFonts.quattrocento(),
+                style: TextStyle(fontFamily: 'Urbanist-Regular', ),
                 decoration: InputDecoration(
                   hintText: 'Nhập mật khẩu hiện tại',
-                  hintStyle: GoogleFonts.quattrocento(color: Colors.grey),
+                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -256,7 +255,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               // Mật khẩu mới
               Text(
                 'Mật khẩu mới',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -267,10 +266,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 controller: _newPasswordController,
                 obscureText: !_isNewPasswordVisible,
                 validator: _validateNewPassword,
-                style: GoogleFonts.quattrocento(),
+                style: TextStyle(fontFamily: 'Urbanist-Regular', ),
                 decoration: InputDecoration(
                   hintText: 'Nhập mật khẩu mới',
-                  hintStyle: GoogleFonts.quattrocento(color: Colors.grey),
+                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -311,7 +310,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               // Xác nhận mật khẩu mới
               Text(
                 'Xác nhận mật khẩu mới',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -322,10 +321,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 controller: _confirmPasswordController,
                 obscureText: !_isConfirmPasswordVisible,
                 validator: _validateConfirmPassword,
-                style: GoogleFonts.quattrocento(),
+                style: TextStyle(fontFamily: 'Urbanist-Regular', ),
                 decoration: InputDecoration(
                   hintText: 'Xác nhận mật khẩu mới',
-                  hintStyle: GoogleFonts.quattrocento(color: Colors.grey),
+                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -373,7 +372,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                   child: Text(
                     'Quên mật khẩu?',
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 14,
                       color: Colors.blue,
                       fontWeight: FontWeight.w500,
@@ -408,7 +407,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         )
                       : Text(
                           'Đổi mật khẩu',
-                          style: GoogleFonts.quattrocento(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,

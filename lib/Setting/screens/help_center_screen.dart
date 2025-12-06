@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../Core/theme/app_theme.dart';
 
 class HelpCenterScreen extends StatefulWidget {
@@ -142,7 +141,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         title: Text(
           'Trung tâm trợ giúp',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -164,7 +163,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 onChanged: (value) => setState(() => _searchQuery = value),
                 decoration: InputDecoration(
                   hintText: 'Tìm kiếm câu hỏi...',
-                  hintStyle: GoogleFonts.quattrocento(color: Colors.grey[500]),
+                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[500]),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
@@ -172,7 +171,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     vertical: 12,
                   ),
                 ),
-                style: GoogleFonts.quattrocento(fontSize: 14),
+                style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
               ),
             ),
           ),
@@ -208,7 +207,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         title: Text(
           category['title'],
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -216,7 +215,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         subtitle: Text(
           '${category['items'].length} câu hỏi',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 12,
             color: Colors.grey[600],
           ),
@@ -234,7 +233,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     return ExpansionTile(
       title: Text(
         question,
-        style: GoogleFonts.quattrocento(
+        style: TextStyle(fontFamily: 'Urbanist-Regular', 
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
@@ -245,7 +244,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Text(
             answer,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 13,
               color: Colors.grey[700],
               height: 1.5,

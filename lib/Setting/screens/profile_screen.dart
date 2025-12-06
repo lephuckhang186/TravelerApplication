@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
@@ -182,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: Text(
           'Trang cá nhân',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -295,7 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _nameController.text.isNotEmpty
                   ? _nameController.text
                   : 'User',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
@@ -306,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _emailController.text.isNotEmpty
                   ? _emailController.text
                   : 'Chưa cập nhật email',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 14,
                 color: _emailController.text.isNotEmpty
                     ? Colors.grey[600]
@@ -330,7 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 4),
                   Text(
                     'Tài khoản đã xác thực',
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 12,
                       color: Colors.green[700],
                       fontWeight: FontWeight.w500,
@@ -358,7 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _nameController.text.isNotEmpty
               ? _nameController.text[0].toUpperCase()
               : 'N',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 40,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -382,7 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Thông tin cá nhân',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -420,7 +419,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Thông tin liên hệ',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -466,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Thống kê du lịch',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -518,7 +517,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -531,7 +530,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 18, color: Colors.grey[500]),
             hintText: _getHintText(label),
-            hintStyle: GoogleFonts.quattrocento(
+            hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 14,
               color: Colors.grey[400],
               fontStyle: FontStyle.italic,
@@ -557,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               vertical: 12,
             ),
           ),
-          style: GoogleFonts.quattrocento(fontSize: 14),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
         ),
       ],
     );
@@ -569,7 +568,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           'Giới tính',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -591,7 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Text(
                   _gender,
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 14,
                     color: _gender == 'Chưa cập nhật'
                         ? Colors.grey[400]
@@ -618,7 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           'Ngày sinh',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -640,7 +639,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Text(
                   '${_birthDate.day}/${_birthDate.month}/${_birthDate.year}',
-                  style: GoogleFonts.quattrocento(fontSize: 14),
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
                 ),
                 const Spacer(),
                 if (_isEditing)
@@ -666,7 +665,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -674,7 +673,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           Text(
             title,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 10,
               color: Colors.grey[600],
             ),
@@ -742,7 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               'Thay đổi ảnh đại diện',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -783,7 +782,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               'Chọn giới tính',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),

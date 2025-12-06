@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'search_place_screen.dart';
 import 'ai_assistant_screen.dart';
@@ -129,7 +128,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 'Private',
-                style: GoogleFonts.inter(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   color: Colors.black,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -209,7 +208,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               children: [
                 Text(
                   _trip.name,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -218,7 +217,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _trip.destination,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 14,
                     color: Colors.grey.shade600,
                   ),
@@ -234,7 +233,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     const SizedBox(width: 4),
                     Text(
                       dateRange,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 13,
                         color: Colors.grey.shade700,
                       ),
@@ -265,7 +264,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               const SizedBox(height: 12),
               Text(
                 'No plans yet',
-                style: GoogleFonts.inter(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -275,7 +274,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               Text(
                 'Start building your itinerary by adding flights, meals, visits or custom notes.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   color: Colors.grey.shade600,
                 ),
@@ -314,7 +313,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           child: activity.startDate != null
               ? Text(
                   timeLabel,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -357,7 +356,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     Expanded(
                       child: Text(
                         activity.title,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
@@ -401,7 +400,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   const SizedBox(height: 4),
                   Text(
                     activity.description!,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 14,
                       color: Colors.grey.shade600,
                       height: 1.4,
@@ -421,7 +420,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       Expanded(
                         child: Text(
                           activity.location!.name,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 13,
                             color: Colors.grey.shade700,
                           ),
@@ -459,7 +458,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'Expected: ${_formatCurrency(activity.budget!.estimatedCost)}',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 12,
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
@@ -491,7 +490,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'Spent: ${_formatCurrency(activity.budget!.actualCost!)}',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 12,
                                   color: Colors.green,
                                   fontWeight: FontWeight.w500,
@@ -523,7 +522,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'No cost recorded',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 12,
                                   color: Colors.orange,
                                   fontWeight: FontWeight.w500,
@@ -604,7 +603,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                               color: AppColors.primary,
                               fontSize: 16,
                             ),
@@ -612,7 +611,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         ),
                         Text(
                           'Edit Activity',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -871,7 +870,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                               color: AppColors.primary,
                               fontSize: 16,
                             ),
@@ -879,7 +878,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         ),
                         Text(
                           'Add a plan',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -1087,7 +1086,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
         ),
         const SizedBox(height: 6),
         TextField(
@@ -1121,7 +1120,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Check-in Status',
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
         ),
         const Spacer(),
         Switch(
@@ -1144,7 +1143,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Category',
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -1157,7 +1156,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               selected: isSelected,
               onSelected: (_) => onChanged(type),
               selectedColor: AppColors.primary.withValues(alpha: 0.15),
-              labelStyle: GoogleFonts.inter(
+              labelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                 color: isSelected ? AppColors.primary : Colors.black,
                 fontWeight: FontWeight.w600,
               ),
@@ -1269,7 +1268,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           children: [
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey.shade600,
               ),
@@ -1277,7 +1276,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             const SizedBox(height: 4),
             Text(
               value,
-              style: GoogleFonts.inter(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
