@@ -8,7 +8,6 @@ import '../../Login/services/auth_service.dart';
 import '../../Login/services/user_profile.dart';
 import '../../Login/screens/auth_screen.dart';
 import 'help_center_screen.dart';
-import 'notification_settings_screen.dart';
 import 'share_feedback_screen.dart';
 import 'general_info_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
@@ -1029,12 +1028,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           _buildMenuDivider(),
           _buildMenuListItem(
-            Icons.notifications_outlined,
-            'Cài đặt thông báo',
-            () => _onNotificationSettings(),
-          ),
-          _buildMenuDivider(),
-          _buildMenuListItem(
             Icons.lock_reset_outlined,
             'Đổi mật khẩu',
             () => _onChangePassword(),
@@ -1142,14 +1135,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _onNotificationSettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const NotificationSettingsScreen(),
-      ),
-    );
-  }
 
   void _onHelpCenter() {
     Navigator.push(
