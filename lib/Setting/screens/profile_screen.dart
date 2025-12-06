@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
+import 'dart:async';
 import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
 import '../../Login/services/firestore_user_service.dart';
@@ -35,6 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _loadUserData();
   }
+
 
   void _loadUserData() async {
     try {
@@ -209,9 +211,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildPersonalInfoSection(),
                 const SizedBox(height: 16),
                 _buildContactInfoSection(),
-                const SizedBox(height: 16),
-                const SizedBox(height: 16),
-                _buildStatsSection(),
               ],
             ),
     );
@@ -452,61 +451,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatsSection() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.analytics, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Thống kê du lịch',
-                  style: GoogleFonts.quattrocento(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Chuyến đi', '12', Icons.flight),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard('Địa điểm', '28', Icons.location_on),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Tổng chi tiêu',
-                    '45.2M',
-                    Icons.account_balance_wallet,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard('Kế hoạch', '8', Icons.event_note),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildEditableField(
     String label,
@@ -653,36 +597,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.quattrocento(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.quattrocento(
-              fontSize: 10,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _toggleEditMode() {
     if (_isEditing) {
