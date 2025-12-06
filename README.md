@@ -1,31 +1,34 @@
-# TravelPro - Ứng Dụng Lập Lịch Trình Du Lịch Thông Minh
+# TripWise - Ứng Dụng Lập Lịch Trình Du Lịch Thông Minh
 
 ## 📖 Giới thiệu tổng quan
 
-**TravelPro** là một ứng dụng lập kế hoạch du lịch toàn diện được thiết kế để giải quyết những thách thức thực tế mà du khách hiện đại phải đối mặt. Ứng dụng kết hợp công nghệ AI hiện đại với giao diện người dùng thân thiện, tạo ra một giải pháp hoàn chỉnh cho việc lên kế hoạch, theo dõi và quản lý chuyến du lịch từ A đến Z.
+**TripWise** là một ứng dụng lập kế hoạch du lịch toàn diện được thiết kế để giải quyết những thách thức thực tế mà du khách hiện đại phải đối mặt. Ứng dụng kết hợp công nghệ AI hiện đại với giao diện người dùng thân thiện, tạo ra một giải pháp hoàn chỉnh cho việc lên kế hoạch, theo dõi và quản lý chuyến du lịch từ A đến Z.
 
 ### 🎯 Vấn đề người dùng gặp phải
 
 **1. Lập kế hoạch du lịch phức tạp và tốn thời gian:**
+
 - Khó khăn trong việc sắp xếp lịch trình hợp lý theo thời gian
 - Thiếu thông tin về địa điểm, hoạt động và chi phí
 - Khó tối ưu hóa tuyến đường và thời gian di chuyển
 - Không có công cụ hỗ trợ lập kế hoạch trực quan
 
 **2. Quản lý ngân sách du lịch không hiệu quả:**
+
 - Khó theo dõi chi tiêu theo thời gian thực
 - Không có cảnh báo khi vượt ngân sách
 - Khó phân loại và phân tích chi tiêu
 - Thiếu công cụ dự đoán chi phí
 
 **3. Thiếu thông tin địa điểm và gợi ý cá nhân hóa:**
+
 - Khó tìm kiếm địa điểm phù hợp sở thích
 - Thiếu đánh giá và kinh nghiệm thực tế
 - Không có gợi ý thông minh dựa trên hành vi
 
-### 🚀 Giải pháp TravelPro cung cấp
+### 🚀 Giải pháp TripWise cung cấp
 
-**TravelPro** được phát triển với sứ mệnh giúp người dùng:
+**TripWise** được phát triển với sứ mệnh giúp người dùng:
 
 ✅ **Lập kế hoạch du lịch dễ dàng và chuyên nghiệp** với giao diện timeline trực quan
 ✅ **Quản lý ngân sách thông minh** với theo dõi chi tiêu thời gian thực  
@@ -44,12 +47,14 @@
 ## 🎯 Đối tượng người dùng
 
 ### Người dùng chính:
+
 - **Du khách cá nhân** muốn lập kế hoạch du lịch chuyên nghiệp
 - **Gia đình** cần quản lý ngân sách và lịch trình cho nhiều người
 - **Nhóm bạn** muốn lên kế hoạch du lịch chung một cách hiệu quả
 - **Business travelers** cần theo dõi chi tiêu công việc
 
 ### Nhu cầu sử dụng:
+
 - Lập kế hoạch du lịch từ 1 ngày đến vài tuần
 - Quản lý ngân sách từ vài triệu đến hàng trăm triệu VND
 - Tìm kiếm thông tin địa điểm, hoạt động du lịch
@@ -60,6 +65,7 @@
 ### 📅 Lập Kế Hoạch Du Lịch Thông Minh (Core Feature)
 
 #### 🎨 Giao diện Timeline Trực quan
+
 **Giải quyết:** Khó khăn trong sắp xếp lịch trình và tối ưu thời gian
 
 - **Timeline như Notion:** Giao diện drag & drop trực quan, dễ sử dụng
@@ -75,6 +81,7 @@
 ✅ Tối ưu hóa thời gian và tuyến đường
 
 #### 📊 Quản lý Hoạt động Thông minh
+
 **Giải quyết:** Khó theo dõi trạng thái và tiến độ các hoạt động
 
 - **Check-in thông minh:** Đánh dấu hoạt động đã hoàn thành
@@ -86,6 +93,7 @@
 ### 💰 Quản Lý Ngân Sách & Chi Tiêu (Advanced Feature)
 
 #### 💵 Theo dõi Chi tiêu Thời gian thực
+
 **Giải quyết:** Khó kiểm soát ngân sách và chi tiêu vượt mức
 
 - **Dashboard ngân sách:** Hiển thị tổng quan chi tiêu trực quan
@@ -95,6 +103,7 @@
 - **Đa tiền tệ:** Hỗ trợ chuyển đổi tiền tệ thời gian thực
 
 **Các danh mục chi tiêu thông minh:**
+
 - 🏨 **Lưu trú:** Khách sạn, homestay, camping
 - 🍜 **Ăn uống:** Nhà hàng, street food, grocery
 - 🚗 **Di chuyển:** Flight, taxi, public transport, fuel
@@ -103,6 +112,7 @@
 - 🏥 **Khẩn cấp:** Y tế, insurance, unexpected costs
 
 #### 📈 Phân tích Chi tiêu Thông minh
+
 - **Biểu đồ trực quan:** Charts và graphs dễ hiểu
 - **So sánh dự đoán vs thực tế:** Analysis variance
 - **Xu hướng chi tiêu:** Tracking patterns theo thời gian
@@ -117,6 +127,7 @@
 ### 🎯 Khám Phá Địa Điểm & Gợi Ý AI (Discovery Feature)
 
 #### 🔍 Tìm kiếm & Khám phá Thông minh
+
 **Giải quyết:** Thiếu thông tin địa điểm và gợi ý phù hợp
 
 - **Database địa điểm toàn diện:** Hàng nghìn địa điểm được verify
@@ -126,6 +137,7 @@
 - **Reviews từ community:** Đánh giá thật từ người dùng
 
 #### 📸 Thông tin Địa điểm Chi tiết
+
 - **Photo galleries:** Hình ảnh chất lượng cao
 - **Video guides:** YouTube travel content
 - **Local tips:** Mẹo từ người địa phương
@@ -135,6 +147,7 @@
 ### 🤖 AI Travel Assistant (Core Feature)
 
 #### 💬 Chatbot Tư vấn 24/7
+
 **Giải quyết:** Thiếu expert advice và support khi cần
 
 - **Natural Language Processing:** Hiểu câu hỏi tự nhiên
@@ -144,6 +157,7 @@
 - **Real-time responses:** Trả lời instant, không chờ đợi
 
 #### 🧠 Tính năng AI Thông minh
+
 - **Itinerary optimization:** Tối ưu hóa lịch trình và route
 - **Budget planning:** Gợi ý phân bổ ngân sách hợp lý
 - **Weather adaptation:** Điều chỉnh kế hoạch theo thời tiết
@@ -151,6 +165,7 @@
 - **Travel tips:** Chia sẻ kinh nghiệm và mẹo hay
 
 **Ví dụ conversation:**
+
 ```
 👤 "Tôi có 2 triệu cho 3 ngày ở Đà Nẵng, nên đi đâu?"
 🤖 "Với 2 triệu cho 3 ngày, tôi gợi ý phân bổ:
@@ -170,6 +185,7 @@
 ### 📊 Phân Tích & Insights (Analytics Feature)
 
 #### 📈 Dashboard Phân tích Cá nhân
+
 **Giải quyết:** Thiếu insights để cải thiện chuyến đi tương lai
 
 - **Travel patterns:** Phân tích thói quen du lịch
@@ -179,6 +195,7 @@
 - **Budget efficiency:** Đánh giá hiệu quả sử dụng ngân sách
 
 #### 🎯 Gợi ý Cải thiện
+
 - **Cost optimization:** Đề xuất tiết kiệm chi phí
 - **Time management:** Tối ưu thời gian lịch trình
 - **Experience enhancement:** Gợi ý nâng cao trải nghiệm
@@ -192,24 +209,28 @@
 ## 🎉 Lợi ích thực tế cho người dùng
 
 ### 💰 Tiết kiệm Chi phí
+
 - **Giảm 15-25% chi phí:** Nhờ quản lý ngân sách thông minh và gợi ý AI
 - **Tránh chi tiêu phát sinh:** Cảnh báo sớm khi sắp vượt budget
 - **Tối ưu giá cả:** So sánh và gợi ý options tốt nhất
 - **Theo dõi ROI:** Đánh giá giá trị từng hoạt động
 
-### ⏰ Tiết kiệm Thời gian  
+### ⏰ Tiết kiệm Thời gian 
+
 - **Lập kế hoạch nhanh 80%:** Timeline trực quan thay vì planning thủ công
 - **Tự động hóa:** Chi tiêu tự động sync từ activities
 - **AI assistant:** Instant answers thay vì research hàng giờ
 - **Templates sẵn có:** Không cần bắt đầu từ đầu
 
 ### 🎯 Trải nghiệm Du lịch Tốt hơn
+
 - **Lịch trình tối ưu:** Không bị rush hoặc waste time
 - **Khám phá địa điểm hay:** AI gợi ý based on interests
 - **Chuẩn bị tốt:** Đầy đủ thông tin trước khi đi
 - **Học hỏi liên tục:** Analytics giúp cải thiện trips sau
 
 ### 📱 Tiện lợi Sử dụng
+
 - **Mọi lúc mọi nơi:** Mobile app + web access
 - **Offline ready:** Core features hoạt động không cần internet
 - **Multi-device sync:** Đồng bộ across điện thoại, tablet, laptop
@@ -218,14 +239,17 @@
 ## 🏆 Use Cases - Tình huống sử dụng thực tế
 
 ### 👨‍👩‍👧‍👦 Gia đình với trẻ nhỏ
+
 **Tình huống:** Gia đình 4 người du lịch Phú Quốc 5 ngày
 
 **Thách thức:**
+
 - Lập lịch phù hợp với trẻ em
 - Quản lý ngân sách cho nhiều người
 - Tìm activities phù hợp mọi lứa tuổi
 
-**TravelPro giúp:**
+**TripWise giúp:**
+
 ```
 📅 Lịch trình thông minh:
    • Sáng: Activities nhẹ nhàng (beach, easy walks)
@@ -247,6 +271,7 @@
 ```
 
 ### 👨‍💼 Business Traveler
+
 **Tình huống:** Chuyến công tác Hà Nội 3 ngày, có thời gian rảnh
 
 **Thách thức:**  
@@ -254,7 +279,8 @@
 - Balance work meetings với sightseeing
 - Track chi tiêu cho company reimbursement
 
-**TravelPro giúp:**
+**TripWise giúp:**
+
 ```
 📅 Schedule optimization:
    • Work meetings: 9AM-5PM
@@ -273,14 +299,17 @@
 ```
 
 ### 👫 Couple Budget Travel
+
 **Tình huống:** Cặp đôi trẻ, budget 10M cho Sapa 4 ngày
 
 **Thách thức:**
+
 - Maximize experiences với limited budget  
 - Tìm spots đẹp cho photos
 - Balance adventure vs comfort
 
-**TravelPro giúp:**
+**TripWise giúp:**
+
 ```
 💰 Smart budget allocation:
    • Transport: 2M (sleeper bus)
@@ -302,14 +331,17 @@
 ```
 
 ### 👥 Nhóm Bạn Thân
+
 **Tình huống:** 8 người bạn đại học reunion tại Đà Lạt
 
 **Thách thức:**
+
 - Coordinate schedules của nhiều người
 - Split bills fairly 
 - Cater to different interests & budgets
 
-**TravelPro giúp:**
+**TripWise giúp:**
+
 ```
 🤝 Group collaboration:
    • Shared timeline: Mọi người edit chung
@@ -336,6 +368,7 @@
 ## 🔄 Customer Journey - Hành trình người dùng
 
 ### 🚀 Onboarding (Lần đầu sử dụng)
+
 ```
 1. Download app → Quick tutorial (2 phút)
 2. Tạo account → Setup preferences (sở thích, budget range)  
@@ -345,6 +378,7 @@
 ```
 
 ### 📅 Planning Phase (Giai đoạn lập kế hoạch)
+
 ```
 1. Create new trip → Nhập destination, dates, budget
 2. AI suggestions → Nhận gợi ý activities và timeline
@@ -355,6 +389,7 @@
 ```
 
 ### ✈️ During Trip (Trong chuyến đi)
+
 ```
 1. Check-in activities → Mark hoàn thành + add photos
 2. Track expenses → Input chi tiêu thực tế  
@@ -364,6 +399,7 @@
 ```
 
 ### 📊 Post-Trip (Sau chuyến đi)
+
 ```
 1. Trip completion → Review toàn bộ experience
 2. Expense analysis → Xem báo cáo chi tiêu chi tiết
@@ -477,7 +513,7 @@ TravelerApplication/
 
 ### Backend Structure (Python)
 ```text
-travelpro-backend/
+TripWise-backend/
 ├── app/
 │   ├── core/                           # Core utilities
 │   │   ├── config.py                   # App configuration
@@ -803,7 +839,7 @@ flutter run -d ios          # iOS simulator
 curl http://localhost:8000/health
 
 # Kết quả mong đợi:
-# {"status": "healthy", "message": "TravelPro Backend API", ...}
+# {"status": "healthy", "message": "TripWise Backend API", ...}
 ```
 
 ### 🛠️ Troubleshooting thường gặp
@@ -886,7 +922,7 @@ flutter run
 #### Backend (.env)
 
 ```bash
-DATABASE_URL=postgresql://user:password@localhost/travelpro_db
+DATABASE_URL=postgresql://user:password@localhost/TripWise_db
 REDIS_URL=redis://localhost:6379
 OPENAI_API_KEY=your_openai_api_key
 GOOGLE_MAPS_API_KEY=your_google_maps_key
@@ -1006,161 +1042,6 @@ flutter test --coverage
 - Collaborative filtering cho recommendation
 - Dijkstra/A* cho route optimization
 - NLP processing cho chatbot
-
-## Database Schema Design
-
-### Core Tables
-
-```sql
--- Users table
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    avatar_url VARCHAR(500),
-    preferences JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Trips table (Core)
-CREATE TABLE trips (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    destination VARCHAR(255),
-    start_date DATE,
-    end_date DATE,
-    budget DECIMAL(10,2),
-    currency VARCHAR(3),
-    is_collaborative BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Places table
-CREATE TABLE places (
-    id SERIAL PRIMARY KEY,
-    google_place_id VARCHAR(255) UNIQUE,
-    name VARCHAR(255) NOT NULL,
-    address TEXT,
-    latitude DECIMAL(10,8),
-    longitude DECIMAL(11,8),
-    category VARCHAR(100),
-    rating DECIMAL(2,1),
-    photo_urls TEXT[],
-    description TEXT
-);
-
--- Activities table (Core - Timeline items)
-CREATE TABLE activities (
-    id SERIAL PRIMARY KEY,
-    trip_id INTEGER REFERENCES trips(id),
-    place_id INTEGER REFERENCES places(id),
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    start_time TIMESTAMP,
-    end_time TIMESTAMP,
-    estimated_cost DECIMAL(10,2),
-    notes TEXT,
-    order_index INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Expenses table (Basic)
-CREATE TABLE expenses (
-    id SERIAL PRIMARY KEY,
-    trip_id INTEGER REFERENCES trips(id),
-    user_id INTEGER REFERENCES users(id),
-    title VARCHAR(255) NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    currency VARCHAR(3),
-    category VARCHAR(50),
-    date DATE,
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Chat messages (AI Assistant)
-CREATE TABLE chat_messages (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    trip_id INTEGER REFERENCES trips(id),
-    message TEXT NOT NULL,
-    is_from_user BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Trip Collaborators (Quân's collaboration system)
-CREATE TABLE trip_collaborators (
-    id SERIAL PRIMARY KEY,
-    trip_id INTEGER REFERENCES trips(id),
-    user_id INTEGER REFERENCES users(id),
-    role VARCHAR(20) DEFAULT 'viewer', -- owner, editor, viewer
-    invited_by INTEGER REFERENCES users(id),
-    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(trip_id, user_id)
-);
-
--- Activity Comments
-CREATE TABLE activity_comments (
-    id SERIAL PRIMARY KEY,
-    activity_id INTEGER REFERENCES activities(id),
-    user_id INTEGER REFERENCES users(id),
-    comment TEXT NOT NULL,
-    parent_comment_id INTEGER REFERENCES activity_comments(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Trip Templates
-CREATE TABLE trip_templates (
-    id SERIAL PRIMARY KEY,
-    created_by INTEGER REFERENCES users(id),
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    destination VARCHAR(255),
-    duration_days INTEGER,
-    category VARCHAR(100),
-    is_public BOOLEAN DEFAULT FALSE,
-    usage_count INTEGER DEFAULT 0,
-    rating DECIMAL(2,1) DEFAULT 0,
-    template_data JSONB, -- Serialized timeline structure
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Real-time Presence (for collaboration)
-CREATE TABLE user_presence (
-    id SERIAL PRIMARY KEY,
-    trip_id INTEGER REFERENCES trips(id),
-    user_id INTEGER REFERENCES users(id),
-    cursor_position JSONB,
-    selected_activity_id INTEGER,
-    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(trip_id, user_id)
-);
-
--- Change History (for version control)
-CREATE TABLE trip_changes (
-    id SERIAL PRIMARY KEY,
-    trip_id INTEGER REFERENCES trips(id),
-    user_id INTEGER REFERENCES users(id),
-    change_type VARCHAR(50), -- create, update, delete, move
-    entity_type VARCHAR(50), -- trip, activity, comment
-    entity_id INTEGER,
-    old_data JSONB,
-    new_data JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Activity Mentions (for notifications)
-CREATE TABLE activity_mentions (
-    id SERIAL PRIMARY KEY,
-    comment_id INTEGER REFERENCES activity_comments(id),
-    mentioned_user_id INTEGER REFERENCES users(id),
-    mentioned_by INTEGER REFERENCES users(id),
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
 
 ## External APIs Integration
 
