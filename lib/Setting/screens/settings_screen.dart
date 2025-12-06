@@ -15,6 +15,7 @@ import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
+import '../../core/utils/weather/screens/weather_screen.dart';
 import 'change_password_screen.dart';
 import '../../Login/services/firestore_statistics_service.dart';
 
@@ -574,12 +575,15 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
           const SizedBox(height: 10),
-          // Two utilities spanning full width
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
+          // Horizontal scrollable utilities
+          SizedBox(
+            height: 85, // Fixed height for the scroll area
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 8, right: 16), // Reduce left padding
               children: [
-                Expanded(
+                SizedBox(
+                  width: 180, // Fixed width per utility item
                   child: _buildRectangularUtilityItem(
                     Icons.currency_exchange,
                     'Chuyển đổi tiền tệ',
@@ -588,12 +592,23 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
+                SizedBox(
+                  width: 160, // Fixed width per utility item
                   child: _buildRectangularUtilityItem(
                     Icons.translate,
                     'Dịch văn bản',
                     const Color(0xFF9C27B0), // Purple
                     () => _onTranslation(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 160, // Fixed width per utility item
+                  child: _buildRectangularUtilityItem(
+                    Icons.cloud,
+                    'Thời tiết',
+                    const Color(0xFF2196F3), // Blue
+                    () => _onWeather(),
                   ),
                 ),
               ],
@@ -614,8 +629,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: double.infinity, // Use full available width
-        height: 75, // Taller for better proportion
+        height: 75, // Fixed height
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1066,6 +1080,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CurrencyConverterScreen()),
+    );
+  }
+
+  void _onWeather() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const WeatherScreen()),
     );
   }
 
