@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
@@ -542,7 +541,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   Expanded(
                     child: Text(
                       'Search for transactions',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         color: Colors.grey[600],
                         fontSize: 14,
                       ),
@@ -658,7 +657,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected ? Colors.black87 : Colors.grey[600],
@@ -792,7 +791,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         value: _selectedTripId,
                         hint: Text(
                           'All Trips',
-                          style: GoogleFonts.quattrocento(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 14,
                             color: Colors.grey[600],
                           ),
@@ -802,7 +801,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                             value: null,
                             child: Text(
                               'All Trips',
-                              style: GoogleFonts.quattrocento(fontSize: 14),
+                              style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
                             ),
                           ),
                           ...tripProvider.trips.map(
@@ -810,7 +809,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                               value: trip.id,
                               child: Text(
                                 '${trip.name} (${trip.destination})',
-                                style: GoogleFonts.quattrocento(fontSize: 14),
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -876,7 +875,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         const SizedBox(width: 8),
                         Text(
                           '${_months[_currentMonthIndex]}/$_currentYear',
-                          style: GoogleFonts.quattrocento(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -936,7 +935,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         child: Center(
                           child: Text(
                             day,
-                            style: GoogleFonts.quattrocento(
+                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.grey[600],
@@ -1000,7 +999,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                           Center(
                             child: Text(
                               '$dayOffset',
-                              style: GoogleFonts.quattrocento(
+                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                 fontSize: 14,
                                 fontWeight: isSelected
                                     ? FontWeight.w600
@@ -1073,7 +1072,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Lỗi tải dữ liệu',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[600],
@@ -1100,7 +1099,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Chưa có giao dịch nào',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 16,
                         color: Colors.grey[600],
                       ),
@@ -1136,7 +1135,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       const SizedBox(height: 16),
                       Text(
                         'Không có giao dịch phù hợp',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.orange[800],
@@ -1147,7 +1146,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         _selectedTripId != null
                             ? 'Trip đã chọn không có giao dịch nào'
                             : 'Thử thay đổi bộ lọc hoặc thêm giao dịch mới',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 14,
                           color: Colors.orange[600],
                         ),
@@ -1193,7 +1192,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                             const SizedBox(width: 8),
                             Text(
                               tripName,
-                              style: GoogleFonts.quattrocento(
+                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.blue[800],
@@ -1202,7 +1201,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                             const Spacer(),
                             Text(
                               '${tripExpenses.length} activities',
-                              style: GoogleFonts.quattrocento(
+                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                 fontSize: 12,
                                 color: Colors.blue[600],
                               ),
@@ -1261,7 +1260,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                               expense.description,
                                             )
                                           : expense.category.displayName,
-                                      style: GoogleFonts.quattrocento(
+                                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -1279,7 +1278,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                           _formatExpenseDate(
                                             expense.expenseDate,
                                           ),
-                                          style: GoogleFonts.quattrocento(
+                                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                             fontSize: 12,
                                             color: Colors.grey[600],
                                           ),
@@ -1299,7 +1298,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                             _extractTripFromDescription(
                                               expense.description,
                                             )!,
-                                            style: GoogleFonts.quattrocento(
+                                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                               fontSize: 12,
                                               color: Colors.blue[600],
                                             ),
@@ -1312,7 +1311,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                               ),
                               Text(
                                 '-${_formatMoney(expense.amount)}₫',
-                                style: GoogleFonts.quattrocento(
+                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.red[700],
@@ -1524,7 +1523,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             const SizedBox(height: 16),
             Text(
               'Chưa có dữ liệu',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 color: Colors.grey[600],
               ),
@@ -1544,7 +1543,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       return Center(
         child: Text(
           'Chưa có chi tiêu nào',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 16,
             color: Colors.grey[600],
           ),
@@ -1586,7 +1585,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             : displayName, // Show name or % based on length
         radius: 80, // Tăng radius lên 100 để pie chart to hơn
         color: colors[index % colors.length],
-        titleStyle: GoogleFonts.quattrocento(
+        titleStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
           fontSize: 10,
           fontWeight: FontWeight.w600,
           color: Colors.white,
@@ -1611,7 +1610,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               children: [
                 Text(
                   'Tổng chi tiêu',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
@@ -1620,7 +1619,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 const SizedBox(height: 4),
                 Text(
                   _formatMoney(total),
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -1628,7 +1627,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 ),
                 Text(
                   'VND',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 11,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
@@ -1664,7 +1663,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         children: [
           Text(
             title,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: isSelected ? Colors.amber[600] : Colors.black,
@@ -1834,7 +1833,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 const SizedBox(height: 16),
                 Text(
                   'Chưa có dữ liệu danh mục',
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     color: Colors.grey[600],
                   ),
@@ -2212,7 +2211,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         const SizedBox(width: 4),
         Text(
           label,
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 10,
             color: Colors.grey[700],
           ),
@@ -2304,7 +2303,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               const SizedBox(width: 8),
               Text(
                 'Budget Status - ${selectedTrip.name}',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.blue[800],
@@ -2358,7 +2357,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             const SizedBox(height: 8),
             Text(
               'Budget period: ${budgetStatus.daysRemaining} days remaining of ${budgetStatus.daysTotal}',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 10,
                 color: Colors.grey[600],
                 fontStyle: FontStyle.italic,
@@ -2414,7 +2413,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           const SizedBox(width: 4),
           Text(
             message,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: indicatorColor,
@@ -2445,7 +2444,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 10,
               color: Colors.grey[600],
             ),
@@ -2453,7 +2452,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           const SizedBox(height: 2),
           Text(
             _formatMoney(value),
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: color,
@@ -2489,14 +2488,14 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           children: [
             Text(
               'Budget Usage',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
             Text(
               '${(percentage * 100).toStringAsFixed(1)}%',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: progressColor,
@@ -2673,7 +2672,7 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
                     Expanded(
                       child: Text(
                         'Create Budget for ${widget.trip.name}',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
@@ -2705,7 +2704,7 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
                           children: [
                             Text(
                               widget.trip.destination,
-                              style: GoogleFonts.quattrocento(
+                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.blue[800],
@@ -2713,7 +2712,7 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
                             ),
                             Text(
                               '${widget.trip.durationDays} days trip',
-                              style: GoogleFonts.quattrocento(
+                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                 fontSize: 12,
                                 color: Colors.blue[600],
                               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_theme.dart';
 import '../models/translation_models.dart';
 import '../services/translation_service.dart';
@@ -64,7 +63,7 @@ class _TranslationScreenState extends State<TranslationScreen>
         ),
         title: Text(
           'Dịch văn bản',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
@@ -170,7 +169,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                 children: [
                   Text(
                     language.nativeName,
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -179,7 +178,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                   ),
                   Text(
                     language.name,
-                    style: GoogleFonts.quattrocento(
+                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 11,
                       color: Colors.grey[600],
                     ),
@@ -220,7 +219,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                   children: [
                     Text(
                       'Nhập văn bản',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[700],
@@ -230,7 +229,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                     if (_sourceController.text.isNotEmpty)
                       Text(
                         '${_sourceController.text.length}/5000',
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 12,
                           color: Colors.grey[500],
                         ),
@@ -244,14 +243,14 @@ class _TranslationScreenState extends State<TranslationScreen>
                   maxLength: 5000,
                   decoration: InputDecoration(
                     hintText: 'Nhập hoặc dán văn bản cần dịch...',
-                    hintStyle: GoogleFonts.quattrocento(
+                    hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
                       color: Colors.grey[400],
                       fontSize: 16,
                     ),
                     border: InputBorder.none,
                     counterText: '',
                   ),
-                  style: GoogleFonts.quattrocento(
+                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     color: Colors.black87,
                     height: 1.5,
@@ -308,7 +307,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                   children: [
                     Text(
                       'Bản dịch',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[700],
@@ -336,7 +335,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                             const SizedBox(width: 4),
                             Text(
                               '${(_currentResult!.confidence * 100).toInt()}%',
-                              style: GoogleFonts.quattrocento(
+                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                                 fontSize: 11,
                                 color: Colors.green[600],
                                 fontWeight: FontWeight.w600,
@@ -361,7 +360,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                     alignment: Alignment.center,
                     child: Text(
                       'Bản dịch sẽ xuất hiện ở đây',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         color: Colors.grey[400],
                         fontSize: 16,
                       ),
@@ -373,7 +372,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                     children: [
                       SelectableText(
                         _targetController.text,
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 16,
                           color: Colors.black87,
                           height: 1.5,
@@ -448,7 +447,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               const SizedBox(width: 8),
               Text(
                 'Kết quả dịch',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.blue[800],
@@ -457,7 +456,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               const Spacer(),
               Text(
                 'Độ tin cậy: ${(_currentResult!.confidence * 100).toInt()}%',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 12,
                   color: Colors.blue[600],
                 ),
@@ -467,7 +466,7 @@ class _TranslationScreenState extends State<TranslationScreen>
           const SizedBox(height: 8),
           Text(
             '${_currentResult!.sourceLanguage.flag} ${_currentResult!.originalText}',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 13,
               color: Colors.grey[700],
             ),
@@ -475,7 +474,7 @@ class _TranslationScreenState extends State<TranslationScreen>
           const SizedBox(height: 4),
           Text(
             '${_currentResult!.targetLanguage.flag} ${_currentResult!.translatedText}',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Colors.blue[800],
@@ -524,7 +523,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                     )
                   : Text(
                       'Dịch',
-                      style: GoogleFonts.quattrocento(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -620,7 +619,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               const SizedBox(height: 20),
               Text(
                 'Chọn ngôn ngữ',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -643,7 +642,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                       ),
                       title: Text(
                         language.nativeName,
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.w400,
@@ -651,7 +650,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                       ),
                       subtitle: Text(
                         language.name,
-                        style: GoogleFonts.quattrocento(
+                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           color: Colors.grey[600],
                           fontSize: 12,
                         ),
@@ -687,19 +686,19 @@ class _TranslationScreenState extends State<TranslationScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Về tính năng dịch',
-          style: GoogleFonts.quattrocento(fontWeight: FontWeight.w600),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Tính năng dịch văn bản hỗ trợ nhiều ngôn ngữ phổ biến. '
           'Tự động phát hiện ngôn ngữ và cung cấp bản dịch chính xác.',
-          style: GoogleFonts.quattrocento(),
+          style: TextStyle(fontFamily: 'Urbanist-Regular', ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Đóng',
-              style: GoogleFonts.quattrocento(color: const Color(0xFF7B61FF)),
+              style: TextStyle(fontFamily: 'Urbanist-Regular', color: const Color(0xFF7B61FF)),
             ),
           ),
         ],

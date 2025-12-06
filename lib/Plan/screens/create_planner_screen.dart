@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
 import '../models/trip_model.dart';
@@ -46,7 +45,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
-            style: GoogleFonts.quattrocento(
+            style: TextStyle(fontFamily: 'Urbanist-Regular', 
               color: AppColors.primary,
               fontSize: 16,
             ),
@@ -55,7 +54,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         leadingWidth: 80,
         title: Text(
           'Create Trip',
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black,
@@ -67,7 +66,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             onPressed: _canSave() && !_isSaving ? _saveTrip : null,
             child: Text(
               _isSaving ? 'Saving...' : 'Save',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 color: _canSave() && !_isSaving
                     ? AppColors.primary
                     : Colors.grey.shade400,
@@ -166,7 +165,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade700,
@@ -177,14 +176,14 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 18,
             fontWeight: FontWeight.w500,
             color: Colors.black,
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: GoogleFonts.quattrocento(
+            hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 18,
               color: Colors.grey.shade400,
             ),
@@ -215,7 +214,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.quattrocento(
+          style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade700,
@@ -232,7 +231,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             ),
             child: Text(
               _formatDate(date),
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,

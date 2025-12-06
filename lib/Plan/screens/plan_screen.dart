@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
 import '../../Login/services/user_service.dart';
@@ -110,7 +109,7 @@ class _PlanScreenState extends State<PlanScreen>
           children: [
             Text(
               'Hello, $_displayName',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 color: AppColors.textSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -118,7 +117,7 @@ class _PlanScreenState extends State<PlanScreen>
             ),
             Text(
               'Trips',
-              style: GoogleFonts.quattrocento(
+              style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 color: AppColors.textPrimary,
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -316,7 +315,7 @@ class _PlanScreenState extends State<PlanScreen>
                   children: [
                     Text(
                       trip.name,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -325,7 +324,7 @@ class _PlanScreenState extends State<PlanScreen>
                     const SizedBox(height: 4),
                     Text(
                       dateRange,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 14,
                         color: Colors.grey.shade600,
                       ),
@@ -341,7 +340,7 @@ class _PlanScreenState extends State<PlanScreen>
                         const SizedBox(width: 4),
                         Text(
                           status,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 12,
                             color: Colors.grey.shade500,
                           ),
@@ -476,7 +475,7 @@ class _PlanScreenState extends State<PlanScreen>
               const SizedBox(height: 12),
               Text(
                 'Uh oh! There is not anyone yet!',
-                style: GoogleFonts.quattrocento(
+                style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   color: Colors.grey.shade600,
                   fontSize: 14,
                 ),
