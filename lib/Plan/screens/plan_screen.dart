@@ -231,7 +231,7 @@ class _PlanScreenState extends State<PlanScreen>
           // Trip Cards
           Expanded(
             child: Transform.translate(
-              offset: const Offset(0, 0),
+              offset: const Offset(0, -32),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0.0),
                 child: isLoading

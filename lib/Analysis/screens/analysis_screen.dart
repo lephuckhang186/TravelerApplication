@@ -658,7 +658,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: const Offset(0, 20),
                   ),
                 ],
               ),
@@ -673,7 +673,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         children: [
                           // Calendar with fixed height
                           SizedBox(
-                            height: 260, // Fixed height for calendar (reduced)
+                            height: 305, // Fixed height for calendar (reduced)
                             child: _buildCalendarViewScrollable(),
                           ),
 
@@ -736,17 +736,32 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               child: Column(
                 children: [
                   // Chart area - Pie chart only
-                  Expanded(flex: 2, child: _buildPieChart()),
+                  Expanded(
+                    flex: 2,
+                    child: Transform.translate(
+                      offset: const Offset(
+                        0,
+                        -50,
+                      ), // Đưa pie chart lên trên 20px
+                      child: _buildPieChart(),
+                    ),
+                  ),
 
                   const SizedBox(height: 16),
 
-                  // Category tabs
-                  _buildCategoryTabs(),
+                  // Category tabs - pushed up
+                  Transform.translate(
+                    offset: const Offset(0, -90),
+                    child: _buildCategoryTabs(),
+                  ),
 
-                  const SizedBox(height: 16),
-
-                  // Category list
-                  Expanded(child: _buildCategoryList()),
+                  // Category list - pushed up
+                  Expanded(
+                    child: Transform.translate(
+                      offset: const Offset(0, -70),
+                      child: _buildCategoryList(),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -910,8 +925,17 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
+                        color: Colors.white,
                         border: Border.all(color: Colors.grey[300]!),
                         borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1149,20 +1173,27 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
             if (expenses.isEmpty) {
               return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.receipt_long, size: 48, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Chưa có giao dịch nào',
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 16,
-                        color: Colors.grey[600],
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 60),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.receipt_long,
+                        size: 48,
+                        color: Colors.grey[400],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'Chưa có giao dịch nào',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
@@ -1229,7 +1260,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // Expenses for this trip
                     ...tripExpenses.map((expense) {
                       return GestureDetector(
@@ -1403,12 +1433,14 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       // Filter by current month and year
       final expenseMonth = expense.expenseDate.month;
       final expenseYear = expense.expenseDate.year;
-      final isCurrentMonth = expenseMonth == (_currentMonthIndex + 1) && expenseYear == _currentYear;
-      
+      final isCurrentMonth =
+          expenseMonth == (_currentMonthIndex + 1) &&
+          expenseYear == _currentYear;
+
       if (!isCurrentMonth) {
         return false; // Skip expenses from other months
       }
-      
+
       // If expense has a tripId, it must be in the valid trips list
       if (expense.tripId != null) {
         return validTripIds.contains(expense.tripId);
@@ -1515,12 +1547,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     return AnimatedBuilder(
       animation: expenseProvider,
       builder: (context, child) {
-        return Expanded(
-          child: Transform.translate(
-            offset: const Offset(0, -20), // Dịch pie chart lên trên 20px
-            child: _buildPieChartContent(),
-          ),
-        );
+        return _buildPieChartContent();
       },
     );
   }
@@ -1536,7 +1563,27 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     if (_categoryTabIndex == 0) {
       // Subcategory tab - group by expense description (activity title)
       final subcategoryBreakdown = <String, double>{};
-      for (final expense in expenseProvider.expenses) {
+
+      // Filter expenses by current month/year AND selected trip
+      final filteredExpenses = expenseProvider.expenses.where((expense) {
+        // Filter by current month and year
+        final expenseMonth = expense.expenseDate.month;
+        final expenseYear = expense.expenseDate.year;
+        final isCurrentMonth =
+            expenseMonth == (_currentMonthIndex + 1) &&
+            expenseYear == _currentYear;
+
+        if (!isCurrentMonth) return false;
+
+        // Filter by selected trip (null = all trips)
+        if (_selectedTripId != null && expense.tripId != _selectedTripId) {
+          return false;
+        }
+
+        return true;
+      });
+
+      for (final expense in filteredExpenses) {
         final rawDescription = expense.description.isNotEmpty
             ? expense.description
             : expense.category.displayName;
@@ -1546,9 +1593,35 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       }
       chartData = subcategoryBreakdown;
     } else {
-      // Category tab - use existing category breakdown
-      final summary = expenseProvider.expenseSummary;
-      chartData = summary?.categoryBreakdown ?? {};
+      // Category tab - group by category with filtering
+      final categoryBreakdown = <String, double>{};
+
+      // Filter expenses by current month/year AND selected trip
+      final filteredExpenses = expenseProvider.expenses.where((expense) {
+        // Filter by current month and year
+        final expenseMonth = expense.expenseDate.month;
+        final expenseYear = expense.expenseDate.year;
+        final isCurrentMonth =
+            expenseMonth == (_currentMonthIndex + 1) &&
+            expenseYear == _currentYear;
+
+        if (!isCurrentMonth) return false;
+
+        // Filter by selected trip (null = all trips)
+        if (_selectedTripId != null && expense.tripId != _selectedTripId) {
+          return false;
+        }
+
+        return true;
+      });
+
+      for (final expense in filteredExpenses) {
+        final categoryName = expense.category.displayName;
+        categoryBreakdown[categoryName] =
+            (categoryBreakdown[categoryName] ?? 0) + expense.amount;
+      }
+
+      chartData = categoryBreakdown;
     }
 
     if (chartData.isEmpty) {
@@ -1608,14 +1681,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       final percentage = (categoryEntry.value / total * 100);
 
       // Get display name based on current tab
-      String displayName;
-      if (_categoryTabIndex == 0) {
-        // Subcategory tab - use the key as is (activity title)
-        displayName = categoryEntry.key;
-      } else {
-        // Category tab - use category display name
-        displayName = _getCategoryDisplayName(categoryEntry.key);
-      }
+      // Both tabs now have displayName as key, no need for conversion
+      final displayName = categoryEntry.key;
 
       return PieChartSectionData(
         value: categoryEntry.value,
@@ -1709,16 +1776,25 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.amber[600] : Colors.black,
+              color: isSelected ? AppColors.skyBlue : Colors.black,
             ),
           ),
           const SizedBox(height: 4),
           Container(
-            height: 2,
+            height: 3,
             width: title.length * 8.0, // Dynamic width based on text length
             decoration: BoxDecoration(
-              color: isSelected ? Colors.amber[600] : Colors.transparent,
-              borderRadius: BorderRadius.circular(1),
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: [
+                        AppColors.skyBlue.withValues(alpha: 0.9),
+                        AppColors.steelBlue.withValues(alpha: 0.8),
+                        AppColors.dodgerBlue.withValues(alpha: 0.7),
+                      ],
+                    )
+                  : null,
+              color: isSelected ? null : Colors.transparent,
+              borderRadius: BorderRadius.circular(1.5),
             ),
           ),
         ],
@@ -1736,15 +1812,32 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           return const Center(child: CircularProgressIndicator());
         }
 
-        final summary = expenseProvider.expenseSummary;
-        final categoryStatuses = expenseProvider.categoryStatus;
-
         List<Map<String, dynamic>> categories = [];
 
         if (_categoryTabIndex == 0) {
           // Subcategory tab - group expenses by description (activity title)
           final subcategoryBreakdown = <String, double>{};
-          for (final expense in expenseProvider.expenses) {
+
+          // Filter expenses by current month/year AND selected trip
+          final filteredExpenses = expenseProvider.expenses.where((expense) {
+            // Filter by current month and year
+            final expenseMonth = expense.expenseDate.month;
+            final expenseYear = expense.expenseDate.year;
+            final isCurrentMonth =
+                expenseMonth == (_currentMonthIndex + 1) &&
+                expenseYear == _currentYear;
+
+            if (!isCurrentMonth) return false;
+
+            // Filter by selected trip (null = all trips)
+            if (_selectedTripId != null && expense.tripId != _selectedTripId) {
+              return false;
+            }
+
+            return true;
+          });
+
+          for (final expense in filteredExpenses) {
             final rawDescription = expense.description.isNotEmpty
                 ? expense.description
                 : expense.category.displayName;
@@ -1754,6 +1847,20 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           }
 
           if (subcategoryBreakdown.isNotEmpty) {
+            // Define colors first
+            final colors = [
+              Colors.orange[400]!,
+              Colors.blue[400]!,
+              Colors.green[400]!,
+              Colors.purple[400]!,
+              Colors.red[400]!,
+              Colors.teal[400]!,
+              Colors.amber[400]!,
+              Colors.pink[400]!,
+              Colors.indigo[400]!,
+            ];
+
+            var colorIndex = 0;
             categories =
                 subcategoryBreakdown.entries.map((entry) {
                   // Try to find corresponding expense to get icon
@@ -1774,72 +1881,94 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         : null;
                   }
 
-                  return {
+                  final categoryData = {
                     'title': entry.key,
                     'amount': entry.value,
                     'icon': _getCategoryIcon(
                       expense?.category ?? ExpenseCategory.miscellaneous,
                     ),
                     'categoryKey': entry.key,
+                    'color':
+                        colors[colorIndex %
+                            colors.length], // Assign color before sorting
                   };
+                  colorIndex++;
+                  return categoryData;
                 }).toList()..sort(
                   (a, b) =>
                       (b['amount'] as double).compareTo(a['amount'] as double),
                 );
           }
         } else {
-          // Category tab - show expense categories grouped
-          if (summary != null && summary.categoryBreakdown.isNotEmpty) {
-            categories = summary.categoryBreakdown.entries.map((entry) {
-              final displayName = _getCategoryDisplayName(entry.key);
-              return {
-                'title': displayName,
-                'amount': entry.value,
-                'icon': _getCategoryIconByName(entry.key),
-                'categoryKey': entry.key,
-              };
-            }).toList();
+          // Category tab - group by category with filtering (same as pie chart)
+          final categoryBreakdown = <String, double>{};
 
-            // Sort by amount descending
-            categories.sort(
-              (a, b) =>
-                  (b['amount'] as double).compareTo(a['amount'] as double),
-            );
-          }
-        }
+          // Filter expenses by current month/year AND selected trip
+          final filteredExpenses = expenseProvider.expenses.where((expense) {
+            // Filter by current month and year
+            final expenseMonth = expense.expenseDate.month;
+            final expenseYear = expense.expenseDate.year;
+            final isCurrentMonth =
+                expenseMonth == (_currentMonthIndex + 1) &&
+                expenseYear == _currentYear;
 
-        if (_categoryTabIndex == 0) {
-          // Show subcategories - group expenses by description (activity title)
-          final subcategoryBreakdown = <String, double>{};
-          for (final expense in expenseProvider.expenses) {
-            final rawDescription = expense.description.isNotEmpty
-                ? expense.description
-                : expense.category.displayName;
-            final subcategoryName = _extractActivityTitle(rawDescription);
-            subcategoryBreakdown[subcategoryName] =
-                (subcategoryBreakdown[subcategoryName] ?? 0) + expense.amount;
+            if (!isCurrentMonth) return false;
+
+            // Filter by selected trip (null = all trips)
+            if (_selectedTripId != null && expense.tripId != _selectedTripId) {
+              return false;
+            }
+
+            return true;
+          });
+
+          for (final expense in filteredExpenses) {
+            final categoryName = expense.category.displayName;
+            categoryBreakdown[categoryName] =
+                (categoryBreakdown[categoryName] ?? 0) + expense.amount;
           }
 
-          if (subcategoryBreakdown.isNotEmpty) {
-            categories = subcategoryBreakdown.entries.map((entry) {
-              // Try to find corresponding expense to get icon
-              final expense = expenseProvider.expenses.firstWhere(
-                (e) =>
-                    _extractActivityTitle(
-                      e.description.isNotEmpty
-                          ? e.description
-                          : e.category.displayName,
-                    ) ==
-                    entry.key,
-                orElse: () => expenseProvider.expenses.first,
-              );
+          if (categoryBreakdown.isNotEmpty) {
+            // Define colors first
+            final colors = [
+              Colors.orange[400]!,
+              Colors.blue[400]!,
+              Colors.green[400]!,
+              Colors.purple[400]!,
+              Colors.red[400]!,
+              Colors.teal[400]!,
+              Colors.amber[400]!,
+              Colors.pink[400]!,
+              Colors.indigo[400]!,
+            ];
 
-              return {
+            var colorIndex = 0;
+            final expensesList = filteredExpenses.toList();
+
+            categories = categoryBreakdown.entries.map((entry) {
+              // Find a representative expense to get icon
+              Expense? expense;
+              try {
+                expense = expensesList.firstWhere(
+                  (e) => e.category.displayName == entry.key,
+                );
+              } catch (e) {
+                expense = expensesList.isNotEmpty ? expensesList.first : null;
+              }
+
+              final categoryData = {
                 'title': entry.key,
                 'amount': entry.value,
-                'icon': _getCategoryIcon(expense.category),
+                'icon': expense != null
+                    ? _getCategoryIcon(expense.category)
+                    : Icons.category,
                 'categoryKey': entry.key,
+                'color':
+                    colors[colorIndex %
+                        colors.length], // Assign color before sorting
               };
+              colorIndex++;
+              return categoryData;
             }).toList();
 
             // Sort by amount descending
@@ -1847,19 +1976,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               (a, b) =>
                   (b['amount'] as double).compareTo(a['amount'] as double),
             );
-          }
-        } else {
-          // Show category status from backend
-          if (categoryStatuses.isNotEmpty) {
-            categories = categoryStatuses.map((status) {
-              return {
-                'title': status.category.displayName,
-                'amount': status.spent,
-                'icon': _getCategoryIcon(status.category),
-                'categoryKey': status.category,
-                'status': status,
-              };
-            }).toList();
           }
         }
 
@@ -1883,26 +1999,14 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           );
         }
 
-        // Định nghĩa màu sắc giống như pie chart
-        final colors = [
-          Colors.orange[400]!,
-          Colors.blue[400]!,
-          Colors.green[400]!,
-          Colors.purple[400]!,
-          Colors.red[400]!,
-          Colors.teal[400]!,
-          Colors.amber[400]!,
-          Colors.pink[400]!,
-          Colors.indigo[400]!,
-        ];
-
         return ListView.builder(
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final category = categories[index];
             final amount = category['amount'] as double;
-            final categoryColor =
-                colors[index % colors.length]; // Màu tương ứng với pie chart
+
+            // Get color from category data (assigned before sorting)
+            final categoryColor = category['color'] as Color;
 
             return GestureDetector(
               onTap: () => _onCategoryTap(category['title'] as String),
@@ -2043,7 +2147,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
     // Create scroll controllers for auto-scrolling
     final monthScrollController = ScrollController(
-      initialScrollOffset: _currentMonthIndex * 52.0, // 52 = item height + margin
+      initialScrollOffset:
+          _currentMonthIndex * 52.0, // 52 = item height + margin
     );
     final yearScrollController = ScrollController(
       initialScrollOffset: (_currentYear - 2000) * 52.0,
@@ -2095,7 +2200,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ),
                               onPressed: () => Navigator.of(context).pop(),
                             ),
                           ],
@@ -2116,7 +2224,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                     color: Colors.white.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.3,
+                                      ),
                                     ),
                                   ),
                                   child: Column(
@@ -2139,7 +2249,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                           controller: monthScrollController,
                                           itemCount: 12,
                                           itemBuilder: (context, index) {
-                                            final isSelected = tempMonth == index;
+                                            final isSelected =
+                                                tempMonth == index;
                                             return GestureDetector(
                                               onTap: () {
                                                 setDialogState(() {
@@ -2147,24 +2258,28 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                                 });
                                               },
                                               child: Container(
-                                                margin: const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
-                                                ),
-                                                padding: const EdgeInsets.symmetric(
-                                                  vertical: 12,
-                                                ),
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color: isSelected
                                                       ? Colors.white
                                                       : Colors.transparent,
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                 ),
                                                 child: Center(
                                                   child: Text(
                                                     _months[index],
                                                     style: TextStyle(
-                                                      fontFamily: 'Urbanist-Regular',
+                                                      fontFamily:
+                                                          'Urbanist-Regular',
                                                       fontSize: 14,
                                                       fontWeight: isSelected
                                                           ? FontWeight.bold
@@ -2192,7 +2307,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                     color: Colors.white.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.3,
+                                      ),
                                     ),
                                   ),
                                   child: Column(
@@ -2224,24 +2341,28 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                                 });
                                               },
                                               child: Container(
-                                                margin: const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
-                                                ),
-                                                padding: const EdgeInsets.symmetric(
-                                                  vertical: 12,
-                                                ),
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color: isSelected
                                                       ? Colors.white
                                                       : Colors.transparent,
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                 ),
                                                 child: Center(
                                                   child: Text(
                                                     year.toString(),
                                                     style: TextStyle(
-                                                      fontFamily: 'Urbanist-Regular',
+                                                      fontFamily:
+                                                          'Urbanist-Regular',
                                                       fontSize: 14,
                                                       fontWeight: isSelected
                                                           ? FontWeight.bold
@@ -2268,7 +2389,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       const SizedBox(height: 16),
                       // OK Button
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+                        padding: const EdgeInsets.only(
+                          bottom: 16,
+                          left: 16,
+                          right: 16,
+                        ),
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context, {
@@ -2496,12 +2621,14 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             .where((expense) {
               // Filter by trip ID
               if (expense.tripId != _selectedTripId) return false;
-              
+
               // Filter by current month and year
               final expenseMonth = expense.expenseDate.month;
               final expenseYear = expense.expenseDate.year;
-              final isCurrentMonth = expenseMonth == (_currentMonthIndex + 1) && expenseYear == _currentYear;
-              
+              final isCurrentMonth =
+                  expenseMonth == (_currentMonthIndex + 1) &&
+                  expenseYear == _currentYear;
+
               return isCurrentMonth;
             })
             .fold(0.0, (sum, expense) => sum + expense.amount);
@@ -2701,26 +2828,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       return '${(amount / 1000).toStringAsFixed(0)}K';
     }
     return amount.toStringAsFixed(0);
-  }
-
-  /// Get category display name from string key (for backward compatibility)
-  String _getCategoryDisplayName(String categoryKey) {
-    try {
-      final category = ExpenseCategoryExtension.fromString(categoryKey);
-      return category.displayName;
-    } catch (e) {
-      return categoryKey;
-    }
-  }
-
-  /// Get category icon by string name (for backward compatibility)
-  IconData _getCategoryIconByName(String categoryName) {
-    try {
-      final category = ExpenseCategoryExtension.fromString(categoryName);
-      return _getCategoryIcon(category);
-    } catch (e) {
-      return Icons.category;
-    }
   }
 }
 
