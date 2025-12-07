@@ -646,10 +646,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           _buildMonthSelector(),
           const SizedBox(height: 16),
 
-          // Calendar or list view
+          // Calendar or list view - Entire box scrollable
           Expanded(
             child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -662,31 +662,50 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  // Calendar grid - expanded to show full calendar
-                  Expanded(flex: 3, child: _buildCalendarView()),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: Column(
+                        children: [
+                          // Calendar with fixed height
+                          SizedBox(
+                            height: 260, // Fixed height for calendar (reduced)
+                            child: _buildCalendarViewScrollable(),
+                          ),
 
-                  const SizedBox(height: 8),
+                          // Legend - with negative margin to bring closer
+                          Transform.translate(
+                            offset: const Offset(0, 3),
+                            child: _buildCalendarLegend(),
+                          ),
 
-                  // Legend and expense list section
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      children: [
-                        // Legend - Fixed at top
-                        _buildCalendarLegend(),
-                        const SizedBox(height: 8),
-                        // Expense list - Scrollable
-                        Expanded(
-                          child: SingleChildScrollView(
+                          // Budget Status - between legend and expense list (only for specific trip)
+                          if (_selectedTripId != null)
+                            Transform.translate(
+                              offset: const Offset(0, 3),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 8,
+                                ),
+                                child: _buildBudgetStatus(),
+                              ),
+                            ),
+
+                          // Expense list - closer to legend
+                          Transform.translate(
+                            offset: Offset(0, _selectedTripId != null ? 3 : 6),
                             child: _buildExpenseList(),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -866,12 +885,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             ),
             const SizedBox(height: 12),
 
-            // Budget Status Card (if trip selected)
-            if (_selectedTripId != null) ...[
-              _buildBudgetStatusCard(tripProvider, expenseProvider),
-              const SizedBox(height: 12),
-            ],
-
             // Month Selector Row
             Row(
               children: [
@@ -889,33 +902,36 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 const SizedBox(width: 8),
 
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 16,
-                          color: Colors.grey[700],
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${_months[_currentMonthIndex]}/$_currentYear',
-                          style: TextStyle(
-                            fontFamily: 'Urbanist-Regular',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                  child: GestureDetector(
+                    onTap: () => _showYearPicker(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: Colors.grey[700],
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Text(
+                            '${_months[_currentMonthIndex]}/$_currentYear',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -940,8 +956,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-  /// Calendar view with trip status colors
-  Widget _buildCalendarView() {
+  /// Calendar view with trip status colors (for scrollable version)
+  Widget _buildCalendarViewScrollable() {
     return Consumer<TripPlanningProvider>(
       builder: (context, tripProvider, child) {
         // Calculate the first day of the current month
@@ -960,7 +976,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
         return Column(
           children: [
-            // Weekday headers - Fixed at top
+            // Weekday headers
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
@@ -990,7 +1006,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               ),
             ),
 
-            // Calendar grid - Fixed (no scrolling)
+            // Calendar grid - takes remaining space in SizedBox
             Expanded(
               child: GridView.builder(
                 physics: const NeverScrollableScrollPhysics(),
@@ -1213,50 +1229,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Trip header - only show when a specific trip is selected (not "All Trips")
-                    if (tripName != 'Other Expenses' &&
-                        _selectedTripId != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue[200]!),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.flight,
-                              color: Colors.blue[600],
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              tripName,
-                              style: TextStyle(
-                                fontFamily: 'Urbanist-Regular',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue[800],
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '${tripExpenses.length} activities',
-                              style: TextStyle(
-                                fontFamily: 'Urbanist-Regular',
-                                fontSize: 12,
-                                color: Colors.blue[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
 
                     // Expenses for this trip
                     ...tripExpenses.map((expense) {
@@ -2055,6 +2027,288 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     _refreshTripData(); // Also refresh trip data to ensure calendar is up-to-date
   }
 
+  /// Show month and year picker dialog with animated gradient style
+  Future<void> _showYearPicker() async {
+    int tempMonth = _currentMonthIndex;
+    int tempYear = _currentYear;
+
+    // Create scroll controllers for auto-scrolling
+    final monthScrollController = ScrollController(
+      initialScrollOffset: _currentMonthIndex * 52.0, // 52 = item height + margin
+    );
+    final yearScrollController = ScrollController(
+      initialScrollOffset: (_currentYear - 2000) * 52.0,
+    );
+
+    final result = await showDialog<Map<String, int>>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              alignment: Alignment.center,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.skyBlue.withValues(alpha: 0.9),
+                        AppColors.steelBlue.withValues(alpha: 0.8),
+                        AppColors.dodgerBlue.withValues(alpha: 0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Chọn tháng & năm',
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Two columns: Month and Year
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 350),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Month column
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Text(
+                                          'Tháng',
+                                          style: TextStyle(
+                                            fontFamily: 'Urbanist-Regular',
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: ListView.builder(
+                                          controller: monthScrollController,
+                                          itemCount: 12,
+                                          itemBuilder: (context, index) {
+                                            final isSelected = tempMonth == index;
+                                            return GestureDetector(
+                                              onTap: () {
+                                                setDialogState(() {
+                                                  tempMonth = index;
+                                                });
+                                              },
+                                              child: Container(
+                                                margin: const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                padding: const EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : Colors.transparent,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    _months[index],
+                                                    style: TextStyle(
+                                                      fontFamily: 'Urbanist-Regular',
+                                                      fontSize: 14,
+                                                      fontWeight: isSelected
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                      color: isSelected
+                                                          ? AppColors.steelBlue
+                                                          : Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Year column
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Text(
+                                          'Năm',
+                                          style: TextStyle(
+                                            fontFamily: 'Urbanist-Regular',
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: ListView.builder(
+                                          controller: yearScrollController,
+                                          itemCount: 101, // 2000-2100
+                                          itemBuilder: (context, index) {
+                                            final year = 2000 + index;
+                                            final isSelected = tempYear == year;
+                                            return GestureDetector(
+                                              onTap: () {
+                                                setDialogState(() {
+                                                  tempYear = year;
+                                                });
+                                              },
+                                              child: Container(
+                                                margin: const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                padding: const EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : Colors.transparent,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    year.toString(),
+                                                    style: TextStyle(
+                                                      fontFamily: 'Urbanist-Regular',
+                                                      fontSize: 14,
+                                                      fontWeight: isSelected
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                      color: isSelected
+                                                          ? AppColors.steelBlue
+                                                          : Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // OK Button
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context, {
+                              'month': tempMonth,
+                              'year': tempYear,
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.steelBlue,
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'OK',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    // Dispose controllers
+    monthScrollController.dispose();
+    yearScrollController.dispose();
+
+    if (result != null) {
+      setState(() {
+        _currentMonthIndex = result['month']!;
+        _currentYear = result['year']!;
+      });
+      _loadData();
+      _refreshTripData();
+    }
+  }
+
   void _onDayTap(int day) {
     _showMessage('Selected day $day');
   }
@@ -2217,274 +2471,136 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-  /// Build budget status card
-  Widget _buildBudgetStatusCard(
-    TripPlanningProvider tripProvider,
-    ExpenseProvider expenseProvider,
-  ) {
-    if (_selectedTripId == null) return Container();
+  /// Build compact budget status for calendar view
+  Widget _buildBudgetStatus() {
+    return Consumer2<TripPlanningProvider, ExpenseProvider>(
+      builder: (context, tripProvider, expenseProvider, child) {
+        if (_selectedTripId == null) return Container();
 
-    final selectedTrip = tripProvider.trips.firstWhere(
-      (trip) => trip.id == _selectedTripId,
-      orElse: () => tripProvider.trips.first,
+        final selectedTrip = tripProvider.trips.firstWhere(
+          (trip) => trip.id == _selectedTripId,
+          orElse: () => tripProvider.trips.first,
+        );
+
+        // Calculate actual spent from current expenses for this specific trip
+        double actualSpent = expenseProvider.expenses
+            .where((expense) => expense.tripId == _selectedTripId)
+            .fold(0.0, (sum, expense) => sum + expense.amount);
+
+        final totalBudget = selectedTrip.budget?.estimatedCost ?? 0.0;
+        final remaining = totalBudget - actualSpent;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.skyBlue.withValues(alpha: 0.9),
+                AppColors.steelBlue.withValues(alpha: 0.8),
+                AppColors.dodgerBlue.withValues(alpha: 0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Budget metrics row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildCompactBudgetMetric('Total', totalBudget, Colors.white),
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  _buildCompactBudgetMetric('Spent', actualSpent, Colors.white),
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  _buildCompactBudgetMetric(
+                    'Remaining',
+                    remaining,
+                    Colors.white,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Budget usage progress bar
+              _buildBudgetUsageBar(totalBudget, actualSpent),
+            ],
+          ),
+        );
+      },
     );
+  }
 
-    // Get budget status from expense provider (should be filtered by trip ID already)
-    final budgetStatus = expenseProvider.budgetStatus;
-
-    // Calculate actual spent from current expenses for this specific trip
-    double actualSpent = 0.0;
-
-    // Always calculate from current expenses to ensure accuracy for the selected trip
-    actualSpent = expenseProvider.expenses
-        .where((expense) {
-          // First priority: Check if expense has matching trip ID
-          if (expense.tripId != null && expense.tripId == _selectedTripId) {
-            return true;
-          }
-
-          // Second priority: Check trip name in description (exact matches)
-          final tripFromDesc = _extractTripFromDescription(expense.description);
-          if (tripFromDesc != null) {
-            // Try multiple matching patterns
-            final patterns = [
-              selectedTrip.name,
-              '${selectedTrip.name} (${selectedTrip.destination})',
-              selectedTrip.destination,
-            ];
-            return patterns.contains(tripFromDesc);
-          }
-
-          // Third priority: Check if expense date falls within trip dates
-          // Only if no trip ID or description match found
-          if (expense.tripId == null && tripFromDesc == null) {
-            return expense.expenseDate.isAfter(
-                  selectedTrip.startDate.subtract(const Duration(days: 1)),
-                ) &&
-                expense.expenseDate.isBefore(
-                  selectedTrip.endDate.add(const Duration(days: 2)),
-                );
-          }
-
-          return false;
-        })
-        .fold(0.0, (sum, expense) => sum + expense.amount);
-
-    // Use trip-specific budget if available, otherwise fall back to budgetStatus or trip budget
-    final totalBudget = (budgetStatus != null && budgetStatus.totalBudget > 0)
-        ? budgetStatus.totalBudget
-        : selectedTrip.budget?.estimatedCost ?? 0.0;
-    final remaining = totalBudget - actualSpent;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.blue[50]!, Colors.blue[100]!],
+  /// Build compact budget metric
+  Widget _buildCompactBudgetMetric(String label, double amount, Color color) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 10,
+            color: Colors.white.withValues(alpha: 0.9),
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            children: [
-              Icon(
-                Icons.account_balance_wallet,
-                color: Colors.blue[600],
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Budget Status - ${selectedTrip.name}',
-                style: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blue[800],
-                ),
-              ),
-              const Spacer(),
-              _buildBudgetWarningIndicator(totalBudget, actualSpent),
-            ],
+        const SizedBox(height: 2),
+        Text(
+          _formatMoney(amount.abs()),
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
-          const SizedBox(height: 12),
-
-          // Budget metrics row
-          Row(
-            children: [
-              Expanded(
-                child: _buildBudgetMetric(
-                  'Total Budget',
-                  totalBudget,
-                  Colors.blue[600]!,
-                  Icons.monetization_on,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildBudgetMetric(
-                  'Spent',
-                  actualSpent,
-                  Colors.orange[600]!,
-                  Icons.trending_down,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildBudgetMetric(
-                  'Remaining',
-                  remaining,
-                  remaining >= 0 ? Colors.green[600]! : Colors.red[600]!,
-                  remaining >= 0 ? Icons.savings : Icons.warning,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Progress bar
-          _buildBudgetProgressBar2(totalBudget, actualSpent),
-
-          // Budget period info
-          if (budgetStatus != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Budget period: ${budgetStatus.daysRemaining} days remaining of ${budgetStatus.daysTotal}',
-              style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                fontSize: 10,
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  /// Build budget warning indicator
-  Widget _buildBudgetWarningIndicator(double totalBudget, double actualSpent) {
-    // Calculate percentage from actual current data
-    double percentage = 0;
-    if (totalBudget > 0) {
-      percentage = (actualSpent / totalBudget) * 100;
-    }
-
-    Color indicatorColor;
-    IconData indicatorIcon;
-    String message;
-
-    if (percentage >= 100) {
-      indicatorColor = Colors.red[600]!;
-      indicatorIcon = Icons.error;
-      message = 'Over budget!';
-    } else if (percentage >= 90) {
-      indicatorColor = Colors.red[600]!;
-      indicatorIcon = Icons.warning;
-      message = 'Over budget!';
-    } else if (percentage >= 75) {
-      indicatorColor = Colors.orange[600]!;
-      indicatorIcon = Icons.info;
-      message = '${(100 - percentage).toStringAsFixed(0)}% left';
-    } else {
-      indicatorColor = Colors.green[600]!;
-      indicatorIcon = Icons.check_circle;
-      message = 'On track';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: indicatorColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: indicatorColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(indicatorIcon, color: indicatorColor, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            message,
-            style: TextStyle(
-              fontFamily: 'Urbanist-Regular',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: indicatorColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build individual budget metric
-  Widget _buildBudgetMetric(
-    String label,
-    double value,
-    Color color,
-    IconData icon,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Urbanist-Regular',
-              fontSize: 10,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            _formatMoney(value),
-            style: TextStyle(
-              fontFamily: 'Urbanist-Regular',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build budget progress bar with current data
-  Widget _buildBudgetProgressBar2(double totalBudget, double actualSpent) {
+  /// Build budget usage progress bar
+  Widget _buildBudgetUsageBar(double totalBudget, double actualSpent) {
     final percentage = totalBudget > 0
-        ? (actualSpent / totalBudget).clamp(0.0, 1.5)
+        ? (actualSpent / totalBudget * 100).clamp(0, 100)
         : 0.0;
 
-    Color progressColor;
-    if (percentage >= 1.0) {
-      progressColor = Colors.red[600]!;
-    } else if (percentage >= 0.9) {
-      progressColor = Colors.orange[600]!;
-    } else if (percentage >= 0.75) {
-      progressColor = Colors.amber[600]!;
-    } else {
-      progressColor = Colors.green[600]!;
-    }
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Progress bar
+        Container(
+          height: 8,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (percentage / 100).clamp(0, 1),
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Percentage text
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -2492,45 +2608,28 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               'Budget Usage',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
-                fontSize: 12,
-                color: Colors.grey[600],
+                fontSize: 9,
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
             Text(
-              '${(percentage * 100).toStringAsFixed(1)}%',
+              '${percentage.toStringAsFixed(1)}%',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: progressColor,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        Container(
-          height: 8,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: percentage,
-            child: Container(
-              decoration: BoxDecoration(
-                color: progressColor,
-                borderRadius: BorderRadius.circular(4),
-                gradient: LinearGradient(
-                  colors: [progressColor, progressColor.withValues(alpha: 0.7)],
-                ),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
+
+  /// Build budget status card
+
+  /// Build budget warning indicator
 
   /// Get icon for expense category
   IconData _getCategoryIcon(ExpenseCategory category) {
