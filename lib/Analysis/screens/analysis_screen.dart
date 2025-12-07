@@ -1398,8 +1398,17 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     final Map<String, List<Expense>> grouped = {};
     final validTripIds = trips.map((trip) => trip.id).toSet();
 
-    // Filter out expenses with invalid trip IDs immediately
+    // Filter expenses by current month/year AND valid trip IDs
     final validExpenses = expenses.where((expense) {
+      // Filter by current month and year
+      final expenseMonth = expense.expenseDate.month;
+      final expenseYear = expense.expenseDate.year;
+      final isCurrentMonth = expenseMonth == (_currentMonthIndex + 1) && expenseYear == _currentYear;
+      
+      if (!isCurrentMonth) {
+        return false; // Skip expenses from other months
+      }
+      
       // If expense has a tripId, it must be in the valid trips list
       if (expense.tripId != null) {
         return validTripIds.contains(expense.tripId);
@@ -2482,9 +2491,19 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           orElse: () => tripProvider.trips.first,
         );
 
-        // Calculate actual spent from current expenses for this specific trip
+        // Calculate actual spent from current expenses for this specific trip AND current month
         double actualSpent = expenseProvider.expenses
-            .where((expense) => expense.tripId == _selectedTripId)
+            .where((expense) {
+              // Filter by trip ID
+              if (expense.tripId != _selectedTripId) return false;
+              
+              // Filter by current month and year
+              final expenseMonth = expense.expenseDate.month;
+              final expenseYear = expense.expenseDate.year;
+              final isCurrentMonth = expenseMonth == (_currentMonthIndex + 1) && expenseYear == _currentYear;
+              
+              return isCurrentMonth;
+            })
             .fold(0.0, (sum, expense) => sum + expense.amount);
 
         final totalBudget = selectedTrip.budget?.estimatedCost ?? 0.0;
