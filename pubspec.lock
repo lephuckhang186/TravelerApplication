@@ -297,6 +297,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
+  dropdown_button2:
+    dependency: "direct main"
+    description:
+      name: dropdown_button2
+      sha256: e232a1c09212e460358f121d01e739b94ac0a4339993a34a77923fa991413e33
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0-beta.23"
   email_validator:
     dependency: transitive
     description:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../Core/theme/app_theme.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../../Expense/models/expense_models.dart';
@@ -42,6 +43,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   String? _selectedTripId; // Selected trip for filtering
   // Removed unused _budgetStatus field
 
+  final ValueNotifier<String?> _selectedTripNotifier = ValueNotifier<String?>(
+    null,
+  );
+
   late TabController _mainTabController;
   late TabController _categoryTabController;
   ExpenseProvider? _expenseProvider;
@@ -76,6 +81,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     super.initState();
     _mainTabController = TabController(length: 2, vsync: this);
     _categoryTabController = TabController(length: 2, vsync: this);
+    _selectedTripNotifier.value = _selectedTripId;
   }
 
   bool _hasInitialized = false;
@@ -110,20 +116,27 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         // Load trips first to get the selected trip ID
         debugPrint('AUTH_INIT: Refreshing trip data...');
         await _refreshTripData();
-        
+
         // Set default trip if none selected and trips exist
         if (mounted) {
-          final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
-          if (_selectedTripId == null && tripProvider.trips.isNotEmpty) {
-            _selectedTripId = tripProvider.trips.first.id;
-            debugPrint('AUTH_INIT: Auto-selected first trip: $_selectedTripId');
-          } else if (tripProvider.trips.isEmpty) {
+          final tripProvider = Provider.of<TripPlanningProvider>(
+            context,
+            listen: false,
+          );
+          // Keep _selectedTripId as null to show "All Trip" by default
+          if (tripProvider.trips.isEmpty) {
             debugPrint('AUTH_INIT: No trips found, will load all expenses');
+          } else {
+            debugPrint(
+              'AUTH_INIT: Keeping All Trip selected (null), ${tripProvider.trips.length} trips available',
+            );
           }
         }
-        
+
         // IMPORTANT: Only load data AFTER trip selection is done
-        debugPrint('AUTH_INIT: Loading expense data with tripId=$_selectedTripId...');
+        debugPrint(
+          'AUTH_INIT: Loading expense data with tripId=$_selectedTripId...',
+        );
         await _loadData();
         debugPrint('AUTH_INIT: Initialization complete');
       } else {
@@ -207,7 +220,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       expenseProvider.fetchBudgetStatus(tripId: _selectedTripId),
     ]);
 
-    debugPrint('LOAD_DATA: Loaded ${expenseProvider.expenses.length} expenses (tripId was: $_selectedTripId)');
+    debugPrint(
+      'LOAD_DATA: Loaded ${expenseProvider.expenses.length} expenses (tripId was: $_selectedTripId)',
+    );
   }
 
   /// Refresh trip data with better error handling
@@ -228,7 +243,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         await tripProvider.initialize().timeout(
           const Duration(seconds: 20),
           onTimeout: () {
-            debugPrint('TRIP_REFRESH: Trip initialization timed out after 20 seconds');
+            debugPrint(
+              'TRIP_REFRESH: Trip initialization timed out after 20 seconds',
+            );
             throw Exception('Trip loading timed out');
           },
         );
@@ -236,11 +253,13 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         debugPrint(
           'TRIP_REFRESH: After initialize, loaded trips: ${tripProvider.trips.length}',
         );
-        
+
         // DON'T auto-select trip - let user choose or default to "All Trips"
         // This prevents filtering out expenses without tripId
         if (tripProvider.trips.isNotEmpty) {
-          debugPrint('TRIP_REFRESH: ${tripProvider.trips.length} trips available. Defaulting to "All Trips" view');
+          debugPrint(
+            'TRIP_REFRESH: ${tripProvider.trips.length} trips available. Defaulting to "All Trips" view',
+          );
         }
 
         // Always run cleanup if trip initialization completed successfully (even if result is 0 trips)
@@ -260,18 +279,26 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           );
         }
       } catch (timeoutError) {
-        debugPrint('TRIP_REFRESH: Timeout or error during initialization: $timeoutError');
+        debugPrint(
+          'TRIP_REFRESH: Timeout or error during initialization: $timeoutError',
+        );
         // Don't crash the app - use cached trips if available
         if (tripProvider.trips.isNotEmpty) {
-          debugPrint('TRIP_REFRESH: Using ${tripProvider.trips.length} cached trips due to timeout');
+          debugPrint(
+            'TRIP_REFRESH: Using ${tripProvider.trips.length} cached trips due to timeout',
+          );
           // Don't auto-select - let user choose
         } else {
-          debugPrint('TRIP_REFRESH: No cached trips available, continuing without trip filter');
+          debugPrint(
+            'TRIP_REFRESH: No cached trips available, continuing without trip filter',
+          );
           // Show a subtle error message
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Unable to load trips. Showing all expenses.'),
+                content: const Text(
+                  'Unable to load trips. Showing all expenses.',
+                ),
                 backgroundColor: Colors.orange[700],
                 duration: const Duration(seconds: 2),
               ),
@@ -294,7 +321,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         context,
         listen: false,
       );
-      
+
       // Note: validTrips can be empty if user legitimately has no trips
       // This is now safe because we only call this after confirming trip loading was successful
       final allExpenses = expenseProvider.expenses;
@@ -369,22 +396,23 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         // Update the selected trip if it was deleted
         if (_selectedTripId != null &&
             !validTripIds.contains(_selectedTripId)) {
-          debugPrint('CLEANUP: Selected trip $_selectedTripId was deleted, selecting first trip');
+          debugPrint(
+            'CLEANUP: Selected trip $_selectedTripId was deleted, selecting first trip',
+          );
           // Trip was deleted, select first available trip instead of null
           if (mounted) {
             setState(() {
-              _selectedTripId = tripProvider.trips.isNotEmpty ? tripProvider.trips.first.id : null;
+              _selectedTripId = tripProvider.trips.isNotEmpty
+                  ? tripProvider.trips.first.id
+                  : null;
               debugPrint('CLEANUP: Reset to first trip: $_selectedTripId');
             });
           }
         } else if (_selectedTripId == null && tripProvider.trips.isNotEmpty) {
-          // No trip selected yet, auto-select first trip
-          if (mounted) {
-            setState(() {
-              _selectedTripId = tripProvider.trips.first.id;
-              debugPrint('CLEANUP: Auto-selected first trip after refresh: $_selectedTripId');
-            });
-          }
+          // Keep All Trip selected (null) - don't auto-select first trip
+          debugPrint(
+            'CLEANUP: Keeping All Trip selected, ${tripProvider.trips.length} trips available',
+          );
         }
 
         // Reload all data to ensure consistency - this should fetch fresh data from server
@@ -490,6 +518,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   void dispose() {
     _mainTabController.dispose();
     _categoryTabController.dispose();
+    _selectedTripNotifier.dispose();
     super.dispose();
   }
 
@@ -500,9 +529,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Header với search và buttons
-            _buildHeader(),
-
             // Main tabs (Activities/Statistic)
             _buildMainTabs(),
 
@@ -514,156 +540,87 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     );
   }
 
-  /// Header with search and filter buttons
-  Widget _buildHeader() {
+  /// Main tabs (Activities/Statistic)
+  Widget _buildMainTabs() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 2),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
-          // Search field
-          Expanded(
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.support),
-              ),
+          _buildTabButton('Activities', 0, 'images/activities.png'),
+          const SizedBox(width: 12),
+          _buildTabButton('Statistic', 1, 'images/analytics.png'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabButton(String title, int index, String imagePath) {
+    final isSelected = _currentViewIndex == index;
+    final scale = isSelected ? 1.4 : 1.0;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onTabChanged(index),
+        child: AnimatedScale(
+          scale: scale,
+          duration: const Duration(milliseconds: 200),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: EdgeInsets.symmetric(horizontal: isSelected ? 18 : 0),
+            padding: EdgeInsets.symmetric(vertical: isSelected ? 14 : 12),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: [
+                        AppColors.skyBlue.withValues(alpha: 0.9),
+                        AppColors.steelBlue.withValues(alpha: 0.8),
+                        AppColors.dodgerBlue.withValues(alpha: 0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: isSelected ? null : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: isSelected ? 0.9 : 0.0),
+                  blurRadius: isSelected ? 15 : 10,
+                  offset: const Offset(0, 3),
+                  spreadRadius: isSelected ? 2 : 1,
+                ),
+              ],
+            ),
+            child: Transform.scale(
+              scale: 1 / scale, // Scale ngược lại để text giữ nguyên kích thước
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(width: 12),
-                  const Icon(
-                    Icons.search,
-                    color: AppColors.textSecondary,
-                    size: 20,
+                  Image.asset(
+                    imagePath,
+                    width: 18,
+                    height: 18,
+                    color: isSelected ? Colors.white : Colors.grey[600],
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Search for transactions',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
+                      fontSize: 16,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: isSelected ? Colors.white : Colors.grey[600],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-
-          // Filter button
-          _buildHeaderButton(
-            icon: Icons.filter_alt_outlined,
-            onTap: _onFilterTap,
-          ),
-          const SizedBox(width: 8),
-
-          // Refresh button
-          _buildHeaderButton(icon: Icons.refresh, onTap: _onRefreshTap),
-          const SizedBox(width: 8),
-
-          // Budget button
-          _buildHeaderButton(
-            icon: Icons.account_balance_wallet,
-            onTap: _showBudgetDialog,
-            isActive: _selectedTripId != null,
-          ),
-          const SizedBox(width: 8),
-
-          // Grid button
-          _buildHeaderButton(icon: Icons.grid_view, onTap: _onGridTap),
-        ],
-      ),
-    );
-  }
-
-  /// Build header button with hover effects
-  Widget _buildHeaderButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isActive = false,
-  }) {
-    return MouseRegion(
-      onEnter: (_) => setState(() {}),
-      onExit: (_) => setState(() {}),
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: isActive ? Colors.blue[50] : Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isActive ? Colors.blue[200]! : Colors.grey[200]!,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Icon(
-              icon,
-              color: isActive ? Colors.blue[600] : Colors.grey[700],
-              size: 20,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Main tabs (Activities/Statistic)
-  Widget _buildMainTabs() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          _buildTabButton('Activities', 0, Icons.access_time),
-          const SizedBox(width: 12),
-          _buildTabButton('Statistic', 1, Icons.bar_chart),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabButton(String title, int index, IconData icon) {
-    final isSelected = _currentViewIndex == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => _onTabChanged(index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.support : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: isSelected ? Colors.black87 : Colors.grey[600],
-              ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? Colors.black87 : Colors.grey[600],
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -692,23 +649,42 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           // Calendar or list view
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: Colors.grey[300]!, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
                   // Calendar grid - expanded to show full calendar
                   Expanded(flex: 3, child: _buildCalendarView()),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
 
-                  // Expense list - takes remaining space
+                  // Legend and expense list section
                   Expanded(
                     flex: 2,
-                    child: SingleChildScrollView(child: _buildExpenseList()),
+                    child: Column(
+                      children: [
+                        // Legend - Fixed at top
+                        _buildCalendarLegend(),
+                        const SizedBox(height: 8),
+                        // Expense list - Scrollable
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: _buildExpenseList(),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -741,10 +717,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               child: Column(
                 children: [
                   // Chart area - Pie chart only
-                  Expanded(
-                    flex: 2,
-                    child: _buildPieChart(),
-                  ),
+                  Expanded(flex: 2, child: _buildPieChart()),
 
                   const SizedBox(height: 16),
 
@@ -770,65 +743,126 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       builder: (context, tripProvider, expenseProvider, child) {
         return Column(
           children: [
-            // Trip Filter Row
-            Row(
-              children: [
-                Icon(Icons.trip_origin, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: _selectedTripId,
-                        hint: Text(
-                          'All Trips',
-                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                            value: null,
-                            child: Text(
-                              'All Trips',
-                              style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
-                            ),
-                          ),
-                          ...tripProvider.trips.map(
-                            (trip) => DropdownMenuItem(
-                              value: trip.id,
-                              child: Text(
-                                '${trip.name} (${trip.destination})',
-                                style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                        onChanged: (String? tripId) async {
-                          debugPrint('TRIP_FILTER: Changed to tripId: $tripId');
-                          setState(() {
-                            _selectedTripId = tripId;
-                          });
-                          debugPrint('TRIP_FILTER: _selectedTripId now set to: $_selectedTripId');
-                          // Force complete refresh when trip filter changes
-                          await _forceRefreshAllData();
-                        },
+            // Trip Filter Row - DropdownButtonFormField2
+            DropdownButtonHideUnderline(
+              child: DropdownButton2<String?>(
+                isExpanded: true,
+                hint: Text(
+                  'All Trips',
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                items: [
+                  // "All Trips" option
+                  DropdownItem<String?>(
+                    value: null,
+                    child: Text(
+                      'All Trips',
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
                       ),
                     ),
                   ),
+                  // Individual trips
+                  ...tripProvider.trips.map((trip) {
+                    return DropdownItem<String?>(
+                      value: trip.id,
+                      child: Text(
+                        trip.name,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }),
+                ],
+                valueListenable: _selectedTripNotifier,
+                onChanged: (String? newValue) async {
+                  setState(() {
+                    _selectedTripId = newValue;
+                    _selectedTripNotifier.value = newValue;
+                  });
+                  await _forceRefreshAllData();
+                },
+                selectedItemBuilder: (context) {
+                  return [
+                    Text(
+                      'All Trips',
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    ...tripProvider.trips.map((trip) {
+                      return Text(
+                        trip.name,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }),
+                  ];
+                },
+                buttonStyleData: ButtonStyleData(
+                  height: 50,
+                  padding: const EdgeInsets.only(left: 16, right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+                iconStyleData: IconStyleData(
+                  icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                  iconSize: 24,
+                ),
+                dropdownStyleData: DropdownStyleData(
+                  maxHeight: 150, // 3 items * ~50px per item = 150px
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  scrollbarTheme: ScrollbarThemeData(
+                    thickness: WidgetStateProperty.all(0),
+                    thumbVisibility: WidgetStateProperty.all(false),
+                  ),
+                ),
+                menuItemStyleData: const MenuItemStyleData(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -875,7 +909,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         const SizedBox(width: 8),
                         Text(
                           '${_months[_currentMonthIndex]}/$_currentYear',
-                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -925,9 +960,15 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
         return Column(
           children: [
-            // Weekday headers
+            // Weekday headers - Fixed at top
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+                ),
+              ),
               child: Row(
                 children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
                     .map(
@@ -935,7 +976,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         child: Center(
                           child: Text(
                             day,
-                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.grey[600],
@@ -948,9 +990,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               ),
             ),
 
-            // Calendar grid
+            // Calendar grid - Fixed (no scrolling)
             Expanded(
               child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 7,
                   childAspectRatio: 1,
@@ -999,7 +1042,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                           Center(
                             child: Text(
                               '$dayOffset',
-                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
                                 fontSize: 14,
                                 fontWeight: isSelected
                                     ? FontWeight.w600
@@ -1031,10 +1075,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 },
               ),
             ),
-
-            // Legend
-            const SizedBox(height: 8),
-            _buildCalendarLegend(),
           ],
         );
       },
@@ -1072,7 +1112,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Lỗi tải dữ liệu',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[600],
@@ -1099,7 +1140,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Chưa có giao dịch nào',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 16,
                         color: Colors.grey[600],
                       ),
@@ -1135,7 +1177,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       const SizedBox(height: 16),
                       Text(
                         'Không có giao dịch phù hợp',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.orange[800],
@@ -1146,7 +1189,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         _selectedTripId != null
                             ? 'Trip đã chọn không có giao dịch nào'
                             : 'Thử thay đổi bộ lọc hoặc thêm giao dịch mới',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.orange[600],
                         ),
@@ -1169,8 +1213,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Trip header
-                    if (tripName != 'Other Expenses') ...[
+                    // Trip header - only show when a specific trip is selected (not "All Trips")
+                    if (tripName != 'Other Expenses' &&
+                        _selectedTripId != null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -1192,7 +1237,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                             const SizedBox(width: 8),
                             Text(
                               tripName,
-                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.blue[800],
@@ -1201,7 +1247,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                             const Spacer(),
                             Text(
                               '${tripExpenses.length} activities',
-                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
                                 fontSize: 12,
                                 color: Colors.blue[600],
                               ),
@@ -1234,6 +1281,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                             ),
                           ),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(8),
@@ -1260,7 +1308,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                               expense.description,
                                             )
                                           : expense.category.displayName,
-                                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                                      style: TextStyle(
+                                        fontFamily: 'Urbanist-Regular',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -1278,7 +1327,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                           _formatExpenseDate(
                                             expense.expenseDate,
                                           ),
-                                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                                          style: TextStyle(
+                                            fontFamily: 'Urbanist-Regular',
                                             fontSize: 12,
                                             color: Colors.grey[600],
                                           ),
@@ -1294,13 +1344,18 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                             color: Colors.blue[500],
                                           ),
                                           const SizedBox(width: 4),
-                                          Text(
-                                            _extractTripFromDescription(
-                                              expense.description,
-                                            )!,
-                                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                                              fontSize: 12,
-                                              color: Colors.blue[600],
+                                          Flexible(
+                                            child: Text(
+                                              _extractTripFromDescription(
+                                                expense.description,
+                                              )!,
+                                              style: TextStyle(
+                                                fontFamily: 'Urbanist-Regular',
+                                                fontSize: 12,
+                                                color: Colors.blue[600],
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
                                             ),
                                           ),
                                         ],
@@ -1311,7 +1366,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                               ),
                               Text(
                                 '-${_formatMoney(expense.amount)}₫',
-                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.red[700],
@@ -1523,7 +1579,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             const SizedBox(height: 16),
             Text(
               'Chưa có dữ liệu',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 color: Colors.grey[600],
               ),
@@ -1543,7 +1600,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       return Center(
         child: Text(
           'Chưa có chi tiêu nào',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 16,
             color: Colors.grey[600],
           ),
@@ -1585,7 +1643,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             : displayName, // Show name or % based on length
         radius: 80, // Tăng radius lên 100 để pie chart to hơn
         color: colors[index % colors.length],
-        titleStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
+        titleStyle: TextStyle(
+          fontFamily: 'Urbanist-Regular',
           fontSize: 10,
           fontWeight: FontWeight.w600,
           color: Colors.white,
@@ -1610,7 +1669,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               children: [
                 Text(
                   'Tổng chi tiêu',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
@@ -1619,7 +1679,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 const SizedBox(height: 4),
                 Text(
                   _formatMoney(total),
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -1627,7 +1688,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 ),
                 Text(
                   'VND',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 11,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
@@ -1640,7 +1702,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       ],
     );
   }
-
 
   /// Category tabs
   Widget _buildCategoryTabs() {
@@ -1663,7 +1724,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         children: [
           Text(
             title,
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: isSelected ? Colors.amber[600] : Colors.black,
@@ -1794,9 +1856,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               return {
                 'title': entry.key,
                 'amount': entry.value,
-                'icon': _getCategoryIcon(
-                  expense.category,
-                ),
+                'icon': _getCategoryIcon(expense.category),
                 'categoryKey': entry.key,
               };
             }).toList();
@@ -1814,9 +1874,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               return {
                 'title': status.category.displayName,
                 'amount': status.spent,
-                'icon': _getCategoryIcon(
-                  status.category,
-                ),
+                'icon': _getCategoryIcon(status.category),
                 'categoryKey': status.category,
                 'status': status,
               };
@@ -1833,7 +1891,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 const SizedBox(height: 16),
                 Text(
                   'Chưa có dữ liệu danh mục',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     color: Colors.grey[600],
                   ),
@@ -1873,7 +1932,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: categoryColor.withValues(alpha: 0.3), // Border màu nhẹ
+                    color: categoryColor.withValues(
+                      alpha: 0.3,
+                    ), // Border màu nhẹ
                     width: 1,
                   ),
                 ),
@@ -1971,9 +2032,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     setState(() {
       _currentViewIndex = index;
     });
-    _showMessage(
-      index == 0 ? 'Switched to Activities' : 'Switched to Statistics',
-    );
   }
 
   void _onCategoryTabChanged(int index) {
@@ -1995,68 +2053,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     });
     _loadData(); // Reload expense data for new month
     _refreshTripData(); // Also refresh trip data to ensure calendar is up-to-date
-  }
-
-
-  void _onFilterTap() {
-    _showMessage('Opening filters...');
-  }
-
-  void _onRefreshTap() async {
-    debugPrint('REFRESH_TAP: Starting refresh...');
-    _showMessage('Refreshing data...');
-
-    try {
-      // Get trip provider for debugging
-      final tripProvider = Provider.of<TripPlanningProvider>(
-        context,
-        listen: false,
-      );
-      debugPrint(
-        'REFRESH_TAP: Before refresh - Trips: ${tripProvider.trips.length}, Expenses: ${expenseProvider.expenses.length}',
-      );
-
-      await Future.wait([_loadData(), _refreshTripData()]);
-
-      debugPrint(
-        'REFRESH_TAP: After refresh - Trips: ${tripProvider.trips.length}, Expenses: ${expenseProvider.expenses.length}',
-      );
-      _showMessage('Data refreshed!');
-    } catch (e) {
-      debugPrint('REFRESH_TAP ERROR: $e');
-      _showMessage('Refresh failed: $e');
-    }
-  }
-
-  void _onGridTap() {
-    _showMessage('Opening grid view...');
-  }
-
-  /// Show budget creation dialog
-  void _showBudgetDialog() {
-    if (_selectedTripId == null) {
-      _showMessage('Please select a trip first');
-      return;
-    }
-
-    final tripProvider = Provider.of<TripPlanningProvider>(
-      context,
-      listen: false,
-    );
-    final selectedTrip = tripProvider.trips.firstWhere(
-      (trip) => trip.id == _selectedTripId,
-      orElse: () => tripProvider.trips.first,
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => _BudgetCreationDialog(
-        trip: selectedTrip,
-        onBudgetCreated: () {
-          _loadData(); // Refresh data after budget creation
-        },
-      ),
-    );
   }
 
   void _onDayTap(int day) {
@@ -2211,7 +2207,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 10,
             color: Colors.grey[700],
           ),
@@ -2303,7 +2300,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               const SizedBox(width: 8),
               Text(
                 'Budget Status - ${selectedTrip.name}',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.blue[800],
@@ -2357,7 +2355,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
             const SizedBox(height: 8),
             Text(
               'Budget period: ${budgetStatus.daysRemaining} days remaining of ${budgetStatus.daysTotal}',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 10,
                 color: Colors.grey[600],
                 fontStyle: FontStyle.italic,
@@ -2413,7 +2412,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           const SizedBox(width: 4),
           Text(
             message,
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: indicatorColor,
@@ -2444,7 +2444,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 10,
               color: Colors.grey[600],
             ),
@@ -2452,7 +2453,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           const SizedBox(height: 2),
           Text(
             _formatMoney(value),
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: color,
@@ -2488,14 +2490,16 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           children: [
             Text(
               'Budget Usage',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
             Text(
               '${(percentage * 100).toStringAsFixed(1)}%',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: progressColor,
@@ -2672,7 +2676,8 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
                     Expanded(
                       child: Text(
                         'Create Budget for ${widget.trip.name}',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
@@ -2704,7 +2709,8 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
                           children: [
                             Text(
                               widget.trip.destination,
-                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.blue[800],
@@ -2712,7 +2718,8 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
                             ),
                             Text(
                               '${widget.trip.durationDays} days trip',
-                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
                                 fontSize: 12,
                                 color: Colors.blue[600],
                               ),
