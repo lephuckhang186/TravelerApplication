@@ -4,6 +4,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart' as flutter_map;
 import 'package:latlong2/latlong.dart' as latlong;
 import 'package:provider/provider.dart';
+import 'package:animate_gradient/animate_gradient.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../Plan/providers/trip_planning_provider.dart';
 import '../../Plan/models/trip_model.dart';
 import '../../Plan/models/activity_models.dart';
@@ -29,6 +32,12 @@ class _MapScreenState extends State<MapScreen> {
   bool _isLoading = false;
   bool _isMapReady = false;
 
+  // Button scale states
+  bool _selectTripPressed = false;
+  bool _clearTripPressed = false;
+  bool _centerPressed = false;
+  bool _checkInPressed = false;
+
   final MapService _mapService = MapService();
 
   @override
@@ -36,6 +45,62 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     // Initialize Flutter Map controller
     _flutterMapController = flutter_map.MapController();
+    // Load last selected trip from Firestore
+    _loadLastSelectedTrip();
+  }
+
+  // Save selected trip ID to Firestore
+  Future<void> _saveSelectedTripId(String? tripId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
+        'lastSelectedTripId': tripId,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Error saving selected trip ID: $e');
+    }
+  }
+
+  // Load last selected trip from Firestore on init
+  Future<void> _loadLastSelectedTrip() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      final lastTripId = doc.data()?['lastSelectedTripId'] as String?;
+      
+      if (lastTripId != null && mounted) {
+        // Load trips and find the one with matching ID
+        final provider = Provider.of<TripPlanningProvider>(context, listen: false);
+        
+        // Initialize provider if trips not loaded yet
+        if (provider.trips.isEmpty) {
+          await provider.initialize();
+        }
+        
+        final trips = provider.trips;
+        final trip = trips.cast<TripModel?>().firstWhere(
+          (t) => t?.id == lastTripId,
+          orElse: () => null,
+        );
+        
+        if (trip != null && mounted) {
+          _selectTrip(trip);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading last selected trip: $e');
+    }
   }
 
   Future<void> _loadTrips() async {
@@ -51,40 +116,106 @@ class _MapScreenState extends State<MapScreen> {
   void _showTripSelectionDialog(List<TripModel> trips) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Chọn chuyến đi',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+      builder: (context) => Dialog(
+        alignment: Alignment.topCenter,
+        insetPadding: const EdgeInsets.only(top: 160, left: 24, right: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AnimateGradient(
+            duration: const Duration(seconds: 5),
+            primaryColors: const [
+              AppColors.surface,
+              AppColors.steelBlue,
+              AppColors.surface,
+            ],
+            secondaryColors: const [
+              AppColors.steelBlue,
+              AppColors.surface,
+              AppColors.steelBlue,
+            ],
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Chọn chuyến đi',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Trip list with constrained height (shows ~3.5 cards)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 280),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: trips.length,
+                      itemBuilder: (context, index) {
+                        final trip = trips[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                            ),
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              trip.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${trip.destination} - ${trip.startDate.toString().split(' ')[0]}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 14,
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white.withOpacity(0.8),
+                              size: 16,
+                            ),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _selectTrip(trip);
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
           ),
         ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: trips.length,
-            itemBuilder: (context, index) {
-              final trip = trips[index];
-              return ListTile(
-                title: Text(trip.name),
-                subtitle: Text(
-                  '${trip.destination} - ${trip.startDate.toString().split(' ')[0]}',
-                ),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _selectTrip(trip);
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
-          ),
-        ],
       ),
     );
   }
@@ -98,6 +229,9 @@ class _MapScreenState extends State<MapScreen> {
       _flutterPolylines.clear();
       _isLoading = true;
     });
+
+    // Save selected trip ID to Firestore
+    await _saveSelectedTripId(trip.id);
 
     await _loadTripData();
     setState(() {
@@ -493,7 +627,7 @@ class _MapScreenState extends State<MapScreen> {
               currentStartingActivity.location!.latitude!,
               currentStartingActivity.location!.longitude!,
             ),
-            18, // Maximum zoom for clearest view
+            19, // High zoom level (120% more detailed)
           ),
         );
       } else {
@@ -503,14 +637,16 @@ class _MapScreenState extends State<MapScreen> {
         ).showSnackBar(const SnackBar(content: Text('Bản đồ chưa sẵn sàng')));
         return;
       }
+    } else {
+      // For web (Flutter Map)
+      _flutterMapController.move(
+        latlong.LatLng(
+          currentStartingActivity.location!.latitude!,
+          currentStartingActivity.location!.longitude!,
+        ),
+        19, // High zoom level (120% more detailed)
+      );
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã về điểm xuất phát: ${_getStartingPointText()}'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   String _formatCurrency(double amount) {
@@ -619,31 +755,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Bản đồ',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-            color: AppColors.navyBlue,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.list, color: AppColors.navyBlue),
-            onPressed: _loadTrips,
-            tooltip: 'Chọn chuyến đi',
-          ),
-          if (_selectedTrip != null)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: AppColors.navyBlue),
-              onPressed: () => _loadTrips(),
-              tooltip: 'Chọn lại chuyến đi',
-            ),
-        ],
-      ),
       body: Stack(
         children: [
           if (!kIsWeb)
@@ -691,104 +802,206 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
           if (_isLoading) const Center(child: CircularProgressIndicator()),
-          if (_selectedTrip == null)
-            Center(
+          // Trip selection buttons at top right
+          Positioned(
+            right: 16,
+            child: SafeArea(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.map_outlined, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Chọn chuyến đi để xem bản đồ',
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                      fontSize: 18,
-                      color: Colors.grey,
+                  GestureDetector(
+                    onTapDown: (_) => setState(() => _selectTripPressed = true),
+                    onTapUp: (_) {
+                      Future.delayed(const Duration(milliseconds: 200), () {
+                        if (mounted) setState(() => _selectTripPressed = false);
+                      });
+                    },
+                    onTapCancel: () =>
+                        setState(() => _selectTripPressed = false),
+                    child: AnimatedScale(
+                      scale: _selectTripPressed ? 1.1 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: FloatingActionButton.small(
+                        onPressed: _loadTrips,
+                        backgroundColor: Colors.white,
+                        child: const Icon(
+                          Icons.list,
+                          color: AppColors.navyBlue,
+                        ),
+                        tooltip: 'Chọn chuyến đi',
+                        heroTag: 'select_trip',
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadTrips,
-                    child: const Text('Chọn chuyến đi'),
-                  ),
+                  if (_selectedTrip != null) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTapDown: (_) =>
+                          setState(() => _clearTripPressed = true),
+                      onTapUp: (_) {
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          if (mounted)
+                            setState(() => _clearTripPressed = false);
+                        });
+                      },
+                      onTapCancel: () =>
+                          setState(() => _clearTripPressed = false),
+                      child: AnimatedScale(
+                        scale: _clearTripPressed ? 1.1 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: FloatingActionButton.small(
+                          onPressed: () {
+                            setState(() {
+                              _selectedTrip = null;
+                              _googleMarkers.clear();
+                              _googlePolylines.clear();
+                              _flutterMarkers.clear();
+                              _flutterPolylines.clear();
+                            });
+                            // Clear saved trip ID from Firestore
+                            _saveSelectedTripId(null);
+                          },
+                          backgroundColor: Colors.white,
+                          child: const Icon(
+                            Icons.close,
+                            color: AppColors.navyBlue,
+                          ),
+                          tooltip: 'Bỏ chọn chuyến đi',
+                          heroTag: 'clear_trip',
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
+          ),
           // Location info overlay
           if (_selectedTrip != null)
             Positioned(
-              top: 16,
               left: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              right: 70,
+              child: SafeArea(
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    // Starting point
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.play_circle_fill,
-                          color: Colors.blue,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: TextEditingController(
-                              text: _getStartingPointText(),
-                            ),
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Điểm xuất phát',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              isDense: true,
-                            ),
-                            style: const TextStyle(fontSize: 14),
+                    Container(
+                      height: 88,
+                      padding: const EdgeInsets.only(
+                        left: 12,
+                        right: 12,
+                        top: 13,
+                        bottom: 13,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            spreadRadius: 1,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Starting point content (without label)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.play_circle_fill,
+                                color: Colors.blue,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _getStartingPointText(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Divider
+                          Divider(
+                            color: Colors.black.withOpacity(0.3),
+                            thickness: 1,
+                            height: 1,
+                          ),
+                          // Next destination content (without label)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                color: Colors.red,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _getNextDestinationText(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    // Next destination
-                    Row(
-                      children: [
-                        Icon(Icons.location_on, color: Colors.red, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: TextEditingController(
-                              text: _getNextDestinationText(),
-                            ),
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Điểm tiếp theo',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              isDense: true,
-                            ),
-                            style: const TextStyle(fontSize: 14),
+                    // "Điểm xuất phát" label on top border
+                    Positioned(
+                      top: -8,
+                      left: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Điểm xuất phát',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
+                      ),
+                    ),
+                    // "Điểm tiếp theo" label on divider line
+                    Positioned(
+                      top: 37,
+                      left: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Điểm tiếp theo',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -804,26 +1017,78 @@ class _MapScreenState extends State<MapScreen> {
                 if (_isMapReady)
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
-                    child: FloatingActionButton.small(
-                      onPressed: _centerToCurrentStartingPoint,
-                      backgroundColor: Colors.white,
-                      child: const Icon(
-                        Icons.my_location,
-                        color: AppColors.navyBlue,
+                    child: GestureDetector(
+                      onTapDown: (_) => setState(() => _centerPressed = true),
+                      onTapUp: (_) {
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          if (mounted) setState(() => _centerPressed = false);
+                        });
+                      },
+                      onTapCancel: () => setState(() => _centerPressed = false),
+                      child: AnimatedScale(
+                        scale: _centerPressed ? 1.1 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: FloatingActionButton.small(
+                          onPressed: _centerToCurrentStartingPoint,
+                          backgroundColor: Colors.white,
+                          child: const Icon(
+                            Icons.my_location,
+                            color: AppColors.navyBlue,
+                          ),
+                          tooltip: 'Về điểm xuất phát',
+                        ),
                       ),
-                      tooltip: 'Về điểm xuất phát',
                     ),
                   ),
                 // Check-in button
                 Container(
                   margin: const EdgeInsets.only(
-                    bottom: 80,
+                    bottom: 50,
                   ), // Add margin to avoid navigation bar
-                  child: FloatingActionButton(
-                    onPressed: _checkIn,
-                    backgroundColor: AppColors.skyBlue,
-                    child: const Icon(Icons.check_circle, color: Colors.white),
-                    tooltip: 'Check-in',
+                  child: GestureDetector(
+                    onTapDown: (_) => setState(() => _checkInPressed = true),
+                    onTapUp: (_) {
+                      Future.delayed(const Duration(milliseconds: 200), () {
+                        if (mounted) setState(() => _checkInPressed = false);
+                      });
+                    },
+                    onTapCancel: () => setState(() => _checkInPressed = false),
+                    child: AnimatedScale(
+                      scale: _checkInPressed ? 1.1 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: AnimateGradient(
+                          duration: const Duration(seconds: 5),
+                          primaryColors: [
+                            AppColors.dodgerBlue.withValues(alpha: 0.9),
+                            AppColors.steelBlue.withValues(alpha: 0.8),
+                            AppColors.skyBlue.withValues(alpha: 0.7),
+                          ],
+                          secondaryColors: [
+                            AppColors.skyBlue.withValues(alpha: 0.7),
+                            AppColors.dodgerBlue.withValues(alpha: 0.9),
+                            AppColors.steelBlue.withValues(alpha: 0.8),
+                          ],
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _checkIn,
+                              child: Container(
+                                width: 56,
+                                height: 56,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
