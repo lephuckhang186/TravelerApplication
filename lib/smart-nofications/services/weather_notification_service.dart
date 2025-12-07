@@ -8,16 +8,29 @@ import '../../core/config/api_config.dart';
 class WeatherNotificationService {
   Future<List<WeatherAlert>> checkWeatherAlerts(String tripId) async {
     try {
-      debugPrint('WeatherNotificationService: Checking weather alerts for trip $tripId');
-      debugPrint('WeatherNotificationService: API URL: ${ApiConfig.baseUrl}/weather/alerts/$tripId');
+      // First try to connect to the backend API
+      final apiAlerts = await _fetchFromBackendAPI(tripId);
+      if (apiAlerts.isNotEmpty) {
+        return apiAlerts;
+      }
       
+      // If API fails, fall back to a simple check based on general weather conditions
+      return await _getFallbackWeatherAlert();
+      
+    } catch (e) {
+      debugPrint('WeatherNotificationService: Error checking weather alerts: $e');
+      return [];
+    }
+  }
+
+  Future<List<WeatherAlert>> _fetchFromBackendAPI(String tripId) async {
+    try {
       // Get auth token from Firebase Auth
       String? authToken;
       try {
         final FirebaseAuth auth = FirebaseAuth.instance;
         if (auth.currentUser != null) {
           authToken = await auth.currentUser!.getIdToken();
-          debugPrint('WeatherNotificationService: Got auth token');
         }
       } catch (authError) {
         debugPrint('WeatherNotificationService: Auth error: $authError');
@@ -28,30 +41,62 @@ class WeatherNotificationService {
         if (authToken != null) 'Authorization': 'Bearer $authToken',
       };
       
-      debugPrint('WeatherNotificationService: Headers: ${headers.keys.toList()}');
-      
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/weather/alerts/$tripId'),
         headers: headers,
-      );
-
-      debugPrint('WeatherNotificationService: Response status: ${response.statusCode}');
-      debugPrint('WeatherNotificationService: Response body: ${response.body}');
+      ).timeout(const Duration(seconds: 10)); // Add timeout
 
       if (response.statusCode == 200) {
         final List<dynamic> alertsJson = jsonDecode(response.body);
         final alerts = alertsJson.map((json) => WeatherAlert.fromJson(json)).toList();
-        debugPrint('WeatherNotificationService: Found ${alerts.length} weather alerts');
+        if (alerts.isNotEmpty) {
+          debugPrint('WeatherNotificationService: Found ${alerts.length} weather alerts');
+        }
         return alerts;
       } else if (response.statusCode == 403) {
-        debugPrint('WeatherNotificationService: 403 Forbidden - Auth required');
         return [];
+      } else if (response.statusCode >= 500) {
+        throw Exception('Server error');
       }
       
-      debugPrint('WeatherNotificationService: No alerts found or error response');
       return [];
     } catch (e) {
-      debugPrint('WeatherNotificationService: Error checking weather alerts: $e');
+      throw e; // Re-throw to trigger fallback
+    }
+  }
+
+  Future<List<WeatherAlert>> _getFallbackWeatherAlert() async {
+    try {
+      // Simple fallback: create a general weather reminder for today
+      final now = DateTime.now();
+      final hour = now.hour;
+      
+      // Create a weather reminder during certain conditions
+      if (hour >= 6 && hour <= 9) { // Morning weather check
+        return [
+          WeatherAlert(
+            condition: 'general',
+            description: 'Hãy kiểm tra thời tiết hôm nay trước khi bắt đầu các hoạt động',
+            temperature: 28.0, // Default temperature
+            location: 'Khu vực hiện tại',
+            alertTime: now,
+          )
+        ];
+      } else if (hour >= 17 && hour <= 19) { // Evening weather check
+        return [
+          WeatherAlert(
+            condition: 'evening',
+            description: 'Kiểm tra thời tiết cho hoạt động buổi tối',
+            temperature: 26.0,
+            location: 'Khu vực hiện tại', 
+            alertTime: now,
+          )
+        ];
+      }
+      
+      return []; // No fallback alert needed at this time
+    } catch (e) {
+      debugPrint('WeatherNotificationService: Error creating fallback alert: $e');
       return [];
     }
   }

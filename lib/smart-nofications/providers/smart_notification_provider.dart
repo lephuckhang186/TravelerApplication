@@ -14,7 +14,9 @@ class SmartNotificationProvider extends ChangeNotifier {
 
   List<SmartNotification> _notifications = [];
   Timer? _periodicTimer;
+  Timer? _dailyWeatherTimer;
   bool _isInitialized = false;
+  DateTime? _lastWeatherCheck;
 
   List<SmartNotification> get notifications => List.unmodifiable(_notifications);
   
@@ -34,89 +36,67 @@ class SmartNotificationProvider extends ChangeNotifier {
     debugPrint('SmartNotificationProvider: Initializing for trip $tripId');
 
     try {
-      // Load existing notifications
-      await _loadNotifications(tripId);
+      // Load existing notifications with timeout
+      try {
+        await _loadNotifications(tripId).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            debugPrint('SmartNotificationProvider: Loading notifications timed out - continuing with empty list');
+          },
+        );
+      } catch (e) {
+        debugPrint('SmartNotificationProvider: Loading notifications failed: $e');
+      }
 
-      // Start periodic checks every 30 seconds for testing (change to 5 minutes in production)
-      _periodicTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      // Start periodic checks every 5 minutes for activity reminders and budget checks
+      _periodicTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
         _checkForNotifications(tripId);
       });
 
-      // Immediately check for notifications once
-      debugPrint('SmartNotificationProvider: Running initial notification check...');
-      await _checkForNotifications(tripId);
-
-      // Add some test notifications for demo
-      await _addTestNotifications(tripId);
-
-      _isInitialized = true;
-      notifyListeners();
-      debugPrint('SmartNotificationProvider: Initialization complete. Notifications count: ${_notifications.length}');
-    } catch (e) {
-      debugPrint('SmartNotificationProvider: Error during initialization: $e');
-    }
-  }
-
-  Future<void> _addTestNotifications(String tripId) async {
-    try {
-      debugPrint('SmartNotificationProvider: Creating test notifications for trip $tripId');
-      
-      // Add test weather notification
-      final weatherNotification = SmartNotification(
-        id: 'test_weather_${DateTime.now().millisecondsSinceEpoch}',
-        type: NotificationType.weather,
-        severity: NotificationSeverity.warning,
-        title: 'Cảnh báo thời tiết',
-        message: 'Dự báo có mưa vào chiều nay tại điểm đến của bạn',
-        createdAt: DateTime.now(),
-        icon: Icons.wb_cloudy,
-        color: Colors.blue,
-      );
-
-      // Add test activity reminder
-      final activityNotification = SmartNotification(
-        id: 'test_activity_${DateTime.now().millisecondsSinceEpoch}',
-        type: NotificationType.activity,
-        severity: NotificationSeverity.info,
-        title: 'Sắp đến hoạt động',
-        message: 'Hoạt động "Tham quan chùa" sẽ bắt đầu trong 45 phút',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-        icon: Icons.schedule,
-        color: Colors.green,
-      );
-
-      // Add test budget notification
-      final budgetNotification = SmartNotification(
-        id: 'test_budget_${DateTime.now().millisecondsSinceEpoch}',
-        type: NotificationType.budget,
-        severity: NotificationSeverity.warning,
-        title: 'Vượt ngân sách',
-        message: 'Chi phí thực tế cao hơn dự kiến 25%',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
-        icon: Icons.warning,
-        color: Colors.orange,
-      );
-
-      _notifications.addAll([weatherNotification, activityNotification, budgetNotification]);
-      
-      debugPrint('SmartNotificationProvider: Added ${_notifications.length} test notifications to memory');
-      
-      // Save each notification
-      for (final notification in [weatherNotification, activityNotification, budgetNotification]) {
-        await _notificationService.saveNotification(notification, tripId);
+      // Immediately check for notifications once (with timeout)
+      try {
+        await _checkForNotifications(tripId).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('SmartNotificationProvider: Initial notification check timed out - will retry in periodic timer');
+          },
+        );
+      } catch (e) {
+        debugPrint('SmartNotificationProvider: Initial notification check failed: $e');
       }
 
-      debugPrint('SmartNotificationProvider: Test notifications saved to storage');
+      _isInitialized = true;
+      debugPrint('SmartNotificationProvider: Initialization completed successfully');
       notifyListeners();
     } catch (e) {
-      debugPrint('SmartNotificationProvider: Error adding test notifications: $e');
+      debugPrint('SmartNotificationProvider: Error during initialization: $e');
+      // Mark as initialized even if there were errors, so periodic checks can continue
+      _isInitialized = true;
+      notifyListeners();
     }
   }
+
+  /// Clear all test notifications (useful for cleaning up old test data)
+  Future<void> clearTestNotifications(String tripId) async {
+    try {
+      final testNotifications = _notifications.where((n) => 
+        n.id.startsWith('test_')).toList();
+      
+      for (final notification in testNotifications) {
+        await deleteNotification(notification.id, tripId);
+      }
+      
+      debugPrint('SmartNotificationProvider: Cleared ${testNotifications.length} test notifications');
+    } catch (e) {
+      debugPrint('SmartNotificationProvider: Error clearing test notifications: $e');
+    }
+  }
+
+
 
   Future<void> _loadNotifications(String tripId) async {
     try {
       _notifications = await _notificationService.getNotifications(tripId);
-      debugPrint('SmartNotificationProvider: Loaded ${_notifications.length} notifications');
       notifyListeners();
     } catch (e) {
       debugPrint('SmartNotificationProvider: Error loading notifications: $e');
@@ -125,31 +105,96 @@ class SmartNotificationProvider extends ChangeNotifier {
 
   Future<void> _checkForNotifications(String tripId) async {
     try {
-      debugPrint('SmartNotificationProvider: Checking for notifications for trip $tripId');
-      
-      // Check for weather alerts
-      debugPrint('SmartNotificationProvider: Checking weather alerts...');
-      final weatherAlerts = await _weatherService.checkWeatherAlerts(tripId);
-      debugPrint('SmartNotificationProvider: Found ${weatherAlerts.length} weather alerts');
-      
-      for (final alert in weatherAlerts) {
-        await _addWeatherNotification(alert, tripId);
-      }
+      // Check weather only once per day when there are activities
+      await _checkWeatherIfNeeded(tripId);
 
-      // Check for activity reminders
-      debugPrint('SmartNotificationProvider: Checking activity reminders...');
-      final reminders = await _reminderService.checkUpcomingActivities(tripId);
-      debugPrint('SmartNotificationProvider: Found ${reminders.length} activity reminders');
-      
-      for (final reminder in reminders) {
-        await _addActivityReminderNotification(reminder, tripId);
+      // Check for activity reminders (with enhanced error handling)
+      try {
+        final reminders = await _reminderService.checkUpcomingActivities(tripId).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('SmartNotificationProvider: Activity service timeout');
+            return <ActivityReminder>[];
+          },
+        );
+        
+        for (final reminder in reminders) {
+          await _addActivityReminderNotification(reminder, tripId);
+        }
+        
+        if (reminders.isNotEmpty) {
+          debugPrint('SmartNotificationProvider: Added ${reminders.length} activity reminders');
+        }
+      } catch (activityError) {
+        final errorString = activityError.toString().toLowerCase();
+        if (errorString.contains('failed to fetch') || 
+            errorString.contains('clientexception') ||
+            errorString.contains('socketexception') ||
+            errorString.contains('connection')) {
+          debugPrint('SmartNotificationProvider: Network unavailable for activity reminders - will retry later');
+        } else {
+          debugPrint('SmartNotificationProvider: Activity service error: $activityError');
+        }
+        // Continue without activity reminders if service is down
       }
 
       notifyListeners();
-      debugPrint('SmartNotificationProvider: Notification check complete. Total notifications: ${_notifications.length}');
     } catch (e) {
       debugPrint('SmartNotificationProvider: Error checking notifications: $e');
     }
+  }
+
+  Future<void> _checkWeatherIfNeeded(String tripId) async {
+    final now = DateTime.now();
+    
+    // Only check if we haven't checked today
+    if (_lastWeatherCheck == null || 
+        now.difference(_lastWeatherCheck!).inHours >= 24 ||
+        !_isSameDay(now, _lastWeatherCheck!)) {
+      
+      // First, check if there are activities today
+      try {
+        final todayActivities = await _reminderService.getTodayActivities(tripId);
+        
+        // Only check weather if there are activities scheduled for today
+        if (todayActivities.isNotEmpty) {
+          debugPrint('SmartNotificationProvider: Checking weather for ${todayActivities.length} activities today');
+          
+          final weatherAlerts = await _weatherService.checkWeatherAlerts(tripId);
+          
+          for (final alert in weatherAlerts) {
+            await _addWeatherNotification(alert, tripId);
+          }
+          
+          if (weatherAlerts.isNotEmpty) {
+            debugPrint('SmartNotificationProvider: Added ${weatherAlerts.length} weather notifications');
+          }
+        }
+        
+        _lastWeatherCheck = now;
+      } catch (activityServiceError) {
+        debugPrint('SmartNotificationProvider: Cannot check activities, assuming there might be activities today');
+        // If activity service is down, still do a weather check as fallback
+        try {
+          final weatherAlerts = await _weatherService.checkWeatherAlerts(tripId);
+          
+          for (final alert in weatherAlerts) {
+            await _addWeatherNotification(alert, tripId);
+          }
+          
+          _lastWeatherCheck = now; // Update even if activities couldn't be checked
+        } catch (weatherError) {
+          debugPrint('SmartNotificationProvider: Weather check also failed: $weatherError');
+          // Don't update _lastWeatherCheck on failure, so it will retry
+        }
+      }
+    }
+  }
+
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+           date1.month == date2.month &&
+           date1.day == date2.day;
   }
 
   Future<void> checkBudgetOnActivity(String tripId, String activityId, double actualCost) async {
@@ -167,6 +212,23 @@ class SmartNotificationProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('SmartNotificationProvider: Error checking budget: $e');
+    }
+  }
+
+  /// Call this method when user checks in to an activity
+  /// This will automatically check for budget overages and create notifications
+  Future<void> handleActivityCheckIn(String tripId, String activityId, String activityTitle, double actualCost) async {
+    try {
+      debugPrint('SmartNotificationProvider: Handling check-in for activity: $activityTitle');
+      
+      // Check for budget overage
+      await checkBudgetOnActivity(tripId, activityId, actualCost);
+      
+      // You could also add other check-in related notifications here
+      // like completion confirmations, next activity reminders, etc.
+      
+    } catch (e) {
+      debugPrint('SmartNotificationProvider: Error handling activity check-in: $e');
     }
   }
 
@@ -244,28 +306,28 @@ class SmartNotificationProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> markAsRead(String notificationId) async {
+  Future<void> markAsRead(String notificationId, String tripId) async {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
     if (index != -1) {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
-      await _notificationService.markAsRead(notificationId);
+      await _notificationService.markAsRead(notificationId, tripId);
       notifyListeners();
     }
   }
 
-  Future<void> markAllAsRead() async {
+  Future<void> markAllAsRead(String tripId) async {
     for (int i = 0; i < _notifications.length; i++) {
       if (!_notifications[i].isRead) {
         _notifications[i] = _notifications[i].copyWith(isRead: true);
       }
     }
-    await _notificationService.markAllAsRead();
+    await _notificationService.markAllAsRead(tripId);
     notifyListeners();
   }
 
-  Future<void> deleteNotification(String notificationId) async {
+  Future<void> deleteNotification(String notificationId, String tripId) async {
     _notifications.removeWhere((n) => n.id == notificationId);
-    await _notificationService.deleteNotification(notificationId);
+    await _notificationService.deleteNotification(notificationId, tripId);
     notifyListeners();
   }
 
@@ -295,6 +357,7 @@ class SmartNotificationProvider extends ChangeNotifier {
   @override
   void dispose() {
     _periodicTimer?.cancel();
+    _dailyWeatherTimer?.cancel();
     super.dispose();
   }
 }

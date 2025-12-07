@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import 'search_place_screen.dart';
 import 'ai_assistant_screen.dart';
 import '../../Core/theme/app_theme.dart';
@@ -73,7 +74,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       if (mounted && _trip.id != null) {
         debugPrint('DEBUG: Attempting to initialize smart notifications for trip: ${_trip.id}');
         
-        // Try to get provider with more detailed error handling
+        // Try to get provider with enhanced error handling
         try {
           final notificationProvider = Provider.of<SmartNotificationProvider>(
             context, 
@@ -81,46 +82,64 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           );
           
           debugPrint('DEBUG: Provider found, calling initialize...');
-          await notificationProvider.initialize(_trip.id!);
+          
+          // Initialize with timeout to prevent hanging
+          await notificationProvider.initialize(_trip.id!).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              debugPrint('DEBUG: Smart notifications initialization timed out');
+              throw TimeoutException('Initialization timeout');
+            },
+          );
+          
           debugPrint('DEBUG: Smart notifications initialization completed for trip: ${_trip.id}');
           
           // Force a rebuild to show notifications
           if (mounted) {
             setState(() {});
           }
+          
         } catch (providerError) {
           debugPrint('DEBUG: Provider error: $providerError');
           
-          // Try alternative approach - add test notification manually
-          debugPrint('DEBUG: Adding manual test notification...');
-          await _addManualTestNotification();
+          final errorString = providerError.toString().toLowerCase();
+          if (errorString.contains('failed to fetch') || 
+              errorString.contains('clientexception') ||
+              errorString.contains('socketexception') ||
+              errorString.contains('timeout') ||
+              errorString.contains('connection')) {
+            debugPrint('DEBUG: Network issue detected - smart notifications will work when connection is restored');
+          } else {
+            debugPrint('DEBUG: Other provider error - notifications may be limited');
+          }
         }
       } else {
         debugPrint('DEBUG: Cannot initialize smart notifications - mounted: $mounted, trip.id: ${_trip.id}');
       }
     } catch (e) {
-      debugPrint('DEBUG: Smart notifications not available: $e');
-      debugPrint('DEBUG: Stack trace: ${StackTrace.current}');
+      debugPrint('DEBUG: Smart notifications initialization failed: $e');
+      // Don't show error to user - notifications are a nice-to-have feature
     }
   }
   
-  Future<void> _addManualTestNotification() async {
-    try {
-      debugPrint('DEBUG: Creating manual test notification for debugging...');
-      // This is just for debugging - in real app, notifications come from provider
-    } catch (e) {
-      debugPrint('DEBUG: Error adding manual test notification: $e');
-    }
-  }
 
   /// Load activities from server to ensure we have the latest data
   Future<void> _loadActivitiesFromServer() async {
     if (_trip.id == null) return;
 
     try {
-      final serverActivities = await _tripService.getActivities(
-        tripId: _trip.id,
+      debugPrint('Loading activities from server for trip: ${_trip.id}');
+      
+      final serverActivities = await _tripService.getActivities(tripId: _trip.id).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('Server request timed out - using local activities');
+          throw TimeoutException('Server request timed out');
+        },
       );
+      
+      debugPrint('Successfully loaded ${serverActivities.length} activities from server');
+      
       setState(() {
         // Merge server activities with local ones, prioritizing server data
         final Map<String, ActivityModel> activityMap = {};
@@ -143,8 +162,43 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           activityMap.values.toList(),
         );
       });
+      
     } catch (e) {
       debugPrint('Failed to load activities from server: $e');
+      
+      // Show user-friendly notification for network issues
+      if (mounted) {
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('failed to fetch') || 
+            errorString.contains('clientexception') ||
+            errorString.contains('socketexception') ||
+            errorString.contains('connection') ||
+            errorString.contains('timeout')) {
+          
+          // Show a subtle notification that we're working offline
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(Icons.wifi_off, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Working offline - server unavailable'),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.orange[700],
+                  duration: Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          });
+        }
+      }
+      
       // Continue with local activities if server fails
     }
   }
@@ -184,7 +238,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ),
           centerTitle: true,
           actions: [
-            const SmartNotificationWidget(),
+            SmartNotificationWidget(tripId: _trip.id ?? ''),
             IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.black),
               onPressed: _isDeleting ? null : _showMoreOptions,
@@ -336,7 +390,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemBuilder: (context, index) =>
           _buildTimelineItem(_activities[index], index),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemCount: _activities.length,
     );
   }
@@ -2160,7 +2214,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         final expense = await _expenseService.createExpenseFromActivity(
           amount: activity.budget!.actualCost!,
           category: activity.activityType.value,
-          description: '${activity.title}',
+          description: activity.title,
           activityId: activity.id,
           tripId: _trip.id,
         );
@@ -2233,7 +2287,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
-                ...conflictingActivities.map((activity) => Padding(
+                ...conflictingActivities.map<Widget>((activity) => Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
                     children: [

@@ -6,7 +6,9 @@ import '../screens/notification_detail_screen.dart';
 import '../../core/theme/app_theme.dart';
 
 class SmartNotificationWidget extends StatelessWidget {
-  const SmartNotificationWidget({super.key});
+  final String tripId;
+  
+  const SmartNotificationWidget({super.key, required this.tripId});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,7 @@ class SmartNotificationWidget extends StatelessWidget {
                 color: provider.hasUnread ? Colors.orange : Colors.black,
                 size: 24,
               ),
-              onPressed: () => _showNotificationPanel(context, provider),
+              onPressed: () => _showNotificationPanel(context, provider, tripId),
             ),
             if (provider.hasUnread)
               Positioned(
@@ -57,7 +59,7 @@ class SmartNotificationWidget extends StatelessWidget {
     );
   }
 
-  void _showNotificationPanel(BuildContext context, SmartNotificationProvider provider) {
+  void _showNotificationPanel(BuildContext context, SmartNotificationProvider provider, String tripId) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -101,7 +103,7 @@ class SmartNotificationWidget extends StatelessWidget {
                     ),
                     if (provider.hasUnread)
                       TextButton(
-                        onPressed: () => provider.markAllAsRead(),
+                        onPressed: () => provider.markAllAsRead(tripId),
                         child: Text(
                           'Đánh dấu đã đọc',
                           style: TextStyle(
@@ -131,7 +133,8 @@ class SmartNotificationWidget extends StatelessWidget {
                             child: _buildNotificationItem(
                               context, 
                               notification, 
-                              provider
+                              provider,
+                              tripId
                             ),
                           );
                         },
@@ -180,7 +183,8 @@ class SmartNotificationWidget extends StatelessWidget {
   Widget _buildNotificationItem(
     BuildContext context, 
     SmartNotification notification, 
-    SmartNotificationProvider provider
+    SmartNotificationProvider provider,
+    String tripId
   ) {
     return Dismissible(
       key: Key(notification.id),
@@ -199,7 +203,7 @@ class SmartNotificationWidget extends StatelessWidget {
         ),
       ),
       onDismissed: (direction) {
-        provider.deleteNotification(notification.id);
+        provider.deleteNotification(notification.id, tripId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã xóa thông báo')),
         );
@@ -263,7 +267,7 @@ class SmartNotificationWidget extends StatelessWidget {
           trailing: _buildSeverityIndicator(notification.severity),
           onTap: () {
             if (!notification.isRead) {
-              provider.markAsRead(notification.id);
+              provider.markAsRead(notification.id, tripId);
             }
             Navigator.push(
               context,

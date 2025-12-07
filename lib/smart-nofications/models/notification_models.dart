@@ -63,26 +63,29 @@ class SmartNotification {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  /// Convert to Firestore document format
+  Map<String, dynamic> toFirestore() {
     return {
-      'id': id,
       'type': type.name,
       'severity': severity.name,
       'title': title,
       'message': message,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': createdAt,
       'isRead': isRead,
       'data': data,
     };
   }
 
-  static SmartNotification fromJson(Map<String, dynamic> json) {
+
+
+  /// Create from Firestore document
+  static SmartNotification fromFirestore(Map<String, dynamic> data, String documentId) {
     final type = NotificationType.values.firstWhere(
-      (e) => e.name == json['type'],
+      (e) => e.name == data['type'],
       orElse: () => NotificationType.activity,
     );
     final severity = NotificationSeverity.values.firstWhere(
-      (e) => e.name == json['severity'],
+      (e) => e.name == data['severity'],
       orElse: () => NotificationSeverity.info,
     );
 
@@ -104,15 +107,27 @@ class SmartNotification {
         break;
     }
 
+    // Handle Firestore Timestamp
+    DateTime createdAt;
+    if (data['createdAt'] is DateTime) {
+      createdAt = data['createdAt'];
+    } else {
+      try {
+        createdAt = (data['createdAt'] as dynamic).toDate();
+      } catch (e) {
+        createdAt = DateTime.now();
+      }
+    }
+
     return SmartNotification(
-      id: json['id'],
+      id: documentId,
       type: type,
       severity: severity,
-      title: json['title'],
-      message: json['message'],
-      createdAt: DateTime.parse(json['createdAt']),
-      isRead: json['isRead'] ?? false,
-      data: json['data'],
+      title: data['title'] ?? '',
+      message: data['message'] ?? '',
+      createdAt: createdAt,
+      isRead: data['isRead'] ?? false,
+      data: data['data'],
       icon: icon,
       color: color,
     );
