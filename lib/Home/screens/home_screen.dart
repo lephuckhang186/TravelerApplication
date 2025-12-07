@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../Setting/screens/settings_screen.dart';
 import '../../Plan/screens/plan_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
 import '../../Map/screens/map_screen.dart';
 import '../../Core/theme/app_theme.dart';
+import '../../Core/providers/app_mode_provider.dart';
 
 /// Home Screen - Travel & Tourism Dashboard
 class HomeScreen extends StatefulWidget {
@@ -31,25 +33,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Auto-switch to Plan if in Settings and mode changes to Collaboration
+    final modeProvider = Provider.of<AppModeProvider>(context);
+    if (modeProvider.isCollaborationMode && _currentIndex == 3) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentIndex = 0; // Switch to Plan
+          });
+        }
+      });
+    }
+    
     return Scaffold(
       body: Stack(children: [_screens[_currentIndex], _buildBottomNavBar()]),
     );
   }
 
   Widget _buildBottomNavBar() {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        margin: const EdgeInsets.all(20),
-        height: 70,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(35),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              width: double.infinity,
-              height: 70,
-              decoration: BoxDecoration(
+    return Consumer<AppModeProvider>(
+      builder: (context, modeProvider, child) {
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            margin: const EdgeInsets.all(20),
+            height: 70,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(35),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  width: double.infinity,
+                  height: 70,
+                  decoration: BoxDecoration(
                 // Bluebird + Clear skies gradient
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -79,39 +95,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildDynamicNavItem(
-                    iconPath: 'images/blueprint.png',
-                    label: 'Plan',
-                    index: 0,
-                    isSelected: _currentIndex == 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildDynamicNavItem(
+                        iconPath: 'images/blueprint.png',
+                        label: 'Plan',
+                        index: 0,
+                        isSelected: _currentIndex == 0,
+                      ),
+                      _buildDynamicNavItem(
+                        iconPath: 'images/analytics.png',
+                        label: 'Analysis',
+                        index: 1,
+                        isSelected: _currentIndex == 1,
+                      ),
+                      _buildDynamicNavItem(
+                        iconPath: 'images/compass.png',
+                        label: 'Map',
+                        index: 2,
+                        isSelected: _currentIndex == 2,
+                      ),
+                      // Hide Settings/Me tab in Collaboration mode
+                      if (modeProvider.isPrivateMode)
+                        _buildDynamicNavItem(
+                          iconPath: 'images/account.png',
+                          label: 'Me',
+                          index: 3,
+                          isSelected: _currentIndex == 3,
+                        ),
+                    ],
                   ),
-                  _buildDynamicNavItem(
-                    iconPath: 'images/analytics.png',
-                    label: 'Analysis',
-                    index: 1,
-                    isSelected: _currentIndex == 1,
-                  ),
-                  _buildDynamicNavItem(
-                    iconPath: 'images/compass.png',
-                    label: 'Map',
-                    index: 2,
-                    isSelected: _currentIndex == 2,
-                  ),
-                  _buildDynamicNavItem(
-                    iconPath: 'images/account.png',
-                    label: 'Me',
-                    index: 3,
-                    isSelected: _currentIndex == 3,
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

@@ -11,6 +11,7 @@ import 'Login/services/user_service.dart';
 import 'Core/theme/app_theme.dart';
 import 'Plan/providers/trip_planning_provider.dart';
 import 'Expense/providers/expense_provider.dart';
+import 'Core/providers/app_mode_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => TripPlanningProvider()),
         ChangeNotifierProvider(create: (context) => ExpenseProvider()),
+        ChangeNotifierProvider(create: (context) => AppModeProvider()),
       ],
       child: MaterialApp(
         title: 'TravelPro - Smart Travel Planner',
@@ -54,4 +56,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
