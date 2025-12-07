@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:animate_gradient/animate_gradient.dart';
+import 'package:intl/intl.dart';
 import '../../Core/theme/app_theme.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
@@ -8,6 +11,37 @@ import '../services/trip_planning_service.dart';
 import '../services/firebase_trip_service.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/models/expense_models.dart';
+
+// Number formatter to add thousand separators
+class NumberTextInputFormatter extends TextInputFormatter {
+  final NumberFormat _formatter = NumberFormat('#,###', 'en_US');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Remove all non-digit characters
+    String digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (digits.isEmpty) {
+      return const TextEditingValue();
+    }
+
+    // Format with thousand separators using dots
+    int value = int.parse(digits);
+    String formatted = _formatter.format(value).replaceAll(',', '.');
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 class CreatePlannerScreen extends StatefulWidget {
   const CreatePlannerScreen({super.key});
@@ -37,117 +71,143 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Cancel',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
-              color: AppColors.primary,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        leadingWidth: 80,
-        title: Text(
-          'Create Trip',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          TextButton(
-            onPressed: _canSave() && !_isSaving ? _saveTrip : null,
-            child: Text(
-              _isSaving ? 'Saving...' : 'Save',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                color: _canSave() && !_isSaving
-                    ? AppColors.primary
-                    : Colors.grey.shade400,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+      body: AnimateGradient(
+        duration: const Duration(seconds: 10),
+        primaryColors: const [
+          AppColors.steelBlue,
+          Color(0xFF8BB8D8),
+          Color.fromARGB(255, 183, 215, 243),
         ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
+        secondaryColors: const [
+          Color(0xFF8BB8D8),
+          AppColors.steelBlue,
+          AppColors.surface,
+        ],
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Custom AppBar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const SizedBox(height: 20),
-
-                    // Trip Name Field
-                    _buildInputField(
-                      label: 'Trip Name',
-                      controller: _tripNameController,
-                      hintText: 'Enter trip name',
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
-
-                    const SizedBox(height: 30),
-
-                    // Destination Field
-                    _buildInputField(
-                      label: 'Destination City*',
-                      controller: _destinationController,
-                      hintText: 'Where are you going?',
+                    const Text(
+                      'Create Trip',
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-
-                    const SizedBox(height: 30),
-
-                    // Start Date
-                    _buildDateField(
-                      label: 'Start Date*',
-                      date: _startDate,
-                      onTap: () => _selectStartDate(),
+                    TextButton(
+                      onPressed: _canSave() && !_isSaving ? _saveTrip : null,
+                      child: Text(
+                        _isSaving ? 'Saving...' : 'Save',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          color: _canSave() && !_isSaving
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.4),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-
-                    const SizedBox(height: 30),
-
-                    // End Date
-                    _buildDateField(
-                      label: 'End Date*',
-                      date: _endDate,
-                      onTap: () => _selectEndDate(),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Budget Field
-                    _buildInputField(
-                      label: 'Total Budget (VND)',
-                      controller: _budgetController,
-                      hintText: 'Enter total budget',
-                      keyboardType: TextInputType.number,
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Description Field
-                    _buildInputField(
-                      label: 'Description',
-                      controller: _descriptionController,
-                      hintText: 'Add trip description (optional)',
-                      maxLines: 4,
-                    ),
-
-                    const SizedBox(height: 100), // Extra space for scrolling
                   ],
                 ),
               ),
-            ),
-          ],
+              // Body content
+              Expanded(
+                child: Column(
+                  children: [
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+
+                            // Trip Name Field
+                            _buildInputField(
+                              label: 'Trip Name*',
+                              controller: _tripNameController,
+                              hintText: 'Enter trip name',
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // Destination Field
+                            _buildInputField(
+                              label: 'Destination City',
+                              controller: _destinationController,
+                              hintText: 'Where are you going?',
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // Start Date
+                            _buildDateField(
+                              label: 'Start Date*',
+                              date: _startDate,
+                              onTap: () => _selectStartDate(),
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // End Date
+                            _buildDateField(
+                              label: 'End Date*',
+                              date: _endDate,
+                              onTap: () => _selectEndDate(),
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // Budget Field
+                            _buildInputField(
+                              label: 'Total Budget (VND)*',
+                              controller: _budgetController,
+                              hintText: 'Enter total budget',
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [NumberTextInputFormatter()],
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // Description Field
+                            _buildInputField(
+                              label: 'Description',
+                              controller: _descriptionController,
+                              hintText: 'Add trip description (optional)',
+                              maxLines: 4,
+                            ),
+
+                            const SizedBox(
+                              height: 100,
+                            ), // Extra space for scrolling
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -159,16 +219,18 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     required String hintText,
     int maxLines = 1,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-            fontSize: 16,
+          style: const TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
@@ -176,27 +238,38 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-            fontSize: 18,
+          inputFormatters: inputFormatters,
+          style: const TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.black,
+            color: Colors.white,
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
-              fontSize: 18,
-              color: Colors.grey.shade400,
+            hintStyle: TextStyle(
+              fontFamily: 'Urbanist-Regular',
+              fontSize: 16,
+              color: Colors.white.withOpacity(0.5),
             ),
-            border: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.15),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
             ),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
             ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
           onChanged: (value) => setState(() {}),
         ),
@@ -214,10 +287,11 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-            fontSize: 16,
+          style: const TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
@@ -225,17 +299,30 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           onTap: onTap,
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
-            child: Text(
-              _formatDate(date),
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _formatDate(date),
+                  style: const TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.white.withOpacity(0.7),
+                  size: 20,
+                ),
+              ],
             ),
           ),
         ),
@@ -269,7 +356,8 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
   }
 
   bool _canSave() {
-    return _destinationController.text.trim().isNotEmpty;
+    return _tripNameController.text.trim().isNotEmpty &&
+        _budgetController.text.trim().isNotEmpty;
   }
 
   void _selectStartDate() async {
@@ -350,7 +438,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           : _destinationController.text.trim();
 
       final budgetAmount = _budgetController.text.trim().isNotEmpty
-          ? double.tryParse(_budgetController.text.trim())
+          ? double.tryParse(_budgetController.text.trim().replaceAll('.', ''))
           : null;
 
       TripModel? createdTrip;
@@ -396,18 +484,6 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       navigator.pop(); // close loading dialog
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            budgetAmount != null
-                ? 'Trip "${createdTrip.name}" created with budget ${budgetAmount.toStringAsFixed(0)} VND!'
-                : 'Trip "${createdTrip.name}" created successfully!',
-          ),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
 
       Navigator.pop(context, createdTrip);
     } catch (e) {
