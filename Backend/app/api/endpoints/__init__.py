@@ -1,1 +1,1 @@
-from . import auth, expenses, planners, collaborators, travel_agent
+from . import auth, expenses, planners, collaborators, travel_agent, weather

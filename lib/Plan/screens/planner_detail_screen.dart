@@ -12,6 +12,8 @@ import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
 import '../utils/activity_scheduling_validator.dart';
+import '../../smart-nofications/widgets/smart_notification_widget.dart';
+import '../../smart-nofications/providers/smart_notification_provider.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -43,7 +45,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     _loadActivitiesFromServer();
     // Try to get expense provider from context after first frame (optional)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('DEBUG: PostFrameCallback - Starting initialization');
       _initializeExpenseProvider();
+      _initializeSmartNotifications();
+      debugPrint('DEBUG: PostFrameCallback - Initialization complete');
     });
   }
 
@@ -60,6 +65,51 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         'ExpenseProvider not available, expense integration disabled: $e',
       );
       _expenseProvider = null;
+    }
+  }
+
+  void _initializeSmartNotifications() async {
+    try {
+      if (mounted && _trip.id != null) {
+        debugPrint('DEBUG: Attempting to initialize smart notifications for trip: ${_trip.id}');
+        
+        // Try to get provider with more detailed error handling
+        try {
+          final notificationProvider = Provider.of<SmartNotificationProvider>(
+            context, 
+            listen: false
+          );
+          
+          debugPrint('DEBUG: Provider found, calling initialize...');
+          await notificationProvider.initialize(_trip.id!);
+          debugPrint('DEBUG: Smart notifications initialization completed for trip: ${_trip.id}');
+          
+          // Force a rebuild to show notifications
+          if (mounted) {
+            setState(() {});
+          }
+        } catch (providerError) {
+          debugPrint('DEBUG: Provider error: $providerError');
+          
+          // Try alternative approach - add test notification manually
+          debugPrint('DEBUG: Adding manual test notification...');
+          await _addManualTestNotification();
+        }
+      } else {
+        debugPrint('DEBUG: Cannot initialize smart notifications - mounted: $mounted, trip.id: ${_trip.id}');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Smart notifications not available: $e');
+      debugPrint('DEBUG: Stack trace: ${StackTrace.current}');
+    }
+  }
+  
+  Future<void> _addManualTestNotification() async {
+    try {
+      debugPrint('DEBUG: Creating manual test notification for debugging...');
+      // This is just for debugging - in real app, notifications come from provider
+    } catch (e) {
+      debugPrint('DEBUG: Error adding manual test notification: $e');
     }
   }
 
@@ -134,6 +184,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ),
           centerTitle: true,
           actions: [
+            const SmartNotificationWidget(),
             IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.black),
               onPressed: _isDeleting ? null : _showMoreOptions,
@@ -789,6 +840,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           );
                           Navigator.pop(context);
                           _updateActivity(updatedActivity);
+          
+          // Check budget notification when checking in with actual cost
+          if (updatedActivity.checkIn && updatedActivity.budget?.actualCost != null) {
+            debugPrint('DEBUG: Activity checked in with actual cost, triggering budget check');
+            _checkBudgetNotification(updatedActivity);
+          } else {
+            debugPrint('DEBUG: Activity check-in status: ${updatedActivity.checkIn}, actual cost: ${updatedActivity.budget?.actualCost}');
+          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -1068,6 +1127,50 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         );
       },
     );
+  }
+
+  Future<void> _checkBudgetNotification(ActivityModel activity) async {
+    try {
+      debugPrint('DEBUG: Checking budget notification for activity: ${activity.title}');
+      debugPrint('DEBUG: Activity check-in: ${activity.checkIn}, actualCost: ${activity.budget?.actualCost}, estimatedCost: ${activity.budget?.estimatedCost}');
+      
+      if (activity.budget?.actualCost != null && 
+          activity.budget?.estimatedCost != null &&
+          _trip.id != null && 
+          activity.id != null) {
+        
+        final actualCost = activity.budget!.actualCost!;
+        final estimatedCost = activity.budget!.estimatedCost;
+        final overage = actualCost - estimatedCost;
+        
+        debugPrint('DEBUG: Budget check - Actual: $actualCost, Estimated: $estimatedCost, Overage: $overage');
+        
+        // Only trigger if overage is more than 10%
+        if (overage > estimatedCost * 0.1) {
+          debugPrint('DEBUG: Budget overage detected! Triggering notification...');
+          try {
+            final notificationProvider = Provider.of<SmartNotificationProvider>(
+              context,
+              listen: false,
+            );
+            await notificationProvider.checkBudgetOnActivity(
+              _trip.id!,
+              activity.id!,
+              actualCost,
+            );
+            debugPrint('DEBUG: Budget notification triggered successfully');
+          } catch (providerError) {
+            debugPrint('DEBUG: SmartNotificationProvider not available: $providerError');
+          }
+        } else {
+          debugPrint('DEBUG: Budget overage within acceptable range (<=10%)');
+        }
+      } else {
+        debugPrint('DEBUG: Budget notification skipped - missing data');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Error checking budget notification: $e');
+    }
   }
 
   Widget _buildTextField({

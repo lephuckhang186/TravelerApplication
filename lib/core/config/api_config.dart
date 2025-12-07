@@ -1,6 +1,6 @@
 class ApiConfig {
   // Base URL for the backend API
-  static const String baseUrl = 'http://localhost:8000/api/v1';
+  static const String baseUrl = 'http://172.20.10.4:8000/api/v1';
   
   // Trip planning endpoints
   static const String activitiesEndpoint = '/activities';
