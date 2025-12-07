@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     # Redis settings (for caching)
     REDIS_URL: Optional[str] = os.getenv("REDIS_URL", "redis://localhost:6379")
     
+    # Weather API settings
+    WEATHER_API_KEY: Optional[str] = os.getenv("WEATHER_API_KEY")
+    
     # Development flags
     ENABLE_DOCS: bool = os.getenv("ENABLE_DOCS", "true").lower() == "true"
     

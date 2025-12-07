@@ -5,12 +5,13 @@ import os
 from datetime import datetime, timedelta
 import json
 from app.core.dependencies import get_current_user
+from app.core.config import settings
 from app.models.user import User
 
 router = APIRouter()
 
 # Weather API configuration - you can use OpenWeatherMap or similar
-WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "your_api_key_here")
+WEATHER_API_KEY = settings.WEATHER_API_KEY or "your_api_key_here"
 WEATHER_API_URL = "http://api.openweathermap.org/data/2.5"
 
 @router.get("/weather/current/{location}")
