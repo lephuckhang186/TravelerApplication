@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'search_place_screen.dart';
-import 'ai_assistant_screen.dart';
+import '../widgets/ai_assistant_dialog.dart';
 import '../../Core/theme/app_theme.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
@@ -811,11 +811,84 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     );
   }
 
-  void _openAIAssistant() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
-    );
+  Future<void> _openAIAssistant() async {
+    final result = await AiAssistantDialog.show(context, currentTrip: _trip);
+
+    // Check if AI assistant made any changes
+    if (result != null && result is Map<String, dynamic>) {
+      final changes = result['changes'] as List?;
+      if (changes != null && changes.isNotEmpty) {
+        // Apply the changes locally
+        _applyAIChanges(changes);
+      } else if (result.containsKey('new_trip')) {
+        // New trip was created - navigate to it
+        final newTrip = result['new_trip'];
+        if (mounted) {
+          // Close current screen and navigate to new trip
+          Navigator.of(context).pop(newTrip);
+        }
+      } else {
+        // No changes made, just refresh from server
+        await _loadActivitiesFromServer();
+      }
+    }
+  }
+
+  /// Apply changes made by AI assistant
+  void _applyAIChanges(List<dynamic> changes) {
+    // Check if this is a full replacement (all activities should be replaced)
+    final hasFullReplace = changes.any((change) => change['action'] == 'replace_all');
+
+    if (hasFullReplace) {
+      // Full replacement: clear all existing activities and add the new ones
+      final newActivities = changes
+          .where((change) => change['action'] == 'replace_all')
+          .map((change) => ActivityModel.fromJson(change['activity'] as Map<String, dynamic>))
+          .toList();
+
+      setState(() {
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(newActivities);
+      });
+
+      debugPrint('AI applied full plan replacement with ${newActivities.length} activities');
+    } else {
+      // Partial changes: apply individual add/remove/update operations
+      for (final change in changes) {
+        final action = change['action'];
+        final activityData = change['activity'];
+
+        switch (action) {
+          case 'add':
+            final newActivity = ActivityModel.fromJson(activityData);
+            setState(() {
+              _activities.add(newActivity);
+              _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
+            });
+            break;
+
+          case 'remove':
+            final activityId = activityData['id'];
+            setState(() {
+              _activities.removeWhere((activity) => activity.id == activityId);
+            });
+            break;
+
+          case 'update':
+            final updatedActivity = ActivityModel.fromJson(activityData);
+            final index = _activities.indexWhere((activity) => activity.id == updatedActivity.id);
+            if (index != -1) {
+              setState(() {
+                _activities[index] = updatedActivity;
+                _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
+              });
+            }
+            break;
+        }
+      }
+    }
+
+    // Save changes to local storage
+    _persistTripChanges();
   }
 
   void _showAddActivityModal() {
