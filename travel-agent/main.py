@@ -5,6 +5,7 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
+import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -238,7 +239,6 @@ async def generate_trip_plan(request: TripPlanRequest):
     """
     try:
         from services.llm_utils import get_llm, get_default_prompt
-        import json
 
         prompt = request.prompt.strip()
         user_id = request.user_id

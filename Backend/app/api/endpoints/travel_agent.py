@@ -37,21 +37,40 @@ router = APIRouter(prefix="/travel-agent", tags=["Travel Agent"])
 
 def call_travel_agent_service(input_text: str, history: List[Dict[str, str]] = None) -> dict:
     """
-    Process travel agent request with real user data
+    Process travel agent request with AI travel planning workflow
     """
     try:
         # Validate input
         if not input_text or not input_text.strip():
             return {"summary": "Please provide a travel query", "status": "error"}
         
-        # Process the actual user request
-        # TODO: Integrate with AI travel planning workflow here
-        
-        # For now, acknowledge receipt of real user data
-        return {
-            "summary": f"Processing your travel request: {input_text.strip()}",
-            "status": "success"
-        }
+        # Try to import and use the travel-agent workflow
+        try:
+            from workflow import graph as travel_agent_graph
+            
+            # Prepare input for travel agent
+            agent_input = {
+                "input": input_text.strip(),
+                "chat_history": history or []
+            }
+            
+            # Invoke the travel agent workflow
+            result = travel_agent_graph.invoke(agent_input)
+            
+            # Extract summary from result
+            summary = result.get("summary", "Travel plan generated successfully")
+            
+            return {
+                "summary": summary,
+                "status": "success"
+            }
+        except ImportError:
+            logger.warning("Travel agent workflow not available, using fallback")
+            # Fallback: provide basic response
+            return {
+                "summary": f"Travel planning request received: {input_text.strip()}. AI agent integration pending.",
+                "status": "success"
+            }
         
     except Exception as e:
         logger.error(f"Error processing travel request: {e}")

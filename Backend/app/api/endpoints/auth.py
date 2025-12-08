@@ -203,16 +203,22 @@ async def create_custom_token(
 @router.post("/refresh")
 async def refresh_token(request: RefreshTokenRequest):
     """
-    Refresh access token
-    Note: In a full implementation, you'd verify the refresh token
+    Refresh access token using Firebase Admin SDK
+    Note: This validates the refresh token and returns user info
     """
     try:
-        # TODO: Verify refresh token from database/Redis
-        # For now, return a simple response
+        # Verify the refresh token is actually a valid Firebase ID token
+        # In production, you would store refresh tokens in Redis/database
+        # For now, we validate the token with Firebase
+        from firebase_admin import auth as firebase_auth
+        
+        decoded_token = firebase_auth.verify_id_token(request.refresh_token)
+        user_id = decoded_token['uid']
         
         return {
-            "message": "Token refresh not implemented yet",
-            "detail": "Use Firebase SDK to refresh tokens on client side"
+            "message": "Token is valid",
+            "user_id": user_id,
+            "detail": "Use Firebase SDK to refresh tokens on client side for new access tokens"
         }
         
     except Exception as e:
