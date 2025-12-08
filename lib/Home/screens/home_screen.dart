@@ -5,6 +5,7 @@ import '../../Setting/screens/settings_screen.dart';
 import '../../Plan/screens/plan_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
 import '../../Map/screens/map_screen.dart';
+import '../../AltsManager/screens/alts_manager_screen.dart';
 import '../../Core/theme/app_theme.dart';
 import '../../Core/providers/app_mode_provider.dart';
 
@@ -28,23 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
     const PlanScreen(),
     const AnalysisScreen(),
     const MapScreen(),
-    const SettingsScreen(),
+    const SettingsScreen(), // Used for Me
+    const AltsManagerScreen(), // For Collaboration mode
   ];
 
   @override
   Widget build(BuildContext context) {
-    // Auto-switch to Plan if in Settings and mode changes to Collaboration
-    final modeProvider = Provider.of<AppModeProvider>(context);
-    if (modeProvider.isCollaborationMode && _currentIndex == 3) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _currentIndex = 0; // Switch to Plan
-          });
-        }
-      });
-    }
-    
     return Scaffold(
       body: Stack(children: [_screens[_currentIndex], _buildBottomNavBar()]),
     );
@@ -66,38 +56,46 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: double.infinity,
                   height: 70,
                   decoration: BoxDecoration(
-                // Bluebird + Clear skies gradient
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.skyBlue.withValues(alpha: 0.9),
-                    AppColors.steelBlue.withValues(alpha: 0.8),
-                    AppColors.dodgerBlue.withValues(alpha: 0.7),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-                borderRadius: BorderRadius.circular(35),
-                border: Border.all(
-                  width: 1.5,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                    // Bluebird + Clear skies gradient
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.skyBlue.withValues(alpha: 0.9),
+                        AppColors.steelBlue.withValues(alpha: 0.8),
+                        AppColors.dodgerBlue.withValues(alpha: 0.7),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                    borderRadius: BorderRadius.circular(35),
+                    border: Border.all(
+                      width: 1.5,
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, -1),
+                      ),
+                    ],
                   ),
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, -1),
-                  ),
-                ],
-              ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      // Show Alts Manager only in Collaboration mode
+                      if (modeProvider.isCollaborationMode)
+                        _buildDynamicNavItem(
+                          iconPath: 'images/accountManager.png',
+                          label: 'Alts Manager',
+                          index: 4,
+                          isSelected: _currentIndex == 4,
+                        ),
                       _buildDynamicNavItem(
                         iconPath: 'images/blueprint.png',
                         label: 'Plan',
@@ -116,8 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         index: 2,
                         isSelected: _currentIndex == 2,
                       ),
-                      // Hide Settings/Me tab in Collaboration mode
-                      if (modeProvider.isPrivateMode)
+                      // Show Me only in Private mode
+                      if (!modeProvider.isCollaborationMode)
                         _buildDynamicNavItem(
                           iconPath: 'images/account.png',
                           label: 'Me',
@@ -189,7 +187,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 opacity: isSelected ? 1.0 : 0.0,
                 child: Text(
                   label,
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     color: AppColors.navyBlue,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
