@@ -294,7 +294,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                                   style: TextStyle(
                                     fontFamily: 'Urbanist-Regular',
                                     fontSize: 12,
-                                    color: Colors.white.withOpacity(0.8),
+                                    color: Colors.white.withValues(alpha: 0.8),
                                   ),
                                 ),
                               ],
@@ -310,7 +310,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -346,7 +346,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -356,7 +356,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                       children: [
                         Icon(
                           clockData.isDayTime ? Icons.wb_sunny : Icons.nights_stay,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           size: 16,
                         ),
                         const SizedBox(width: 4),
@@ -365,7 +365,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                           style: TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             fontSize: 11,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
@@ -386,7 +386,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                         : Icons.favorite_outline,
                     color: provider.isFavorite(clockData.timeZone)
                         ? Colors.red[300]
-                        : Colors.white.withOpacity(0.8),
+                        : Colors.white.withValues(alpha: 0.8),
                     size: 20,
                   ),
                 ),

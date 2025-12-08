@@ -106,8 +106,15 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _handleWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        final shouldPop = await _handleWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -285,7 +292,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemBuilder: (context, index) =>
           _buildTimelineItem(_activities[index], index),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemCount: _activities.length,
     );
   }
@@ -815,17 +822,17 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final result = await AiAssistantDialog.show(context, currentTrip: _trip);
 
     // Check if AI assistant made any changes
-    if (result != null && result is Map<String, dynamic>) {
+    if (result != null) {
       final changes = result['changes'] as List?;
       if (changes != null && changes.isNotEmpty) {
         // Apply the changes locally
         _applyAIChanges(changes);
       } else if (result.containsKey('new_trip')) {
         // New trip was created - navigate to it
-        final newTrip = result['new_trip'];
+        // final newTrip = result['new_trip'];
         if (mounted) {
           // Close current screen and navigate to new trip
-          Navigator.of(context).pop(newTrip);
+          Navigator.of(context).pop(result['new_trip']);
         }
       } else {
         // No changes made, just refresh from server
@@ -1426,6 +1433,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 descriptionController.text.trim(),
                 budgetController.text.trim(),
               );
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -2130,7 +2138,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         final expense = await _expenseService.createExpenseFromActivity(
           amount: activity.budget!.actualCost!,
           category: activity.activityType.value,
-          description: '${activity.title}',
+          description: activity.title,
           activityId: activity.id,
           tripId: _trip.id,
         );
@@ -2217,7 +2225,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       ),
                     ],
                   ),
-                )).toList(),
+                )),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),

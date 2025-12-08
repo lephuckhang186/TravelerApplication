@@ -7,7 +7,7 @@ class WeatherProvider extends ChangeNotifier {
   
   WeatherData? _currentWeather;
   List<LocationData> _searchResults = [];
-  List<WeatherData> _favoriteWeathers = [];
+  final List<WeatherData> _favoriteWeathers = [];
   bool _isLoading = false;
   String? _error;
   

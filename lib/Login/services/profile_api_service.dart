@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../Core/config/api_config.dart';
 import '../../Login/services/user_profile.dart';
+import 'package:flutter/foundation.dart';
 
 class ProfileApiService {
   static const String _baseUrl = ApiConfig.baseUrl;
@@ -40,7 +41,7 @@ class ProfileApiService {
         throw Exception('Failed to get profile: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error getting user profile: $e');
+      debugPrint('Error getting user profile: $e');
       return null;
     }
   }
@@ -58,14 +59,24 @@ class ProfileApiService {
       final headers = await _getHeaders();
 
       final updateData = <String, dynamic>{};
-      if (fullName != null) updateData['full_name'] = fullName;
-      if (phone != null) updateData['phone'] = phone;
-      if (address != null) updateData['address'] = address;
-      if (gender != null) updateData['gender'] = gender;
-      if (dateOfBirth != null)
+      if (fullName != null) {
+        updateData['full_name'] = fullName;
+      }
+      if (phone != null) {
+        updateData['phone'] = phone;
+      }
+      if (address != null) {
+        updateData['address'] = address;
+      }
+      if (gender != null) {
+        updateData['gender'] = gender;
+      }
+      if (dateOfBirth != null) {
         updateData['date_of_birth'] = dateOfBirth.toIso8601String();
-      if (profilePicture != null)
+      }
+      if (profilePicture != null) {
         updateData['profile_picture'] = profilePicture;
+      }
 
       final response = await http.put(
         Uri.parse('$_baseUrl/auth/profile'),
@@ -76,13 +87,13 @@ class ProfileApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        print(
+        debugPrint(
           'Profile update failed: ${response.statusCode} - ${response.body}',
         );
         return false;
       }
     } catch (e) {
-      print('Error updating user profile: $e');
+      debugPrint('Error updating user profile: $e');
       return false;
     }
   }
@@ -112,7 +123,7 @@ class ProfileApiService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error syncing user data: $e');
+      debugPrint('Error syncing user data: $e');
       return false;
     }
   }

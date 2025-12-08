@@ -74,7 +74,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.primary.withOpacity(0.1), AppColors.surface],
+            colors: [AppColors.primary.withValues(alpha: 0.1), AppColors.surface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -474,6 +474,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
       );
 
       // Đóng loading dialog
+      if (!mounted) return;
       Navigator.pop(context);
 
       if (success) {
@@ -485,6 +486,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
       }
     } catch (e) {
       // Đóng loading dialog
+      if (!mounted) return;
       Navigator.pop(context);
 
       // Hiển thị dialog fallback

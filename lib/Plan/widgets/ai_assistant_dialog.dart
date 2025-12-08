@@ -11,17 +11,17 @@ import '../models/activity_models.dart';
 class AiAssistantDialog extends StatefulWidget {
   final TripModel? currentTrip;
 
-  const AiAssistantDialog({Key? key, this.currentTrip}) : super(key: key);
+  const AiAssistantDialog({super.key, this.currentTrip});
 
   @override
-  _AiAssistantDialogState createState() => _AiAssistantDialogState();
+  State<AiAssistantDialog> createState() => _AiAssistantDialogState();
 
   static Future<Map<String, dynamic>?> show(BuildContext context, {TripModel? currentTrip}) {
     return showGeneralDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'AI Assistant',
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       transitionDuration: const Duration(milliseconds: 300),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return ScaleTransition(
@@ -105,6 +105,7 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
     _saveMessages();
   }
 
+  // ignore: unused_element
   Future<void> _deleteChatHistory(String chatHistory) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(chatHistory);
@@ -160,7 +161,7 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
         debugPrint('  → Route: General AI Query (/invoke)');
         // Use regular AI assistant for other queries
         final response = await http.post(
-          Uri.parse('http://127.0.0.1:8000/invoke'),
+          Uri.parse('http://127.0.0.1:5000/invoke'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'input': userMessage, 'history': history}),
         );
@@ -268,10 +269,15 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
           // Determine activity type
           ActivityType activityType = ActivityType.activity;
           final typeString = activityData['activity_type'] as String?;
-          if (typeString == 'restaurant') activityType = ActivityType.restaurant;
-          else if (typeString == 'lodging') activityType = ActivityType.lodging;
-          else if (typeString == 'flight') activityType = ActivityType.flight;
-          else if (typeString == 'tour') activityType = ActivityType.tour;
+          if (typeString == 'restaurant') {
+            activityType = ActivityType.restaurant;
+          } else if (typeString == 'lodging') {
+            activityType = ActivityType.lodging;
+          } else if (typeString == 'flight') {
+            activityType = ActivityType.flight;
+          } else if (typeString == 'tour') {
+            activityType = ActivityType.tour;
+          }
 
           // Create budget
           BudgetModel? budget;
@@ -354,12 +360,12 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
     setState(() {
       _messages.add({
         'role': 'assistant',
-        'content': '✅ Đã tạo kế hoạch du lịch thành công!\n\n' +
-            '📋 **${generatedTrip.name}**\n' +
-            '📍 **Điểm đến:** ${generatedTrip.destination}\n' +
-            '📅 **Thời gian:** ${generatedTrip.startDate.day}/${generatedTrip.startDate.month} - ${generatedTrip.endDate.day}/${generatedTrip.endDate.month}/${generatedTrip.endDate.year}\n' +
-            '👥 **Số người:** ${planData['trip_info']['travelers_count'] ?? 1}\n' +
-            '💰 **Ngân sách dự kiến:** ${planData['summary']['total_estimated_cost']?.toStringAsFixed(0) ?? 'N/A'} VND\n\n' +
+        'content': '✅ Đã tạo kế hoạch du lịch thành công!\n\n'
+            '📋 **${generatedTrip.name}**\n'
+            '📍 **Điểm đến:** ${generatedTrip.destination}\n'
+            '📅 **Thời gian:** ${generatedTrip.startDate.day}/${generatedTrip.startDate.month} - ${generatedTrip.endDate.day}/${generatedTrip.endDate.month}/${generatedTrip.endDate.year}\n'
+            '👥 **Số người:** ${planData['trip_info']['travelers_count'] ?? 1}\n'
+            '💰 **Ngân sách dự kiến:** ${planData['summary']['total_estimated_cost']?.toStringAsFixed(0) ?? 'N/A'} VND\n\n'
             '🎯 **Các hoạt động chính:**',
       });
     });
@@ -383,9 +389,9 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
     setState(() {
       _messages.add({
         'role': 'assistant',
-        'content': '🔗 **Tùy chọn:**\n' +
-            '• Nhấn "Xem chi tiết" để xem kế hoạch đầy đủ\n' +
-            '• Nhấn "Lưu kế hoạch" để lưu vào tài khoản\n' +
+        'content': '🔗 **Tùy chọn:**\n'
+            '• Nhấn "Xem chi tiết" để xem kế hoạch đầy đủ\n'
+            '• Nhấn "Lưu kế hoạch" để lưu vào tài khoản\n'
             '• Tiếp tục chat để chỉnh sửa kế hoạch',
       });
     });
@@ -423,7 +429,7 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
 
       // Call the backend /edit-plan endpoint with conversation context
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/edit-plan'),
+        Uri.parse('http://127.0.0.1:5000/edit-plan'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'command': userMessage,
@@ -472,10 +478,15 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
 
               // Map activity type
               ActivityType mappedType = ActivityType.activity;
-              if (activityType == 'restaurant') mappedType = ActivityType.restaurant;
-              else if (activityType == 'lodging') mappedType = ActivityType.lodging;
-              else if (activityType == 'flight') mappedType = ActivityType.flight;
-              else if (activityType == 'tour') mappedType = ActivityType.tour;
+              if (activityType == 'restaurant') {
+                mappedType = ActivityType.restaurant;
+              } else if (activityType == 'lodging') {
+                mappedType = ActivityType.lodging;
+              } else if (activityType == 'flight') {
+                mappedType = ActivityType.flight;
+              } else if (activityType == 'tour') {
+                mappedType = ActivityType.tour;
+              }
 
               final newActivity = ActivityModel(
                 id: 'ai_mod_${DateTime.now().millisecondsSinceEpoch}',
@@ -642,7 +653,7 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Container(
+      child: SizedBox(
         width: MediaQuery.of(context).size.width * 0.9,
         height: MediaQuery.of(context).size.height * 0.8,
         child: Column(
@@ -839,7 +850,7 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],

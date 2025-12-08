@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../Core/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/ai_plan_editor_service.dart';
 import '../services/ai_trip_planner_service.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
@@ -11,10 +10,10 @@ import '../models/activity_models.dart';
 class AiAssistantScreen extends StatefulWidget {
   final TripModel? currentTrip;
 
-  const AiAssistantScreen({Key? key, this.currentTrip}) : super(key: key);
+  const AiAssistantScreen({super.key, this.currentTrip});
 
   @override
-  _AiAssistantScreenState createState() => _AiAssistantScreenState();
+  State<AiAssistantScreen> createState() => _AiAssistantScreenState();
 }
 
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
@@ -44,13 +43,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       _chatHistories = [_currentChat]; // Only one chat history per plan
     } else {
       // Fallback to general chat history for backward compatibility
-      _chatHistories = prefs.getStringList('chat_histories') ?? ['chat_history_1'];
+      _chatHistories =
+          prefs.getStringList('chat_histories') ?? ['chat_history_1'];
       _currentChat = prefs.getString('current_chat') ?? _chatHistories.first;
     }
 
     _loadMessages();
   }
 
+  // ignore: unused_element
   Future<void> _loadChatHistories() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -131,8 +132,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       debugPrint('🤖 AI Assistant Debug:');
       debugPrint('  - Message: "$userMessage"');
       debugPrint('  - Has current trip: ${widget.currentTrip != null}');
-      debugPrint('  - Is trip planning: ${_isTripPlanningRequest(userMessage)}');
-      debugPrint('  - Is comprehensive planning: ${_isComprehensiveTripPlanning(userMessage)}');
+      debugPrint(
+        '  - Is trip planning: ${_isTripPlanningRequest(userMessage)}',
+      );
+      debugPrint(
+        '  - Is comprehensive planning: ${_isComprehensiveTripPlanning(userMessage)}',
+      );
       debugPrint('  - Is plan editing: ${_isPlanEditingCommand(userMessage)}');
 
       // Check if this is a comprehensive trip planning request
@@ -142,7 +147,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         await _handleTripPlanning(userMessage);
       }
       // Check if this is a plan editing command and we have a current trip
-      else if (widget.currentTrip != null && _isPlanEditingCommand(userMessage)) {
+      else if (widget.currentTrip != null &&
+          _isPlanEditingCommand(userMessage)) {
         debugPrint('  → Route: Plan Editing');
         // Use new plan editing endpoint that generates complete new plans
         await _handlePlanEditing(userMessage);
@@ -150,7 +156,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         debugPrint('  → Route: General AI Query (/invoke)');
         // Use regular AI assistant for other queries
         final response = await http.post(
-          Uri.parse('http://127.0.0.1:8000/invoke'),
+          Uri.parse('http://127.0.0.1:5000/invoke'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'input': userMessage, 'history': history}),
         );
@@ -210,7 +216,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           // No current trip - create new trip (original flow)
           await _handleNewTripCreation(generatedTrip, planData);
         }
-
       } else {
         setState(() {
           _messages.add({
@@ -230,9 +235,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   /// Add generated activities to the current trip
-  Future<void> _addGeneratedActivitiesToCurrentTrip(TripModel generatedTrip, Map<String, dynamic> planData) async {
+  Future<void> _addGeneratedActivitiesToCurrentTrip(
+    TripModel generatedTrip,
+    Map<String, dynamic> planData,
+  ) async {
     try {
-      debugPrint('Adding generated activities to current trip: ${widget.currentTrip!.id}');
+      debugPrint(
+        'Adding generated activities to current trip: ${widget.currentTrip!.id}',
+      );
 
       // Convert generated activities to current trip context
       final List<Map<String, dynamic>> addedActivities = [];
@@ -244,24 +254,37 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
         for (final activityData in activities) {
           // Calculate date for this activity based on current trip start date
-          final activityDate = widget.currentTrip!.startDate.add(Duration(days: day - 1));
+          final activityDate = widget.currentTrip!.startDate.add(
+            Duration(days: day - 1),
+          );
 
           // Create activity with proper timing
           final startDateTime = DateTime(
             activityDate.year,
             activityDate.month,
             activityDate.day,
-            int.tryParse((activityData['start_time'] as String?)?.split(':')[0] ?? '9') ?? 9,
-            int.tryParse((activityData['start_time'] as String?)?.split(':')[1] ?? '0') ?? 0,
+            int.tryParse(
+                  (activityData['start_time'] as String?)?.split(':')[0] ?? '9',
+                ) ??
+                9,
+            int.tryParse(
+                  (activityData['start_time'] as String?)?.split(':')[1] ?? '0',
+                ) ??
+                0,
           );
 
           // Determine activity type
           ActivityType activityType = ActivityType.activity;
           final typeString = activityData['activity_type'] as String?;
-          if (typeString == 'restaurant') activityType = ActivityType.restaurant;
-          else if (typeString == 'lodging') activityType = ActivityType.lodging;
-          else if (typeString == 'flight') activityType = ActivityType.flight;
-          else if (typeString == 'tour') activityType = ActivityType.tour;
+          if (typeString == 'restaurant') {
+            activityType = ActivityType.restaurant;
+          } else if (typeString == 'lodging') {
+            activityType = ActivityType.lodging;
+          } else if (typeString == 'flight') {
+            activityType = ActivityType.flight;
+          } else if (typeString == 'tour') {
+            activityType = ActivityType.tour;
+          }
 
           // Create budget
           BudgetModel? budget;
@@ -275,12 +298,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
           // Parse location data from AI response
           LocationModel? location;
-          if (activityData['location'] != null || activityData['address'] != null) {
+          if (activityData['location'] != null ||
+              activityData['address'] != null) {
             // Parse coordinates if provided
             double? latitude, longitude;
             if (activityData['coordinates'] != null) {
               try {
-                final coords = (activityData['coordinates'] as String).split(',');
+                final coords = (activityData['coordinates'] as String).split(
+                  ',',
+                );
                 if (coords.length == 2) {
                   latitude = double.tryParse(coords[0].trim());
                   longitude = double.tryParse(coords[1].trim());
@@ -291,7 +317,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             }
 
             location = LocationModel(
-              name: activityData['location'] ?? activityData['title'] ?? 'Unknown Location',
+              name:
+                  activityData['location'] ??
+                  activityData['title'] ??
+                  'Unknown Location',
               address: activityData['address'],
               latitude: latitude,
               longitude: longitude,
@@ -311,10 +340,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           );
 
           // Track for UI update
-          addedActivities.add({
-            'action': 'add',
-            'activity': activity.toJson(),
-          });
+          addedActivities.add({'action': 'add', 'activity': activity.toJson()});
         }
       }
 
@@ -326,10 +352,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '✅ Đã thêm **$totalActivities hoạt động** vào kế hoạch hiện tại!\n\n' +
-              '📋 **Kế hoạch đã được cập nhật:**\n' +
-              '📍 **Điểm đến:** ${generatedTrip.destination}\n' +
-              '👥 **Dành cho:** ${planData['trip_info']['travelers_count'] ?? 1} người\n' +
+          'content':
+              '✅ Đã thêm **$totalActivities hoạt động** vào kế hoạch hiện tại!\n\n'
+              '📋 **Kế hoạch đã được cập nhật:**\n'
+              '📍 **Điểm đến:** ${generatedTrip.destination}\n'
+              '👥 **Dành cho:** ${planData['trip_info']['travelers_count'] ?? 1} người\n'
               '💰 **Ngân sách dự kiến:** ${planData['summary']['total_estimated_cost']?.toStringAsFixed(0) ?? 'N/A'} VND',
         });
       });
@@ -353,10 +380,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       setState(() {
         _messages.add({
           'role': 'system',
-          'content': '✨ Các hoạt động đã được thêm vào trang kế hoạch! Quay lại để xem.',
+          'content':
+              '✨ Các hoạt động đã được thêm vào trang kế hoạch! Quay lại để xem.',
         });
       });
-
     } catch (e) {
       debugPrint('Error adding activities to current trip: $e');
       setState(() {
@@ -377,28 +404,29 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '🔄 Đang phân tích yêu cầu và tạo lại kế hoạch hoàn toàn mới...',
+          'content':
+              '🔄 Đang phân tích yêu cầu và tạo lại kế hoạch hoàn toàn mới...',
         });
       });
 
       // Call the new /edit-plan endpoint
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/edit-plan'),
+        Uri.parse('http://127.0.0.1:5000/edit-plan'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'command': userMessage,
           'trip_id': widget.currentTrip!.id,
-          'conversation_history': _messages.map((msg) => {
-            'role': msg['role'],
-            'content': msg['content']
-          }).toList(),
+          'conversation_history': _messages
+              .map((msg) => {'role': msg['role'], 'content': msg['content']})
+              .toList(),
         }),
       );
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
 
-        if (result['success'] == true && result['action_type'] == 'full_replace') {
+        if (result['success'] == true &&
+            result['action_type'] == 'full_replace') {
           final newPlan = result['new_plan'];
           final message = result['message'];
 
@@ -408,7 +436,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           setState(() {
             _messages.add({
               'role': 'assistant',
-              'content': '❌ ${result['message'] ?? 'Không thể chỉnh sửa kế hoạch'}',
+              'content':
+                  '❌ ${result['message'] ?? 'Không thể chỉnh sửa kế hoạch'}',
             });
           });
         }
@@ -432,7 +461,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   /// Replace current trip with completely new plan
-  Future<void> _replaceCurrentTripWithNewPlan(Map<String, dynamic> newPlan, String aiMessage) async {
+  Future<void> _replaceCurrentTripWithNewPlan(
+    Map<String, dynamic> newPlan,
+    String aiMessage,
+  ) async {
     try {
       debugPrint('Replacing current trip with new plan');
 
@@ -451,24 +483,37 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
         for (final activityData in activities) {
           // Calculate date for this activity based on current trip start date
-          final activityDate = widget.currentTrip!.startDate.add(Duration(days: day - 1));
+          final activityDate = widget.currentTrip!.startDate.add(
+            Duration(days: day - 1),
+          );
 
           // Create activity with proper timing
           final startDateTime = DateTime(
             activityDate.year,
             activityDate.month,
             activityDate.day,
-            int.tryParse((activityData['start_time'] as String?)?.split(':')[0] ?? '9') ?? 9,
-            int.tryParse((activityData['start_time'] as String?)?.split(':')[1] ?? '0') ?? 0,
+            int.tryParse(
+                  (activityData['start_time'] as String?)?.split(':')[0] ?? '9',
+                ) ??
+                9,
+            int.tryParse(
+                  (activityData['start_time'] as String?)?.split(':')[1] ?? '0',
+                ) ??
+                0,
           );
 
           // Determine activity type
           ActivityType activityType = ActivityType.activity;
           final typeString = activityData['activity_type'] as String?;
-          if (typeString == 'restaurant') activityType = ActivityType.restaurant;
-          else if (typeString == 'lodging') activityType = ActivityType.lodging;
-          else if (typeString == 'flight') activityType = ActivityType.flight;
-          else if (typeString == 'tour') activityType = ActivityType.tour;
+          if (typeString == 'restaurant') {
+            activityType = ActivityType.restaurant;
+          } else if (typeString == 'lodging') {
+            activityType = ActivityType.lodging;
+          } else if (typeString == 'flight') {
+            activityType = ActivityType.flight;
+          } else if (typeString == 'tour') {
+            activityType = ActivityType.tour;
+          }
 
           // Create budget
           BudgetModel? budget;
@@ -482,12 +527,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
           // Parse location data from AI response
           LocationModel? location;
-          if (activityData['location'] != null || activityData['address'] != null) {
+          if (activityData['location'] != null ||
+              activityData['address'] != null) {
             // Parse coordinates if provided
             double? latitude, longitude;
             if (activityData['coordinates'] != null) {
               try {
-                final coords = (activityData['coordinates'] as String).split(',');
+                final coords = (activityData['coordinates'] as String).split(
+                  ',',
+                );
                 if (coords.length == 2) {
                   latitude = double.tryParse(coords[0].trim());
                   longitude = double.tryParse(coords[1].trim());
@@ -498,7 +546,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             }
 
             location = LocationModel(
-              name: activityData['location'] ?? activityData['title'] ?? 'Unknown Location',
+              name:
+                  activityData['location'] ??
+                  activityData['title'] ??
+                  'Unknown Location',
               address: activityData['address'],
               latitude: latitude,
               longitude: longitude,
@@ -519,7 +570,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
           // Track for replacement (remove old + add new)
           newActivities.add({
-            'action': 'replace_all', // Special action to indicate full replacement
+            'action':
+                'replace_all', // Special action to indicate full replacement
             'activity': activity.toJson(),
           });
         }
@@ -533,7 +585,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '✅ **Đã tạo lại hoàn toàn kế hoạch du lịch!**\n\n'
+          'content':
+              '✅ **Đã tạo lại hoàn toàn kế hoạch du lịch!**\n\n'
               '$aiMessage\n\n'
               '📋 **Kế hoạch mới:**\n'
               '📍 **Điểm đến:** ${tripInfo['destination'] ?? widget.currentTrip!.destination}\n'
@@ -562,10 +615,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       setState(() {
         _messages.add({
           'role': 'system',
-          'content': '🔄 **Kế hoạch đã được thay thế hoàn toàn!** Quay lại trang kế hoạch để xem phiên bản mới.',
+          'content':
+              '🔄 **Kế hoạch đã được thay thế hoàn toàn!** Quay lại trang kế hoạch để xem phiên bản mới.',
         });
       });
-
     } catch (e) {
       debugPrint('Error replacing trip with new plan: $e');
       setState(() {
@@ -578,17 +631,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   /// Handle new trip creation (original flow)
-  Future<void> _handleNewTripCreation(TripModel generatedTrip, Map<String, dynamic> planData) async {
+  Future<void> _handleNewTripCreation(
+    TripModel generatedTrip,
+    Map<String, dynamic> planData,
+  ) async {
     // Add success message
     setState(() {
       _messages.add({
         'role': 'assistant',
-        'content': '✅ Đã tạo kế hoạch du lịch thành công!\n\n' +
-            '📋 **${generatedTrip.name}**\n' +
-            '📍 **Điểm đến:** ${generatedTrip.destination}\n' +
-            '📅 **Thời gian:** ${generatedTrip.startDate.day}/${generatedTrip.startDate.month} - ${generatedTrip.endDate.day}/${generatedTrip.endDate.month}/${generatedTrip.endDate.year}\n' +
-            '👥 **Số người:** ${planData['trip_info']['travelers_count'] ?? 1}\n' +
-            '💰 **Ngân sách dự kiến:** ${planData['summary']['total_estimated_cost']?.toStringAsFixed(0) ?? 'N/A'} VND\n\n' +
+        'content':
+            '✅ Đã tạo kế hoạch du lịch thành công!\n\n'
+            '📋 **${generatedTrip.name}**\n'
+            '📍 **Điểm đến:** ${generatedTrip.destination}\n'
+            '📅 **Thời gian:** ${generatedTrip.startDate.day}/${generatedTrip.startDate.month} - ${generatedTrip.endDate.day}/${generatedTrip.endDate.month}/${generatedTrip.endDate.year}\n'
+            '👥 **Số người:** ${planData['trip_info']['travelers_count'] ?? 1}\n'
+            '💰 **Ngân sách dự kiến:** ${planData['summary']['total_estimated_cost']?.toStringAsFixed(0) ?? 'N/A'} VND\n\n'
             '🎯 **Các hoạt động chính:**',
       });
     });
@@ -612,9 +669,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     setState(() {
       _messages.add({
         'role': 'assistant',
-        'content': '🔗 **Tùy chọn:**\n' +
-            '• Nhấn "Xem chi tiết" để xem kế hoạch đầy đủ\n' +
-            '• Nhấn "Lưu kế hoạch" để lưu vào tài khoản\n' +
+        'content':
+            '🔗 **Tùy chọn:**\n'
+            '• Nhấn "Xem chi tiết" để xem kế hoạch đầy đủ\n'
+            '• Nhấn "Lưu kế hoạch" để lưu vào tài khoản\n'
             '• Tiếp tục chat để chỉnh sửa kế hoạch',
       });
     });
@@ -624,18 +682,20 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
     try {
       final aiTripPlanner = AITripPlannerService();
-      final savedTrip = await aiTripPlanner.saveGeneratedTrip(generatedTrip);
+      await aiTripPlanner.saveGeneratedTrip(generatedTrip);
       setState(() {
         _messages.add({
           'role': 'system',
-          'content': '💾 Kế hoạch đã được lưu tự động! Bạn có thể tìm thấy nó trong danh sách chuyến đi.',
+          'content':
+              '💾 Kế hoạch đã được lưu tự động! Bạn có thể tìm thấy nó trong danh sách chuyến đi.',
         });
       });
     } catch (e) {
       setState(() {
         _messages.add({
           'role': 'system',
-          'content': '⚠️ Kế hoạch được tạo nhưng chưa lưu. Bạn có thể sao chép thông tin để tạo thủ công.',
+          'content':
+              '⚠️ Kế hoạch được tạo nhưng chưa lưu. Bạn có thể sao chép thông tin để tạo thủ công.',
         });
       });
     }
@@ -646,13 +706,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     final lowerMessage = message.toLowerCase();
 
     // Must contain planning keywords
-    bool hasPlanningIntent = lowerMessage.contains('lên kế hoạch') ||
-                            lowerMessage.contains('tạo kế hoạch') ||
-                            lowerMessage.contains('lập kế hoạch') ||
-                            lowerMessage.contains('plan') ||
-                            lowerMessage.contains('kế hoạch du lịch') ||
-                            lowerMessage.contains('trip') ||
-                            lowerMessage.contains('chuyến đi');
+    bool hasPlanningIntent =
+        lowerMessage.contains('lên kế hoạch') ||
+        lowerMessage.contains('tạo kế hoạch') ||
+        lowerMessage.contains('lập kế hoạch') ||
+        lowerMessage.contains('plan') ||
+        lowerMessage.contains('kế hoạch du lịch') ||
+        lowerMessage.contains('trip') ||
+        lowerMessage.contains('chuyến đi');
 
     if (!hasPlanningIntent) return false;
 
@@ -660,32 +721,47 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     int paramCount = 0;
 
     // Check for duration (days/nights)
-    if (lowerMessage.contains('ngày') || lowerMessage.contains('đêm') || lowerMessage.contains('day') || lowerMessage.contains('night')) {
+    if (lowerMessage.contains('ngày') ||
+        lowerMessage.contains('đêm') ||
+        lowerMessage.contains('day') ||
+        lowerMessage.contains('night')) {
       paramCount++;
     }
 
     // Check for budget (money terms)
-    if (lowerMessage.contains('ngân sách') || lowerMessage.contains('tiền') ||
-        lowerMessage.contains('vnd') || lowerMessage.contains('triệu') ||
-        lowerMessage.contains('budget') || lowerMessage.contains('cost') ||
-        lowerMessage.contains('million') || lowerMessage.contains('\$')) {
+    if (lowerMessage.contains('ngân sách') ||
+        lowerMessage.contains('tiền') ||
+        lowerMessage.contains('vnd') ||
+        lowerMessage.contains('triệu') ||
+        lowerMessage.contains('budget') ||
+        lowerMessage.contains('cost') ||
+        lowerMessage.contains('million') ||
+        lowerMessage.contains('\$')) {
       paramCount++;
     }
 
     // Check for number of people
-    if (lowerMessage.contains('người') || lowerMessage.contains('people') ||
+    if (lowerMessage.contains('người') ||
+        lowerMessage.contains('people') ||
         lowerMessage.contains('person')) {
       paramCount++;
     }
 
     // Check for destination (common destinations or "tại" keyword)
-    if (lowerMessage.contains('tại ') || lowerMessage.contains('ở ') ||
-        lowerMessage.contains('đến ') || lowerMessage.contains('to ') ||
-        lowerMessage.contains('tokyo') || lowerMessage.contains('japan') ||
-        lowerMessage.contains('hanoi') || lowerMessage.contains('saigon') ||
-        lowerMessage.contains('danang') || lowerMessage.contains('hue') ||
-        lowerMessage.contains('paris') || lowerMessage.contains('london') ||
-        lowerMessage.contains('singapore') || lowerMessage.contains('thailand')) {
+    if (lowerMessage.contains('tại ') ||
+        lowerMessage.contains('ở ') ||
+        lowerMessage.contains('đến ') ||
+        lowerMessage.contains('to ') ||
+        lowerMessage.contains('tokyo') ||
+        lowerMessage.contains('japan') ||
+        lowerMessage.contains('hanoi') ||
+        lowerMessage.contains('saigon') ||
+        lowerMessage.contains('danang') ||
+        lowerMessage.contains('hue') ||
+        lowerMessage.contains('paris') ||
+        lowerMessage.contains('london') ||
+        lowerMessage.contains('singapore') ||
+        lowerMessage.contains('thailand')) {
       paramCount++;
     }
 
@@ -699,7 +775,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             lowerMessage.contains('tạo kế hoạch') ||
             lowerMessage.contains('plan') ||
             lowerMessage.contains('kế hoạch du lịch')) &&
-           (lowerMessage.contains('ngày') ||
+        (lowerMessage.contains('ngày') ||
             lowerMessage.contains('đêm') ||
             lowerMessage.contains('trip') ||
             lowerMessage.contains('chuyến đi'));
@@ -709,23 +785,25 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     final lowerMessage = message.toLowerCase();
 
     // Check for explicit edit commands with day reference
-    bool hasEditAction = lowerMessage.contains('thêm') ||
-                        lowerMessage.contains('xóa') ||
-                        lowerMessage.contains('xoá') ||
-                        lowerMessage.contains('thay') ||
-                        lowerMessage.contains('đổi') ||
-                        lowerMessage.contains('add') ||
-                        lowerMessage.contains('remove') ||
-                        lowerMessage.contains('update') ||
-                        lowerMessage.contains('delete') ||
-                        lowerMessage.contains('sửa') ||
-                        lowerMessage.contains('chỉnh sửa') ||
-                        lowerMessage.contains('edit');
+    bool hasEditAction =
+        lowerMessage.contains('thêm') ||
+        lowerMessage.contains('xóa') ||
+        lowerMessage.contains('xoá') ||
+        lowerMessage.contains('thay') ||
+        lowerMessage.contains('đổi') ||
+        lowerMessage.contains('add') ||
+        lowerMessage.contains('remove') ||
+        lowerMessage.contains('update') ||
+        lowerMessage.contains('delete') ||
+        lowerMessage.contains('sửa') ||
+        lowerMessage.contains('chỉnh sửa') ||
+        lowerMessage.contains('edit');
 
-    bool hasDayReference = lowerMessage.contains('ngày') ||
-                          lowerMessage.contains('day') ||
-                          lowerMessage.contains('hôm') ||
-                          lowerMessage.contains('buổi');
+    bool hasDayReference =
+        lowerMessage.contains('ngày') ||
+        lowerMessage.contains('day') ||
+        lowerMessage.contains('hôm') ||
+        lowerMessage.contains('buổi');
 
     // If both edit action and day reference exist, it's a plan editing command
     if (hasEditAction && hasDayReference) {
@@ -733,14 +811,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     }
 
     // Also check for activity mentions (add/remove specific activities)
-    bool hasActivityKeywords = lowerMessage.contains('hoạt động') ||
-                              lowerMessage.contains('activity') ||
-                              lowerMessage.contains('món ăn') ||
-                              lowerMessage.contains('đi') ||
-                              lowerMessage.contains('tham quan') ||
-                              lowerMessage.contains('ăn') ||
-                              lowerMessage.contains('ở') ||
-                              lowerMessage.contains('bay');
+    bool hasActivityKeywords =
+        lowerMessage.contains('hoạt động') ||
+        lowerMessage.contains('activity') ||
+        lowerMessage.contains('món ăn') ||
+        lowerMessage.contains('đi') ||
+        lowerMessage.contains('tham quan') ||
+        lowerMessage.contains('ăn') ||
+        lowerMessage.contains('ở') ||
+        lowerMessage.contains('bay');
 
     return hasEditAction && hasActivityKeywords;
   }
@@ -751,9 +830,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context, {
-            'changes': _sessionChanges,
-          }),
+          onPressed: () => Navigator.pop(context, {'changes': _sessionChanges}),
         ),
         title: const Text(
           'AI Travel Assistant',
@@ -768,7 +845,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         backgroundColor: Colors.white,
         centerTitle: true,
       ),
-      drawer: widget.currentTrip != null ? _buildPlanChatDrawer() : _buildGeneralChatDrawer(),
+      drawer: widget.currentTrip != null
+          ? _buildPlanChatDrawer()
+          : _buildGeneralChatDrawer(),
       body: Column(
         children: [
           Expanded(
@@ -802,7 +881,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -870,7 +949,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: Colors.blue.withValues(alpha: 0.3),
                   spreadRadius: 2,
                   blurRadius: 10,
                   offset: const Offset(0, 4),
@@ -896,7 +975,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     height: 1.5,
                   ),
                 ),
@@ -943,7 +1022,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         spreadRadius: 1,
                         blurRadius: 6,
                         offset: const Offset(0, 2),
@@ -1071,7 +1150,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     widget.currentTrip?.name ?? 'Chuyến đi',
                     style: TextStyle(
                       fontFamily: 'Urbanist-Regular',
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,

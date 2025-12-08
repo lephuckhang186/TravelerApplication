@@ -905,7 +905,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   /// Build travel timeline chart with real data
   Widget _buildTravelTimelineChart() {
-    final currentYear = DateTime.now().year;
+    // final currentYear = DateTime.now().year;
     final maxTrips = _stats.completedTrips > 0 ? _stats.completedTrips : 5;
     
     // Calculate column heights based on data
@@ -913,7 +913,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final trips2025 = _stats.completedTrips2025;
     final trips2026 = 0; // Future trips
     
-    return Container(
+    return SizedBox(
       height: 60,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -985,7 +985,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             gradient: trips > 0 ? LinearGradient(
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
-              colors: [color, color.withOpacity(0.7)],
+              colors: [color, color.withValues(alpha: 0.7)],
             ) : null,
           ),
         ),
@@ -1121,6 +1121,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   // Event handlers for new design
+  // ignore: unused_element
   void _onExpenseManagement() {
     Navigator.push(
       context,

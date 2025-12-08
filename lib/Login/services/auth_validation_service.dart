@@ -162,11 +162,11 @@ class AuthValidationService {
         return ValidationResult(true, '');
       }
       // Các lỗi khác, cho phép tiếp tục để không block user
-      print('Lỗi kiểm tra email: ${e.message}');
+      debugPrint('Lỗi kiểm tra email: ${e.message}');
       return ValidationResult(true, '');
     } catch (e) {
       // Nếu có lỗi network, cho phép tiếp tục
-      print('Lỗi kiểm tra email: $e');
+      debugPrint('Lỗi kiểm tra email: $e');
       return ValidationResult(true, '');
     }
   }

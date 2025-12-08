@@ -24,10 +24,10 @@ class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _googleMapController;
   late flutter_map.MapController _flutterMapController;
   TripModel? _selectedTrip;
-  Set<Marker> _googleMarkers = {};
-  Set<Polyline> _googlePolylines = {};
-  List<flutter_map.Marker> _flutterMarkers = [];
-  List<flutter_map.Polyline> _flutterPolylines = [];
+  final Set<Marker> _googleMarkers = {};
+  final Set<Polyline> _googlePolylines = {};
+  final List<flutter_map.Marker> _flutterMarkers = [];
+  final List<flutter_map.Polyline> _flutterPolylines = [];
   int _currentActivityIndex = 0;
   bool _isLoading = false;
   bool _isMapReady = false;
@@ -174,10 +174,10 @@ class _MapScreenState extends State<MapScreen> {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                             ),
                           ),
                           child: ListTile(
@@ -192,13 +192,13 @@ class _MapScreenState extends State<MapScreen> {
                             subtitle: Text(
                               '${trip.destination} - ${trip.startDate.toString().split(' ')[0]}',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                                 fontSize: 14,
                               ),
                             ),
                             trailing: Icon(
                               Icons.arrow_forward_ios,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               size: 16,
                             ),
                             onTap: () {
@@ -267,7 +267,7 @@ class _MapScreenState extends State<MapScreen> {
     }
     _currentActivityIndex = firstUncheckedIndex;
 
-    print(
+    debugPrint(
       'Loaded trip with ${activities.length} activities, current index: $_currentActivityIndex',
     );
 
@@ -554,6 +554,7 @@ class _MapScreenState extends State<MapScreen> {
           // Update marker colors
           _updateMarkers(updatedActivities);
 
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Đã check-in ${updatedActivity.title}!'),
@@ -571,6 +572,7 @@ class _MapScreenState extends State<MapScreen> {
           });
           _updateMarkers(updatedActivities);
 
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('🎉 Chúc mừng! Bạn đã hoàn thành chuyến đi!'),
@@ -581,6 +583,7 @@ class _MapScreenState extends State<MapScreen> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi check-in: $e'),
@@ -594,11 +597,11 @@ class _MapScreenState extends State<MapScreen> {
     if (_selectedTrip == null) return;
 
     // Debug logs
-    print('Center to current starting point called');
-    print('isMapReady: $_isMapReady');
-    print('kIsWeb: $kIsWeb');
-    print('Current activity index: $_currentActivityIndex');
-    print('Google controller: ${_googleMapController != null}');
+    debugPrint('Center to current starting point called');
+    debugPrint('isMapReady: $_isMapReady');
+    debugPrint('kIsWeb: $kIsWeb');
+    debugPrint('Current activity index: $_currentActivityIndex');
+    debugPrint('Google controller: ${_googleMapController != null}');
 
     final activities = _selectedTrip!.activities
         .where(
@@ -620,7 +623,7 @@ class _MapScreenState extends State<MapScreen> {
     // Center map on current starting point with maximum zoom for clarity
     if (!kIsWeb) {
       if (_googleMapController != null) {
-        print('Animating Google Maps camera to current starting point');
+        debugPrint('Animating Google Maps camera to current starting point');
         _googleMapController!.animateCamera(
           CameraUpdate.newLatLngZoom(
             LatLng(
@@ -631,7 +634,7 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       } else {
-        print('Google Maps controller is null!');
+        debugPrint('Google Maps controller is null!');
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Bản đồ chưa sẵn sàng')));
@@ -664,8 +667,9 @@ class _MapScreenState extends State<MapScreen> {
         )
         .toList();
 
-    if (activities.isEmpty || _currentActivityIndex >= activities.length)
+    if (activities.isEmpty || _currentActivityIndex >= activities.length) {
       return '';
+    }
 
     final currentActivity = activities[_currentActivityIndex];
     // Display location name or address instead of activity title
@@ -824,12 +828,12 @@ class _MapScreenState extends State<MapScreen> {
                       child: FloatingActionButton.small(
                         onPressed: _loadTrips,
                         backgroundColor: Colors.white,
+                        tooltip: 'Chọn chuyến đi',
+                        heroTag: 'select_trip',
                         child: const Icon(
                           Icons.list,
                           color: AppColors.navyBlue,
                         ),
-                        tooltip: 'Chọn chuyến đi',
-                        heroTag: 'select_trip',
                       ),
                     ),
                   ),
@@ -840,8 +844,9 @@ class _MapScreenState extends State<MapScreen> {
                           setState(() => _clearTripPressed = true),
                       onTapUp: (_) {
                         Future.delayed(const Duration(milliseconds: 200), () {
-                          if (mounted)
+                          if (mounted) {
                             setState(() => _clearTripPressed = false);
+                          }
                         });
                       },
                       onTapCancel: () =>
@@ -862,12 +867,12 @@ class _MapScreenState extends State<MapScreen> {
                             _saveSelectedTripId(null);
                           },
                           backgroundColor: Colors.white,
+                          tooltip: 'Bỏ chọn chuyến đi',
+                          heroTag: 'clear_trip',
                           child: const Icon(
                             Icons.close,
                             color: AppColors.navyBlue,
                           ),
-                          tooltip: 'Bỏ chọn chuyến đi',
-                          heroTag: 'clear_trip',
                         ),
                       ),
                     ),
@@ -898,7 +903,7 @@ class _MapScreenState extends State<MapScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 4,
                             spreadRadius: 1,
                           ),
@@ -933,7 +938,7 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                           // Divider
                           Divider(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             thickness: 1,
                             height: 1,
                           ),
@@ -1031,11 +1036,11 @@ class _MapScreenState extends State<MapScreen> {
                         child: FloatingActionButton.small(
                           onPressed: _centerToCurrentStartingPoint,
                           backgroundColor: Colors.white,
+                          tooltip: 'Về điểm xuất phát',
                           child: const Icon(
                             Icons.my_location,
                             color: AppColors.navyBlue,
                           ),
-                          tooltip: 'Về điểm xuất phát',
                         ),
                       ),
                     ),

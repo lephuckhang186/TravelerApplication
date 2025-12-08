@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip_model.dart';
 import 'firebase_trip_service.dart';
+// ignore: avoid_web_libraries_in_flutter
+// ignore: deprecated_member_use
 import 'dart:html' as html;
 
 /// Hybrid storage service for trips - Local + Firebase Cloud persistence

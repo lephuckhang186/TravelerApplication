@@ -1,4 +1,4 @@
-///Định nghĩa các data models cho expense management
+// Định nghĩa các data models cho expense management
 
 import 'package:flutter/foundation.dart';
 /// Expense category enumeration matching backend

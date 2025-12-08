@@ -138,27 +138,27 @@ class _GoogleSignupCompletionScreenState
                         decoration: InputDecoration(
                           hintText: 'Nhập họ và tên',
                           hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontFamily: 'Urbanist-Regular',
                           ),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.15),
+                          fillColor: Colors.white.withValues(alpha: 0.15),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               width: 2,
                             ),
                           ),
@@ -187,17 +187,17 @@ class _GoogleSignupCompletionScreenState
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.email_outlined,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -223,7 +223,7 @@ class _GoogleSignupCompletionScreenState
                           onPressed: _isLoading ? null : _completeSignup,
                           style:
                               ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white.withOpacity(0.9),
+                                backgroundColor: Colors.white.withValues(alpha: 0.9),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -245,7 +245,7 @@ class _GoogleSignupCompletionScreenState
                                           0xFF4682B4,
                                         ); // AppColors.steelBlue
                                       }
-                                      return Colors.white.withOpacity(0.9);
+                                      return Colors.white.withValues(alpha: 0.9);
                                     }),
                                 foregroundColor:
                                     WidgetStateProperty.resolveWith((states) {

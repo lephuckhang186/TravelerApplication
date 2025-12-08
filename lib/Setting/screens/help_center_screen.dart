@@ -200,7 +200,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: category['color'].withOpacity(0.1),
+            color: category['color'].withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(category['icon'], color: category['color'], size: 24),

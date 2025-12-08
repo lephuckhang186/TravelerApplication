@@ -189,6 +189,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<ActivityType>(
+              // ignore: deprecated_member_use
               value: _selectedType,
               decoration: const InputDecoration(labelText: 'Loại hoạt động *'),
               items: ActivityType.values.map((type) {
@@ -208,6 +209,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<ActivityStatus>(
+                    // ignore: deprecated_member_use
                     value: _selectedStatus,
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: ActivityStatus.values.map((status) {
@@ -228,6 +230,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<Priority>(
+                    // ignore: deprecated_member_use
                     value: _selectedPriority,
                     decoration: const InputDecoration(labelText: 'Priority'),
                     items: Priority.values.map((priority) {
@@ -386,6 +389,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
+              // ignore: deprecated_member_use
               value: _selectedCurrency,
               decoration: const InputDecoration(labelText: 'Currency'),
               items: ['VND', 'USD', 'EUR'].map((currency) {
@@ -571,8 +575,9 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
   }
 
   Widget _buildExpenseInfoSection() {
-    if (widget.activity?.expenseInfo.hasExpense != true)
+    if (widget.activity?.expenseInfo.hasExpense != true) {
       return const SizedBox();
+    }
 
     return Card(
       child: Padding(

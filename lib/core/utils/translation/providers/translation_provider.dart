@@ -101,7 +101,7 @@ class TranslationProvider extends ChangeNotifier {
   }
 
   void _addToHistory(TranslationResult result) {
-    _history = [result, ..._history.take(19).toList()];
+    _history = [result, ..._history.take(19)];
     notifyListeners();
   }
 
