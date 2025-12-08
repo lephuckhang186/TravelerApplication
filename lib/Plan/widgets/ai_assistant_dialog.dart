@@ -58,11 +58,17 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
 
   Future<void> _loadChatHistories() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _chatHistories =
-          prefs.getStringList('chat_histories') ?? ['chat_history_1'];
+
+    if (widget.currentTrip != null) {
+      // Use plan-specific chat history
+      _currentChat = 'plan_${widget.currentTrip!.id}_chat';
+      _chatHistories = [_currentChat]; // Only one chat history per plan
+    } else {
+      // Fallback to general chat history for backward compatibility
+      _chatHistories = prefs.getStringList('chat_histories') ?? ['chat_history_1'];
       _currentChat = prefs.getString('current_chat') ?? _chatHistories.first;
-    });
+    }
+
     _loadMessages();
   }
 
