@@ -24,7 +24,12 @@ void main() async {
 
   // Enable DevicePreview only in debug mode
   runApp(
-    DevicePreview(enabled: !kReleaseMode, builder: (context) => const MyApp()),
+    DevicePreview(
+      enabled: !kReleaseMode,
+      defaultDevice: Devices.ios.iPhone16ProMax,
+      backgroundColor: Colors.black,
+      builder: (context) => const MyApp(),
+    ),
   );
 }
 
