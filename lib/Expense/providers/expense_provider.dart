@@ -42,6 +42,7 @@ class ExpenseProvider with ChangeNotifier {
     : _expenseService = expenseService ?? ExpenseService();
 
   // Getters
+  ExpenseService get expenseService => _expenseService;
   List<Expense> get expenses => _expenses;
   BudgetStatus? get budgetStatus => _budgetStatus;
   List<CategoryStatus> get categoryStatus => _categoryStatus;

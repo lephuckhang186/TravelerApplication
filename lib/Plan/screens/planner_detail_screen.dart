@@ -287,7 +287,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     if (_activities.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 300),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -411,17 +411,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 60,
+        Container(
+          width: 55,
+          alignment: Alignment.centerLeft,
           child: activity.startDate != null
               ? Text(
                   timeLabel,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.visible,
                 )
               : const SizedBox(),
         ),
@@ -1574,76 +1577,139 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       text: _trip.description ?? '',
     );
     final budgetController = TextEditingController(
-      text: _trip.budget?.estimatedCost.toString() ?? '',
+      text: _trip.budget?.estimatedCost != null 
+          ? _formatCurrency(_trip.budget!.estimatedCost).replaceAll(' VND', '') 
+          : '',
     );
+    DateTime selectedStartDate = _trip.startDate;
+    DateTime selectedEndDate = _trip.endDate;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Trip Information'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Trip Name',
-                  border: OutlineInputBorder(),
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Edit Trip Information'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Trip Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: destinationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Destination',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: budgetController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Total Budget (VND)',
+                      border: OutlineInputBorder(),
+                      helperText: 'Format: 1,000,000',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedStartDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null && picked != selectedStartDate) {
+                        setDialogState(() {
+                          selectedStartDate = picked;
+                          // Ensure end date is not before start date
+                          if (selectedEndDate.isBefore(selectedStartDate)) {
+                            selectedEndDate = selectedStartDate;
+                          }
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Start Date',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(_formatDate(selectedStartDate)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedEndDate,
+                        firstDate: selectedStartDate,
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null && picked != selectedEndDate) {
+                        setDialogState(() {
+                          selectedEndDate = picked;
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'End Date',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(_formatDate(selectedEndDate)),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: destinationController,
-                decoration: const InputDecoration(
-                  labelText: 'Destination',
-                  border: OutlineInputBorder(),
-                ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
-                  border: OutlineInputBorder(),
+              ElevatedButton(
+                onPressed: () async {
+                  await _saveEditedTripInfo(
+                    nameController.text.trim(),
+                    destinationController.text.trim(),
+                    descriptionController.text.trim(),
+                    budgetController.text.trim(),
+                    selectedStartDate,
+                    selectedEndDate,
+                  );
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: budgetController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Total Budget (VND)',
-                  border: OutlineInputBorder(),
-                ),
+                child: const Text('Save Changes'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await _saveEditedTripInfo(
-                nameController.text.trim(),
-                destinationController.text.trim(),
-                descriptionController.text.trim(),
-                budgetController.text.trim(),
-              );
-              if (!context.mounted) return;
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Save Changes'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -1900,6 +1966,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     String destination,
     String description,
     String budgetText,
+    DateTime startDate,
+    DateTime endDate,
   ) async {
     try {
       if (name.isEmpty || destination.isEmpty) {
@@ -1912,10 +1980,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         return;
       }
 
-      // Parse budget
+      // Parse budget - remove commas first
       double? budget;
       if (budgetText.isNotEmpty) {
-        budget = double.tryParse(budgetText);
+        // Remove commas and any non-digit characters except decimal point
+        final cleanBudget = budgetText.replaceAll(',', '').replaceAll(' ', '');
+        budget = double.tryParse(cleanBudget);
         if (budget == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1944,6 +2014,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         destination: destination,
         description: description.isNotEmpty ? description : null,
         budget: budgetModel,
+        startDate: startDate,
+        endDate: endDate,
         updatedAt: DateTime.now(),
       );
 
