@@ -12,7 +12,7 @@ class CurrencyProvider extends ChangeNotifier {
   double _exchangeRate = 0.0;
   bool _isLoading = false;
   String? _error;
-  Map<String, ExchangeRate> _exchangeRates = {};
+  final Map<String, ExchangeRate> _exchangeRates = {};
   List<ConversionResult> _history = [];
 
   // Getters
@@ -105,7 +105,7 @@ class CurrencyProvider extends ChangeNotifier {
   void _addToHistory(ConversionResult result) {
     // Only add if amount > 0
     if (result.amount > 0) {
-      _history = [result, ..._history.take(19).toList()];
+      _history = [result, ..._history.take(19)];
       notifyListeners();
     }
   }

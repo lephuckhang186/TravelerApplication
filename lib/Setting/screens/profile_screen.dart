@@ -52,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         _userProfile = await _firestoreService.getUserProfile(currentUser.uid);
       } catch (firestoreError) {
-        print('Firestore error: $firestoreError');
+        debugPrint('Firestore error: $firestoreError');
         _userProfile = null;
       }
 
@@ -93,13 +93,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               displayName,
             );
           } catch (createError) {
-            print('Error creating initial profile: $createError');
+            debugPrint('Error creating initial profile: $createError');
             // Không ném lỗi, vẫn hiển thị thông tin từ Firebase Auth
           }
         }
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      debugPrint('Error loading user data: $e');
       _setDefaultUserData();
     } finally {
       if (mounted) {
@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _firestoreService.createOrUpdateUser(userProfile);
       _userProfile = userProfile;
     } catch (e) {
-      print('Error creating initial profile: $e');
+      debugPrint('Error creating initial profile: $e');
     }
   }
 
@@ -222,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.primary.withOpacity(0.1), AppColors.surface],
+            colors: [AppColors.primary.withValues(alpha: 0.1), AppColors.surface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -318,7 +318,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -637,7 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       _showSnackBar('Đã lưu thông tin cá nhân');
     } catch (e) {
-      print('Error saving profile: $e');
+      debugPrint('Error saving profile: $e');
       _showSnackBar('Lỗi khi lưu thông tin: $e');
     }
   }
@@ -714,8 +714,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.pop(context);
                     },
                   ),
-                )
-                .toList(),
+                ),
           ],
         ),
       ),

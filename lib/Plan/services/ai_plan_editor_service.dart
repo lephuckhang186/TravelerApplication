@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/activity_models.dart';
-import '../models/trip_model.dart';
 import 'trip_planning_service.dart';
 
 /// Service for AI-powered plan editing with natural language processing
 class AIPlanEditorService {
+  // ignore: unused_field
   final TripPlanningService _tripService = TripPlanningService();
 
   // For demo purposes, we'll simulate successful operations
@@ -181,6 +180,7 @@ class AIPlanEditorService {
   }
 
   /// Add activity to plan for specific day
+  // ignore: unused_element
   Future<Map<String, dynamic>> _addActivityToPlan({
     required String tripId,
     required int day,
@@ -222,6 +222,7 @@ class AIPlanEditorService {
   }
 
   /// Remove activity from plan for specific day
+  // ignore: unused_element
   Future<Map<String, dynamic>> _removeActivityFromPlan({
     required String tripId,
     required int day,
@@ -260,6 +261,7 @@ class AIPlanEditorService {
   }
 
   /// Update activity in plan for specific day
+  // ignore: unused_element
   Future<Map<String, dynamic>> _updateActivityInPlan({
     required String tripId,
     required int day,

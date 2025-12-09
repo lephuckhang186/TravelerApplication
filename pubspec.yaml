@@ -63,6 +63,7 @@ dependencies:
   translator: 1.0.4+1
   flutter_tts: ^4.2.3
   speech_to_text: ^7.0.2
+  intl: any
 
   # Maps
   google_maps_flutter: ^2.6.1

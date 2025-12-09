@@ -70,7 +70,7 @@ class WelcomeScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -129,7 +129,7 @@ class WelcomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(25),
                       ),
                       elevation: 3,
-                      shadowColor: const Color(0xFF40E0D0).withOpacity(0.3),
+                      shadowColor: const Color(0xFF40E0D0).withValues(alpha: 0.3),
                     ),
                     child: const Text(
                       'Bắt đầu hành trình',
@@ -198,7 +198,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   bool _isLoading = false;
-  bool _isCheckingEmail = false;
+  final bool _isCheckingEmail = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int _passwordStrength = 0;
@@ -273,7 +273,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       // Lưu thông tin vào Firestore
       if (userCredential?.user != null) {
-        print('🔥 Starting Firestore user profile creation...'); // Debug log
+        debugPrint('🔥 Starting Firestore user profile creation...'); // Debug log
 
         try {
           await _firestoreService.createEmailUserProfile(
@@ -282,9 +282,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             fullName: username, // Use username from form
             dateOfBirth: DateTime(2000, 1, 1), // Default date
           );
-          print('✅ Firestore user profile created successfully!'); // Debug log
+          debugPrint('✅ Firestore user profile created successfully!'); // Debug log
         } catch (firestoreError) {
-          print('❌ Firestore error: $firestoreError'); // Debug log
+          debugPrint('❌ Firestore error: $firestoreError'); // Debug log
           // Vẫn cho user vào app nếu Firebase Auth thành công
           _showErrorMessage(
             'Account created but profile sync failed. You can update it later.',
@@ -312,6 +312,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _showErrorMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -371,21 +372,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     decoration: InputDecoration(
                       hintText: 'Username',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontFamily: 'Urbanist-Regular',
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -397,7 +398,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       prefixIcon: Icon(
                         Icons.person_outline,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -421,21 +422,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     decoration: InputDecoration(
                       hintText: 'Email',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontFamily: 'Urbanist-Regular',
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -447,7 +448,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       prefixIcon: Icon(
                         Icons.email_outlined,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       suffixIcon: _isCheckingEmail
                           ? const SizedBox(
@@ -485,21 +486,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     decoration: InputDecoration(
                       hintText: 'Password',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontFamily: 'Urbanist-Regular',
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -511,14 +512,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
                               ? Icons.visibility_off
                               : Icons.visibility,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                         ),
                         onPressed: () {
                           setState(() => _obscurePassword = !_obscurePassword);
@@ -545,21 +546,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     decoration: InputDecoration(
                       hintText: 'Re-enter Password',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontFamily: 'Urbanist-Regular',
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -571,14 +572,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword
                               ? Icons.visibility_off
                               : Icons.visibility,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                         ),
                         onPressed: () {
                           setState(
@@ -610,33 +611,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onPressed: _isLoading ? null : _handleEmailSignUp,
                     style:
                         ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.9),
+                          backgroundColor: Colors.white.withValues(alpha: 0.9),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 0,
                         ).copyWith(
-                          backgroundColor: MaterialStateProperty.resolveWith((
+                          backgroundColor: WidgetStateProperty.resolveWith((
                             states,
                           ) {
-                            if (states.contains(MaterialState.hovered)) {
+                            if (states.contains(WidgetState.hovered)) {
                               // Bluebird + Clear Skies gradient effect on hover
                               return const Color(
                                 0xFF87CEEB,
                               ); // AppColors.skyBlue
                             }
-                            if (states.contains(MaterialState.pressed)) {
+                            if (states.contains(WidgetState.pressed)) {
                               return const Color(
                                 0xFF4682B4,
                               ); // AppColors.steelBlue
                             }
-                            return Colors.white.withOpacity(0.9);
+                            return Colors.white.withValues(alpha: 0.9);
                           }),
-                          foregroundColor: MaterialStateProperty.resolveWith((
+                          foregroundColor: WidgetStateProperty.resolveWith((
                             states,
                           ) {
-                            if (states.contains(MaterialState.hovered) ||
-                                states.contains(MaterialState.pressed)) {
+                            if (states.contains(WidgetState.hovered) ||
+                                states.contains(WidgetState.pressed)) {
                               return Colors
                                   .white; // White text on blue background
                             }
@@ -684,7 +685,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Text(
                       "Already have an account? ",
                       style: TextStyle(
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8),
                         fontSize: 14,
                         fontFamily: 'Urbanist-Regular',
                       ),
@@ -733,7 +734,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             Text(
               'Password Strength: ',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 12,
                 fontFamily: 'Urbanist-Regular',
               ),
@@ -749,9 +750,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const Spacer(),
             Text(
-              '${_passwordStrength}%',
+              '$_passwordStrength%',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 12,
                 fontFamily: 'Urbanist-Regular',
               ),
@@ -761,7 +762,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         const SizedBox(height: 4),
         LinearProgressIndicator(
           value: progress,
-          backgroundColor: Colors.white.withOpacity(0.2),
+          backgroundColor: Colors.white.withValues(alpha: 0.2),
           valueColor: AlwaysStoppedAnimation<Color>(color),
           minHeight: 4,
         ),
@@ -846,6 +847,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showErrorMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -965,21 +967,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   hintText: 'Your email',
                   hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontFamily: 'Urbanist-Regular',
                   ),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.2),
+                  fillColor: Colors.white.withValues(alpha: 0.2),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -1020,9 +1022,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             await _authService.sendPasswordResetEmail(
                               _emailController.text.trim(),
                             );
+                            if (!mounted) return;
+                            // ignore: use_build_context_synchronously
                             Navigator.pop(context);
                             _showSuccessMessage('Password reset email sent!');
                           } catch (e) {
+                            if (!mounted) return;
                             _showErrorMessage(e.toString());
                           }
                         } else {
@@ -1113,17 +1118,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: InputDecoration(
                       hintText: 'Email',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontFamily: 'Urbanist-Regular',
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
                           color: _hasEmailError
                               ? Colors.red
-                              : Colors.white.withOpacity(0.3),
+                              : Colors.white.withValues(alpha: 0.3),
                           width: _hasEmailError ? 2 : 1,
                         ),
                       ),
@@ -1132,7 +1137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderSide: BorderSide(
                           color: _hasEmailError
                               ? Colors.red
-                              : Colors.white.withOpacity(0.3),
+                              : Colors.white.withValues(alpha: 0.3),
                           width: _hasEmailError ? 2 : 1,
                         ),
                       ),
@@ -1145,7 +1150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       prefixIcon: Icon(
                         Icons.email_outlined,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -1183,21 +1188,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: InputDecoration(
                       hintText: 'Password',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontFamily: 'Urbanist-Regular',
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -1209,14 +1214,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
                               ? Icons.visibility_off
                               : Icons.visibility,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                         ),
                         onPressed: () {
                           setState(() => _obscurePassword = !_obscurePassword);
@@ -1237,7 +1242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Text(
                       'Forgot Password?',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         fontFamily: 'Urbanist-Regular',
@@ -1254,33 +1259,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _isLoading ? null : _handleEmailLogin,
                     style:
                         ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.9),
+                          backgroundColor: Colors.white.withValues(alpha: 0.9),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 0,
                         ).copyWith(
-                          backgroundColor: MaterialStateProperty.resolveWith((
+                          backgroundColor: WidgetStateProperty.resolveWith((
                             states,
                           ) {
-                            if (states.contains(MaterialState.hovered)) {
+                            if (states.contains(WidgetState.hovered)) {
                               // Bluebird + Clear Skies gradient effect on hover
                               return const Color(
                                 0xFF87CEEB,
                               ); // AppColors.skyBlue
                             }
-                            if (states.contains(MaterialState.pressed)) {
+                            if (states.contains(WidgetState.pressed)) {
                               return const Color(
                                 0xFF4682B4,
                               ); // AppColors.steelBlue
                             }
-                            return Colors.white.withOpacity(0.9);
+                            return Colors.white.withValues(alpha: 0.9);
                           }),
-                          foregroundColor: MaterialStateProperty.resolveWith((
+                          foregroundColor: WidgetStateProperty.resolveWith((
                             states,
                           ) {
-                            if (states.contains(MaterialState.hovered) ||
-                                states.contains(MaterialState.pressed)) {
+                            if (states.contains(WidgetState.hovered) ||
+                                states.contains(WidgetState.pressed)) {
                               return Colors
                                   .white; // White text on blue background
                             }
@@ -1325,7 +1330,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: Container(
                         height: 1,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                     Padding(
@@ -1333,7 +1338,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'OR',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1342,7 +1347,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: Container(
                         height: 1,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -1383,7 +1388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       "Don't have an account? ",
                       style: TextStyle(
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8),
                         fontSize: 14,
                         fontFamily: 'Urbanist-Regular',
                       ),

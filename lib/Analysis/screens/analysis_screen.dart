@@ -3095,24 +3095,25 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
           ? double.parse(_dailyLimitController.text)
           : null;
 
-      // Create budget through expense service
-      // Use the parsed values for budget creation (implementation needed)
-      debugPrint(
-        'Creating budget: $budgetAmount VND, Daily limit: ${dailyLimitAmount ?? 0} VND',
+      // Get expense provider
+      final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+
+      // Create budget through expense provider
+      final success = await expenseProvider.createBudget(
+        budgetAmount,
+        dailyLimit: dailyLimitAmount,
       );
-      // TODO: Create Budget object and call createBudget
-      // final budget = Budget(totalBudget: budgetAmount, dailyLimit: dailyLimitAmount);
-      // await expenseService.createBudget(budget);
-      // TODO: Implement proper budget creation logic
-      // This is a placeholder for the actual budget creation logic
-      // await expenseService.createBudget(someBudgetObject);
+
+      if (!success) {
+        throw Exception(expenseProvider.error ?? 'Failed to create budget');
+      }
 
       if (mounted) {
         Navigator.pop(context);
         widget.onBudgetCreated();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Budget created successfully'),
             backgroundColor: Colors.green,
           ),

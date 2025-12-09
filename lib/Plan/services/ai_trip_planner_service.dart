@@ -12,7 +12,7 @@ class AITripPlannerService {
   // Dynamic base URL based on platform
   static String get baseUrl {
     // Use localhost for development
-    return 'http://localhost:8000';
+    return 'http://localhost:5000';
   }
 
   /// Generate a complete trip plan based on natural language prompt
@@ -217,7 +217,7 @@ class AITripPlannerService {
       return createdTrip.copyWith(activities: createdActivities);
     } catch (e) {
       debugPrint('Error saving generated trip: $e');
-      throw e;
+      rethrow;
     }
   }
 }

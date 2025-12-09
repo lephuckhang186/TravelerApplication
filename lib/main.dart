@@ -48,7 +48,6 @@ class MyApp extends StatelessWidget {
         title: 'TravelPro - Smart Travel Planner',
         debugShowCheckedModeBanner: false,
         // Enable DevicePreview integration
-        useInheritedMediaQuery: true,
         locale: DevicePreview.locale(context),
         builder: DevicePreview.appBuilder,
         theme: AppTheme.lightTheme,

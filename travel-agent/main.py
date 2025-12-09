@@ -4,6 +4,11 @@ from typing import List, Dict, Optional
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from dotenv import load_dotenv
+import json
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create the FastAPI app
 api = FastAPI()
@@ -234,7 +239,6 @@ async def generate_trip_plan(request: TripPlanRequest):
     """
     try:
         from services.llm_utils import get_llm, get_default_prompt
-        import json
 
         prompt = request.prompt.strip()
         user_id = request.user_id
@@ -379,4 +383,4 @@ async def generate_trip_plan(request: TripPlanRequest):
 # To run this API, use the command:
 # uvicorn main:api --reload
 if __name__ == "__main__":
-    uvicorn.run(api, host="0.0.0.0", port=8000)
+    uvicorn.run(api, host="0.0.0.0", port=5000)

@@ -181,7 +181,7 @@ class AppTheme {
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.textOnAccent,
               elevation: 3,
-              shadowColor: AppColors.primary.withOpacity(0.3),
+              shadowColor: AppColors.primary.withValues(alpha: 0.3),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
