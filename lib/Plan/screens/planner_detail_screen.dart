@@ -452,15 +452,18 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 width: 2,
                 height: 155,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.skyBlue.withValues(alpha: 0.9),
-                      AppColors.steelBlue.withValues(alpha: 0.8),
-                      AppColors.dodgerBlue.withValues(alpha: 0.7),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  gradient: activity.checkIn
+                      ? null
+                      : LinearGradient(
+                          colors: [
+                            AppColors.skyBlue.withValues(alpha: 0.9),
+                            AppColors.steelBlue.withValues(alpha: 0.8),
+                            AppColors.dodgerBlue.withValues(alpha: 0.7),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                  color: activity.checkIn ? Colors.green : null,
                 ),
               ),
           ],
