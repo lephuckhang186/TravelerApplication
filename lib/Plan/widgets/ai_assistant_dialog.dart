@@ -206,9 +206,36 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
         });
       });
 
+      // Build enhanced prompt with trip context if available
+      String enhancedPrompt = userMessage;
+      if (widget.currentTrip != null) {
+        final trip = widget.currentTrip!;
+        final startDateStr = '${trip.startDate.year}-${trip.startDate.month.toString().padLeft(2, '0')}-${trip.startDate.day.toString().padLeft(2, '0')}';
+        final endDateStr = '${trip.endDate.year}-${trip.endDate.month.toString().padLeft(2, '0')}-${trip.endDate.day.toString().padLeft(2, '0')}';
+        final durationDays = trip.endDate.difference(trip.startDate).inDays + 1;
+        final totalBudget = trip.budget?.estimatedCost ?? 0;
+        final currency = trip.budget?.currency ?? 'VND';
+        
+        // Build structured prompt with trip card information
+        enhancedPrompt = '''
+Thông tin chuyến đi hiện tại (từ Trip Card):
+- Tên chuyến đi: "${trip.name}"
+- Điểm đến: "${trip.destination}"
+- Ngày bắt đầu: "$startDateStr"
+- Ngày kết thúc: "$endDateStr"
+- Số ngày: $durationDays ngày
+- Tổng ngân sách: $totalBudget $currency
+
+Yêu cầu của người dùng: $userMessage
+
+Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên và yêu cầu của người dùng. Sử dụng CHÍNH XÁC các thông tin về tên, điểm đến, ngày tháng, ngân sách từ Trip Card ở trên.''';
+        
+        debugPrint('Enhanced prompt with trip context:\n$enhancedPrompt');
+      }
+
       // Use AI Trip Planner Service
       final aiTripPlanner = AITripPlannerService();
-      final result = await aiTripPlanner.generateTripPlan(userMessage);
+      final result = await aiTripPlanner.generateTripPlan(enhancedPrompt);
 
       if (result['success'] == true) {
         final TripModel generatedTrip = result['trip'];
@@ -558,7 +585,14 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
 
     if (!hasPlanningIntent) return false;
 
-    // Must contain multiple trip parameters (destination + duration OR budget OR people)
+    // If we have a current trip, only need people count (other info from trip card)
+    if (widget.currentTrip != null) {
+      // When we have current trip context, any planning intent should route to trip planning
+      // The trip card already has destination, dates, and budget
+      return true; // Always route to trip planning when we have current trip context
+    }
+
+    // Without current trip, must contain multiple trip parameters
     int paramCount = 0;
 
     // Check for duration (days/nights)
@@ -738,7 +772,9 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
                       child: TextField(
                         controller: _controller,
                         decoration: InputDecoration(
-                          hintText: 'Ask me anything about your trip...',
+                          hintText: widget.currentTrip != null
+                              ? 'VD: Tạo kế hoạch cho 3 người'
+                              : 'Ask me anything about your trip...',
                           hintStyle: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 16,
@@ -782,38 +818,72 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
   }
 
   Widget _buildWelcomeView() {
-    final suggestions = [
-      {
-        'icon': Icons.location_on,
-        'text': 'Gợi ý địa điểm du lịch Việt Nam',
-        'query': 'Bạn có thể gợi ý cho tôi những địa điểm du lịch nổi tiếng ở Việt Nam không?',
-      },
-      {
-        'icon': Icons.flight,
-        'text': 'Lên kế hoạch chuyến đi',
-        'query': 'Tôi muốn lên kế hoạch cho một chuyến du lịch 3 ngày 2 đêm',
-      },
-      {
-        'icon': Icons.restaurant,
-        'text': 'Khám phá ẩm thực địa phương',
-        'query': 'Những món ăn đặc sản nào tôi nên thử khi du lịch?',
-      },
-      {
-        'icon': Icons.hotel,
-        'text': 'Tìm chỗ ở phù hợp',
-        'query': 'Bạn có thể giúp tôi tìm khách sạn với ngân sách hợp lý không?',
-      },
-      {
-        'icon': Icons.directions_car,
-        'text': 'Phương tiện di chuyển',
-        'query': 'Cách di chuyển tốt nhất giữa các thành phố là gì?',
-      },
-      {
-        'icon': Icons.attach_money,
-        'text': 'Ước tính chi phí',
-        'query': 'Chi phí cho một chuyến du lịch thường là bao nhiêu?',
-      },
-    ];
+    // Different suggestions based on whether we have a current trip
+    final suggestions = widget.currentTrip != null
+        ? [
+            {
+              'icon': Icons.people,
+              'text': 'Tạo kế hoạch cho 2 người',
+              'query': 'Tạo kế hoạch cho 2 người',
+            },
+            {
+              'icon': Icons.group,
+              'text': 'Tạo kế hoạch cho 4 người',
+              'query': 'Tạo kế hoạch cho 4 người',
+            },
+            {
+              'icon': Icons.family_restroom,
+              'text': 'Tạo kế hoạch cho gia đình 5 người',
+              'query': 'Tạo kế hoạch cho gia đình 5 người',
+            },
+            {
+              'icon': Icons.restaurant,
+              'text': 'Thêm hoạt động ăn uống',
+              'query': 'Thêm các nhà hàng địa phương nổi tiếng vào ngày 1',
+            },
+            {
+              'icon': Icons.tour,
+              'text': 'Thêm điểm tham quan',
+              'query': 'Thêm các địa điểm tham quan phổ biến vào kế hoạch',
+            },
+            {
+              'icon': Icons.edit_calendar,
+              'text': 'Sửa kế hoạch hiện tại',
+              'query': 'Tôi muốn thay đổi lịch trình ngày đầu tiên',
+            },
+          ]
+        : [
+            {
+              'icon': Icons.location_on,
+              'text': 'Gợi ý địa điểm du lịch Việt Nam',
+              'query': 'Bạn có thể gợi ý cho tôi những địa điểm du lịch nổi tiếng ở Việt Nam không?',
+            },
+            {
+              'icon': Icons.flight,
+              'text': 'Lên kế hoạch chuyến đi',
+              'query': 'Tôi muốn lên kế hoạch cho một chuyến du lịch 3 ngày 2 đêm',
+            },
+            {
+              'icon': Icons.restaurant,
+              'text': 'Khám phá ẩm thực địa phương',
+              'query': 'Những món ăn đặc sản nào tôi nên thử khi du lịch?',
+            },
+            {
+              'icon': Icons.hotel,
+              'text': 'Tìm chỗ ở phù hợp',
+              'query': 'Bạn có thể giúp tôi tìm khách sạn với ngân sách hợp lý không?',
+            },
+            {
+              'icon': Icons.directions_car,
+              'text': 'Phương tiện di chuyển',
+              'query': 'Cách di chuyển tốt nhất giữa các thành phố là gì?',
+            },
+            {
+              'icon': Icons.attach_money,
+              'text': 'Ước tính chi phí',
+              'query': 'Chi phí cho một chuyến du lịch thường là bao nhiêu?',
+            },
+          ];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -845,7 +915,9 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Tôi là trợ lý AI du lịch của bạn!',
+                  widget.currentTrip != null
+                      ? 'Tôi sẽ giúp bạn lên kế hoạch!'
+                      : 'Tôi là trợ lý AI du lịch của bạn!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
@@ -853,12 +925,57 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
+                if (widget.currentTrip != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '📍 ${widget.currentTrip!.destination}',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${widget.currentTrip!.startDate.day}/${widget.currentTrip!.startDate.month}/${widget.currentTrip!.startDate.year} - ${widget.currentTrip!.endDate.day}/${widget.currentTrip!.endDate.month}/${widget.currentTrip!.endDate.year}',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                        if (widget.currentTrip!.budget != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '💰 ${widget.currentTrip!.budget!.estimatedCost.toStringAsFixed(0)} ${widget.currentTrip!.budget!.currency}',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            'Bạn muốn hỏi gì?',
+            widget.currentTrip != null
+                ? 'Chỉ cần cho tôi biết số người du lịch:'
+                : 'Bạn muốn hỏi gì?',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 18,

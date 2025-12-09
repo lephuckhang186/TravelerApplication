@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'search_place_screen.dart';
 import '../widgets/ai_assistant_dialog.dart';
@@ -12,6 +13,49 @@ import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
 import '../utils/activity_scheduling_validator.dart';
+
+/// Formatter để tự động thêm dấu chấm sau mỗi 3 chữ số
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Loại bỏ tất cả dấu chấm hiện có
+    String newText = newValue.text.replaceAll('.', '');
+
+    // Chỉ giữ lại số
+    newText = newText.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (newText.isEmpty) {
+      return const TextEditingValue();
+    }
+
+    // Thêm dấu chấm sau mỗi 3 chữ số từ phải sang trái
+    String formatted = '';
+    int count = 0;
+    for (int i = newText.length - 1; i >= 0; i--) {
+      if (count == 3) {
+        formatted = '.$formatted';
+        count = 0;
+      }
+      formatted = newText[i] + formatted;
+      count++;
+    }
+
+    // Tính toán vị trí con trở mới
+    int cursorPosition = formatted.length;
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: cursorPosition),
+    );
+  }
+}
 
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -208,28 +252,34 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: AppColors.primary.withValues(alpha: 0.12),
-          ),
-          child: const Icon(
-            Icons.travel_explore,
-            color: AppColors.primary,
-            size: 20,
+        Transform.translate(
+          offset: const Offset(
+            -25,
+            4,
+          ), // Adjust this value to move left side down
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primary.withValues(alpha: 0.12),
+            ),
+            child: const Icon(
+              Icons.travel_explore,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
         ),
         const SizedBox(width: 12),
         Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Transform.translate(
-                offset: const Offset(0, 0),
-                child: Text(
+          child: Transform.translate(
+            offset: const Offset(-30, 0), // Adjust this value to move text down
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   _trip.name,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
@@ -240,43 +290,43 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _trip.destination,
-                style: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
+                const SizedBox(height: 2),
+                Text(
+                  _trip.destination,
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.calendar_today,
-                    size: 11,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      dateRange,
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 11,
-                        color: Colors.grey.shade700,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 11,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        dateRange,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 11,
+                          color: Colors.grey.shade700,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -510,14 +560,35 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       Transform.translate(
                         offset: const Offset(0, -8),
                         child: IconButton(
-                          icon: Icon(
-                            activity.checkIn
-                                ? Icons.check_circle
-                                : Icons.check_circle_outline,
-                            color: activity.checkIn
-                                ? Colors.green
-                                : Colors.grey,
-                          ),
+                          icon: activity.checkIn
+                              ? Icon(Icons.check_circle, color: Colors.green)
+                              : Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppColors.skyBlue.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        AppColors.steelBlue.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        AppColors.dodgerBlue.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.check_circle_outline,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
                           onPressed: () => _toggleCheckIn(activity),
                         ),
                       ),
@@ -717,9 +788,24 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final descriptionController = TextEditingController(
       text: activity.description ?? '',
     );
-    final expectedCostController = TextEditingController(
-      text: activity.budget?.estimatedCost.toString() ?? '',
-    );
+    // Format expected cost with thousand separators
+    String formattedCost = '';
+    if (activity.budget?.estimatedCost != null) {
+      final cost = activity.budget!.estimatedCost.toInt().toString();
+      // Add dots every 3 digits from right to left
+      String formatted = '';
+      int count = 0;
+      for (int i = cost.length - 1; i >= 0; i--) {
+        if (count == 3) {
+          formatted = '.$formatted';
+          count = 0;
+        }
+        formatted = cost[i] + formatted;
+        count++;
+      }
+      formattedCost = formatted;
+    }
+    final expectedCostController = TextEditingController(text: formattedCost);
     dynamic selectedPlace = activity.location != null
         ? {
             'display_name': activity.location!.name,
@@ -920,7 +1006,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               expectedCostController.text.trim().isEmpty
                               ? null
                               : double.tryParse(
-                                  expectedCostController.text.trim(),
+                                  expectedCostController.text.trim().replaceAll(
+                                    '.',
+                                    '',
+                                  ),
                                 );
 
                           // Create budget preserving actual cost if exists
@@ -1279,7 +1368,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               expectedCostController.text.trim().isEmpty
                               ? null
                               : double.tryParse(
-                                  expectedCostController.text.trim(),
+                                  expectedCostController.text.trim().replaceAll(
+                                    '.',
+                                    '',
+                                  ),
                                 );
 
                           // Create budget if expected cost is provided
@@ -1346,6 +1438,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
   }) {
+    // Áp dụng formatter cho số tiền khi keyboardType là number
+    final inputFormatters = keyboardType == TextInputType.number
+        ? [ThousandsSeparatorInputFormatter()]
+        : <TextInputFormatter>[];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1362,6 +1459,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
@@ -1577,8 +1675,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       text: _trip.description ?? '',
     );
     final budgetController = TextEditingController(
-      text: _trip.budget?.estimatedCost != null 
-          ? _formatCurrency(_trip.budget!.estimatedCost).replaceAll(' VND', '') 
+      text: _trip.budget?.estimatedCost != null
+          ? _formatCurrency(_trip.budget!.estimatedCost).replaceAll(' VND', '')
           : '',
     );
     DateTime selectedStartDate = _trip.startDate;
@@ -1625,7 +1723,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Total Budget (VND)',
                       border: OutlineInputBorder(),
-                      helperText: 'Format: 1,000,000',
+                      helperText: 'Format: 1.000.000',
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -2219,7 +2317,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   String _formatCurrency(double amount) {
-    return '${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',')} VND';
+    return '${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} VND';
   }
 
   void _toggleCheckIn(ActivityModel activity) async {
