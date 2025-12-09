@@ -450,240 +450,255 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             if (!isLast)
               Container(
                 width: 2,
-                height: 60,
-                color: AppColors.primary.withValues(alpha: 0.2),
+                height: 155,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.skyBlue.withValues(alpha: 0.9),
+                      AppColors.steelBlue.withValues(alpha: 0.8),
+                      AppColors.dodgerBlue.withValues(alpha: 0.7),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
               ),
           ],
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 6),
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.1),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Transform.translate(
-                        offset: const Offset(0, 0),
-                        child: Text(
-                          activity.title,
-                          style: TextStyle(
-                            fontFamily: 'Urbanist-Regular',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    // Check-in button
-                    Transform.translate(
-                      offset: const Offset(0, -8),
-                      child: IconButton(
-                        icon: Icon(
-                          activity.checkIn
-                              ? Icons.check_circle
-                              : Icons.check_circle_outline,
-                          color: activity.checkIn ? Colors.green : Colors.grey,
-                        ),
-                        onPressed: () => _toggleCheckIn(activity),
-                      ),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(0, -8),
-                      child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, size: 18),
-                        onSelected: (value) {
-                          if (value == 'delete') {
-                            _deleteActivity(activity);
-                          } else if (value == 'edit') {
-                            _showEditActivityModal(activity);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit Activity'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Remove'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          child: SizedBox(
+            height: 195,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.1),
                 ),
-                if (activity.description != null &&
-                    activity.description!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Transform.translate(
-                    offset: const Offset(0, 0),
-                    child: Text(
-                      activity.description!,
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-                if (activity.location != null) ...[
-                  const SizedBox(height: 8),
-                  Transform.translate(
-                    offset: const Offset(0, 0),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          size: 14,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Transform.translate(
+                          offset: const Offset(0, 0),
                           child: Text(
-                            activity.location!.name,
+                            activity.title,
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
-                              fontSize: 13,
-                              color: Colors.grey.shade700,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      // Check-in button
+                      Transform.translate(
+                        offset: const Offset(0, -8),
+                        child: IconButton(
+                          icon: Icon(
+                            activity.checkIn
+                                ? Icons.check_circle
+                                : Icons.check_circle_outline,
+                            color: activity.checkIn
+                                ? Colors.green
+                                : Colors.grey,
+                          ),
+                          onPressed: () => _toggleCheckIn(activity),
+                        ),
+                      ),
+                      Transform.translate(
+                        offset: const Offset(0, -8),
+                        child: PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, size: 18),
+                          onSelected: (value) {
+                            if (value == 'delete') {
+                              _deleteActivity(activity);
+                            } else if (value == 'edit') {
+                              _showEditActivityModal(activity);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit Activity'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Remove'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-                // Budget information - show expected cost before check-in, actual cost after
-                if (activity.budget != null) ...[
-                  const SizedBox(height: 8),
-                  Transform.translate(
-                    offset: const Offset(0, 0),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: [
-                        // Before check-in: Show expected cost only
-                        if (!activity.checkIn)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                  if (activity.description != null &&
+                      activity.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Transform.translate(
+                      offset: const Offset(0, 0),
+                      child: Text(
+                        activity.description!,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                  if (activity.location != null) ...[
+                    const SizedBox(height: 8),
+                    Transform.translate(
+                      offset: const Offset(0, 0),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              activity.location!.name,
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
+                                fontSize: 13,
+                                color: Colors.grey.shade700,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.schedule,
-                                  size: 12,
-                                  color: AppColors.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Expected: ${_formatCurrency(activity.budget!.estimatedCost)}',
-                                  style: TextStyle(
-                                    fontFamily: 'Urbanist-Regular',
-                                    fontSize: 12,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // Budget information - show expected cost before check-in, actual cost after
+                  if (activity.budget != null) ...[
+                    const SizedBox(height: 8),
+                    Transform.translate(
+                      offset: const Offset(0, 0),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          // Before check-in: Show expected cost only
+                          if (!activity.checkIn)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.schedule,
+                                    size: 12,
                                     color: AppColors.primary,
-                                    fontWeight: FontWeight.w500,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Expected: ${_formatCurrency(activity.budget!.estimatedCost)}',
+                                    style: TextStyle(
+                                      fontFamily: 'Urbanist-Regular',
+                                      fontSize: 12,
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        // After check-in: Show actual cost
-                        if (activity.checkIn &&
-                            activity.budget!.actualCost != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.receipt,
-                                  size: 12,
-                                  color: Colors.green,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Spent: ${_formatCurrency(activity.budget!.actualCost!)}',
-                                  style: TextStyle(
-                                    fontFamily: 'Urbanist-Regular',
-                                    fontSize: 12,
+                          // After check-in: Show actual cost
+                          if (activity.checkIn &&
+                              activity.budget!.actualCost != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.receipt,
+                                    size: 12,
                                     color: Colors.green,
-                                    fontWeight: FontWeight.w500,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Spent: ${_formatCurrency(activity.budget!.actualCost!)}',
+                                    style: TextStyle(
+                                      fontFamily: 'Urbanist-Regular',
+                                      fontSize: 12,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        // After check-in but no actual cost recorded
-                        if (activity.checkIn &&
-                            activity.budget!.actualCost == null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber,
-                                  size: 12,
-                                  color: Colors.orange,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'No cost recorded',
-                                  style: TextStyle(
-                                    fontFamily: 'Urbanist-Regular',
-                                    fontSize: 12,
+                          // After check-in but no actual cost recorded
+                          if (activity.checkIn &&
+                              activity.budget!.actualCost == null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.warning_amber,
+                                    size: 12,
                                     color: Colors.orange,
-                                    fontWeight: FontWeight.w500,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'No cost recorded',
+                                    style: TextStyle(
+                                      fontFamily: 'Urbanist-Regular',
+                                      fontSize: 12,
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
