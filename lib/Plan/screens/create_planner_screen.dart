@@ -152,7 +152,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
 
                             // Destination Field
                             _buildInputField(
-                              label: 'Destination City',
+                              label: 'Destination City*',
                               controller: _destinationController,
                               hintText: 'Where are you going?',
                             ),
@@ -357,6 +357,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
 
   bool _canSave() {
     return _tripNameController.text.trim().isNotEmpty &&
+        _destinationController.text.trim().isNotEmpty &&
         _budgetController.text.trim().isNotEmpty;
   }
 
