@@ -14,21 +14,25 @@ class SmartNotificationWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SmartNotificationProvider>(
       builder: (context, provider, child) {
-        debugPrint('SmartNotificationWidget: Building with ${provider.notifications.length} notifications, unread: ${provider.unreadCount}');
+        final tripNotifications = provider.getNotifications(tripId);
+        final tripUnreadCount = provider.getUnreadCount(tripId);
+        final hasUnreadForTrip = provider.hasUnreadForTrip(tripId);
+        
+        debugPrint('SmartNotificationWidget: Building with ${tripNotifications.length} notifications, unread: $tripUnreadCount for trip $tripId');
         
         return Stack(
           children: [
             IconButton(
               icon: Icon(
-                provider.hasUnread 
+                hasUnreadForTrip 
                     ? Icons.notifications_active
                     : Icons.notifications_outlined,
-                color: provider.hasUnread ? Colors.orange : Colors.black,
+                color: hasUnreadForTrip ? Colors.orange : Colors.black,
                 size: 24,
               ),
               onPressed: () => _showNotificationPanel(context, provider, tripId),
             ),
-            if (provider.hasUnread)
+            if (hasUnreadForTrip)
               Positioned(
                 right: 6,
                 top: 6,
@@ -43,7 +47,7 @@ class SmartNotificationWidget extends StatelessWidget {
                     minHeight: 16,
                   ),
                   child: Text(
-                    '${provider.unreadCount}',
+                    '$tripUnreadCount',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -93,7 +97,7 @@ class SmartNotificationWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Thông báo thông minh',
+                      'Notifications',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 18,
@@ -101,11 +105,11 @@ class SmartNotificationWidget extends StatelessWidget {
                         color: Colors.black,
                       ),
                     ),
-                    if (provider.hasUnread)
+                    if (provider.hasUnreadForTrip(tripId))
                       TextButton(
                         onPressed: () => provider.markAllAsRead(tripId),
                         child: Text(
-                          'Đánh dấu đã đọc',
+                          'Mark all as read',
                           style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 14,
@@ -118,16 +122,16 @@ class SmartNotificationWidget extends StatelessWidget {
               
               // Notifications list
               Expanded(
-                child: provider.notifications.isEmpty
+                child: provider.getNotifications(tripId).isEmpty
                     ? _buildEmptyState()
                     : ListView.builder(
                         controller: scrollController,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: provider.notifications.length,
+                        itemCount: provider.getNotifications(tripId).length,
                         shrinkWrap: true,
                         physics: const BouncingScrollPhysics(),
                         itemBuilder: (context, index) {
-                          final notification = provider.notifications[index];
+                          final notification = provider.getNotifications(tripId)[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: _buildNotificationItem(
@@ -159,7 +163,7 @@ class SmartNotificationWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Không có thông báo nào',
+            'No notifications',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 16,
@@ -168,7 +172,7 @@ class SmartNotificationWidget extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Thông báo thông minh sẽ xuất hiện ở đây',
+            'Smart notifications will appear here',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 14,
@@ -205,7 +209,7 @@ class SmartNotificationWidget extends StatelessWidget {
       onDismissed: (direction) {
         provider.deleteNotification(notification.id, tripId);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xóa thông báo')),
+          const SnackBar(content: Text('Notification deleted')),
         );
       },
       child: Container(
@@ -310,13 +314,13 @@ class SmartNotificationWidget extends StatelessWidget {
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
+      return '${difference.inDays} days ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
+      return '${difference.inHours} hours ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
+      return '${difference.inMinutes} minutes ago';
     } else {
-      return 'Vừa xong';
+      return 'Just now';
     }
   }
 }

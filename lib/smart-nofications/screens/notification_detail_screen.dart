@@ -274,10 +274,29 @@ class NotificationDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildDetailRow('Hoạt động', data['activityTitle'] ?? 'Không xác định'),
-          _buildDetailRow('Dự kiến', '${_formatCurrency(data['estimatedCost'])} ${data['currency'] ?? 'VND'}'),
-          _buildDetailRow('Thực tế', '${_formatCurrency(data['actualCost'])} ${data['currency'] ?? 'VND'}'),
-          _buildDetailRow('Vượt quá', '${_formatCurrency(data['overageAmount'])} (${data['overagePercentage'].toInt()}%)'),
+          // Handle both backend response format and BudgetWarning model format
+          if (data['activityTitle'] != null)
+            _buildDetailRow('Hoạt động', data['activityTitle']),
+          
+          // Backend format (from expense response)
+          if (data['total_budget'] != null)
+            _buildDetailRow('Ngân sách', '${_formatCurrency(data['total_budget'])} ${data['currency'] ?? 'VND'}'),
+          if (data['total_spent'] != null)
+            _buildDetailRow('Đã chi', '${_formatCurrency(data['total_spent'])} ${data['currency'] ?? 'VND'}'),
+          if (data['overage'] != null)
+            _buildDetailRow('Vượt quá', '${_formatCurrency(data['overage'])} ${data['currency'] ?? 'VND'}'),
+          if (data['remaining'] != null)
+            _buildDetailRow('Còn lại', '${_formatCurrency(data['remaining'])} ${data['currency'] ?? 'VND'}'),
+          if (data['percentage_used'] != null)
+            _buildDetailRow('Đã sử dụng', '${(data['percentage_used'] as num).round()}%'),
+          
+          // BudgetWarning model format
+          if (data['estimatedCost'] != null)
+            _buildDetailRow('Dự kiến', '${_formatCurrency(data['estimatedCost'])} ${data['currency'] ?? 'VND'}'),
+          if (data['actualCost'] != null)
+            _buildDetailRow('Thực tế', '${_formatCurrency(data['actualCost'])} ${data['currency'] ?? 'VND'}'),
+          if (data['overageAmount'] != null && data['overagePercentage'] != null)
+            _buildDetailRow('Vượt quá', '${_formatCurrency(data['overageAmount'])} (${(data['overagePercentage'] as num).round()}%)'),
         ],
       ),
     );

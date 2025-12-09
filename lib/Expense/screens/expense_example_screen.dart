@@ -463,13 +463,13 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
       return;
     }
 
-    final success = await _expenseProvider.createExpense(
+    final expense = await _expenseProvider.createExpense(
       amount,
       _selectedCategory,
       description: _descriptionController.text.trim(),
     );
 
-    if (success) {
+    if (expense != null) {
       _amountController.clear();
       _descriptionController.clear();
       if (mounted) {

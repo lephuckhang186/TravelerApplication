@@ -356,20 +356,47 @@ class FirebaseService:
             return None
     
     async def update_trip(self, trip_id: str, user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Update trip"""
+        """Update trip - supports multiple storage patterns"""
         try:
-            trip_ref = self.db.collection('trips').document(trip_id)
-            trip_doc = trip_ref.get()
-            
-            if not trip_doc.exists or trip_doc.to_dict().get('user_id') != user_id:
-                return None
-            
             updates['updated_at'] = datetime.utcnow().isoformat()
-            trip_ref.update(updates)
+            updated = False
             
-            return await self.get_trip(trip_id, user_id)
+            # Pattern 1: Update users/{userId}/trips/{tripId} (Flutter app structure)
+            if user_id:
+                try:
+                    user_trip_ref = self.db.collection('users').document(user_id).collection('trips').document(trip_id)
+                    user_trip_doc = user_trip_ref.get()
+                    if user_trip_doc.exists:
+                        user_trip_ref.update(updates)
+                        print(f"✅ UPDATED: users/{user_id}/trips/{trip_id}")
+                        updated = True
+                except Exception as e:
+                    print(f"⚠️ Could not update users/{user_id}/trips/{trip_id}: {e}")
+            
+            # Pattern 2: Update trips/{tripId} (Backend structure)
+            try:
+                trip_ref = self.db.collection('trips').document(trip_id)
+                trip_doc = trip_ref.get()
+                
+                if trip_doc.exists:
+                    trip_data = trip_doc.to_dict()
+                    if not user_id or trip_data.get('user_id') == user_id:
+                        trip_ref.update(updates)
+                        print(f"✅ UPDATED: trips/{trip_id}")
+                        updated = True
+            except Exception as e:
+                print(f"⚠️ Could not update trips/{trip_id}: {e}")
+            
+            if updated:
+                return await self.get_trip(trip_id, user_id)
+            else:
+                print(f"❌ UPDATE_TRIP_FAILED: Trip {trip_id} not found in any collection")
+                return None
+                
         except Exception as e:
             print(f"❌ FIRESTORE_UPDATE_TRIP_ERROR: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def delete_trip(self, trip_id: str, user_id: str) -> bool:

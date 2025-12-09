@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => SmartNotificationProvider()),
       ],
       child: MaterialApp(
-        title: 'TravelPro - Smart Travel Planner',
+        title: 'TripWise - Smart Travel Planner',
         debugShowCheckedModeBanner: false,
         // Enable DevicePreview integration
         useInheritedMediaQuery: true,

@@ -6,64 +6,65 @@ import '../../Plan/services/trip_planning_service.dart';
 class BudgetNotificationService {
   final TripPlanningService _tripService = TripPlanningService();
 
-  Future<BudgetWarning?> checkBudgetOverage(String activityId, double actualCost) async {
+  Future<BudgetWarning?> checkBudgetOverage(String activityId, double actualCost, {String? tripId}) async {
     try {
       debugPrint('BudgetNotificationService: Checking overage for activity $activityId with actual cost $actualCost');
       
-      // For demo purposes, create a mock activity if service not available
-      try {
-        final activity = await _tripService.getActivity(activityId);
-        
-        if (activity?.budget?.estimatedCost == null) {
-          debugPrint('BudgetNotificationService: No budget set for activity');
+      ActivityModel? activity;
+      
+      // Try to get activity from trip if tripId provided
+      if (tripId != null) {
+        try {
+          final trip = await _tripService.getTrip(tripId);
+          if (trip != null) {
+            activity = trip.activities.firstWhere(
+              (a) => a.id == activityId,
+              orElse: () => throw Exception('Activity not found in trip'),
+            );
+          }
+        } catch (e) {
+          debugPrint('BudgetNotificationService: Could not get activity from trip: $e');
+        }
+      }
+      
+      // Fallback: try to get activity directly (may fail if backend is down)
+      if (activity == null) {
+        try {
+          activity = await _tripService.getActivity(activityId);
+        } catch (e) {
+          debugPrint('BudgetNotificationService: Could not get activity from backend: $e');
           return null;
         }
-
-        final estimatedCost = activity!.budget!.estimatedCost;
-        final overage = actualCost - estimatedCost;
-        
-        debugPrint('BudgetNotificationService: Estimated: $estimatedCost, Actual: $actualCost, Overage: $overage');
-        
-        // Only alert if overage is more than 10%
-        if (overage > estimatedCost * 0.1) {
-          final overagePercentage = (overage / estimatedCost) * 100;
-          
-          debugPrint('BudgetNotificationService: Budget overage detected: ${overagePercentage.toInt()}%');
-          
-          return BudgetWarning(
-            activityTitle: activity.title,
-            estimatedCost: estimatedCost,
-            actualCost: actualCost,
-            overageAmount: overage,
-            overagePercentage: overagePercentage,
-            currency: activity.budget!.currency ?? 'VND',
-          );
-        }
-        
-        debugPrint('BudgetNotificationService: Budget overage within acceptable range');
-        return null;
-      } catch (serviceError) {
-        debugPrint('BudgetNotificationService: Service error, creating mock warning: $serviceError');
-        
-        // Create mock warning for demo if service fails
-        final mockEstimatedCost = 300000.0; // Mock estimated cost
-        final overage = actualCost - mockEstimatedCost;
-        
-        if (overage > mockEstimatedCost * 0.1) {
-          final overagePercentage = (overage / mockEstimatedCost) * 100;
-          
-          return BudgetWarning(
-            activityTitle: 'Activity (Mock)',
-            estimatedCost: mockEstimatedCost,
-            actualCost: actualCost,
-            overageAmount: overage,
-            overagePercentage: overagePercentage,
-            currency: 'VND',
-          );
-        }
-        
+      }
+      
+      if (activity?.budget?.estimatedCost == null) {
+        debugPrint('BudgetNotificationService: No budget set for activity $activityId');
         return null;
       }
+
+      final estimatedCost = activity!.budget!.estimatedCost;
+      final overage = actualCost - estimatedCost;
+      
+      debugPrint('BudgetNotificationService: Estimated: $estimatedCost, Actual: $actualCost, Overage: $overage');
+      
+      // Only alert if overage is more than 10%
+      if (overage > estimatedCost * 0.1) {
+        final overagePercentage = (overage / estimatedCost) * 100;
+        
+        debugPrint('BudgetNotificationService: Budget overage detected: ${overagePercentage.toInt()}%');
+        
+        return BudgetWarning(
+          activityTitle: activity.title,
+          estimatedCost: estimatedCost,
+          actualCost: actualCost,
+          overageAmount: overage,
+          overagePercentage: overagePercentage,
+          currency: activity.budget!.currency,
+        );
+      }
+      
+      debugPrint('BudgetNotificationService: Budget overage within acceptable range');
+      return null;
     } catch (e) {
       debugPrint('BudgetNotificationService: Error checking budget overage: $e');
       return null;
@@ -72,7 +73,32 @@ class BudgetNotificationService {
 
   Future<List<BudgetWarning>> checkTripBudgetStatus(String tripId) async {
     try {
-      final activities = await _tripService.getActivities(tripId: tripId);
+      debugPrint('BudgetNotificationService: Checking budget status for trip $tripId');
+      
+      List<ActivityModel> activities = [];
+      
+      // Try to get activities from trip object first
+      try {
+        final trip = await _tripService.getTrip(tripId);
+        if (trip != null) {
+          activities = trip.activities;
+          debugPrint('BudgetNotificationService: Got ${activities.length} activities from trip object');
+        }
+      } catch (e) {
+        debugPrint('BudgetNotificationService: Could not get trip: $e');
+      }
+      
+      // Fallback: try to get activities from backend (may fail)
+      if (activities.isEmpty) {
+        try {
+          activities = await _tripService.getActivities(tripId: tripId);
+          debugPrint('BudgetNotificationService: Got ${activities.length} activities from backend');
+        } catch (e) {
+          debugPrint('BudgetNotificationService: Could not get activities from backend: $e');
+          return [];
+        }
+      }
+
       final warnings = <BudgetWarning>[];
 
       for (final activity in activities) {
@@ -80,20 +106,25 @@ class BudgetNotificationService {
             activity.budget != null && 
             activity.budget!.actualCost != null) {
           
+          debugPrint('BudgetNotificationService: Checking activity ${activity.id} with actual cost ${activity.budget!.actualCost}');
+          
           final warning = await checkBudgetOverage(
             activity.id!, 
-            activity.budget!.actualCost!
+            activity.budget!.actualCost!,
+            tripId: tripId
           );
           
           if (warning != null) {
             warnings.add(warning);
+            debugPrint('BudgetNotificationService: Added budget warning for activity ${activity.id}');
           }
         }
       }
 
+      debugPrint('BudgetNotificationService: Found ${warnings.length} budget warnings for trip $tripId');
       return warnings;
     } catch (e) {
-      print('Error checking trip budget status: $e');
+      debugPrint('BudgetNotificationService: Error checking trip budget status: $e');
       return [];
     }
   }

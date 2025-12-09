@@ -148,6 +148,7 @@ class Expense {
   final String description;
   final String currency;
   final String? tripId; // Added trip ID support
+  final Map<String, dynamic>? budgetWarning; // Budget warning from backend
 
   const Expense({
     required this.id,
@@ -157,6 +158,7 @@ class Expense {
     this.description = '',
     this.currency = 'VND',
     this.tripId,
+    this.budgetWarning,
   });
 
   /// Validate expense amount
@@ -171,9 +173,13 @@ class Expense {
       description: json['description'] as String? ?? '',
       currency: json['currency'] as String? ?? 'VND',
       tripId: json['planner_id'] as String?, // Map backend planner_id to tripId
+      budgetWarning: json['budget_warning'] as Map<String, dynamic>?,
     );
     
     debugPrint('DEBUG: Expense.fromJson - ID: ${expense.id}, TripId: ${expense.tripId}, planner_id from backend: ${json['planner_id']}');
+    if (expense.budgetWarning != null) {
+      debugPrint('DEBUG: Expense.fromJson - Budget warning detected: ${expense.budgetWarning}');
+    }
     
     return expense;
   }
@@ -187,6 +193,7 @@ class Expense {
       'description': description,
       'currency': currency,
       if (tripId != null) 'planner_id': tripId,
+      if (budgetWarning != null) 'budget_warning': budgetWarning,
     };
   }
 

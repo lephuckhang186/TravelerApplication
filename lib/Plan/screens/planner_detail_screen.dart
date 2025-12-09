@@ -175,27 +175,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             errorString.contains('connection') ||
             errorString.contains('timeout')) {
           
-          // Show a subtle notification that we're working offline
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      Icon(Icons.wifi_off, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Working offline - server unavailable'),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: Colors.orange[700],
-                  duration: Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          });
+          // Network error handled - continue with local data
         }
       }
       
@@ -2219,6 +2199,42 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           tripId: _trip.id,
         );
 
+        debugPrint(
+          'Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND), expenseId: ${expense.id}',
+        );
+
+        // Check if backend returned a budget warning
+        if (expense.budgetWarning != null) {
+          debugPrint('💰 BUDGET_WARNING from backend: ${expense.budgetWarning}');
+          
+          // Trigger smart notification for budget warning
+          try {
+            final notificationProvider = Provider.of<SmartNotificationProvider>(
+              context,
+              listen: false,
+            );
+            
+            final warningType = expense.budgetWarning!['type'] as String?;
+            final message = expense.budgetWarning!['message'] as String?;
+            
+            debugPrint('🔔 Triggering notification for budget warning: $warningType - $message');
+            
+            // Create notification based on warning type
+            if (warningType == 'OVER_BUDGET' || warningType == 'WARNING' || warningType == 'NO_BUDGET') {
+              await notificationProvider.handleExpenseCreatedWithResponse(
+                _trip.id!,
+                expense,
+                activity.id,
+              );
+              debugPrint('✅ Budget warning notification created successfully');
+            }
+          } catch (providerError) {
+            debugPrint('❌ Failed to create budget warning notification: $providerError');
+          }
+        } else {
+          debugPrint('ℹ️ No budget warning from backend');
+        }
+
         // Update activity with expense info
         final updatedExpenseInfo = activity.expenseInfo.copyWith(
           expenseId: expense.id,
@@ -2239,10 +2255,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           });
           await _persistTripChanges();
         }
-
-        debugPrint(
-          'Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND), expenseId: ${expense.id}',
-        );
       } else {
         // Log activity cost without expense integration
         debugPrint(

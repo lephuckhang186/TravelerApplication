@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/notification_models.dart';
 import '../../Plan/models/activity_models.dart';
 import '../../Plan/services/trip_planning_service.dart';
@@ -16,12 +17,12 @@ class ActivityReminderService {
           final timeDiff = activity.startDate!.difference(now);
           final minutesUntilStart = timeDiff.inMinutes;
 
-          // Send reminder 60 minutes before activity starts
-          if (minutesUntilStart > 0 && minutesUntilStart <= 60) {
+          // Send reminder 2 hours before activity starts
+          if (minutesUntilStart > 0 && minutesUntilStart <= 120) {
             reminders.add(ActivityReminder(
               activityId: activity.id ?? '',
               activityTitle: activity.title,
-              location: activity.location?.name ?? 'Chưa xác định',
+              location: activity.location?.name ?? 'Not specified',
               startTime: activity.startDate!,
               minutesUntilStart: minutesUntilStart,
             ));
@@ -31,7 +32,7 @@ class ActivityReminderService {
 
       return reminders;
     } catch (e) {
-      print('Error checking upcoming activities: $e');
+      debugPrint('ActivityReminderService: Error checking upcoming activities: $e');
       return [];
     }
   }
@@ -60,7 +61,7 @@ class ActivityReminderService {
             reminders.add(ActivityReminder(
               activityId: activity.id ?? '',
               activityTitle: activity.title,
-              location: activity.location?.name ?? 'Chưa xác định',
+              location: activity.location?.name ?? 'Not specified',
               startTime: activity.startDate!,
               minutesUntilStart: timeDiff.inMinutes,
             ));
@@ -73,7 +74,7 @@ class ActivityReminderService {
 
       return reminders;
     } catch (e) {
-      print('Error getting today activities: $e');
+      debugPrint('ActivityReminderService: Error getting today activities: $e');
       return [];
     }
   }
@@ -102,7 +103,7 @@ class ActivityReminderService {
 
       return nextActivity;
     } catch (e) {
-      print('Error getting next activity: $e');
+      debugPrint('ActivityReminderService: Error getting next activity: $e');
       return null;
     }
   }
@@ -112,13 +113,13 @@ class ActivityReminderService {
     final difference = activityTime.difference(now);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays} ngày ${difference.inHours % 24} giờ';
+      return '${difference.inDays} days ${difference.inHours % 24} hours';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ ${difference.inMinutes % 60} phút';
+      return '${difference.inHours} hours ${difference.inMinutes % 60} minutes';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút';
+      return '${difference.inMinutes} minutes';
     } else {
-      return 'Sắp bắt đầu';
+      return 'Starting soon';
     }
   }
 
@@ -134,5 +135,50 @@ class ActivityReminderService {
 
     // Send reminder if activity is within 1 hour
     return timeUntilActivity.inMinutes <= 60 && timeUntilActivity.inMinutes > 0;
+  }
+
+  /// Check if today is within the trip date range
+  Future<bool> isTodayWithinTrip(String tripId) async {
+    try {
+      debugPrint('ActivityReminderService: Checking trip $tripId for date range');
+      final trip = await _tripService.getTrip(tripId);
+      if (trip == null) {
+        debugPrint('ActivityReminderService: Trip $tripId not found');
+        return false;
+      }
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      debugPrint('ActivityReminderService: Today is $today (${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')})');
+      
+      // Get trip start and end dates
+      final startDate = trip.startDate;
+      final endDate = trip.endDate;
+      
+      debugPrint('ActivityReminderService: Trip startDate: $startDate, endDate: $endDate');
+      
+      final tripStartDay = DateTime(startDate.year, startDate.month, startDate.day);
+      final tripEndDay = DateTime(endDate.year, endDate.month, endDate.day);
+      
+      debugPrint('ActivityReminderService: Trip date range: $tripStartDay to $tripEndDay');
+      debugPrint('ActivityReminderService: Comparison - Today: $today, Start: $tripStartDay, End: $tripEndDay');
+      
+      // Check if today is within the trip date range (inclusive of both start and end dates)
+      final isWithinTrip = (today.isAtSameMomentAs(tripStartDay) || today.isAfter(tripStartDay)) &&
+                           (today.isAtSameMomentAs(tripEndDay) || today.isBefore(tripEndDay));
+      
+      debugPrint('ActivityReminderService: Today ($today) within trip dates ($tripStartDay to $tripEndDay): $isWithinTrip');
+      
+      // Additional detailed logging
+      debugPrint('ActivityReminderService: Same as start? ${today.isAtSameMomentAs(tripStartDay)}');
+      debugPrint('ActivityReminderService: Same as end? ${today.isAtSameMomentAs(tripEndDay)}');
+      debugPrint('ActivityReminderService: After start? ${today.isAfter(tripStartDay)}');
+      debugPrint('ActivityReminderService: Before end+1? ${today.isBefore(tripEndDay.add(const Duration(days: 1)))}');
+      
+      return isWithinTrip;
+    } catch (e) {
+      debugPrint('ActivityReminderService: Error checking trip dates: $e');
+      return false;
+    }
   }
 }

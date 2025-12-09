@@ -67,7 +67,7 @@ class TripExpenseIntegrationService {
         'DEBUG: Integration - ExpenseProvider available: ${_expenseProvider != null}',
       );
 
-      final success = await _expenseProvider!.createExpenseFromActivity(
+      final expense = await _expenseProvider!.createExpenseFromActivity(
         amount: amount,
         category: activity.activityType.value,
         description: activity.budget!.actualCost != null
@@ -77,9 +77,9 @@ class TripExpenseIntegrationService {
         tripId: activity.tripId ?? '',
       );
 
-      debugPrint('DEBUG: Integration - Expense creation result: $success');
+      debugPrint('DEBUG: Integration - Expense creation result: ${expense != null}');
 
-      if (success && activity.id != null) {
+      if (expense != null && activity.id != null) {
         // Track activity-expense mapping
         final activityId = activity.id;
         if (activityId != null) {
@@ -103,7 +103,7 @@ class TripExpenseIntegrationService {
         }
       }
 
-      return success;
+      return expense != null;
     } catch (e) {
       debugPrint('DEBUG: Integration - Failed to sync activity expense: $e');
       return false;

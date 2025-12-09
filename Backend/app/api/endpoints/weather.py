@@ -29,7 +29,8 @@ async def get_current_weather(
                "appid": WEATHER_API_KEY,
                "units": "metric",
                "lang": "vi"
-           }
+           },
+           timeout=10
        )
        
        if response.status_code == 200:
@@ -48,75 +49,55 @@ async def get_current_weather(
    except Exception as e:
        raise HTTPException(status_code=500, detail=f"Weather service error: {str(e)}")
 
-@router.get("/weather/forecast/{location}")
-async def get_weather_forecast(
-   location: str,
-   days: int = 5,
-   current_user: User = Depends(get_current_user)
-):
-   """Get weather forecast for a location"""
-   try:
-       response = requests.get(
-           f"{WEATHER_API_URL}/forecast",
-           params={
-               "q": location,
-               "appid": WEATHER_API_KEY,
-               "units": "metric",
-               "cnt": days * 8,  # 8 forecasts per day (every 3 hours)
-               "lang": "vi"
-           }
-       )
-       
-       if response.status_code == 200:
-           forecast_data = response.json()
-           forecasts = []
-           
-           for item in forecast_data["list"]:
-               forecasts.append({
-                   "datetime": item["dt_txt"],
-                   "temperature": item["main"]["temp"],
-                   "condition": item["weather"][0]["description"],
-                   "humidity": item["main"]["humidity"],
-                   "wind_speed": item["wind"]["speed"]
-               })
-           
-           return {
-               "location": forecast_data["city"]["name"],
-               "forecasts": forecasts
-           }
-       else:
-           raise HTTPException(status_code=404, detail="Location not found")
-           
-   except Exception as e:
-       raise HTTPException(status_code=500, detail=f"Weather service error: {str(e)}")
-
 @router.get("/weather/alerts/{trip_id}")
 async def get_weather_alerts(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get weather alerts for a trip"""
+    """Get weather alerts for a trip - checks if today is within trip dates"""
     try:
-        # Get trip destination from database/storage
-        # Try to get trip destination, fallback to default locations if trip not found
-        destination = "Ha Noi"  # Default location
+        from app.services.firebase_service import firebase_service
+        from datetime import date
+        
+        print(f"🔍 Weather alerts check for trip {trip_id}, user: {current_user.id}")
+        
+        # Get trip data from Firebase
+        trip_data = await firebase_service.get_trip(trip_id, current_user.id)
+        if not trip_data:
+            print(f"❌ Trip {trip_id} not found")
+            raise HTTPException(status_code=404, detail="Trip not found")
+        
+        destination = trip_data.get("destination") or trip_data.get("name", "Ha Noi")
+        print(f"📍 Trip destination: {destination}")
+        
+        # Parse trip dates
+        start_date_str = trip_data.get('start_date', '')
+        end_date_str = trip_data.get('end_date', '')
+        
+        # Handle different date formats
+        if 'T' in start_date_str:
+            start_date_str = start_date_str.split('T')[0]
+        if 'T' in end_date_str:
+            end_date_str = end_date_str.split('T')[0]
+        
         try:
-            # Try to import and use trip storage service if available
-            from app.services.trip_storage_service import trip_storage
-            trip_data = trip_storage.get_trip(trip_id, current_user.id)
-            if trip_data and "destination" in trip_data:
-                destination = trip_data["destination"]
-        except ImportError:
-            print("Trip storage service not available, using default location")
-            # Use a simple mock approach - in real app, implement proper trip storage
-            # For now, we'll extract destination from trip_id if it contains location info
-            if "_" in trip_id:
-                potential_dest = trip_id.split("_")[-1].replace("-", " ").title()
-                if len(potential_dest) > 2:
-                    destination = potential_dest
-        except Exception as trip_error:
-            print(f"Could not get trip data, using default location: {trip_error}")
-            # Continue with default destination
+            start_date = date.fromisoformat(start_date_str)
+            end_date = date.fromisoformat(end_date_str)
+            today = date.today()
+            
+            print(f"📅 Trip dates: {start_date} to {end_date}")
+            print(f"📅 Today: {today}")
+            
+            # Check if today is within trip dates
+            if not (start_date <= today <= end_date):
+                print(f"⏭️ Today is not within trip dates - skipping weather check")
+                return []
+            
+            print(f"✅ Today is within trip dates - checking weather for {destination}")
+            
+        except Exception as date_error:
+            print(f"⚠️ Could not parse trip dates: {date_error}")
+            return []
         
         alerts = []
         
@@ -128,35 +109,50 @@ async def get_weather_alerts(
                     "appid": WEATHER_API_KEY,
                     "units": "metric",
                     "lang": "vi"
-                }
+                },
+                timeout=10
             )
+            print(f"🌤️ Weather API response status: {response.status_code}")
             
             if response.status_code == 200:
                 weather_data = response.json()
                 temp = weather_data["main"]["temp"]
                 condition = weather_data["weather"][0]["description"].lower()
                 
-                # Check for alert conditions
-                if (temp > 35 or temp < 10 or 
-                    "rain" in condition or 
-                    "storm" in condition or
-                    "thunderstorm" in condition):
-                    
-                    alerts.append({
-                        "condition": weather_data["weather"][0]["main"],
-                        "description": weather_data["weather"][0]["description"],
-                        "temperature": temp,
-                        "location": weather_data["name"],
-                        "alertTime": datetime.now().isoformat()
-                    })
+                print(f"🌡️ Current weather: {temp}°C, {condition}")
+                
+                # Always return weather info when today is within trip dates
+                # No conditions needed - just show current weather
+                alerts.append({
+                    "condition": weather_data["weather"][0]["main"],
+                    "description": weather_data["weather"][0]["description"],
+                    "temperature": temp,
+                    "location": weather_data["name"],
+                    "alertTime": datetime.now().isoformat(),
+                    "tripDates": {
+                        "start": start_date.isoformat(),
+                        "end": end_date.isoformat(),
+                        "today": today.isoformat()
+                    },
+                    "isWarning": (temp > 35 or temp < 10 or 
+                                 "rain" in condition or 
+                                 "storm" in condition or
+                                 "thunderstorm" in condition)
+                })
+                print(f"📋 Weather notification created: {condition}, {temp}°C (always show during trip)")
                     
         except Exception as weather_error:
-            print(f"Error checking weather for {destination}: {weather_error}")
+            print(f"❌ Error checking weather for {destination}: {weather_error}")
             # Return empty alerts if weather service fails
         
         return alerts
         
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"❌ Weather alerts error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Weather alerts error: {str(e)}")
 
 @router.get("/weather/current-alert/{trip_id}")
@@ -164,26 +160,65 @@ async def get_current_weather_alert(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Check if there's a current weather alert for trip destination"""
+    """Check if there's a current weather alert for trip destination - checks if today is within trip dates"""
     try:
-        # Get trip destination from database/storage
-        destination = "Ha Noi"  # Default location
+        from app.services.firebase_service import firebase_service
+        from datetime import date
+        
+        print(f"🔍 Current weather alert check for trip {trip_id}, user: {current_user.id}")
+        
+        # Get trip data from Firebase
+        trip_data = await firebase_service.get_trip(trip_id, current_user.id)
+        if not trip_data:
+            print(f"❌ Trip {trip_id} not found")
+            raise HTTPException(status_code=404, detail="Trip not found")
+        
+        destination = trip_data.get("destination") or trip_data.get("name", "Ha Noi")
+        print(f"📍 Trip destination: {destination}")
+        
+        # Parse trip dates
+        start_date_str = trip_data.get('start_date', '')
+        end_date_str = trip_data.get('end_date', '')
+        
+        # Handle different date formats
+        if 'T' in start_date_str:
+            start_date_str = start_date_str.split('T')[0]
+        if 'T' in end_date_str:
+            end_date_str = end_date_str.split('T')[0]
+        
         try:
-            # Try to import and use trip storage service if available
-            from app.services.trip_storage_service import trip_storage
-            trip_data = trip_storage.get_trip(trip_id, current_user.id)
-            if trip_data and "destination" in trip_data:
-                destination = trip_data["destination"]
-        except ImportError:
-            print("Trip storage service not available, using default location")
-            # Use a simple mock approach - extract destination from trip_id if it contains location info
-            if "_" in trip_id:
-                potential_dest = trip_id.split("_")[-1].replace("-", " ").title()
-                if len(potential_dest) > 2:
-                    destination = potential_dest
-        except Exception as trip_error:
-            print(f"Could not get trip data, using default location: {trip_error}")
-            # Continue with default destination
+            start_date = date.fromisoformat(start_date_str)
+            end_date = date.fromisoformat(end_date_str)
+            today = date.today()
+            
+            print(f"📅 Trip dates: {start_date} to {end_date}")
+            print(f"📅 Today: {today}")
+            
+            # Check if today is within trip dates
+            if not (start_date <= today <= end_date):
+                print(f"⏭️ Today is not within trip dates - no weather alerts needed")
+                return {
+                    "hasAlert": False,
+                    "alertType": "info",
+                    "destination": destination,
+                    "tripId": trip_id,
+                    "tripDates": {
+                        "start": start_date.isoformat(),
+                        "end": end_date.isoformat(),
+                        "today": today.isoformat()
+                    }
+                }
+            
+            print(f"✅ Today is within trip dates - checking weather for {destination}")
+            
+        except Exception as date_error:
+            print(f"⚠️ Could not parse trip dates: {date_error}")
+            return {
+                "hasAlert": False,
+                "alertType": "info",
+                "destination": destination,
+                "tripId": trip_id
+            }
 
         response = requests.get(
             f"{WEATHER_API_URL}/weather",
@@ -192,52 +227,63 @@ async def get_current_weather_alert(
                 "appid": WEATHER_API_KEY,
                 "units": "metric",
                 "lang": "en"
-            }
+            },
+            timeout=10
         )
+        print(f"🌤️ Weather API response status: {response.status_code}")
         
         if response.status_code == 200:
             weather_data = response.json()
             temp = weather_data["main"]["temp"]
             condition = weather_data["weather"][0]["description"].lower()
             
-            has_alert = False
+            print(f"🌡️ Current weather: {temp}°C, {condition}")
+            
+            # Always show weather info when today is within trip dates
+            # Determine severity level for display purposes
+            has_alert = True  # Always true when within trip dates
             alert_type = "info"
             
-            # Determine if there should be an alert
             if temp > 38:
-                has_alert = True
                 alert_type = "critical"
             elif temp < 5:
-                has_alert = True
                 alert_type = "critical"
             elif "thunderstorm" in condition or "heavy rain" in condition:
-                has_alert = True
                 alert_type = "critical"
             elif "rain" in condition or temp > 35 or temp < 10:
-                has_alert = True
                 alert_type = "warning"
             
             result = {
                 "hasAlert": has_alert,
                 "alertType": alert_type,
-                "destination": destination,  # Include destination in response
-                "tripId": trip_id
-            }
-            
-            if has_alert:
-                result["alert"] = {
+                "destination": destination,
+                "tripId": trip_id,
+                "tripDates": {
+                    "start": start_date.isoformat(),
+                    "end": end_date.isoformat(),
+                    "today": today.isoformat()
+                },
+                "alert": {
                     "condition": weather_data["weather"][0]["main"],
                     "description": weather_data["weather"][0]["description"],
                     "temperature": temp,
                     "location": weather_data["name"],
                     "alertTime": datetime.now().isoformat()
                 }
+            }
+            
+            print(f"📋 Weather notification: {alert_type} - {condition}, {temp}°C (always show during trip)")
             
             return result
         else:
             raise HTTPException(status_code=404, detail=f"Weather data not found for destination: {destination}")
             
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"❌ Current weather alert error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Current weather alert error: {str(e)}")
 
 @router.post("/weather/subscribe-alerts")

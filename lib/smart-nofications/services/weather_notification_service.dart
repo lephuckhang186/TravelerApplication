@@ -8,15 +8,8 @@ import '../../core/config/api_config.dart';
 class WeatherNotificationService {
   Future<List<WeatherAlert>> checkWeatherAlerts(String tripId) async {
     try {
-      // First try to connect to the backend API
-      final apiAlerts = await _fetchFromBackendAPI(tripId);
-      if (apiAlerts.isNotEmpty) {
-        return apiAlerts;
-      }
-      
-      // If API fails, fall back to a simple check based on general weather conditions
-      return await _getFallbackWeatherAlert();
-      
+      debugPrint('WeatherNotificationService: Checking weather alerts for trip $tripId');
+      return await _fetchFromBackendAPI(tripId);
     } catch (e) {
       debugPrint('WeatherNotificationService: Error checking weather alerts: $e');
       return [];
@@ -61,45 +54,11 @@ class WeatherNotificationService {
       
       return [];
     } catch (e) {
-      throw e; // Re-throw to trigger fallback
-    }
-  }
-
-  Future<List<WeatherAlert>> _getFallbackWeatherAlert() async {
-    try {
-      // Simple fallback: create a general weather reminder for today
-      final now = DateTime.now();
-      final hour = now.hour;
-      
-      // Create a weather reminder during certain conditions
-      if (hour >= 6 && hour <= 9) { // Morning weather check
-        return [
-          WeatherAlert(
-            condition: 'general',
-            description: 'Hãy kiểm tra thời tiết hôm nay trước khi bắt đầu các hoạt động',
-            temperature: 28.0, // Default temperature
-            location: 'Khu vực hiện tại',
-            alertTime: now,
-          )
-        ];
-      } else if (hour >= 17 && hour <= 19) { // Evening weather check
-        return [
-          WeatherAlert(
-            condition: 'evening',
-            description: 'Kiểm tra thời tiết cho hoạt động buổi tối',
-            temperature: 26.0,
-            location: 'Khu vực hiện tại', 
-            alertTime: now,
-          )
-        ];
-      }
-      
-      return []; // No fallback alert needed at this time
-    } catch (e) {
-      debugPrint('WeatherNotificationService: Error creating fallback alert: $e');
+      debugPrint('WeatherNotificationService: Backend API error: $e');
       return [];
     }
   }
+
 
   Future<WeatherAlert?> getCurrentWeatherAlert(String location) async {
     try {
@@ -119,19 +78,8 @@ class WeatherNotificationService {
       
       return null;
     } catch (e) {
-      print('Error getting current weather alert: $e');
+      debugPrint('WeatherNotificationService: Error getting current weather alert: $e');
       return null;
     }
-  }
-
-  bool _shouldAlertForWeather(Map<String, dynamic> weather) {
-    final condition = weather['condition']?.toString().toLowerCase() ?? '';
-    final temperature = weather['temperature'] ?? 0.0;
-    
-    // Alert conditions
-    final dangerousConditions = ['thunderstorm', 'storm', 'heavy rain', 'snow'];
-    final extremeTemperature = temperature > 40 || temperature < 5;
-    
-    return dangerousConditions.any((c) => condition.contains(c)) || extremeTemperature;
   }
 }
