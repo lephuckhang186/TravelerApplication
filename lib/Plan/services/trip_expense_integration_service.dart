@@ -71,8 +71,8 @@ class TripExpenseIntegrationService {
         amount: amount,
         category: activity.activityType.value,
         description: activity.budget!.actualCost != null
-            ? '${activity.title}'
-            : '${activity.title}',
+            ? activity.title
+            : activity.title,
         activityId: activity.id ?? '',
         tripId: activity.tripId ?? '',
       );

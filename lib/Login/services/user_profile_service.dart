@@ -3,6 +3,7 @@ import '../../Login/services/user_profile.dart';
 import 'firestore_user_service.dart';
 import 'profile_api_service.dart';
 import 'auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 class UserProfileService {
   static final UserProfileService _instance = UserProfileService._internal();
@@ -26,20 +27,16 @@ class UserProfileService {
         currentUser.uid,
       );
 
-      if (profile == null) {
-        // Fallback: try to get from backend API
-        profile = await _apiService.getUserProfile();
+      // Fallback: try to get from backend API
+      profile ??= await _apiService.getUserProfile();
 
-        if (profile == null) {
-          // Last resort: create from Firebase Auth data
-          profile = await _createProfileFromAuthData(currentUser);
-        }
-      }
+      // Last resort: create from Firebase Auth data
+      profile ??= await _createProfileFromAuthData(currentUser);
 
       _cachedProfile = profile;
       return profile;
     } catch (e) {
-      print('Error getting user profile: $e');
+      debugPrint('Error getting user profile: $e');
       return _cachedProfile;
     }
   }
@@ -70,7 +67,7 @@ class UserProfileService {
           profilePicture: profilePicture,
         );
       } catch (e) {
-        print('Firestore update failed: $e');
+        debugPrint('Firestore update failed: $e');
         firestoreSuccess = false;
       }
 
@@ -86,7 +83,7 @@ class UserProfileService {
           profilePicture: profilePicture,
         );
       } catch (e) {
-        print('API update failed: $e');
+        debugPrint('API update failed: $e');
         apiSuccess = false;
       }
 
@@ -98,7 +95,7 @@ class UserProfileService {
       // Return true if at least one update succeeded
       return firestoreSuccess || apiSuccess;
     } catch (e) {
-      print('Error updating user profile: $e');
+      debugPrint('Error updating user profile: $e');
       return false;
     }
   }
@@ -118,7 +115,7 @@ class UserProfileService {
           value: value,
         );
       } catch (e) {
-        print('Firestore field update failed: $e');
+        debugPrint('Firestore field update failed: $e');
         success = false;
       }
 
@@ -126,7 +123,7 @@ class UserProfileService {
       try {
         await _apiService.updateField(field, value);
       } catch (e) {
-        print('API field update failed: $e');
+        debugPrint('API field update failed: $e');
       }
 
       // Clear cache
@@ -136,7 +133,7 @@ class UserProfileService {
 
       return success;
     } catch (e) {
-      print('Error updating field $field: $e');
+      debugPrint('Error updating field $field: $e');
       return false;
     }
   }
@@ -161,7 +158,7 @@ class UserProfileService {
         await _createProfileFromAuthData(currentUser);
       }
     } catch (e) {
-      print('Error syncing after login: $e');
+      debugPrint('Error syncing after login: $e');
     }
   }
 
@@ -183,7 +180,7 @@ class UserProfileService {
       await _firestoreService.createOrUpdateUser(profile);
       return profile;
     } catch (e) {
-      print('Error creating profile from auth data: $e');
+      debugPrint('Error creating profile from auth data: $e');
       return null;
     }
   }

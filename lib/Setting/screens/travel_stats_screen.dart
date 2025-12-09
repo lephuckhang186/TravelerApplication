@@ -38,7 +38,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         }
       },
       onError: (error) {
-        print('Error loading statistics: $error');
+        debugPrint('Error loading statistics: $error');
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -93,7 +93,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 3,
                 ),
@@ -208,7 +208,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         ? (_stats.totalDays2025 * 100.0).toInt()
         : _stats.totalDistance.toInt();
     
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,7 +567,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
             const SizedBox(height: 16),
             
             // Chart - using real data, auto-scaling
-            Container(
+            SizedBox(
               height: 200,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -666,7 +666,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
             const SizedBox(height: 16),
             
             // Chart - using real 2025 data, auto-scaling
-            Container(
+            SizedBox(
               height: 200,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -779,13 +779,13 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                   end: Alignment.topCenter,
                   colors: [
                     color,
-                    color.withOpacity(0.6),
+                    color.withValues(alpha: 0.6),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(6),
                 boxShadow: value > 0 ? [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   )

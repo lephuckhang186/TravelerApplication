@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class MapService {
   // Free Routing APIs:
@@ -19,7 +20,7 @@ class MapService {
     // Try real routing APIs first for actual driving directions
     try {
       // Priority 1: OpenRouteService (free, reliable)
-      print('Trying OpenRouteService for real driving directions...');
+      debugPrint('Trying OpenRouteService for real driving directions...');
       final orsRoute = await _getOpenRouteServiceDirections(
         origin,
         destination,
@@ -28,15 +29,15 @@ class MapService {
         vehicleOptions: vehicleOptions,
       );
       if (orsRoute != null && orsRoute.isNotEmpty) {
-        print('OpenRouteService routing successful: ${orsRoute.length} points');
+        debugPrint('OpenRouteService routing successful: ${orsRoute.length} points');
         return orsRoute;
       }
 
       // Priority 2: OSRM (free, alternative)
-      print('Trying OSRM as backup...');
+      debugPrint('Trying OSRM as backup...');
       final osrmRoute = await _getOSRMDirections(origin, destination);
       if (osrmRoute != null && osrmRoute.isNotEmpty) {
-        print('OSRM routing successful: ${osrmRoute.length} points');
+        debugPrint('OSRM routing successful: ${osrmRoute.length} points');
         return osrmRoute;
       }
 
@@ -44,17 +45,17 @@ class MapService {
       // To use Google Maps routing, get API key from: https://console.cloud.google.com/
 
       // Last resort: Create a simple curved route (not straight line)
-      print('All routing APIs failed, creating curved path...');
+      debugPrint('All routing APIs failed, creating curved path...');
       final curvedRoute = _createSimpleCurvedRoute(origin, destination);
       if (curvedRoute.isNotEmpty) {
         return curvedRoute;
       }
 
       // Absolute fallback: straight line
-      print('Using straight line as final fallback');
+      debugPrint('Using straight line as final fallback');
       return [origin, destination];
     } catch (e) {
-      print('Error getting directions: $e');
+      debugPrint('Error getting directions: $e');
       return [origin, destination];
     }
   }
@@ -103,20 +104,20 @@ class MapService {
     final uri = Uri.parse(baseUrl).replace(queryParameters: params);
     final url = uri.toString();
 
-    print(
+    debugPrint(
       'OpenRouteService API Key being used: ${orsApiKey.substring(0, 20)}...',
     );
-    print('Request URL: $url');
-    print(
+    debugPrint('Request URL: $url');
+    debugPrint(
       'Profile: $profile, Avoid features: $avoidFeatures, Vehicle options: $vehicleOptions',
     );
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
 
-      print('OpenRouteService Response status: ${response.statusCode}');
-      print('Response headers: ${response.headers}');
-      print(
+      debugPrint('OpenRouteService Response status: ${response.statusCode}');
+      debugPrint('Response headers: ${response.headers}');
+      debugPrint(
         'Response body preview: ${response.body.substring(0, min(300, response.body.length))}',
       );
 
@@ -128,10 +129,10 @@ class MapService {
           final geometry = data['features'][0]['geometry'];
           if (geometry != null && geometry['coordinates'] != null) {
             final coordinates = geometry['coordinates'] as List;
-            print(
+            debugPrint(
               'OpenRouteService Success: Found ${coordinates.length} coordinates',
             );
-            print('Route avoids: ${avoidFeatures.join(", ")}');
+            debugPrint('Route avoids: ${avoidFeatures.join(", ")}');
             return coordinates
                 .map((coord) => LatLng(coord[1], coord[0]))
                 .toList();
@@ -141,34 +142,34 @@ class MapService {
           final geometry = data['routes'][0]['geometry'];
           if (geometry != null && geometry['coordinates'] != null) {
             final coordinates = geometry['coordinates'] as List;
-            print(
+            debugPrint(
               'OpenRouteService Success (alt format): Found ${coordinates.length} coordinates',
             );
-            print('Route avoids: ${avoidFeatures.join(", ")}');
+            debugPrint('Route avoids: ${avoidFeatures.join(", ")}');
             return coordinates
                 .map((coord) => LatLng(coord[1], coord[0]))
                 .toList();
           }
         }
 
-        print(
+        debugPrint(
           'OpenRouteService response format unexpected: ${data.keys.join(', ')}',
         );
       } else if (response.statusCode == 400) {
         // Handle specific error cases
         final errorData = json.decode(response.body);
-        print('OpenRouteService Bad Request: ${errorData}');
+        debugPrint('OpenRouteService Bad Request: $errorData');
         if (errorData['error'] != null &&
             errorData['error']['message'] != null) {
-          print('Error message: ${errorData['error']['message']}');
+          debugPrint('Error message: ${errorData['error']['message']}');
         }
       } else {
-        print(
+        debugPrint(
           'OpenRouteService HTTP error ${response.statusCode}: ${response.body}',
         );
       }
     } catch (e) {
-      print('Error calling OpenRouteService: $e');
+      debugPrint('Error calling OpenRouteService: $e');
     }
 
     return null;
@@ -194,13 +195,13 @@ class MapService {
       );
 
       try {
-        print('Trying OSRM server: $server');
+        debugPrint('Trying OSRM server: $server');
         final response = await http
             .get(url)
             .timeout(const Duration(seconds: 10));
 
-        print('OSRM Response status: ${response.statusCode}');
-        print(
+        debugPrint('OSRM Response status: ${response.statusCode}');
+        debugPrint(
           'OSRM Response body: ${response.body.substring(0, min(200, response.body.length))}',
         );
 
@@ -212,16 +213,16 @@ class MapService {
               data['routes'].isNotEmpty) {
             final coordinates =
                 data['routes'][0]['geometry']['coordinates'] as List;
-            print('OSRM Success: Found ${coordinates.length} coordinates');
+            debugPrint('OSRM Success: Found ${coordinates.length} coordinates');
             return coordinates
                 .map((coord) => LatLng(coord[1], coord[0]))
                 .toList();
           } else {
-            print('OSRM Response code: ${data['code']}');
+            debugPrint('OSRM Response code: ${data['code']}');
           }
         }
       } catch (e) {
-        print('Error with OSRM server $server: $e');
+        debugPrint('Error with OSRM server $server: $e');
         continue; // Try next server
       }
     }
@@ -235,7 +236,7 @@ class MapService {
         '?steps=false&overview=simplified&geometries=geojson',
       );
 
-      print('Trying simplified OSRM endpoint');
+      debugPrint('Trying simplified OSRM endpoint');
       final response = await http
           .get(simpleUrl)
           .timeout(const Duration(seconds: 5));
@@ -247,7 +248,7 @@ class MapService {
             data['routes'].isNotEmpty) {
           final coordinates =
               data['routes'][0]['geometry']['coordinates'] as List;
-          print(
+          debugPrint(
             'Simplified OSRM Success: Found ${coordinates.length} coordinates',
           );
           return coordinates
@@ -256,7 +257,7 @@ class MapService {
         }
       }
     } catch (e) {
-      print('Simplified OSRM also failed: $e');
+      debugPrint('Simplified OSRM also failed: $e');
     }
 
     return null;
@@ -280,10 +281,10 @@ class MapService {
         points.add(LatLng(lat, lng));
       }
 
-      print('Created simple curved route with ${points.length} points');
+      debugPrint('Created simple curved route with ${points.length} points');
       return points;
     } catch (e) {
-      print('Error creating simple curved route: $e');
+      debugPrint('Error creating simple curved route: $e');
       return [origin, destination];
     }
   }

@@ -382,7 +382,7 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),
@@ -439,7 +439,7 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),
@@ -592,29 +592,29 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
                           backgroundColor: Colors.white,
                           headerBackgroundColor: Colors.blue[600],
                           headerForegroundColor: Colors.white,
-                          dayForegroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          dayForegroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.white;
                             }
                             return Colors.black87;
                           }),
-                          dayBackgroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          dayBackgroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.blue.shade600;
                             }
-                            if (states.contains(MaterialState.hovered)) {
+                            if (states.contains(WidgetState.hovered)) {
                               return Colors.blue.shade100;
                             }
                             return Colors.transparent;
                           }),
-                          todayForegroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          todayForegroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.white;
                             }
                             return Colors.blue.shade600;
                           }),
-                          todayBackgroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          todayBackgroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.blue.shade600;
                             }
                             return Colors.blue.shade50;
@@ -679,29 +679,29 @@ class _ExpenseExampleScreenState extends State<ExpenseExampleScreen> {
                           backgroundColor: Colors.white,
                           headerBackgroundColor: Colors.orange.shade600,
                           headerForegroundColor: Colors.white,
-                          dayForegroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          dayForegroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.white;
                             }
                             return Colors.black87;
                           }),
-                          dayBackgroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          dayBackgroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.orange.shade600;
                             }
-                            if (states.contains(MaterialState.hovered)) {
+                            if (states.contains(WidgetState.hovered)) {
                               return Colors.orange.shade100;
                             }
                             return Colors.transparent;
                           }),
-                          todayForegroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          todayForegroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.white;
                             }
                             return Colors.orange.shade600;
                           }),
-                          todayBackgroundColor: MaterialStateColor.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          todayBackgroundColor: WidgetStateColor.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.orange.shade600;
                             }
                             return Colors.orange.shade50;

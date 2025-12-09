@@ -2696,6 +2696,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Build compact budget metric
   Widget _buildCompactBudgetMetric(String label, double amount, Color color) {
+    // Determine if amount is negative for special formatting
+    final isNegative = amount < 0;
+    final displayAmount = isNegative ? amount.abs() : amount;
+    
     return Column(
       children: [
         Text(
@@ -2709,12 +2713,12 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         ),
         const SizedBox(height: 2),
         Text(
-          _formatMoney(amount.abs()),
+          '${isNegative ? '-' : ''}${_formatMoney(displayAmount)}',
           style: TextStyle(
             fontFamily: 'Urbanist-Regular',
             fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: color,
+            color: isNegative ? Colors.red[300] : color,
           ),
         ),
       ],
@@ -2724,8 +2728,12 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   /// Build budget usage progress bar
   Widget _buildBudgetUsageBar(double totalBudget, double actualSpent) {
     final percentage = totalBudget > 0
-        ? (actualSpent / totalBudget * 100).clamp(0, 100)
+        ? (actualSpent / totalBudget * 100)
         : 0.0;
+    
+    // Determine if over budget
+    final isOverBudget = percentage > 100;
+    final displayPercentage = percentage.clamp(0, 100);
 
     return Column(
       children: [
@@ -2739,9 +2747,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: (percentage / 100).clamp(0, 1),
+              value: (displayPercentage / 100).clamp(0, 1),
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isOverBudget ? Colors.red[300]! : Colors.white,
+              ),
             ),
           ),
         ),
@@ -2758,14 +2768,27 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
-            Text(
-              '${percentage.toStringAsFixed(1)}%',
-              style: TextStyle(
-                fontFamily: 'Urbanist-Regular',
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            Row(
+              children: [
+                if (isOverBudget)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      Icons.warning,
+                      size: 10,
+                      color: Colors.red[300],
+                    ),
+                  ),
+                Text(
+                  '${percentage.toStringAsFixed(1)}%',
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: isOverBudget ? Colors.red[300] : Colors.white,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -3072,24 +3095,25 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
           ? double.parse(_dailyLimitController.text)
           : null;
 
-      // Create budget through expense service
-      // Use the parsed values for budget creation (implementation needed)
-      debugPrint(
-        'Creating budget: $budgetAmount VND, Daily limit: ${dailyLimitAmount ?? 0} VND',
+      // Get expense provider
+      final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+
+      // Create budget through expense provider
+      final success = await expenseProvider.createBudget(
+        budgetAmount,
+        dailyLimit: dailyLimitAmount,
       );
-      // TODO: Create Budget object and call createBudget
-      // final budget = Budget(totalBudget: budgetAmount, dailyLimit: dailyLimitAmount);
-      // await expenseService.createBudget(budget);
-      // TODO: Implement proper budget creation logic
-      // This is a placeholder for the actual budget creation logic
-      // await expenseService.createBudget(someBudgetObject);
+
+      if (!success) {
+        throw Exception(expenseProvider.error ?? 'Failed to create budget');
+      }
 
       if (mounted) {
         Navigator.pop(context);
         widget.onBudgetCreated();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Budget created successfully'),
             backgroundColor: Colors.green,
           ),

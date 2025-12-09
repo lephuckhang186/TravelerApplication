@@ -22,7 +22,14 @@ def add_collaborator(
     """
     Add a collaborator to a planner.
     """
-    # TODO: Add logic to check if the current user is the owner of the planner
+    # Check if the current user is the owner of the planner
+    from app.services.planner_service import planner as planner_service
+    planner = planner_service.get(db=db, id=collaborator_in.planner_id)
+    if not planner:
+        raise HTTPException(status_code=404, detail="Planner not found")
+    if planner.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the planner owner can add collaborators")
+    
     collaborator = collaborator_service.create(db=db, obj_in=collaborator_in)
     return collaborator
 
@@ -39,7 +46,21 @@ def read_collaborators(
     """
     Get collaborators for a planner.
     """
-    # TODO: Add logic to check if the current user is a collaborator on the planner
+    # Check if the current user is the owner or a collaborator on the planner
+    from app.services.planner_service import planner as planner_service
+    planner = planner_service.get(db=db, id=planner_id)
+    if not planner:
+        raise HTTPException(status_code=404, detail="Planner not found")
+    
+    # Check if user is owner or collaborator
+    is_owner = planner.user_id == current_user.id
+    is_collaborator = collaborator_service.get_by_user_and_planner(
+        db=db, user_id=current_user.id, planner_id=planner_id
+    ) is not None
+    
+    if not (is_owner or is_collaborator):
+        raise HTTPException(status_code=403, detail="You don't have access to this planner")
+    
     collaborators = collaborator_service.get_multi_by_planner(
         db=db, planner_id=planner_id
     )
@@ -56,7 +77,14 @@ def remove_collaborator(
     """
     Remove a collaborator from a planner.
     """
-    # TODO: Add logic to check if the current user is the owner of the planner
+    # Check if the current user is the owner of the planner
+    from app.services.planner_service import planner as planner_service
+    planner = planner_service.get(db=db, id=collaborator_in.planner_id)
+    if not planner:
+        raise HTTPException(status_code=404, detail="Planner not found")
+    if planner.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the planner owner can remove collaborators")
+    
     collaborator = collaborator_service.get_by_user_and_planner(
         db=db, user_id=collaborator_in.user_id, planner_id=collaborator_in.planner_id
     )

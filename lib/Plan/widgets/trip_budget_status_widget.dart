@@ -8,10 +8,10 @@ class TripBudgetStatusWidget extends StatefulWidget {
   final bool showDetails;
 
   const TripBudgetStatusWidget({
-    Key? key,
+    super.key,
     required this.trip,
     this.showDetails = true,
-  }) : super(key: key);
+  });
 
   @override
   State<TripBudgetStatusWidget> createState() => _TripBudgetStatusWidgetState();
@@ -120,10 +120,10 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -252,9 +252,9 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.05),
+                      color: Colors.red.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3), width: 1),
                     ),
                     child: Row(
                       children: [
@@ -275,9 +275,9 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.05),
+                      color: Colors.orange.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
+                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3), width: 1),
                     ),
                     child: Row(
                       children: [
@@ -305,9 +305,9 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.05),
+        color: Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [

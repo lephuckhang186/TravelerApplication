@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'search_place_screen.dart';
-import 'ai_assistant_screen.dart';
+import '../widgets/ai_assistant_dialog.dart';
 import '../../Core/theme/app_theme.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
@@ -190,8 +190,15 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _handleWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        final shouldPop = await _handleWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -201,22 +208,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
             onPressed: _handleWillPop,
           ),
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.lock_outline, color: Colors.black, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Private',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          centerTitle: true,
+          title: _buildTripHeader(),
+          centerTitle: false,
           actions: [
             SmartNotificationWidget(tripId: _trip.id ?? ''),
             IconButton(
@@ -225,29 +218,66 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            _buildTripHeader(),
-            Expanded(child: _buildTimeline()),
-          ],
-        ),
+        body: _buildTimeline(),
         floatingActionButton: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // AI Assistant Button
-            FloatingActionButton(
-              heroTag: "ai_assistant_btn",
-              onPressed: _isDeleting ? null : _openAIAssistant,
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.skyBlue.withValues(alpha: 0.9),
+                    AppColors.steelBlue.withValues(alpha: 0.8),
+                    AppColors.dodgerBlue.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _isDeleting ? null : _openAIAssistant,
+                  customBorder: const CircleBorder(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      'images/chatbot.png',
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             // Add Activity Button
-            FloatingActionButton(
-              heroTag: "add_activity_btn",
-              onPressed: _isDeleting ? null : _showAddActivityModal,
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add, color: Colors.white),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.skyBlue.withValues(alpha: 0.9),
+                    AppColors.steelBlue.withValues(alpha: 0.8),
+                    AppColors.dodgerBlue.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _isDeleting ? null : _showAddActivityModal,
+                  customBorder: const CircleBorder(),
+                  child: const Icon(Icons.add, color: Colors.white, size: 28),
+                ),
+              ),
             ),
           ],
         ),
@@ -259,73 +289,82 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final dateRange =
         '${_formatDate(_trip.startDate)} - ${_formatDate(_trip.endDate)}';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        boxShadow: [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.05),
-            blurRadius: 12,
-            offset: Offset(0, 3),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: AppColors.primary.withValues(alpha: 0.12),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: AppColors.primary.withValues(alpha: 0.12),
-            ),
-            child: const Icon(Icons.travel_explore, color: AppColors.primary),
+          child: const Icon(
+            Icons.travel_explore,
+            color: AppColors.primary,
+            size: 20,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Transform.translate(
+                offset: const Offset(0, 0),
+                child: Text(
                   _trip.name,
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                    fontSize: 20,
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _trip.destination,
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _trip.destination,
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 11,
+                    color: AppColors.primary,
                   ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
                       dateRange,
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 11,
                         color: Colors.grey.shade700,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -335,7 +374,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Icon(
                 Icons.hourglass_empty,
@@ -345,7 +384,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               const SizedBox(height: 12),
               Text(
                 'No plans yet',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -355,7 +395,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               Text(
                 'Start building your itinerary by adding flights, meals, visits or custom notes.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 14,
                   color: Colors.grey.shade600,
                 ),
@@ -366,22 +407,89 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemBuilder: (context, index) =>
-          _buildTimelineItem(_activities[index], index),
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemCount: _activities.length,
+    // Group activities by date
+    final Map<DateTime, List<ActivityModel>> activitiesByDate = {};
+    for (final activity in _activities) {
+      if (activity.startDate != null) {
+        final date = DateTime(
+          activity.startDate!.year,
+          activity.startDate!.month,
+          activity.startDate!.day,
+        );
+        if (!activitiesByDate.containsKey(date)) {
+          activitiesByDate[date] = [];
+        }
+        activitiesByDate[date]!.add(activity);
+      }
+    }
+
+    // Sort dates
+    final sortedDates = activitiesByDate.keys.toList()..sort();
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+      itemCount: sortedDates.length,
+      itemBuilder: (context, dateIndex) {
+        final date = sortedDates[dateIndex];
+        final activitiesForDate = activitiesByDate[date]!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.skyBlue.withValues(alpha: 0.9),
+                    AppColors.steelBlue.withValues(alpha: 0.8),
+                    AppColors.dodgerBlue.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    _formatDateWithDayOfWeek(date),
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Activities for this date
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: activitiesForDate.asMap().entries.map((entry) {
+                  final activityIndex = entry.key;
+                  final activity = entry.value;
+                  final isLast = activityIndex == activitiesForDate.length - 1;
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: isLast ? 24 : 12),
+                    child: _buildTimelineItem(activity, activityIndex, isLast),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        );
+      },
+>>>>>>> 9d606e875cc952752a56eb3c3c64a5950d3c70b6
     );
   }
 
-  Widget _buildTimelineItem(ActivityModel activity, int index) {
-    final isLast = index == _activities.length - 1;
+  Widget _buildTimelineItem(ActivityModel activity, int index, bool isLast) {
     final icon = _iconForType(activity.activityType);
-    final color = activity.checkIn
-        ? Colors
-              .green // Checked-in color
-        : _colorForType(activity.activityType);
     final timeLabel = activity.startDate != null
         ? _formatTime(activity.startDate!)
         : '--';
@@ -394,7 +502,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           child: activity.startDate != null
               ? Text(
                   timeLabel,
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -407,215 +516,278 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: activity.checkIn
+                    ? null
+                    : LinearGradient(
+                        colors: [
+                          AppColors.skyBlue.withValues(alpha: 0.9),
+                          AppColors.steelBlue.withValues(alpha: 0.8),
+                          AppColors.dodgerBlue.withValues(alpha: 0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                color: activity.checkIn ? Colors.green : null,
+              ),
               child: Icon(icon, color: Colors.white, size: 20),
             ),
             if (!isLast)
               Container(
                 width: 2,
-                height: 60,
-                color: AppColors.primary.withValues(alpha: 0.2),
+                height: 155,
+                decoration: BoxDecoration(
+                  gradient: activity.checkIn
+                      ? null
+                      : LinearGradient(
+                          colors: [
+                            AppColors.skyBlue.withValues(alpha: 0.9),
+                            AppColors.steelBlue.withValues(alpha: 0.8),
+                            AppColors.dodgerBlue.withValues(alpha: 0.7),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                  color: activity.checkIn ? Colors.green : null,
+                ),
               ),
           ],
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 6),
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.1),
+          child: SizedBox(
+            height: 195,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Transform.translate(
+                          offset: const Offset(0, 0),
+                          child: Text(
+                            activity.title,
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      // Check-in button
+                      Transform.translate(
+                        offset: const Offset(0, -8),
+                        child: IconButton(
+                          icon: Icon(
+                            activity.checkIn
+                                ? Icons.check_circle
+                                : Icons.check_circle_outline,
+                            color: activity.checkIn
+                                ? Colors.green
+                                : Colors.grey,
+                          ),
+                          onPressed: () => _toggleCheckIn(activity),
+                        ),
+                      ),
+                      Transform.translate(
+                        offset: const Offset(0, -8),
+                        child: PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, size: 18),
+                          onSelected: (value) {
+                            if (value == 'delete') {
+                              _deleteActivity(activity);
+                            } else if (value == 'edit') {
+                              _showEditActivityModal(activity);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit Activity'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Remove'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (activity.description != null &&
+                      activity.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Transform.translate(
+                      offset: const Offset(0, 0),
                       child: Text(
-                        activity.title,
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                        activity.description!,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          height: 1.4,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    // Check-in button
-                    IconButton(
-                      icon: Icon(
-                        activity.checkIn
-                            ? Icons.check_circle
-                            : Icons.check_circle_outline,
-                        color: activity.checkIn ? Colors.green : Colors.grey,
-                      ),
-                      onPressed: () => _toggleCheckIn(activity),
-                    ),
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, size: 18),
-                      onSelected: (value) {
-                        if (value == 'delete') {
-                          _deleteActivity(activity);
-                        } else if (value == 'edit') {
-                          _showEditActivityModal(activity);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit Activity'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Remove'),
-                        ),
-                      ],
                     ),
                   ],
-                ),
-                if (activity.description != null &&
-                    activity.description!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    activity.description!,
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      height: 1.4,
+                  if (activity.location != null) ...[
+                    const SizedBox(height: 8),
+                    Transform.translate(
+                      offset: const Offset(0, 0),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              activity.location!.name,
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
+                                fontSize: 13,
+                                color: Colors.grey.shade700,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-                if (activity.location != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: AppColors.primary,
+                  ],
+                  // Budget information - show expected cost before check-in, actual cost after
+                  if (activity.budget != null) ...[
+                    const SizedBox(height: 8),
+                    Transform.translate(
+                      offset: const Offset(0, 0),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          // Before check-in: Show expected cost only
+                          if (!activity.checkIn)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.schedule,
+                                    size: 12,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Expected: ${_formatCurrency(activity.budget!.estimatedCost)}',
+                                    style: TextStyle(
+                                      fontFamily: 'Urbanist-Regular',
+                                      fontSize: 12,
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // After check-in: Show actual cost
+                          if (activity.checkIn &&
+                              activity.budget!.actualCost != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.receipt,
+                                    size: 12,
+                                    color: Colors.green,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Spent: ${_formatCurrency(activity.budget!.actualCost!)}',
+                                    style: TextStyle(
+                                      fontFamily: 'Urbanist-Regular',
+                                      fontSize: 12,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // After check-in but no actual cost recorded
+                          if (activity.checkIn &&
+                              activity.budget!.actualCost == null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.warning_amber,
+                                    size: 12,
+                                    color: Colors.orange,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'No cost recorded',
+                                    style: TextStyle(
+                                      fontFamily: 'Urbanist-Regular',
+                                      fontSize: 12,
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          activity.location!.name,
-                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                            fontSize: 13,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
-                // Budget information - show expected cost before check-in, actual cost after
-                if (activity.budget != null) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      // Before check-in: Show expected cost only
-                      if (!activity.checkIn)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.schedule,
-                                size: 12,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Expected: ${_formatCurrency(activity.budget!.estimatedCost)}',
-                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                                  fontSize: 12,
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      // After check-in: Show actual cost
-                      if (activity.checkIn &&
-                          activity.budget!.actualCost != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.receipt,
-                                size: 12,
-                                color: Colors.green,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Spent: ${_formatCurrency(activity.budget!.actualCost!)}',
-                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                                  fontSize: 12,
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      // After check-in but no actual cost recorded
-                      if (activity.checkIn &&
-                          activity.budget!.actualCost == null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.warning_amber,
-                                size: 12,
-                                color: Colors.orange,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'No cost recorded',
-                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                                  fontSize: 12,
-                                  color: Colors.orange,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),
@@ -684,7 +856,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Cancel',
-                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
                               color: AppColors.primary,
                               fontSize: 16,
                             ),
@@ -692,7 +865,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         ),
                         Text(
                           'Edit Activity',
-                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -904,11 +1078,102 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     );
   }
 
-  void _openAIAssistant() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
+  Future<void> _openAIAssistant() async {
+    final result = await AiAssistantDialog.show(context, currentTrip: _trip);
+
+    // Check if AI assistant made any changes
+    if (result != null) {
+      final changes = result['changes'] as List?;
+      if (changes != null && changes.isNotEmpty) {
+        // Apply the changes locally
+        _applyAIChanges(changes);
+      } else if (result.containsKey('new_trip')) {
+        // New trip was created - navigate to it
+        // final newTrip = result['new_trip'];
+        if (mounted) {
+          // Close current screen and navigate to new trip
+          Navigator.of(context).pop(result['new_trip']);
+        }
+      } else {
+        // No changes made, just refresh from server
+        await _loadActivitiesFromServer();
+      }
+    }
+  }
+
+  /// Apply changes made by AI assistant
+  void _applyAIChanges(List<dynamic> changes) {
+    // Check if this is a full replacement (all activities should be replaced)
+    final hasFullReplace = changes.any(
+      (change) => change['action'] == 'replace_all',
     );
+
+    if (hasFullReplace) {
+      // Full replacement: clear all existing activities and add the new ones
+      final newActivities = changes
+          .where((change) => change['action'] == 'replace_all')
+          .map(
+            (change) => ActivityModel.fromJson(
+              change['activity'] as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+
+      setState(() {
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
+          newActivities,
+        );
+      });
+
+      debugPrint(
+        'AI applied full plan replacement with ${newActivities.length} activities',
+      );
+    } else {
+      // Partial changes: apply individual add/remove/update operations
+      for (final change in changes) {
+        final action = change['action'];
+        final activityData = change['activity'];
+
+        switch (action) {
+          case 'add':
+            final newActivity = ActivityModel.fromJson(activityData);
+            setState(() {
+              _activities.add(newActivity);
+              _activities =
+                  ActivitySchedulingValidator.sortActivitiesChronologically(
+                    _activities,
+                  );
+            });
+            break;
+
+          case 'remove':
+            final activityId = activityData['id'];
+            setState(() {
+              _activities.removeWhere((activity) => activity.id == activityId);
+            });
+            break;
+
+          case 'update':
+            final updatedActivity = ActivityModel.fromJson(activityData);
+            final index = _activities.indexWhere(
+              (activity) => activity.id == updatedActivity.id,
+            );
+            if (index != -1) {
+              setState(() {
+                _activities[index] = updatedActivity;
+                _activities =
+                    ActivitySchedulingValidator.sortActivitiesChronologically(
+                      _activities,
+                    );
+              });
+            }
+            break;
+        }
+      }
+    }
+
+    // Save changes to local storage
+    _persistTripChanges();
   }
 
   void _showAddActivityModal() {
@@ -959,7 +1224,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Cancel',
-                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
                               color: AppColors.primary,
                               fontSize: 16,
                             ),
@@ -967,7 +1233,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         ),
                         Text(
                           'Add a plan',
-                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -1219,7 +1486,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
         ),
         const SizedBox(height: 6),
         TextField(
@@ -1253,7 +1524,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Check-in Status',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
         ),
         const Spacer(),
         Switch(
@@ -1276,7 +1551,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       children: [
         Text(
           'Category',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -1289,7 +1568,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               selected: isSelected,
               onSelected: (_) => onChanged(type),
               selectedColor: AppColors.primary.withValues(alpha: 0.15),
-              labelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
+              labelStyle: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 color: isSelected ? AppColors.primary : Colors.black,
                 fontWeight: FontWeight.w600,
               ),
@@ -1401,7 +1681,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           children: [
             Text(
               label,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.grey.shade600,
               ),
@@ -1409,7 +1690,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             const SizedBox(height: 4),
             Text(
               value,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
@@ -1490,6 +1772,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 descriptionController.text.trim(),
                 budgetController.text.trim(),
               );
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -1506,40 +1789,72 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   void _showMoreOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.skyBlue.withValues(alpha: 0.9),
+              AppColors.steelBlue.withValues(alpha: 0.8),
+              AppColors.dodgerBlue.withValues(alpha: 0.7),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: const Text('Edit Trip Info'),
-              subtitle: const Text('Rename or update the description'),
-              onTap: () {
-                Navigator.pop(context);
-                _showEditTripDialog();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: const Text('Delete Trip'),
-              subtitle: const Text('Remove this trip and all its data'),
-              onTap: _confirmDeleteTrip,
-            ),
-          ],
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: Colors.white),
+                title: const Text(
+                  'Edit Trip Info',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: const Text(
+                  'Rename or update the description',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showEditTripDialog();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.white),
+                title: const Text(
+                  'Delete Trip',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: const Text(
+                  'Remove this trip and all its data',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                onTap: _confirmDeleteTrip,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1566,7 +1881,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           validationResult.message,
           validationResult.conflictingActivities,
         );
-        
+
         if (!shouldContinue) {
           return; // User chose not to continue
         }
@@ -1633,7 +1948,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           validationResult.message,
           validationResult.conflictingActivities,
         );
-        
+
         if (!shouldContinue) {
           return; // User chose not to continue
         }
@@ -1652,7 +1967,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       setState(() {
         _activities.add(createdActivity);
         // Sort activities chronologically
-        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
+          _activities,
+        );
       });
       await _persistTripChanges();
 
@@ -1909,25 +2226,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
   }
 
-  Color _colorForType(ActivityType type) {
-    switch (type) {
-      case ActivityType.flight:
-        return const Color(0xFF4CAF50);
-      case ActivityType.restaurant:
-        return const Color(0xFF2196F3);
-      case ActivityType.tour:
-        return const Color(0xFF9C27B0);
-      case ActivityType.lodging:
-        return const Color(0xFF607D8B);
-      case ActivityType.carRental:
-        return const Color(0xFFFF9800);
-      case ActivityType.note:
-        return const Color(0xFF795548);
-      default:
-        return AppColors.primary;
-    }
-  }
-
   String _formatDate(DateTime date) {
     const months = [
       'Jan',
@@ -1944,6 +2242,34 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatDateWithDayOfWeek(DateTime date) {
+    const daysOfWeek = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final dayOfWeek = daysOfWeek[date.weekday - 1];
+    return '$dayOfWeek, ${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   String _formatTime(DateTime dateTime) {
@@ -1986,11 +2312,13 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   /// Handle checkout - remove expense if exists and toggle status
   Future<void> _checkOutActivity(ActivityModel activity) async {
     // Delete expense if it was synced and we have the expense ID
-    if (activity.expenseInfo.expenseSynced && 
+    if (activity.expenseInfo.expenseSynced &&
         activity.expenseInfo.expenseId != null) {
       try {
         if (_expenseProvider != null) {
-          await _expenseProvider!.deleteExpense(activity.expenseInfo.expenseId!);
+          await _expenseProvider!.deleteExpense(
+            activity.expenseInfo.expenseId!,
+          );
           debugPrint('Deleted expense: ${activity.expenseInfo.expenseId}');
         }
       } catch (e) {
@@ -2004,7 +2332,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       checkIn: false,
       expenseInfo: ExpenseInfo(), // Reset expense info
     );
-    
+
     await _updateActivityCheckIn(updatedActivity);
 
     if (mounted) {
@@ -2163,7 +2491,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     setState(() {
       _activities[index] = updatedActivity;
       // Re-sort activities chronologically
-      _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
+      _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
+        _activities,
+      );
     });
     await _persistTripChanges();
     debugPrint('Check-in status updated locally and persisted');
@@ -2180,7 +2510,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       }
 
       // Check if expense already exists for this activity
-      if (activity.expenseInfo.expenseSynced && 
+      if (activity.expenseInfo.expenseSynced &&
           activity.expenseInfo.expenseId != null) {
         debugPrint(
           'Expense already exists for activity: ${activity.title} (expenseId: ${activity.expenseInfo.expenseId})',
@@ -2309,74 +2639,115 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         child: Text(
                           '${activity.title} (${_formatActivityTime(activity)})',
                           style: const TextStyle(fontSize: 14),
+              title: Row(
+                children: [
+                  Icon(Icons.warning_amber, color: Colors.orange.shade600),
+                  const SizedBox(width: 8),
+                  const Text('Xung đột thời gian'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(message),
+                  const SizedBox(height: 16),
+                  if (conflictingActivities.isNotEmpty) ...[
+                    const Text(
+                      'Hoạt động bị trùng:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    ...conflictingActivities.map(
+                      (activity) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.circle,
+                              size: 6,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${activity.title} (${_formatActivityTime(activity)})',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                )).toList(),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.lightbulb_outline, 
-                           size: 16, color: Colors.blue.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Gợi ý: Chọn thời gian khác để tránh xung đột',
-                          style: TextStyle(
-                            fontSize: 12,
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline,
+                            size: 16,
                             color: Colors.blue.shade700,
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Gợi ý: Chọn thời gian khác để tránh xung đột',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    'Quay lại',
+                    style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Tiếp tục'),
+                ),
               ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                'Quay lại',
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade600,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Tiếp tục'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+            );
+          },
+        ) ??
+        false;
   }
 
   /// Format activity time for display
   String _formatActivityTime(ActivityModel activity) {
     if (activity.startDate == null) return '';
-    
+
     final start = activity.startDate!;
-    final startStr = '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
-    
+    final startStr =
+        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+
     if (activity.endDate != null) {
       final end = activity.endDate!;
-      final endStr = '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+      final endStr =
+          '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
       return '$startStr - $endStr';
     }
-    
+
     return startStr;
   }
 }

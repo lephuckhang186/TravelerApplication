@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../Login/services/auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Model cho thống kê người dùng real-time từ Firestore
 class UserTravelStats {
@@ -361,7 +362,7 @@ class FirestoreStatisticsService {
         return date;
       }
     } catch (e) {
-      print('Error parsing date: $e');
+      debugPrint('Error parsing date: $e');
     }
     
     return null;
@@ -416,7 +417,7 @@ class FirestoreStatisticsService {
         totalDays2025: tripsStats['totalDays2025'],
       );
     } catch (e) {
-      print('Error getting user statistics: $e');
+      debugPrint('Error getting user statistics: $e');
       return UserTravelStats.empty();
     }
   }

@@ -5,7 +5,7 @@ import 'dart:convert';
 class AiAssistantPanel extends StatefulWidget {
   final VoidCallback onClose;
 
-  const AiAssistantPanel({Key? key, required this.onClose}) : super(key: key);
+  const AiAssistantPanel({super.key, required this.onClose});
 
   @override
   State<AiAssistantPanel> createState() => _AiAssistantPanelState();
@@ -94,7 +94,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
 
   Future<void> _checkBackendStatus() async {
     try {
-      const String healthUrl = 'http://localhost:8000/health';
+      const String healthUrl = 'http://localhost:5000/health';
       final response = await http.get(Uri.parse(healthUrl));
 
       if (mounted) {
@@ -112,7 +112,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
   }
 
   Future<String> _callTravelAgentAPI(String userInput) async {
-    const String apiUrl = 'http://localhost:8000/invoke';
+    const String apiUrl = 'http://localhost:5000/invoke';
 
     try {
       // Prepare message history for API
@@ -470,7 +470,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.2),
+            color: Colors.blue.withValues(alpha: 0.2),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -512,7 +512,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -526,7 +526,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(Icons.menu, size: 20, color: Colors.white),
@@ -538,7 +538,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(Icons.close, size: 20, color: Colors.white),
@@ -622,7 +622,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -673,7 +673,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         spreadRadius: 1,
                         blurRadius: 3,
                         offset: const Offset(0, 1),
@@ -843,7 +843,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 1),
@@ -955,7 +955,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                     spreadRadius: 1,
                     blurRadius: 3,
                     offset: const Offset(0, 1),

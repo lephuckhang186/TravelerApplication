@@ -116,7 +116,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 8,
           ),
@@ -214,7 +214,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 8,
           ),
@@ -283,9 +283,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF7B61FF).withOpacity(0.05),
+        color: const Color(0xFF7B61FF).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF7B61FF).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFF7B61FF).withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,7 +358,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 8,
           ),
@@ -447,13 +447,16 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         _convertCurrency();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Lỗi tải tỷ giá: $e')));
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -480,6 +483,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         _exchangeRate = result.exchangeRate;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Lỗi chuyển đổi: $e')));

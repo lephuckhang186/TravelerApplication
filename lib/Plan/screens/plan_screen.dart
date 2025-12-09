@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
+import '../../Core/providers/app_mode_provider.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';
 import '../models/trip_model.dart';
@@ -20,7 +21,6 @@ class _PlanScreenState extends State<PlanScreen>
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  bool _isPrivateMode = true; // true = Private, false = Collaboration
 
   // 🎯 Sửa: Thay thế getter _visibleTrips bằng một hàm nhận vào danh sách trips từ Provider
   List<TripModel> _getVisibleTrips(List<TripModel> allTrips) {
@@ -183,9 +183,10 @@ class _PlanScreenState extends State<PlanScreen>
                     // Private/Collaboration Toggle Button
                     GestureDetector(
                       onTap: () {
-                        setState(() {
-                          _isPrivateMode = !_isPrivateMode;
-                        });
+                        Provider.of<AppModeProvider>(
+                          context,
+                          listen: false,
+                        ).toggleMode();
                       },
                       child: Container(
                         height: 56,
@@ -200,23 +201,33 @@ class _PlanScreenState extends State<PlanScreen>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Image.asset(
-                              _isPrivateMode
-                                  ? 'images/private.png'
-                                  : 'images/collaboration.png',
-                              width: 24,
-                              height: 24,
-                              color: Colors.white,
+                            Consumer<AppModeProvider>(
+                              builder: (context, modeProvider, child) {
+                                return Image.asset(
+                                  modeProvider.isPrivateMode
+                                      ? 'images/private.png'
+                                      : 'images/collaboration.png',
+                                  width: 24,
+                                  height: 24,
+                                  color: Colors.white,
+                                );
+                              },
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              _isPrivateMode ? 'Private' : 'Collaboration',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Urbanist-Regular',
-                              ),
+                            Consumer<AppModeProvider>(
+                              builder: (context, modeProvider, child) {
+                                return Text(
+                                  modeProvider.isPrivateMode
+                                      ? 'Private'
+                                      : 'Collaboration',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Urbanist-Regular',
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

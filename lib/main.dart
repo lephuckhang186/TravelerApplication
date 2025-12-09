@@ -12,6 +12,7 @@ import 'Core/theme/app_theme.dart';
 import 'Plan/providers/trip_planning_provider.dart';
 import 'Expense/providers/expense_provider.dart';
 import 'smart-nofications/providers/smart_notification_provider.dart';
+import 'Core/providers/app_mode_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,12 @@ void main() async {
 
   // Enable DevicePreview only in debug mode
   runApp(
-    DevicePreview(enabled: !kReleaseMode, builder: (context) => const MyApp()),
+    DevicePreview(
+      enabled: !kReleaseMode,
+      defaultDevice: Devices.ios.iPhone16ProMax,
+      backgroundColor: Colors.black,
+      builder: (context) => const MyApp(),
+    ),
   );
 }
 
@@ -38,12 +44,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => TripPlanningProvider()),
         ChangeNotifierProvider(create: (context) => ExpenseProvider()),
         ChangeNotifierProvider(create: (context) => SmartNotificationProvider()),
+        ChangeNotifierProvider(create: (context) => AppModeProvider()),
       ],
       child: MaterialApp(
         title: 'TripWise - Smart Travel Planner',
         debugShowCheckedModeBanner: false,
         // Enable DevicePreview integration
-        useInheritedMediaQuery: true,
         locale: DevicePreview.locale(context),
         builder: DevicePreview.appBuilder,
         theme: AppTheme.lightTheme,
@@ -56,4 +62,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
