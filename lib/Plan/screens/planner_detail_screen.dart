@@ -484,7 +484,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ],
         );
       },
->>>>>>> 9d606e875cc952752a56eb3c3c64a5950d3c70b6
     );
   }
 
@@ -2539,13 +2538,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           
           // Trigger smart notification for budget warning
           try {
-            final notificationProvider = Provider.of<SmartNotificationProvider>(
-              context,
-              listen: false,
-            );
-            
-            final warningType = expense.budgetWarning!['type'] as String?;
-            final message = expense.budgetWarning!['message'] as String?;
+            if (mounted) {
+              final notificationProvider = Provider.of<SmartNotificationProvider>(
+                context,
+                listen: false,
+              );
+              
+              final warningType = expense.budgetWarning!['type'] as String?;
+             final message = expense.budgetWarning!['message'] as String?;
             
             debugPrint('🔔 Triggering notification for budget warning: $warningType - $message');
             
@@ -2557,6 +2557,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 activity.id,
               );
               debugPrint('✅ Budget warning notification created successfully');
+            }
             }
           } catch (providerError) {
             debugPrint('❌ Failed to create budget warning notification: $providerError');
@@ -2639,77 +2640,42 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                         child: Text(
                           '${activity.title} (${_formatActivityTime(activity)})',
                           style: const TextStyle(fontSize: 14),
-              title: Row(
-                children: [
-                  Icon(Icons.warning_amber, color: Colors.orange.shade600),
-                  const SizedBox(width: 8),
-                  const Text('Xung đột thời gian'),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(message),
-                  const SizedBox(height: 16),
-                  if (conflictingActivities.isNotEmpty) ...[
-                    const Text(
-                      'Hoạt động bị trùng:',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 16,
+                      color: Colors.blue.shade700,
                     ),
-                    const SizedBox(height: 8),
-                    ...conflictingActivities.map(
-                      (activity) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.circle,
-                              size: 6,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${activity.title} (${_formatActivityTime(activity)})',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ),
-                          ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Gợi ý: Chọn thời gian khác để tránh xung đột',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue.shade700,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline,
-                            size: 16,
-                            color: Colors.blue.shade700,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Gợi ý: Chọn thời gian khác để tránh xung đột',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
-                ],
+                ),
               ),
+            ],
+          ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
