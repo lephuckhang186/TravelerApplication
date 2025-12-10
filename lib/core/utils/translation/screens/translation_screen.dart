@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../theme/app_theme.dart';
@@ -27,6 +28,10 @@ class _TranslationScreenState extends State<TranslationScreen>
   bool _isProcessingImage = false;
   TranslationResult? _currentResult;
 
+  // Timer for auto-translation debouncing
+  Timer? _debounceTimer;
+  static const Duration _debounceDuration = Duration(milliseconds: 800);
+
   late AnimationController _swapAnimationController;
   late Animation<double> _swapAnimation;
 
@@ -47,6 +52,7 @@ class _TranslationScreenState extends State<TranslationScreen>
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _sourceController.dispose();
     _targetController.dispose();
     _swapAnimationController.dispose();
@@ -443,6 +449,12 @@ class _TranslationScreenState extends State<TranslationScreen>
                     setState(() {});
                     if (text.isNotEmpty) {
                       _autoDetectLanguage(text);
+                      _scheduleAutoTranslation();
+                    } else {
+                      // Clear translation when text is empty
+                      _debounceTimer?.cancel();
+                      _targetController.clear();
+                      _currentResult = null;
                     }
                   },
                 ),
@@ -529,6 +541,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                         icon: Icons.clear_rounded,
                         label: 'Xóa',
                         onTap: () {
+                          _debounceTimer?.cancel();
                           _sourceController.clear();
                           _targetController.clear();
                           setState(() {
@@ -671,33 +684,94 @@ class _TranslationScreenState extends State<TranslationScreen>
                 ),
                 const SizedBox(height: 12),
                 if (_isLoading)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.skyBlue,
+                  Container(
+                    height: 120,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Outer rotating circle
+                            SizedBox(
+                              width: 50,
+                              height: 50,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.skyBlue.withValues(alpha: 0.3),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Đang dịch...',
-                            style: TextStyle(
-                              fontFamily: 'Urbanist-Regular',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.steelBlue,
+                            // Inner solid circle
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.skyBlue.withValues(alpha: 0.2),
+                                    AppColors.dodgerBlue.withValues(alpha: 0.15),
+                                  ],
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.translate_rounded,
+                                color: AppColors.dodgerBlue,
+                                size: 20,
+                              ),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Đang dịch văn bản...',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.steelBlue.withValues(alpha: 0.7),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.skyBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.dodgerBlue,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Đang xử lý',
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.dodgerBlue,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 else if (_targetController.text.isEmpty)
@@ -829,104 +903,64 @@ class _TranslationScreenState extends State<TranslationScreen>
   }
 
   Widget _buildBottomActions() {
+    // Show informational message about auto-translation
     return Container(
-      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.skyBlue.withValues(alpha: 0.1),
+            AppColors.dodgerBlue.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.skyBlue.withValues(alpha: 0.2),
+          width: 1.5,
+        ),
+      ),
       child: Row(
         children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _sourceController.text.isEmpty
-                      ? [
-                          Colors.grey.withValues(alpha: 0.3),
-                          Colors.grey.withValues(alpha: 0.2),
-                        ]
-                      : [
-                          AppColors.skyBlue.withValues(alpha: 0.95),
-                          AppColors.steelBlue.withValues(alpha: 0.9),
-                          AppColors.dodgerBlue.withValues(alpha: 0.85),
-                        ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: _sourceController.text.isEmpty
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: AppColors.skyBlue.withValues(alpha: 0.4),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.skyBlue.withValues(alpha: 0.2),
+                  AppColors.dodgerBlue.withValues(alpha: 0.15),
+                ],
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _sourceController.text.isEmpty ? null : _translateText,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    child: _isLoading
-                        ? const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                  strokeWidth: 3,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Text(
-                                'Đang dịch...',
-                                style: TextStyle(
-                                  fontFamily: 'Urbanist-Regular',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.translate_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Dịch ngay',
-                                style: TextStyle(
-                                  fontFamily: 'Urbanist-Regular',
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.arrow_forward_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.bolt_rounded,
+              color: AppColors.dodgerBlue,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Dịch tự động khi bạn nhập văn bản',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.steelBlue.withValues(alpha: 0.8),
               ),
             ),
           ),
+          if (_isLoading)
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.dodgerBlue,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -937,6 +971,8 @@ class _TranslationScreenState extends State<TranslationScreen>
 
     setState(() {
       _isLoading = true;
+      _targetController.clear();
+      _currentResult = null;
     });
 
     try {
@@ -946,18 +982,6 @@ class _TranslationScreenState extends State<TranslationScreen>
         actualSourceLanguage = await _translationService.detectLanguage(
           _sourceController.text,
         );
-        // Update UI to show detected language (but keep auto in selector)
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Phát hiện ngôn ngữ: ${actualSourceLanguage.nativeName}',
-              ),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.blue,
-            ),
-          );
-        }
       }
 
       final result = await _translationService.translateText(
@@ -966,15 +990,17 @@ class _TranslationScreenState extends State<TranslationScreen>
         targetLanguage: _targetLanguage,
       );
 
-      setState(() {
-        _currentResult = result;
-        _targetController.text = result.translatedText;
-      });
+      if (mounted) {
+        setState(() {
+          _currentResult = result;
+          _targetController.text = result.translatedText;
+        });
+      }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi dịch: $e')));
+      setState(() {
+        _targetController.text = 'Lỗi: Không thể dịch văn bản';
+      });
     } finally {
       if (mounted) {
         setState(() {
@@ -987,6 +1013,18 @@ class _TranslationScreenState extends State<TranslationScreen>
   Future<void> _autoDetectLanguage(String text) async {
     // Only auto-detect if source language is set to auto
     if (_sourceLanguage.code != 'auto') return;
+  }
+
+  void _scheduleAutoTranslation() {
+    // Cancel any existing timer
+    _debounceTimer?.cancel();
+    
+    // Start a new timer
+    _debounceTimer = Timer(_debounceDuration, () {
+      if (_sourceController.text.trim().isNotEmpty && mounted) {
+        _translateText();
+      }
+    });
   }
 
   void _swapLanguages() {
@@ -1014,6 +1052,11 @@ class _TranslationScreenState extends State<TranslationScreen>
         _targetController.text = tempText;
       });
       _swapAnimationController.reset();
+      
+      // Auto-translate after swapping
+      if (_sourceController.text.trim().isNotEmpty) {
+        _scheduleAutoTranslation();
+      }
     });
   }
 
@@ -1108,6 +1151,11 @@ class _TranslationScreenState extends State<TranslationScreen>
                                 }
                               });
                               Navigator.pop(context);
+                              
+                              // Auto-translate after language change
+                              if (_sourceController.text.trim().isNotEmpty) {
+                                _scheduleAutoTranslation();
+                              }
                             },
                     );
                   },

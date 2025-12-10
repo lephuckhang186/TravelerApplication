@@ -113,6 +113,59 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
   }
 
+  void _initializeSmartNotifications() async {
+    try {
+      if (mounted && _trip.id != null) {
+        debugPrint('DEBUG: Attempting to initialize smart notifications for trip: ${_trip.id}');
+        
+        // Try to get provider with enhanced error handling
+        try {
+          final notificationProvider = Provider.of<SmartNotificationProvider>(
+            context, 
+            listen: false
+          );
+          
+          debugPrint('DEBUG: Provider found, calling initialize...');
+          
+          // Initialize with timeout to prevent hanging
+          await notificationProvider.initialize(_trip.id!).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              debugPrint('DEBUG: Smart notifications initialization timed out');
+              throw TimeoutException('Initialization timeout');
+            },
+          );
+          
+          debugPrint('DEBUG: Smart notifications initialization completed for trip: ${_trip.id}');
+          
+          // Force a rebuild to show notifications
+          if (mounted) {
+            setState(() {});
+          }
+          
+        } catch (providerError) {
+          debugPrint('DEBUG: Provider error: $providerError');
+          
+          final errorString = providerError.toString().toLowerCase();
+          if (errorString.contains('failed to fetch') || 
+              errorString.contains('clientexception') ||
+              errorString.contains('socketexception') ||
+              errorString.contains('timeout') ||
+              errorString.contains('connection')) {
+            debugPrint('DEBUG: Network issue detected - smart notifications will work when connection is restored');
+          } else {
+            debugPrint('DEBUG: Other provider error - notifications may be limited');
+          }
+        }
+      } else {
+        debugPrint('DEBUG: Cannot initialize smart notifications - mounted: $mounted, trip.id: ${_trip.id}');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Smart notifications initialization failed: $e');
+      // Don't show error to user - notifications are a nice-to-have feature
+    }
+  }
+
   /// Load activities from local trip data (no longer needed to fetch from server)
   Future<void> _loadActivitiesFromServer() async {
     // Activities are already loaded from trip.activities in initState
