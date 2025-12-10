@@ -107,40 +107,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
   }
 
-  /// Load activities from server to ensure we have the latest data
+  /// Load activities from local trip data (no longer needed to fetch from server)
   Future<void> _loadActivitiesFromServer() async {
-    if (_trip.id == null) return;
-
-    try {
-      final serverActivities = await _tripService.getActivities(
-        tripId: _trip.id,
-      );
-      setState(() {
-        // Merge server activities with local ones, prioritizing server data
-        final Map<String, ActivityModel> activityMap = {};
-
-        // First add local activities
-        for (final activity in _activities) {
-          if (activity.id != null) {
-            activityMap[activity.id!] = activity;
-          }
-        }
-
-        // Then add/override with server activities
-        for (final activity in serverActivities) {
-          if (activity.id != null) {
-            activityMap[activity.id!] = activity;
-          }
-        }
-
-        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
-          activityMap.values.toList(),
-        );
-      });
-    } catch (e) {
-      debugPrint('Failed to load activities from server: $e');
-      // Continue with local activities if server fails
-    }
+    // Activities are already loaded from trip.activities in initState
+    // This function is kept for compatibility but does nothing
+    debugPrint('Activities loaded from local trip data: ${_activities.length}');
   }
 
   Future<bool> _handleWillPop() async {
@@ -1913,20 +1884,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         }
       }
 
-      // Try to update on server if activity has an ID and not local
-      if (updatedActivity.id != null &&
-          !updatedActivity.id!.startsWith('local_')) {
-        try {
-          await _tripService.updateActivity(
-            updatedActivity.id!,
-            updatedActivity,
-          );
-        } catch (e) {
-          debugPrint('Failed to update activity on server: $e');
-          // Continue with local update even if server fails
-        }
-      }
-
+      // Update locally only - no backend API call needed
       setState(() {
         _activities[index] = updatedActivity;
         // Resort activities by start date
@@ -1938,25 +1896,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         });
       });
       await _persistTripChanges();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Activity updated successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update activity: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Failed to update activity: $e');
     }
   }
 
@@ -1980,18 +1921,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         }
       }
 
-      // First, try to create the activity on the server
-      ActivityModel createdActivity;
-      try {
-        createdActivity = await _tripService.createActivity(activity);
-      } catch (e) {
-        debugPrint('Failed to create activity on server: $e');
-        // If server fails, continue with local storage only
-        createdActivity = activity;
-      }
-
+      // Add activity locally only - no backend API call needed
       setState(() {
-        _activities.add(createdActivity);
+        _activities.add(activity);
         // Sort activities chronologically
         _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
           _activities,
@@ -2000,62 +1932,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       await _persistTripChanges();
 
       // Don't auto-create expense - only create on check-in
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Activity added successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add activity: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Failed to add activity: $e');
     }
   }
 
   Future<void> _deleteActivity(ActivityModel activity) async {
     try {
-      // Try to delete from server if activity has an ID
-      if (activity.id != null && !activity.id!.startsWith('local_')) {
-        try {
-          await _tripService.deleteActivity(activity.id!);
-        } catch (e) {
-          debugPrint('Failed to delete activity from server: $e');
-        }
-      }
-
+      // Delete locally only - no backend API call needed
       setState(() {
         _activities.remove(activity);
       });
       await _persistTripChanges();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Activity removed successfully'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to remove activity: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Failed to remove activity: $e');
     }
   }
 
@@ -2135,25 +2025,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         _trip = storedTrip;
         _hasChanges = true;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Trip information updated successfully!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update trip: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Failed to update trip: $e');
     }
   }
 
@@ -2223,13 +2096,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete trip: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint('Failed to delete trip: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -2343,39 +2210,31 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Handle checkout - remove expense if exists and toggle status
   Future<void> _checkOutActivity(ActivityModel activity) async {
-    // Delete expense if it was synced and we have the expense ID
+    // Delete expense using optimistic update pattern
     if (activity.expenseInfo.expenseSynced &&
         activity.expenseInfo.expenseId != null) {
-      try {
-        if (_expenseProvider != null) {
-          await _expenseProvider!.deleteExpense(
-            activity.expenseInfo.expenseId!,
-          );
-          debugPrint('Deleted expense: ${activity.expenseInfo.expenseId}');
-        }
-      } catch (e) {
-        debugPrint('Failed to delete expense on checkout: $e');
-        // Continue with checkout even if expense deletion fails
+      if (_expenseProvider != null) {
+        // Optimistic update: remove from local cache immediately
+        final expenseId = activity.expenseInfo.expenseId!;
+        _expenseProvider!.expenses.removeWhere((exp) => exp.id == expenseId);
+        debugPrint('Optimistically removed expense from local cache: $expenseId');
+        
+        // Delete on backend in background (fire-and-forget with error handling)
+        _expenseProvider!.deleteExpense(expenseId).catchError((e) {
+          debugPrint('Failed to delete expense on backend: $e');
+          // Note: Local cache already updated, so UI won't show it
+          // If this is critical, consider implementing rollback
+        });
       }
     }
 
-    // Update activity: uncheck and clear expense info
+    // Update activity immediately: uncheck and clear expense info
     final updatedActivity = activity.copyWith(
       checkIn: false,
       expenseInfo: ExpenseInfo(), // Reset expense info
     );
 
     await _updateActivityCheckIn(updatedActivity);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Checked out'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   /// Handle check-in with actual cost input
@@ -2429,10 +2288,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 final cost = double.tryParse(costText);
                 if (cost != null && cost > 0) {
                   Navigator.pop(context, cost);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid cost')),
-                  );
                 }
               } else {
                 // Allow check-in without cost
@@ -2474,23 +2329,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     if (actualCost > 0) {
       await _createExpenseForCheckedInActivity(updatedActivity);
     }
-
-    if (mounted) {
-      String message = 'Checked in!';
-      if (actualCost > 0) {
-        message += _expenseProvider != null
-            ? ' Expense created.'
-            : ' Cost recorded.';
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   /// Update activity check-in status
@@ -2505,21 +2343,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       return;
     }
 
-    // Try to update on server if activity has an ID and not local
-    if (updatedActivity.id != null &&
-        !updatedActivity.id!.startsWith('local_')) {
-      try {
-        debugPrint(
-          'Syncing check-in to server for activity: ${updatedActivity.id}',
-        );
-        await _tripService.updateActivity(updatedActivity.id!, updatedActivity);
-        debugPrint('Successfully synced check-in to server');
-      } catch (e) {
-        debugPrint('Failed to sync check-in to server: $e');
-        // Continue with local update even if server fails
-      }
-    }
-
+    // Update locally only - no backend API call needed
     setState(() {
       _activities[index] = updatedActivity;
       // Re-sort activities chronologically
@@ -2552,6 +2376,47 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
       // Only try expense integration if provider is available
       if (_expenseProvider != null) {
+        // Double-check: Verify expense doesn't exist on server
+        // This prevents duplicates if checkout deletion is still pending
+        try {
+          final existingExpenses = _expenseProvider!.expenses;
+          final duplicateExpense = existingExpenses.where((exp) =>
+            exp.description == activity.title &&
+            exp.tripId == _trip.id &&
+            exp.amount == activity.budget!.actualCost
+          ).firstOrNull;
+          
+          if (duplicateExpense != null) {
+            debugPrint(
+              'Found existing expense for activity: ${activity.title}, reusing expense ID: ${duplicateExpense.id}',
+            );
+            
+            // Reuse existing expense instead of creating new one
+            final updatedExpenseInfo = activity.expenseInfo.copyWith(
+              expenseId: duplicateExpense.id,
+              hasExpense: true,
+              expenseCategory: activity.activityType.value,
+              expenseSynced: true,
+            );
+
+            final updatedActivity = activity.copyWith(
+              expenseInfo: updatedExpenseInfo,
+            );
+
+            final index = _activities.indexWhere((a) => a.id == activity.id);
+            if (index != -1) {
+              setState(() {
+                _activities[index] = updatedActivity;
+              });
+              await _persistTripChanges();
+            }
+            return;
+          }
+        } catch (e) {
+          debugPrint('Error checking for duplicate expense: $e');
+          // Continue to create new expense
+        }
+        
         // Create expense and get the expense ID
         final expense = await _expenseService.createExpenseFromActivity(
           amount: activity.budget!.actualCost!,

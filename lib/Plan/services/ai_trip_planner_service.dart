@@ -199,22 +199,14 @@ class AITripPlannerService {
   /// Save generated trip to backend
   Future<TripModel> saveGeneratedTrip(TripModel trip) async {
     try {
-      // Create trip on backend
+      // Create trip on backend (this will still use backend API for trips)
       final createdTrip = await _tripService.createTrip(trip);
 
-      // Create all activities
-      final List<ActivityModel> createdActivities = [];
-      for (final activity in trip.activities) {
-        try {
-          final createdActivity = await _tripService.createActivity(activity);
-          createdActivities.add(createdActivity);
-        } catch (e) {
-          debugPrint('Failed to create activity: $e');
-          // Continue with other activities
-        }
-      }
-
-      return createdTrip.copyWith(activities: createdActivities);
+      // Activities are already included in the trip, no need to create them separately
+      // They will be saved to Firestore as part of the trip document
+      debugPrint('Trip created with ${trip.activities.length} activities');
+      
+      return createdTrip.copyWith(activities: trip.activities);
     } catch (e) {
       debugPrint('Error saving generated trip: $e');
       rethrow;
