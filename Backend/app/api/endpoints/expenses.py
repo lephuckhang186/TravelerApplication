@@ -33,6 +33,7 @@ class ExpenseResponse(BaseModel):
     expense_date: datetime
     currency: str = "VND"
     planner_id: Optional[str] = None  # Add planner_id field
+    budget_warning: Optional[dict] = None  # Add budget warning info
     
     class Config:
         from_attributes = True
@@ -44,6 +45,7 @@ class BudgetCreateRequest(BaseModel):
     total_budget: float = Field(..., gt=0)
     daily_limit: Optional[float] = Field(None, gt=0)
     category_allocations: Optional[dict] = None
+    trip_id: Optional[str] = Field(None, description="Trip ID to associate budget with")
 
 class TripCreateRequest(BaseModel):
     start_date: date
@@ -165,32 +167,79 @@ async def create_trip_endpoint(
 @router.post("/budget/create")
 async def create_budget(
     budget_request: BudgetCreateRequest,
-    trip_id: Optional[str] = Query(None, description="Trip ID to associate budget with"),
+    trip_id: Optional[str] = Query(None, description="Trip ID to associate budget with (query param)"),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a budget for a specific trip - SIMPLIFIED VERSION"""
+    """Create a budget for a specific trip - accepts trip_id from query param or request body"""
     try:
-        if not trip_id:
-            raise HTTPException(
-                status_code=400,
-                detail="trip_id is required for budget creation."
-            )
+        # Accept trip_id from either query parameter or request body
+        final_trip_id = trip_id or budget_request.trip_id
+        
+        print(f"💰 BUDGET_CREATE: User {current_user.id} creating budget")
+        print(f"   Trip ID (query): {trip_id}")
+        print(f"   Trip ID (body): {budget_request.trip_id}")
+        print(f"   Final Trip ID: {final_trip_id}")
+        print(f"   Total Budget: {budget_request.total_budget}")
+        print(f"   Request body full: {budget_request.dict()}")
+        
+        if not final_trip_id:
+            print(f"⚠️ BUDGET_CREATE_WARNING: No trip_id provided, attempting to find user's latest trip")
+            
+            # Try to get user's most recent trip as fallback
+            try:
+                from app.services.firebase_service import firebase_service
+                
+                # Get all user trips
+                user_ref = firebase_service.db.collection('users').document(current_user.id)
+                trips_ref = user_ref.collection('trips')
+                trips_query = trips_ref.order_by('created_at', direction='DESCENDING').limit(1)
+                trips_docs = trips_query.stream()
+                
+                latest_trip = None
+                for doc in trips_docs:
+                    latest_trip = doc
+                    break
+                
+                if latest_trip:
+                    final_trip_id = latest_trip.id
+                    print(f"✅ AUTO_DETECTED: Using latest trip {final_trip_id}")
+                else:
+                    print(f"❌ BUDGET_CREATE_ERROR: No trips found for user")
+                    raise HTTPException(
+                        status_code=400,
+                        detail="trip_id is required for budget creation. Please provide trip_id or create a trip first."
+                    )
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"❌ BUDGET_CREATE_ERROR: Could not auto-detect trip: {e}")
+                raise HTTPException(
+                    status_code=400,
+                    detail="trip_id is required for budget creation (provide in query param or request body)."
+                )
         
         # Verify trip exists and belongs to user
-        trip = await firebase_service.get_trip(trip_id, current_user.id)
+        print(f"🔍 Checking if trip {final_trip_id} exists for user {current_user.id}")
+        trip = await firebase_service.get_trip(final_trip_id, current_user.id)
         if not trip:
+            print(f"❌ BUDGET_CREATE_ERROR: Trip {final_trip_id} not found")
             raise HTTPException(
                 status_code=404,
                 detail="Trip not found or does not belong to user."
             )
         
+        print(f"✅ Trip found: {trip.get('name')}")
+        
         # Update trip budget in Firestore
         updates = {"total_budget": budget_request.total_budget}
-        updated_trip = await firebase_service.update_trip(trip_id, current_user.id, updates)
+        print(f"💾 Updating trip budget in Firestore...")
+        updated_trip = await firebase_service.update_trip(final_trip_id, current_user.id, updates)
+        
+        print(f"✅ BUDGET_CREATED: Budget {budget_request.total_budget} VND for trip {final_trip_id}")
         
         return {
             "message": "Budget created successfully",
-            "trip_id": trip_id,
+            "trip_id": final_trip_id,
             "budget": {
                 "total_budget": budget_request.total_budget,
                 "daily_limit": budget_request.daily_limit,
@@ -201,6 +250,9 @@ async def create_budget(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ BUDGET_CREATE_ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/budget/trip/{trip_id}", response_model=BudgetStatusResponse)
@@ -350,6 +402,63 @@ async def create_expense(
                 detail=f"Database error: {str(db_error)}"
             )
         
+        # Check budget after creating expense
+        budget_warning = None
+        try:
+            trip = await firebase_service.get_trip(final_trip_id, current_user.id)
+            
+            # Get budget value (default to 0 if not set)
+            total_budget = float(trip.get('total_budget', 0)) if trip else 0.0
+            
+            # Get all expenses for this trip
+            trip_expenses = await firebase_service.get_trip_expenses(final_trip_id, current_user.id)
+            total_spent = sum(float(exp['amount']) for exp in trip_expenses)
+            
+            percentage_used = (total_spent / total_budget * 100) if total_budget > 0 else 100.0
+            
+            print(f"📊 BUDGET_CHECK: Total budget: {total_budget}, Total spent: {total_spent}, Percentage: {percentage_used:.1f}%")
+            
+            # Check for overbudget
+            if total_budget == 0:
+                # No budget set - warn user to set budget
+                budget_warning = {
+                    "type": "NO_BUDGET",
+                    "message": f"Chưa đặt ngân sách cho chuyến đi! Đã chi tiêu {total_spent:,.0f} {expense['currency']}",
+                    "total_budget": 0.0,
+                    "total_spent": total_spent,
+                    "percentage_used": 0.0
+                }
+                print(f"⚠️ NO_BUDGET: Spent {total_spent} but no budget set")
+            elif total_spent > total_budget:
+                overage = total_spent - total_budget
+                budget_warning = {
+                    "type": "OVER_BUDGET",
+                    "message": f"Vượt ngân sách {overage:,.0f} {expense['currency']}!",
+                    "total_budget": total_budget,
+                    "total_spent": total_spent,
+                    "percentage_used": percentage_used,
+                    "overage": overage
+                }
+                print(f"⚠️ OVER_BUDGET: Spent {total_spent} / Budget {total_budget} (vượt {overage})")
+            elif percentage_used >= 80:
+                remaining = total_budget - total_spent
+                budget_warning = {
+                    "type": "WARNING",
+                    "message": f"Sắp hết ngân sách! Còn {remaining:,.0f} {expense['currency']}",
+                    "total_budget": total_budget,
+                    "total_spent": total_spent,
+                    "percentage_used": percentage_used,
+                    "remaining": remaining
+                }
+                print(f"⚠️ BUDGET_WARNING: {percentage_used:.1f}% used, remaining: {remaining}")
+            else:
+                print(f"✅ BUDGET_OK: {percentage_used:.1f}% used")
+        except Exception as budget_check_error:
+            print(f"⚠️ BUDGET_CHECK_ERROR: {budget_check_error}")
+            import traceback
+            traceback.print_exc()
+            # Don't fail expense creation if budget check fails
+        
         response = ExpenseResponse(
             id=expense["id"],
             amount=float(expense["amount"]),
@@ -357,10 +466,13 @@ async def create_expense(
             description=expense["name"],
             expense_date=datetime.fromisoformat(expense["date"]),
             currency=expense["currency"],
-            planner_id=final_trip_id  # Include the trip ID
+            planner_id=final_trip_id,
+            budget_warning=budget_warning
         )
         
         print(f"🎉 EXPENSE_CREATED: {response.id} - {response.amount} {response.currency}")
+        if budget_warning:
+            print(f"   ⚠️ BUDGET_ALERT: {budget_warning['type']} - {budget_warning['message']}")
         return response
         
     except ValueError as e:
@@ -503,13 +615,17 @@ async def get_category_status(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get spending status by category (SQLite database)"""
+    """Get spending status by category with proper budget checking"""
     try:
         # Get expenses from Firestore
         if trip_id:
             expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
+            # Get trip budget info
+            trip = await firebase_service.get_trip(trip_id, current_user.id)
+            total_budget = float(trip.get('total_budget', 0)) if trip else 0.0
         else:
             expenses = await firebase_service.get_user_expenses(current_user.id)
+            total_budget = 0.0
         
         if not expenses:
             return []
@@ -521,19 +637,33 @@ async def get_category_status(
             amount = float(expense['amount'])
             category_totals[category] = category_totals.get(category, 0) + amount
         
-        # Convert to response format
-        return [
-            CategoryStatusResponse(
+        # Get total spent across all categories
+        total_spent = sum(category_totals.values())
+        
+        # Calculate per-category allocation (simple equal distribution for now)
+        # You can improve this by storing category budgets in the trip document
+        num_categories = len(category_totals) if category_totals else 1
+        allocated_per_category = total_budget / num_categories if total_budget > 0 else 0.0
+        
+        # Convert to response format with proper overbudget checking
+        result = []
+        for category, spent in category_totals.items():
+            allocated = allocated_per_category
+            remaining = max(0, allocated - spent)
+            percentage_used = (spent / allocated * 100) if allocated > 0 else 100.0
+            is_over = spent > allocated if allocated > 0 else False
+            
+            result.append(CategoryStatusResponse(
                 category=category,
-                allocated=0.0,  # No allocation data available in simplified version
+                allocated=allocated,
                 spent=spent,
-                remaining=0.0,  # No allocation data available
-                percentage_used=100.0 if spent > 0 else 0.0,
-                is_over_budget=False,  # No budget data to compare
-                status="ACTIVE" if spent > 0 else "UNUSED"
-            )
-            for category, spent in category_totals.items()
-        ]
+                remaining=remaining,
+                percentage_used=percentage_used,
+                is_over_budget=is_over,
+                status="OVER_BUDGET" if is_over else "WARNING" if percentage_used > 80 else "ACTIVE" if spent > 0 else "UNUSED"
+            ))
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:
