@@ -439,6 +439,36 @@ async def create_activity(
             actual_cost=actual_cost,
             **kwargs
         )
+        
+        # Save activity to Firestore for persistence and weather alerts
+        if activity_data.trip_id:
+            try:
+                activity_firestore_data = {
+                    'id': activity.id,
+                    'planner_id': activity_data.trip_id,
+                    'name': activity.name,
+                    'title': activity_data.title,
+                    'description': activity_data.description or '',
+                    'activity_type': activity_data.activity_type,
+                    'start_time': activity_data.start_date.isoformat() if activity_data.start_date else None,
+                    'startTime': activity_data.start_date.isoformat() if activity_data.start_date else None,  # Alternative field name
+                    'end_time': activity_data.end_date.isoformat() if activity_data.end_date else None,
+                    'location': activity_data.location.dict() if activity_data.location else None,
+                    'check_in': activity_data.check_in,
+                    'status': activity_data.status,
+                    'priority': activity_data.priority,
+                    'created_by': current_user.id,
+                    'created_at': datetime.now().isoformat(),
+                    'updated_at': datetime.now().isoformat()
+                }
+                
+                # Save to Firestore using the activity ID
+                await firebase_service.db.collection('activities').document(activity.id).set(activity_firestore_data)
+                print(f"✅ FIRESTORE_ACTIVITY: Saved activity {activity.id} to Firestore for trip {activity_data.trip_id}")
+                        
+            except Exception as firestore_error:
+                print(f"⚠️ FIRESTORE_ACTIVITY_ERROR: Failed to save activity to Firestore: {firestore_error}")
+                # Don't fail the request - activity is still in memory
 
         return activity_to_response(activity)
 
@@ -472,6 +502,9 @@ async def get_activities(
 ):
     """Get activities with expense tracking information"""
     try:
+        print(f"📋 GET_ACTIVITIES: User {current_user.id} requesting activities")
+        print(f"   Trip ID filter: {trip_id}")
+        print(f"   Page: {page}, Limit: {limit}")
         # Start with all user's activities
         travel_mgr = get_travel_manager()
         activities = travel_mgr.activity_manager.get_activities_by_user(current_user.id)
@@ -514,6 +547,8 @@ async def get_activities(
         end_idx = start_idx + limit
         paginated_activities = activities[start_idx:end_idx]
 
+        print(f"✅ GET_ACTIVITIES_SUCCESS: Returning {len(paginated_activities)} activities (total: {total})")
+        
         return ActivityListResponse(
             activities=[activity_to_response(activity) for activity in paginated_activities],
             total=total,
@@ -523,6 +558,9 @@ async def get_activities(
         )
 
     except Exception as e:
+        print(f"❌ GET_ACTIVITIES_ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to get activities: {str(e)}"
@@ -604,7 +642,7 @@ async def create_trip(
         print(f"📝 TRIP_VALIDATION: All validations passed")
         
         # Ensure user record exists first
-        _ensure_user_record(current_user)
+        await _ensure_user_record(current_user)
 
         # Create trip data for storage
         trip_data_dict = {
@@ -644,7 +682,10 @@ async def create_trip(
         
         # Convert stored trip to response model
         try:
-            return _trip_row_to_response(stored_trip)
+            trip_response = _trip_row_to_response(stored_trip)
+            print(f"📤 TRIP_RESPONSE: Returning trip with ID: {trip_response.id}")
+            print(f"   Frontend should use this ID for budget creation")
+            return trip_response
         except Exception as response_error:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -668,7 +709,7 @@ async def get_trips(
 ):
     """Get all trips for the current user"""
     try:
-        _ensure_user_record(current_user)
+        await _ensure_user_record(current_user)
 
         # Get user's trips from Firestore
         stored_trips = await firebase_service.get_user_trips(current_user.id)
@@ -727,7 +768,7 @@ async def delete_trip(
 ):
     """Delete a trip with SQLite database cleanup (no more in-memory expense managers)"""
     try:
-        _ensure_user_record(current_user)
+        await _ensure_user_record(current_user)
 
         # Clean up activities from integrated travel manager (in-memory cleanup)
         travel_mgr = get_travel_manager()
@@ -774,10 +815,48 @@ async def get_activity(
     current_user: User = Depends(get_current_user)
 ):
     """Get activity by ID with expense information"""
+    print(f"🔍 GET_ACTIVITY: User {current_user.id} requesting activity {activity_id}")
+    
     travel_mgr = get_travel_manager()
     activity = travel_mgr.activity_manager.get_activity(activity_id)
     
     if not activity:
+        print(f"❌ GET_ACTIVITY_ERROR: Activity {activity_id} not found in memory")
+        print(f"   Attempting to load from Firestore...")
+        
+        # Try to load from Firestore as fallback
+        try:
+            activity_doc = await firebase_service.db.collection('activities').document(activity_id).get()
+            if activity_doc.exists:
+                activity_data = activity_doc.to_dict()
+                print(f"✅ Found activity in Firestore: {activity_data.get('title')}")
+                
+                # Check ownership
+                if activity_data.get('created_by') != current_user.id:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Not authorized to view this activity"
+                    )
+                
+                # Return minimal response from Firestore data
+                return ActivityResponse(
+                    id=activity_id,
+                    title=activity_data.get('title', ''),
+                    description=activity_data.get('description'),
+                    activity_type=activity_data.get('activity_type', 'activity'),
+                    status=activity_data.get('status', 'planned'),
+                    priority=activity_data.get('priority', 'medium'),
+                    start_date=datetime.fromisoformat(activity_data['start_time']) if activity_data.get('start_time') else None,
+                    end_date=datetime.fromisoformat(activity_data['end_time']) if activity_data.get('end_time') else None,
+                    location=activity_data.get('location'),
+                    check_in=activity_data.get('check_in', False),
+                    trip_id=activity_data.get('planner_id'),
+                    created_at=datetime.fromisoformat(activity_data['created_at']) if activity_data.get('created_at') else datetime.now(),
+                    updated_at=datetime.fromisoformat(activity_data['updated_at']) if activity_data.get('updated_at') else datetime.now()
+                )
+        except Exception as firestore_error:
+            print(f"❌ FIRESTORE_GET_ACTIVITY_ERROR: {firestore_error}")
+        
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Activity not found"
@@ -790,6 +869,7 @@ async def get_activity(
             detail="Not authorized to view this activity"
         )
 
+    print(f"✅ GET_ACTIVITY_SUCCESS: Found activity {activity.title}")
     return activity_to_response(activity)
 
 
@@ -858,6 +938,39 @@ async def update_activity(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Failed to update activity"
             )
+        
+        # Update activity in Firestore
+        if updated_activity.trip_id:
+            try:
+                firestore_updates = {
+                    'updated_at': datetime.now().isoformat()
+                }
+                
+                # Add specific fields that were updated
+                if activity_data.title:
+                    firestore_updates['title'] = activity_data.title
+                    firestore_updates['name'] = activity_data.title
+                if activity_data.description is not None:
+                    firestore_updates['description'] = activity_data.description
+                if activity_data.start_date:
+                    firestore_updates['start_time'] = activity_data.start_date.isoformat()
+                    firestore_updates['startTime'] = activity_data.start_date.isoformat()
+                if activity_data.end_date:
+                    firestore_updates['end_time'] = activity_data.end_date.isoformat()
+                if activity_data.check_in is not None:
+                    firestore_updates['check_in'] = activity_data.check_in
+                if activity_data.status:
+                    firestore_updates['status'] = activity_data.status
+                if activity_data.priority:
+                    firestore_updates['priority'] = activity_data.priority
+                if activity_data.location:
+                    firestore_updates['location'] = activity_data.location.dict()
+                    
+                await firebase_service.db.collection('activities').document(activity_id).update(firestore_updates)
+                print(f"✅ FIRESTORE_ACTIVITY_UPDATE: Updated activity {activity_id} in Firestore")
+            except Exception as firestore_error:
+                print(f"⚠️ FIRESTORE_ACTIVITY_UPDATE_ERROR: {firestore_error}")
+                # Don't fail the request
         
         # If checking in, create expense in Firebase
         if is_checking_in and updated_activity.trip_id:
@@ -930,6 +1043,14 @@ async def delete_activity(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete activity"
         )
+    
+    # Delete activity from Firestore
+    try:
+        await firebase_service.db.collection('activities').document(activity_id).delete()
+        print(f"✅ FIRESTORE_ACTIVITY_DELETE: Deleted activity {activity_id} from Firestore")
+    except Exception as firestore_error:
+        print(f"⚠️ FIRESTORE_ACTIVITY_DELETE_ERROR: {firestore_error}")
+        # Don't fail the request - activity is already deleted from memory
 
 
 @router.post("/{activity_id}/schedule", response_model=ActivityResponse)

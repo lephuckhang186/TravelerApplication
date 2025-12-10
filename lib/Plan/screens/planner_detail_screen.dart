@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import 'search_place_screen.dart';
 import '../widgets/ai_assistant_dialog.dart';
 import '../../Core/theme/app_theme.dart';
@@ -13,6 +14,8 @@ import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
 import '../utils/activity_scheduling_validator.dart';
+import '../../smart-nofications/widgets/smart_notification_widget.dart';
+import '../../smart-nofications/providers/smart_notification_provider.dart';
 
 /// Formatter để tự động thêm dấu chấm sau mỗi 3 chữ số
 class ThousandsSeparatorInputFormatter extends TextInputFormatter {
@@ -87,7 +90,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     _loadActivitiesFromServer();
     // Try to get expense provider from context after first frame (optional)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('DEBUG: PostFrameCallback - Starting initialization');
       _initializeExpenseProvider();
+      _initializeSmartNotifications();
+      debugPrint('DEBUG: PostFrameCallback - Initialization complete');
     });
   }
 
@@ -142,6 +148,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           title: _buildTripHeader(),
           centerTitle: false,
           actions: [
+            SmartNotificationWidget(tripId: _trip.id ?? ''),
             IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.black),
               onPressed: _isDeleting ? null : _showMoreOptions,
@@ -1025,6 +1032,14 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           );
                           Navigator.pop(context);
                           _updateActivity(updatedActivity);
+          
+          // Check budget notification when checking in with actual cost
+          if (updatedActivity.checkIn && updatedActivity.budget?.actualCost != null) {
+            debugPrint('DEBUG: Activity checked in with actual cost, triggering budget check');
+            _checkBudgetNotification(updatedActivity);
+          } else {
+            debugPrint('DEBUG: Activity check-in status: ${updatedActivity.checkIn}, actual cost: ${updatedActivity.budget?.actualCost}');
+          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -1400,6 +1415,50 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         );
       },
     );
+  }
+
+  Future<void> _checkBudgetNotification(ActivityModel activity) async {
+    try {
+      debugPrint('DEBUG: Checking budget notification for activity: ${activity.title}');
+      debugPrint('DEBUG: Activity check-in: ${activity.checkIn}, actualCost: ${activity.budget?.actualCost}, estimatedCost: ${activity.budget?.estimatedCost}');
+      
+      if (activity.budget?.actualCost != null && 
+          activity.budget?.estimatedCost != null &&
+          _trip.id != null && 
+          activity.id != null) {
+        
+        final actualCost = activity.budget!.actualCost!;
+        final estimatedCost = activity.budget!.estimatedCost;
+        final overage = actualCost - estimatedCost;
+        
+        debugPrint('DEBUG: Budget check - Actual: $actualCost, Estimated: $estimatedCost, Overage: $overage');
+        
+        // Only trigger if overage is more than 10%
+        if (overage > estimatedCost * 0.1) {
+          debugPrint('DEBUG: Budget overage detected! Triggering notification...');
+          try {
+            final notificationProvider = Provider.of<SmartNotificationProvider>(
+              context,
+              listen: false,
+            );
+            await notificationProvider.checkBudgetOnActivity(
+              _trip.id!,
+              activity.id!,
+              actualCost,
+            );
+            debugPrint('DEBUG: Budget notification triggered successfully');
+          } catch (providerError) {
+            debugPrint('DEBUG: SmartNotificationProvider not available: $providerError');
+          }
+        } else {
+          debugPrint('DEBUG: Budget overage within acceptable range (<=10%)');
+        }
+      } else {
+        debugPrint('DEBUG: Budget notification skipped - missing data');
+      }
+    } catch (e) {
+      debugPrint('DEBUG: Error checking budget notification: $e');
+    }
   }
 
   Widget _buildTextField({
@@ -2427,6 +2486,44 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           tripId: _trip.id,
         );
 
+        debugPrint(
+          'Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND), expenseId: ${expense.id}',
+        );
+
+        // Check if backend returned a budget warning
+        if (expense.budgetWarning != null) {
+          debugPrint('💰 BUDGET_WARNING from backend: ${expense.budgetWarning}');
+          
+          // Trigger smart notification for budget warning
+          try {
+            if (mounted) {
+              final notificationProvider = Provider.of<SmartNotificationProvider>(
+                context,
+                listen: false,
+              );
+              
+              final warningType = expense.budgetWarning!['type'] as String?;
+             final message = expense.budgetWarning!['message'] as String?;
+            
+            debugPrint('🔔 Triggering notification for budget warning: $warningType - $message');
+            
+            // Create notification based on warning type
+            if (warningType == 'OVER_BUDGET' || warningType == 'WARNING' || warningType == 'NO_BUDGET') {
+              await notificationProvider.handleExpenseCreatedWithResponse(
+                _trip.id!,
+                expense,
+                activity.id,
+              );
+              debugPrint('✅ Budget warning notification created successfully');
+            }
+            }
+          } catch (providerError) {
+            debugPrint('❌ Failed to create budget warning notification: $providerError');
+          }
+        } else {
+          debugPrint('ℹ️ No budget warning from backend');
+        }
+
         // Update activity with expense info
         final updatedExpenseInfo = activity.expenseInfo.copyWith(
           expenseId: expense.id,
@@ -2447,10 +2544,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           });
           await _persistTripChanges();
         }
-
-        debugPrint(
-          'Created expense for checked-in activity: ${activity.title} (${activity.budget!.actualCost} VND), expenseId: ${expense.id}',
-        );
       } else {
         // Log activity cost without expense integration
         debugPrint(
@@ -2469,84 +2562,78 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     List<ActivityModel> conflictingActivities,
   ) async {
     return await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: Row(
-                children: [
-                  Icon(Icons.warning_amber, color: Colors.orange.shade600),
-                  const SizedBox(width: 8),
-                  const Text('Xung đột thời gian'),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(message),
-                  const SizedBox(height: 16),
-                  if (conflictingActivities.isNotEmpty) ...[
-                    const Text(
-                      'Hoạt động bị trùng:',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber, color: Colors.orange.shade600),
+              const SizedBox(width: 8),
+              const Text('Xung đột thời gian'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              if (conflictingActivities.isNotEmpty) ...[
+                const Text(
+                  'Hoạt động bị trùng:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                ...conflictingActivities.map<Widget>((activity) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.circle, size: 6, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${activity.title} (${_formatActivityTime(activity)})',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 16,
+                      color: Colors.blue.shade700,
                     ),
-                    const SizedBox(height: 8),
-                    ...conflictingActivities.map(
-                      (activity) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.circle,
-                              size: 6,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${activity.title} (${_formatActivityTime(activity)})',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ),
-                          ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Gợi ý: Chọn thời gian khác để tránh xung đột',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue.shade700,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline,
-                            size: 16,
-                            color: Colors.blue.shade700,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Gợi ý: Chọn thời gian khác để tránh xung đột',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
-                ],
+                ),
               ),
+            ],
+          ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),

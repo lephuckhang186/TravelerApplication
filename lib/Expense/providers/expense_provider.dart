@@ -178,7 +178,7 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   /// Create expense from activity integration
-  Future<bool> createExpenseFromActivity({
+  Future<Expense?> createExpenseFromActivity({
     required double amount,
     required String category,
     required String description,
@@ -243,7 +243,7 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   /// Create a new expense
-  Future<bool> createExpense(
+  Future<Expense?> createExpense(
     double amount,
     ExpenseCategory category, {
     String description = '',
@@ -270,10 +270,10 @@ class ExpenseProvider with ChangeNotifier {
         fetchExpenseSummary(tripId: tripId)
       ]);
 
-      return true;
+      return newExpense; // Return the expense with budget warning
     } catch (e) {
       _setError(e.toString());
-      return false;
+      return null;
     } finally {
       _setLoading(false);
     }
