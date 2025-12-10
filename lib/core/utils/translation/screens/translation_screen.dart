@@ -829,7 +829,7 @@ class _TranslationScreenState extends State<TranslationScreen>
   }
 
   Widget _buildBottomActions() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Row(
         children: [

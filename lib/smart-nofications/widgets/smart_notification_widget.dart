@@ -224,7 +224,7 @@ class SmartNotificationWidget extends StatelessWidget {
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           leading: CircleAvatar(
-            backgroundColor: notification.color.withOpacity(0.1),
+            backgroundColor: notification.color.withValues(alpha: 0.1),
             child: Icon(
               notification.icon,
               color: notification.color,

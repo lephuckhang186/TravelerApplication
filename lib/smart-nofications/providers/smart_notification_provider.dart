@@ -13,11 +13,11 @@ class SmartNotificationProvider extends ChangeNotifier {
   final ActivityReminderService _reminderService = ActivityReminderService();
 
   // Store notifications per tripId
-  Map<String, List<SmartNotification>> _notificationsByTrip = {};
+  final Map<String, List<SmartNotification>> _notificationsByTrip = {};
   Timer? _periodicTimer;
   Timer? _dailyWeatherTimer;
-  Map<String, bool> _initializedTrips = {};
-  Map<String, DateTime?> _lastWeatherCheckByTrip = {};
+  final Map<String, bool> _initializedTrips = {};
+  final Map<String, DateTime?> _lastWeatherCheckByTrip = {};
 
   // Get notifications for specific trip
   List<SmartNotification> getNotifications(String tripId) {
