@@ -2224,6 +2224,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           debugPrint('Failed to delete expense on backend: $e');
           // Note: Local cache already updated, so UI won't show it
           // If this is critical, consider implementing rollback
+          return false;
         });
       }
     }
