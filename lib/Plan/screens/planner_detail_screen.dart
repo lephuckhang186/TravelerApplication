@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'search_place_screen.dart';
@@ -15,6 +16,49 @@ import '../services/trip_expense_integration_service.dart';
 import '../utils/activity_scheduling_validator.dart';
 import '../../smart-nofications/widgets/smart_notification_widget.dart';
 import '../../smart-nofications/providers/smart_notification_provider.dart';
+
+/// Formatter để tự động thêm dấu chấm sau mỗi 3 chữ số
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Loại bỏ tất cả dấu chấm hiện có
+    String newText = newValue.text.replaceAll('.', '');
+
+    // Chỉ giữ lại số
+    newText = newText.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (newText.isEmpty) {
+      return const TextEditingValue();
+    }
+
+    // Thêm dấu chấm sau mỗi 3 chữ số từ phải sang trái
+    String formatted = '';
+    int count = 0;
+    for (int i = newText.length - 1; i >= 0; i--) {
+      if (count == 3) {
+        formatted = '.$formatted';
+        count = 0;
+      }
+      formatted = newText[i] + formatted;
+      count++;
+    }
+
+    // Tính toán vị trí con trở mới
+    int cursorPosition = formatted.length;
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: cursorPosition),
+    );
+  }
+}
 
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -293,28 +337,34 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: AppColors.primary.withValues(alpha: 0.12),
-          ),
-          child: const Icon(
-            Icons.travel_explore,
-            color: AppColors.primary,
-            size: 20,
+        Transform.translate(
+          offset: const Offset(
+            -25,
+            4,
+          ), // Adjust this value to move left side down
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primary.withValues(alpha: 0.12),
+            ),
+            child: const Icon(
+              Icons.travel_explore,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
         ),
         const SizedBox(width: 12),
         Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Transform.translate(
-                offset: const Offset(0, 0),
-                child: Text(
+          child: Transform.translate(
+            offset: const Offset(-30, 0), // Adjust this value to move text down
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   _trip.name,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
@@ -325,43 +375,43 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _trip.destination,
-                style: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
+                const SizedBox(height: 2),
+                Text(
+                  _trip.destination,
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.calendar_today,
-                    size: 11,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      dateRange,
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 11,
-                        color: Colors.grey.shade700,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 11,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        dateRange,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 11,
+                          color: Colors.grey.shade700,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -372,7 +422,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     if (_activities.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 300),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -496,17 +546,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 60,
+        Container(
+          width: 55,
+          alignment: Alignment.centerLeft,
           child: activity.startDate != null
               ? Text(
                   timeLabel,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.visible,
                 )
               : const SizedBox(),
         ),
@@ -592,14 +645,35 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       Transform.translate(
                         offset: const Offset(0, -8),
                         child: IconButton(
-                          icon: Icon(
-                            activity.checkIn
-                                ? Icons.check_circle
-                                : Icons.check_circle_outline,
-                            color: activity.checkIn
-                                ? Colors.green
-                                : Colors.grey,
-                          ),
+                          icon: activity.checkIn
+                              ? Icon(Icons.check_circle, color: Colors.green)
+                              : Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppColors.skyBlue.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        AppColors.steelBlue.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        AppColors.dodgerBlue.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.check_circle_outline,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
                           onPressed: () => _toggleCheckIn(activity),
                         ),
                       ),
@@ -799,9 +873,24 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final descriptionController = TextEditingController(
       text: activity.description ?? '',
     );
-    final expectedCostController = TextEditingController(
-      text: activity.budget?.estimatedCost.toString() ?? '',
-    );
+    // Format expected cost with thousand separators
+    String formattedCost = '';
+    if (activity.budget?.estimatedCost != null) {
+      final cost = activity.budget!.estimatedCost.toInt().toString();
+      // Add dots every 3 digits from right to left
+      String formatted = '';
+      int count = 0;
+      for (int i = cost.length - 1; i >= 0; i--) {
+        if (count == 3) {
+          formatted = '.$formatted';
+          count = 0;
+        }
+        formatted = cost[i] + formatted;
+        count++;
+      }
+      formattedCost = formatted;
+    }
+    final expectedCostController = TextEditingController(text: formattedCost);
     dynamic selectedPlace = activity.location != null
         ? {
             'display_name': activity.location!.name,
@@ -1002,7 +1091,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               expectedCostController.text.trim().isEmpty
                               ? null
                               : double.tryParse(
-                                  expectedCostController.text.trim(),
+                                  expectedCostController.text.trim().replaceAll(
+                                    '.',
+                                    '',
+                                  ),
                                 );
 
                           // Create budget preserving actual cost if exists
@@ -1369,7 +1461,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                               expectedCostController.text.trim().isEmpty
                               ? null
                               : double.tryParse(
-                                  expectedCostController.text.trim(),
+                                  expectedCostController.text.trim().replaceAll(
+                                    '.',
+                                    '',
+                                  ),
                                 );
 
                           // Create budget if expected cost is provided
@@ -1480,6 +1575,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
   }) {
+    // Áp dụng formatter cho số tiền khi keyboardType là number
+    final inputFormatters = keyboardType == TextInputType.number
+        ? [ThousandsSeparatorInputFormatter()]
+        : <TextInputFormatter>[];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1496,6 +1596,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
@@ -1711,76 +1812,139 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       text: _trip.description ?? '',
     );
     final budgetController = TextEditingController(
-      text: _trip.budget?.estimatedCost.toString() ?? '',
+      text: _trip.budget?.estimatedCost != null
+          ? _formatCurrency(_trip.budget!.estimatedCost).replaceAll(' VND', '')
+          : '',
     );
+    DateTime selectedStartDate = _trip.startDate;
+    DateTime selectedEndDate = _trip.endDate;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Trip Information'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Trip Name',
-                  border: OutlineInputBorder(),
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Edit Trip Information'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Trip Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: destinationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Destination',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: budgetController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Total Budget (VND)',
+                      border: OutlineInputBorder(),
+                      helperText: 'Format: 1.000.000',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedStartDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null && picked != selectedStartDate) {
+                        setDialogState(() {
+                          selectedStartDate = picked;
+                          // Ensure end date is not before start date
+                          if (selectedEndDate.isBefore(selectedStartDate)) {
+                            selectedEndDate = selectedStartDate;
+                          }
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Start Date',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(_formatDate(selectedStartDate)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedEndDate,
+                        firstDate: selectedStartDate,
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null && picked != selectedEndDate) {
+                        setDialogState(() {
+                          selectedEndDate = picked;
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'End Date',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(_formatDate(selectedEndDate)),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: destinationController,
-                decoration: const InputDecoration(
-                  labelText: 'Destination',
-                  border: OutlineInputBorder(),
-                ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
-                  border: OutlineInputBorder(),
+              ElevatedButton(
+                onPressed: () async {
+                  await _saveEditedTripInfo(
+                    nameController.text.trim(),
+                    destinationController.text.trim(),
+                    descriptionController.text.trim(),
+                    budgetController.text.trim(),
+                    selectedStartDate,
+                    selectedEndDate,
+                  );
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: budgetController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Total Budget (VND)',
-                  border: OutlineInputBorder(),
-                ),
+                child: const Text('Save Changes'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await _saveEditedTripInfo(
-                nameController.text.trim(),
-                destinationController.text.trim(),
-                descriptionController.text.trim(),
-                budgetController.text.trim(),
-              );
-              if (!context.mounted) return;
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Save Changes'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -2037,6 +2201,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     String destination,
     String description,
     String budgetText,
+    DateTime startDate,
+    DateTime endDate,
   ) async {
     try {
       if (name.isEmpty || destination.isEmpty) {
@@ -2049,10 +2215,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         return;
       }
 
-      // Parse budget
+      // Parse budget - remove commas first
       double? budget;
       if (budgetText.isNotEmpty) {
-        budget = double.tryParse(budgetText);
+        // Remove commas and any non-digit characters except decimal point
+        final cleanBudget = budgetText.replaceAll(',', '').replaceAll(' ', '');
+        budget = double.tryParse(cleanBudget);
         if (budget == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -2081,6 +2249,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         destination: destination,
         description: description.isNotEmpty ? description : null,
         budget: budgetModel,
+        startDate: startDate,
+        endDate: endDate,
         updatedAt: DateTime.now(),
       );
 
@@ -2284,7 +2454,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   String _formatCurrency(double amount) {
-    return '${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',')} VND';
+    return '${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} VND';
   }
 
   void _toggleCheckIn(ActivityModel activity) async {

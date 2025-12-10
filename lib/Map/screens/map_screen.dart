@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../Plan/providers/trip_planning_provider.dart';
 import '../../Plan/models/trip_model.dart';
 import '../../Plan/models/activity_models.dart';
+import '../../Expense/providers/expense_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../services/map_service.dart';
 
@@ -506,7 +507,7 @@ class _MapScreenState extends State<MapScreen> {
         category: activity.budget?.category,
       );
 
-      final updatedActivity = activity.copyWith(
+      var updatedActivity = activity.copyWith(
         checkIn: true,
         budget: updatedBudget,
       );
@@ -521,6 +522,62 @@ class _MapScreenState extends State<MapScreen> {
       );
 
       if (success) {
+        // Create expense record for this check-in and get expense ID
+        String? createdExpenseId;
+        if (!mounted) return;
+        
+        try {
+          final expenseProvider = Provider.of<ExpenseProvider>(
+            context,
+            listen: false,
+          );
+          
+          // Check if expense already exists for this activity
+          if (updatedActivity.expenseInfo.expenseSynced &&
+              updatedActivity.expenseInfo.expenseId != null) {
+            debugPrint(
+              'Expense already exists for activity: ${updatedActivity.title} (expenseId: ${updatedActivity.expenseInfo.expenseId})',
+            );
+            createdExpenseId = updatedActivity.expenseInfo.expenseId;
+          } else if (actualCost > 0) {
+            // Create new expense using ExpenseService directly
+            final expenseService = expenseProvider.expenseService;
+            final expense = await expenseService.createExpenseFromActivity(
+              amount: actualCost,
+              category: updatedActivity.activityType.value,
+              description: updatedActivity.title,
+              activityId: updatedActivity.id,
+              tripId: _selectedTrip!.id,
+            );
+            
+            createdExpenseId = expense.id;
+            debugPrint('✅ Expense created successfully with ID: $createdExpenseId');
+            
+            // Update activity with expense info
+            final updatedExpenseInfo = updatedActivity.expenseInfo.copyWith(
+              expenseId: createdExpenseId,
+              hasExpense: true,
+              expenseCategory: updatedActivity.activityType.value,
+              expenseSynced: true,
+            );
+            
+            updatedActivity = updatedActivity.copyWith(
+              expenseInfo: updatedExpenseInfo,
+            );
+            
+            // Save the updated activity with expense info back to provider
+            await tripProvider.updateActivityInTrip(
+              _selectedTrip!.id!,
+              updatedActivity,
+            );
+            
+            debugPrint('✅ Activity updated with expense info');
+          }
+        } catch (e) {
+          debugPrint('❌ Error creating expense: $e');
+          // Continue with check-in even if expense creation fails
+        }
+
         // Update selected trip from provider to reflect changes
         final updatedTrip = tripProvider.getTripById(_selectedTrip!.id!);
         if (updatedTrip != null) {
