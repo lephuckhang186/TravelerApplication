@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../theme/app_theme.dart';
 import '../models/translation_models.dart';
 import '../services/translation_service.dart';
+import '../services/ocr_service.dart';
 
 class TranslationScreen extends StatefulWidget {
   const TranslationScreen({super.key});
@@ -16,12 +17,14 @@ class _TranslationScreenState extends State<TranslationScreen>
   final TextEditingController _sourceController = TextEditingController();
   final TextEditingController _targetController = TextEditingController();
   final TranslationService _translationService = TranslationService();
+  final OCRService _ocrService = OCRService();
 
-  Language _sourceLanguage = Language.supportedLanguages[1]; // English
-  Language _targetLanguage = Language.supportedLanguages[0]; // Vietnamese
+  Language _sourceLanguage = Language.supportedLanguages[0]; // Auto Detect
+  Language _targetLanguage = Language.supportedLanguages[1]; // Vietnamese
 
   bool _isLoading = false;
   bool _isListening = false;
+  bool _isProcessingImage = false;
   TranslationResult? _currentResult;
 
   late AnimationController _swapAnimationController;
@@ -47,77 +50,151 @@ class _TranslationScreenState extends State<TranslationScreen>
     _sourceController.dispose();
     _targetController.dispose();
     _swapAnimationController.dispose();
+    _ocrService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF5F7FA),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.skyBlue.withValues(alpha: 0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              color: AppColors.dodgerBlue,
+              size: 20,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-        title: Text(
-          'Dịch văn bản',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.skyBlue.withValues(alpha: 0.15),
+                AppColors.dodgerBlue.withValues(alpha: 0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.skyBlue.withValues(alpha: 0.9),
+                      AppColors.steelBlue.withValues(alpha: 0.8),
+                      AppColors.dodgerBlue.withValues(alpha: 0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.translate_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'AI Translator',
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1D2E),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.black54),
-            onPressed: _showInfo,
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.skyBlue.withValues(alpha: 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.info_outline_rounded,
+                color: AppColors.dodgerBlue,
+              ),
+              onPressed: _showInfo,
+            ),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildLanguageSelector(),
-                  const SizedBox(height: 16),
-                  _buildTranslationCard(),
-                  if (_currentResult != null) ...[
-                    const SizedBox(height: 16),
-                    _buildResultCard(),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          _buildBottomActions(),
-        ],
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.of(context).padding.top + 80,
+          20,
+          20,
+        ),
+        child: Column(
+          children: [
+            _buildLanguageSelector(),
+            const SizedBox(height: 24),
+            _buildTranslationCard(),
+            const SizedBox(height: 20),
+            _buildBottomActions(),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildLanguageSelector() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
+            color: AppColors.skyBlue.withValues(alpha: 0.08),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           Expanded(child: _buildLanguageButton(_sourceLanguage, true)),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           AnimatedBuilder(
             animation: _swapAnimation,
             builder: (context, child) {
@@ -126,23 +203,38 @@ class _TranslationScreenState extends State<TranslationScreen>
                 child: GestureDetector(
                   onTap: _swapLanguages,
                   child: Container(
-                    width: 44,
-                    height: 44,
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF7B61FF),
-                      borderRadius: BorderRadius.circular(22),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.skyBlue.withValues(alpha: 0.9),
+                          AppColors.steelBlue.withValues(alpha: 0.8),
+                          AppColors.dodgerBlue.withValues(alpha: 0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.skyBlue.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: const Icon(
-                      Icons.swap_horiz,
+                      Icons.swap_horiz_rounded,
                       color: Colors.white,
-                      size: 20,
+                      size: 28,
                     ),
                   ),
                 ),
               );
             },
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(child: _buildLanguageButton(_targetLanguage, false)),
         ],
       ),
@@ -153,41 +245,74 @@ class _TranslationScreenState extends State<TranslationScreen>
     return GestureDetector(
       onTap: () => _showLanguagePicker(isSource),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.skyBlue.withValues(alpha: 0.05),
+              AppColors.dodgerBlue.withValues(alpha: 0.02),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.skyBlue.withValues(alpha: 0.15),
+            width: 1.5,
+          ),
         ),
         child: Row(
           children: [
-            Text(language.flag, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.skyBlue.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(language.flag, style: const TextStyle(fontSize: 20)),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     language.nativeName,
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                    style: const TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1D2E),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     language.name,
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 11,
-                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.steelBlue.withValues(alpha: 0.6),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            Icon(Icons.keyboard_arrow_down, color: Colors.grey[600], size: 18),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.dodgerBlue,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -198,40 +323,95 @@ class _TranslationScreenState extends State<TranslationScreen>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
+            color: AppColors.skyBlue.withValues(alpha: 0.08),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Source text input
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white,
+                  AppColors.skyBlue.withValues(alpha: 0.02),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      'Nhập văn bản',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.skyBlue.withValues(alpha: 0.15),
+                            AppColors.dodgerBlue.withValues(alpha: 0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.edit_note_rounded,
+                            color: AppColors.dodgerBlue,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Nhập văn bản',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.steelBlue,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const Spacer(),
                     if (_sourceController.text.isNotEmpty)
-                      Text(
-                        '${_sourceController.text.length}/5000',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                          fontSize: 12,
-                          color: Colors.grey[500],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.skyBlue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${_sourceController.text.length}/5000',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.steelBlue,
+                          ),
                         ),
                       ),
                   ],
@@ -239,21 +419,25 @@ class _TranslationScreenState extends State<TranslationScreen>
                 const SizedBox(height: 12),
                 TextField(
                   controller: _sourceController,
-                  maxLines: 6,
+                  maxLines: 4,
                   maxLength: 5000,
                   decoration: InputDecoration(
                     hintText: 'Nhập hoặc dán văn bản cần dịch...',
-                    hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
-                      color: Colors.grey[400],
+                    hintStyle: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
+                      color: AppColors.steelBlue.withValues(alpha: 0.3),
                       fontSize: 16,
+                      fontWeight: FontWeight.w500,
                     ),
                     border: InputBorder.none,
                     counterText: '',
                   ),
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: const TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
-                    color: Colors.black87,
-                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1A1D2E),
+                    height: 1.6,
                   ),
                   onChanged: (text) {
                     setState(() {});
@@ -262,12 +446,88 @@ class _TranslationScreenState extends State<TranslationScreen>
                     }
                   },
                 ),
-                if (_sourceController.text.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.clear,
+                const SizedBox(height: 16),
+                // Action buttons row
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    // Prominent Image Button
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.skyBlue.withValues(alpha: 0.9),
+                            AppColors.steelBlue.withValues(alpha: 0.85),
+                            AppColors.dodgerBlue.withValues(alpha: 0.75),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.skyBlue.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _isProcessingImage
+                              ? null
+                              : _showImageSourceDialog,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.photo_camera_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Quét ảnh',
+                                  style: TextStyle(
+                                    fontFamily: 'Urbanist-Regular',
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                if (_isProcessingImage) ...[
+                                  const SizedBox(width: 10),
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Other action buttons
+                    if (_sourceController.text.isNotEmpty) ...[
+                      _buildModernActionButton(
+                        icon: Icons.clear_rounded,
+                        label: 'Xóa',
                         onTap: () {
                           _sourceController.clear();
                           _targetController.clear();
@@ -276,69 +536,132 @@ class _TranslationScreenState extends State<TranslationScreen>
                           });
                         },
                       ),
-                      const SizedBox(width: 8),
-                      _buildActionButton(
-                        icon: Icons.content_copy,
+                      _buildModernActionButton(
+                        icon: Icons.content_copy_rounded,
+                        label: 'Copy',
                         onTap: () => _copyToClipboard(_sourceController.text),
                       ),
-                      const SizedBox(width: 8),
-                      _buildActionButton(
-                        icon: Icons.mic,
+                      _buildModernActionButton(
+                        icon: Icons.mic_rounded,
+                        label: 'Voice',
                         onTap: _startListening,
                         isActive: _isListening,
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),
 
           // Divider
-          Container(height: 1, color: Colors.grey[200]),
+          Container(
+            height: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  AppColors.skyBlue.withValues(alpha: 0.2),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
 
           // Target text output
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.dodgerBlue.withValues(alpha: 0.02),
+                  Colors.white,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      'Bản dịch',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.dodgerBlue.withValues(alpha: 0.15),
+                            AppColors.skyBlue.withValues(alpha: 0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.translate_rounded,
+                            color: AppColors.dodgerBlue,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Bản dịch',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.steelBlue,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const Spacer(),
                     if (_currentResult != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green[50],
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.green.withValues(alpha: 0.15),
+                              Colors.green.withValues(alpha: 0.08),
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.green.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.check_circle,
-                              size: 14,
-                              color: Colors.green[600],
+                              Icons.verified_rounded,
+                              size: 16,
+                              color: Colors.green[700],
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Text(
                               '${(_currentResult!.confidence * 100).toInt()}%',
-                              style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                                fontSize: 11,
-                                color: Colors.green[600],
-                                fontWeight: FontWeight.w600,
+                              style: TextStyle(
+                                fontFamily: 'Urbanist-Regular',
+                                fontSize: 12,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -348,22 +671,58 @@ class _TranslationScreenState extends State<TranslationScreen>
                 ),
                 const SizedBox(height: 12),
                 if (_isLoading)
-                  const Center(
+                  Center(
                     child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(),
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.skyBlue,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Đang dịch...',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.steelBlue,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   )
                 else if (_targetController.text.isEmpty)
                   Container(
                     height: 120,
                     alignment: Alignment.center,
-                    child: Text(
-                      'Bản dịch sẽ xuất hiện ở đây',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                        color: Colors.grey[400],
-                        fontSize: 16,
-                      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.translate_rounded,
+                          size: 48,
+                          color: AppColors.skyBlue.withValues(alpha: 0.3),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Bản dịch sẽ xuất hiện ở đây',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            color: AppColors.steelBlue.withValues(alpha: 0.4),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 else
@@ -372,28 +731,33 @@ class _TranslationScreenState extends State<TranslationScreen>
                     children: [
                       SelectableText(
                         _targetController.text,
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: const TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 16,
-                          color: Colors.black87,
-                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1A1D2E),
+                          height: 1.6,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
-                          _buildActionButton(
-                            icon: Icons.content_copy,
+                          _buildModernActionButton(
+                            icon: Icons.content_copy_rounded,
+                            label: 'Copy',
                             onTap: () =>
                                 _copyToClipboard(_targetController.text),
                           ),
-                          const SizedBox(width: 8),
-                          _buildActionButton(
-                            icon: Icons.volume_up,
+                          _buildModernActionButton(
+                            icon: Icons.volume_up_rounded,
+                            label: 'Đọc',
                             onTap: () => _speakText(_targetController.text),
                           ),
-                          const SizedBox(width: 8),
-                          _buildActionButton(
-                            icon: Icons.share,
+                          _buildModernActionButton(
+                            icon: Icons.share_rounded,
+                            label: 'Chia sẻ',
                             onTap: () => _shareText(_targetController.text),
                           ),
                         ],
@@ -408,126 +772,159 @@ class _TranslationScreenState extends State<TranslationScreen>
     );
   }
 
-  Widget _buildActionButton({
+  Widget _buildModernActionButton({
     required IconData icon,
+    required String label,
     required VoidCallback onTap,
     bool isActive = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF7B61FF) : Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
+          gradient: isActive
+              ? LinearGradient(
+                  colors: [
+                    AppColors.skyBlue.withValues(alpha: 0.3),
+                    AppColors.dodgerBlue.withValues(alpha: 0.25),
+                  ],
+                )
+              : null,
+          color: isActive ? null : AppColors.skyBlue.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActive
+                ? AppColors.skyBlue.withValues(alpha: 0.4)
+                : AppColors.skyBlue.withValues(alpha: 0.15),
+            width: 1.5,
+          ),
         ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: isActive ? Colors.white : Colors.grey[600],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isActive
+                  ? AppColors.dodgerBlue
+                  : AppColors.steelBlue.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isActive
+                    ? AppColors.dodgerBlue
+                    : AppColors.steelBlue.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildResultCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.translate, color: Colors.blue[600], size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Kết quả dịch',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blue[800],
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Độ tin cậy: ${(_currentResult!.confidence * 100).toInt()}%',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                  fontSize: 12,
-                  color: Colors.blue[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${_currentResult!.sourceLanguage.flag} ${_currentResult!.originalText}',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
-              fontSize: 13,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${_currentResult!.targetLanguage.flag} ${_currentResult!.translatedText}',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.blue[800],
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildBottomActions() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      width: double.infinity,
       child: Row(
         children: [
           Expanded(
-            child: ElevatedButton(
-              onPressed: _sourceController.text.isEmpty ? null : _translateText,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B61FF),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _sourceController.text.isEmpty
+                      ? [
+                          Colors.grey.withValues(alpha: 0.3),
+                          Colors.grey.withValues(alpha: 0.2),
+                        ]
+                      : [
+                          AppColors.skyBlue.withValues(alpha: 0.95),
+                          AppColors.steelBlue.withValues(alpha: 0.9),
+                          AppColors.dodgerBlue.withValues(alpha: 0.85),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: _sourceController.text.isEmpty
+                    ? []
+                    : [
+                        BoxShadow(
+                          color: AppColors.skyBlue.withValues(alpha: 0.4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _sourceController.text.isEmpty ? null : _translateText,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    child: _isLoading
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                  strokeWidth: 3,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'Đang dịch...',
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.translate_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Dịch ngay',
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'Dịch',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
             ),
           ),
         ],
@@ -543,9 +940,29 @@ class _TranslationScreenState extends State<TranslationScreen>
     });
 
     try {
+      // If source language is auto detect, detect it first
+      Language actualSourceLanguage = _sourceLanguage;
+      if (_sourceLanguage.code == 'auto') {
+        actualSourceLanguage = await _translationService.detectLanguage(
+          _sourceController.text,
+        );
+        // Update UI to show detected language (but keep auto in selector)
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Phát hiện ngôn ngữ: ${actualSourceLanguage.nativeName}',
+              ),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+      }
+
       final result = await _translationService.translateText(
         text: _sourceController.text,
-        sourceLanguage: _sourceLanguage,
+        sourceLanguage: actualSourceLanguage,
         targetLanguage: _targetLanguage,
       );
 
@@ -568,19 +985,24 @@ class _TranslationScreenState extends State<TranslationScreen>
   }
 
   Future<void> _autoDetectLanguage(String text) async {
-    try {
-      final detectedLanguage = await _translationService.detectLanguage(text);
-      if (detectedLanguage != _sourceLanguage) {
-        setState(() {
-          _sourceLanguage = detectedLanguage;
-        });
-      }
-    } catch (e) {
-      // Silent fail for auto-detection
-    }
+    // Only auto-detect if source language is set to auto
+    if (_sourceLanguage.code != 'auto') return;
   }
 
   void _swapLanguages() {
+    // Don't swap if source is auto detect
+    if (_sourceLanguage.code == 'auto') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Không thể hoán đổi khi đang ở chế độ tự động phát hiện',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     _swapAnimationController.forward().then((_) {
       setState(() {
         final temp = _sourceLanguage;
@@ -622,7 +1044,8 @@ class _TranslationScreenState extends State<TranslationScreen>
               const SizedBox(height: 20),
               Text(
                 'Chọn ngôn ngữ',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -638,6 +1061,10 @@ class _TranslationScreenState extends State<TranslationScreen>
                         ? language.code == _sourceLanguage.code
                         : language.code == _targetLanguage.code;
 
+                    // Don't allow "auto" for target language
+                    final isAutoDetect = language.code == 'auto';
+                    final isDisabled = !isSource && isAutoDetect;
+
                     return ListTile(
                       leading: Text(
                         language.flag,
@@ -645,32 +1072,43 @@ class _TranslationScreenState extends State<TranslationScreen>
                       ),
                       title: Text(
                         language.nativeName,
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.w400,
+                          color: isDisabled ? Colors.grey[400] : null,
                         ),
                       ),
                       subtitle: Text(
-                        language.name,
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        isDisabled
+                            ? '${language.name} (Chỉ dành cho ngôn ngữ nguồn)'
+                            : language.name,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           color: Colors.grey[600],
                           fontSize: 12,
                         ),
                       ),
                       trailing: isSelected
-                          ? Icon(Icons.check, color: const Color(0xFF7B61FF))
+                          ? Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.dodgerBlue,
+                            )
                           : null,
-                      onTap: () {
-                        setState(() {
-                          if (isSource) {
-                            _sourceLanguage = language;
-                          } else {
-                            _targetLanguage = language;
-                          }
-                        });
-                        Navigator.pop(context);
-                      },
+                      enabled: !isDisabled,
+                      onTap: isDisabled
+                          ? null
+                          : () {
+                              setState(() {
+                                if (isSource) {
+                                  _sourceLanguage = language;
+                                } else {
+                                  _targetLanguage = language;
+                                }
+                              });
+                              Navigator.pop(context);
+                            },
                     );
                   },
                 ),
@@ -689,19 +1127,26 @@ class _TranslationScreenState extends State<TranslationScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Về tính năng dịch',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontWeight: FontWeight.w600,
+          ),
         ),
         content: Text(
           'Tính năng dịch văn bản hỗ trợ nhiều ngôn ngữ phổ biến. '
           'Tự động phát hiện ngôn ngữ và cung cấp bản dịch chính xác.',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+          style: TextStyle(fontFamily: 'Urbanist-Regular'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Đóng',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', color: const Color(0xFF7B61FF)),
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                color: AppColors.dodgerBlue,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -740,5 +1185,280 @@ class _TranslationScreenState extends State<TranslationScreen>
         content: Text('Tính năng nhận diện giọng nói sẽ được thêm'),
       ),
     );
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Chọn nguồn ảnh',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.skyBlue.withValues(alpha: 0.15),
+                      AppColors.dodgerBlue.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.camera_alt_rounded,
+                  color: AppColors.dodgerBlue,
+                ),
+              ),
+              title: Text(
+                'Chụp ảnh',
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              subtitle: Text(
+                'Mở camera để chụp ảnh',
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _extractTextFromCamera();
+              },
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.skyBlue.withValues(alpha: 0.15),
+                      AppColors.dodgerBlue.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.photo_library_rounded,
+                  color: AppColors.dodgerBlue,
+                ),
+              ),
+              title: Text(
+                'Chọn từ thư viện',
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              subtitle: Text(
+                'Chọn ảnh từ thư viện của bạn',
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _extractTextFromGallery();
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _extractTextFromCamera() async {
+    setState(() {
+      _isProcessingImage = true;
+    });
+
+    // Show loading indicator
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('Đang xử lý ảnh và trích xuất văn bản...'),
+            ],
+          ),
+          duration: Duration(seconds: 30),
+          backgroundColor: AppColors.skyBlue,
+        ),
+      );
+    }
+
+    try {
+      final extractedText = await _ocrService.extractTextFromCamera();
+
+      // Close loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
+
+      if (extractedText != null && extractedText.isNotEmpty) {
+        setState(() {
+          _sourceController.text = extractedText;
+        });
+
+        // Auto detect language and translate
+        await _autoDetectLanguage(extractedText);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Đã quét văn bản từ ảnh thành công!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingImage = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _extractTextFromGallery() async {
+    setState(() {
+      _isProcessingImage = true;
+    });
+
+    // Show loading indicator
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('Đang xử lý ảnh và trích xuất văn bản...'),
+            ],
+          ),
+          duration: Duration(seconds: 30),
+          backgroundColor: Color(0xFF7B61FF),
+        ),
+      );
+    }
+
+    try {
+      // Pass language hint from source language (unless it's auto)
+      final languageHint = _sourceLanguage.code == 'auto'
+          ? null
+          : _sourceLanguage.code;
+      final extractedText = await _ocrService.extractTextFromGallery(
+        languageHint: languageHint,
+      );
+
+      // Close loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
+
+      if (extractedText != null && extractedText.isNotEmpty) {
+        setState(() {
+          _sourceController.text = extractedText;
+        });
+
+        // Auto detect language and translate
+        await _autoDetectLanguage(extractedText);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Đã quét văn bản từ ảnh thành công!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingImage = false;
+        });
+      }
+    }
   }
 }

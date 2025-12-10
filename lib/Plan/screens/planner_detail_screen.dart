@@ -152,6 +152,32 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         floatingActionButton: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Add Activity Button
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.skyBlue.withValues(alpha: 0.9),
+                    AppColors.steelBlue.withValues(alpha: 0.8),
+                    AppColors.dodgerBlue.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _isDeleting ? null : _showAddActivityModal,
+                  customBorder: const CircleBorder(),
+                  child: const Icon(Icons.add, color: Colors.white, size: 28),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             // AI Assistant Button
             Container(
               width: 56,
@@ -180,32 +206,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       color: Colors.white,
                     ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Add Activity Button
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.skyBlue.withValues(alpha: 0.9),
-                    AppColors.steelBlue.withValues(alpha: 0.8),
-                    AppColors.dodgerBlue.withValues(alpha: 0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _isDeleting ? null : _showAddActivityModal,
-                  customBorder: const CircleBorder(),
-                  child: const Icon(Icons.add, color: Colors.white, size: 28),
                 ),
               ),
             ),
