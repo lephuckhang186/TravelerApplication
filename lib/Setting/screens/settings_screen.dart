@@ -1120,14 +1120,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  // Event handlers for new design
-  // ignore: unused_element
-  void _onExpenseManagement() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AnalysisScreen()),
-    );
-  }
 
   void _onTravelStats() {
     Navigator.push(

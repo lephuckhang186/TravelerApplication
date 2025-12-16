@@ -1,15 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/activity_models.dart';
-import 'trip_planning_service.dart';
 
 /// Service for AI-powered plan editing with natural language processing
 class AIPlanEditorService {
-  // ignore: unused_field
-  final TripPlanningService _tripService = TripPlanningService();
-
   // For demo purposes, we'll simulate successful operations
   // In production, this would connect to the actual backend API
-
 
 
   /// Parse natural language command and suggest plan update (no automatic execution)
@@ -179,130 +174,6 @@ class AIPlanEditorService {
         .join(' ');
   }
 
-  /// Add activity to plan for specific day
-  // ignore: unused_element
-  Future<Map<String, dynamic>> _addActivityToPlan({
-    required String tripId,
-    required int day,
-    required String activity,
-  }) async {
-    try {
-      debugPrint('AI Plan Editor: Adding "$activity" to day $day of trip $tripId');
-
-      // For demo purposes, simulate successful operation
-      // In production, this would validate the trip and create the activity
-
-      // Determine activity type based on keywords
-      final activityType = _determineActivityType(activity);
-
-      // Create mock activity for response
-      final mockActivity = ActivityModel(
-        id: 'mock_activity_${DateTime.now().millisecondsSinceEpoch}',
-        title: activity,
-        activityType: activityType,
-        startDate: DateTime.now().add(Duration(days: day - 1)), // Mock date
-        tripId: tripId,
-      );
-
-      return {
-        'success': true,
-        'message': 'Đã thêm "$activity" vào ngày $day.',
-        'action': 'add',
-        'activity': mockActivity,
-        'day': day,
-      };
-    } catch (e) {
-      debugPrint('Error adding activity: $e');
-      return {
-        'success': false,
-        'message': 'Không thể thêm hoạt động: $e',
-        'action': 'add',
-      };
-    }
-  }
-
-  /// Remove activity from plan for specific day
-  // ignore: unused_element
-  Future<Map<String, dynamic>> _removeActivityFromPlan({
-    required String tripId,
-    required int day,
-    required String activity,
-  }) async {
-    try {
-      debugPrint('AI Plan Editor: Removing "$activity" from day $day of trip $tripId');
-
-      // For demo purposes, simulate successful operation
-      // In production, this would find and remove the actual activity
-
-      // Create mock activity for response
-      final mockActivity = ActivityModel(
-        id: 'mock_removed_activity_${DateTime.now().millisecondsSinceEpoch}',
-        title: activity,
-        activityType: ActivityType.activity,
-        startDate: DateTime.now().add(Duration(days: day - 1)), // Mock date
-        tripId: tripId,
-      );
-
-      return {
-        'success': true,
-        'message': 'Đã xóa "$activity" khỏi ngày $day.',
-        'action': 'remove',
-        'activity': mockActivity,
-        'day': day,
-      };
-    } catch (e) {
-      debugPrint('Error removing activity: $e');
-      return {
-        'success': false,
-        'message': 'Không thể xóa hoạt động: $e',
-        'action': 'remove',
-      };
-    }
-  }
-
-  /// Update activity in plan for specific day
-  // ignore: unused_element
-  Future<Map<String, dynamic>> _updateActivityInPlan({
-    required String tripId,
-    required int day,
-    required String oldActivity,
-    required String newActivity,
-  }) async {
-    try {
-      debugPrint('AI Plan Editor: Updating "$oldActivity" to "$newActivity" on day $day of trip $tripId');
-
-      // For demo purposes, simulate successful operation
-      // In production, this would find and update the actual activity
-
-      // Determine activity type based on keywords
-      final activityType = _determineActivityType(newActivity);
-
-      // Create mock updated activity for response
-      final mockActivity = ActivityModel(
-        id: 'mock_updated_activity_${DateTime.now().millisecondsSinceEpoch}',
-        title: newActivity,
-        activityType: activityType,
-        startDate: DateTime.now().add(Duration(days: day - 1)), // Mock date
-        tripId: tripId,
-        updatedAt: DateTime.now(),
-      );
-
-      return {
-        'success': true,
-        'message': 'Đã thay đổi "$oldActivity" thành "$newActivity" trong ngày $day.',
-        'action': 'update',
-        'activity': mockActivity,
-        'day': day,
-      };
-    } catch (e) {
-      debugPrint('Error updating activity: $e');
-      return {
-        'success': false,
-        'message': 'Không thể cập nhật hoạt động: $e',
-        'action': 'update',
-      };
-    }
-  }
 
   /// Suggest adding activity to plan for specific day (no execution)
   Map<String, dynamic> _suggestAddActivity({
