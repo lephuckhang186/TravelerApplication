@@ -24,6 +24,18 @@ class CRUDPlanner(CRUDBase[Planner, PlannerCreate, PlannerUpdate]):
             .limit(limit)
             .all()
         )
+    
+    def get_multi_by_ids(
+        self, db: Session, *, ids: List[int], skip: int = 0, limit: int = 100
+    ) -> List[Planner]:
+        """Get multiple planners by IDs."""
+        return (
+            db.query(self.model)
+            .filter(Planner.id.in_(ids))
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
 
 planner = CRUDPlanner(Planner)

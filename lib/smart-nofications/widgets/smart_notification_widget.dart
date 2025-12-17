@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/notification_models.dart';
 import '../providers/smart_notification_provider.dart';
 import '../screens/notification_detail_screen.dart';
-import '../../core/theme/app_theme.dart';
+import '../../Core/theme/app_theme.dart';
 
 class SmartNotificationWidget extends StatelessWidget {
   final String tripId;

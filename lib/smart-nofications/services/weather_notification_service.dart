@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/notification_models.dart';
-import '../../core/config/api_config.dart';
+import '../../Core/config/api_config.dart';
 
 class WeatherNotificationService {
   Future<List<WeatherAlert>> checkWeatherAlerts(String tripId) async {

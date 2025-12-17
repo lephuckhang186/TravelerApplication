@@ -11,7 +11,7 @@ import '../../Plan/providers/trip_planning_provider.dart';
 import '../../Plan/models/trip_model.dart';
 import '../../Plan/models/activity_models.dart';
 import '../../Expense/providers/expense_provider.dart';
-import '../../core/theme/app_theme.dart';
+import '../../Core/theme/app_theme.dart';
 import '../services/map_service.dart';
 
 class MapScreen extends StatefulWidget {

@@ -15,10 +15,12 @@ import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
 import '../../Core/utils/currency/screens/currency_converter_screen.dart';
-import '../../core/utils/weather/screens/weather_screen.dart';
-import '../../core/utils/world_clock/screens/world_clock_screen.dart';
+import '../../Core/utils/weather/screens/weather_screen.dart';
+import '../../Core/utils/world_clock/screens/world_clock_screen.dart';
 import 'change_password_screen.dart';
 import '../../Login/services/firestore_statistics_service.dart';
+import '../../Plan/providers/collaboration_provider.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -1228,6 +1230,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
               // Store navigator reference
               final navigator = Navigator.of(context);
+
+              // Clear collaboration data first
+              final collaborationProvider = context.read<CollaborationProvider>();
+              collaborationProvider.clearAllData();
 
               // Logout user
               final userService = UserService();

@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:animate_gradient/animate_gradient.dart';
 import 'package:intl/intl.dart';
 import '../../Core/theme/app_theme.dart';
+import '../../Core/providers/app_mode_provider.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../providers/trip_planning_provider.dart';
+import '../providers/collaboration_provider.dart';
 import '../services/trip_planning_service.dart';
 import '../services/firebase_trip_service.dart';
 import '../../Expense/services/expense_service.dart';
@@ -44,7 +46,14 @@ class NumberTextInputFormatter extends TextInputFormatter {
 }
 
 class CreatePlannerScreen extends StatefulWidget {
-  const CreatePlannerScreen({super.key});
+  final bool isCollaborative;
+  final TripModel? existingTrip;
+  
+  const CreatePlannerScreen({
+    super.key,
+    this.isCollaborative = false,
+    this.existingTrip,
+  });
 
   @override
   State<CreatePlannerScreen> createState() => _CreatePlannerScreenState();
@@ -103,14 +112,18 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
                         ),
                       ),
                     ),
-                    const Text(
-                      'Create Trip',
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    Consumer<AppModeProvider>(
+                      builder: (context, appMode, child) {
+                        return Text(
+                          appMode.isPrivateMode ? 'Create Trip' : 'Create Shared Trip',
+                          style: const TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
                     ),
                     TextButton(
                       onPressed: _canSave() && !_isSaving ? _saveTrip : null,
@@ -442,16 +455,16 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           ? double.tryParse(_budgetController.text.trim().replaceAll('.', ''))
           : null;
 
+      // Check which mode we're in
+      final appMode = context.read<AppModeProvider>();
+      
       TripModel? createdTrip;
-      TripPlanningProvider? provider;
-      try {
-        provider = context.read<TripPlanningProvider>();
-      } catch (_) {
-        provider = null;
-      }
-
-      if (provider != null) {
-        createdTrip = await provider.createTrip(
+      
+      if (appMode.isCollaborationMode) {
+        // Create shared trip using the same interface as private mode
+        final collaborationProvider = context.read<CollaborationProvider>();
+        
+        final sharedTrip = await collaborationProvider.createTrip(
           name: tripName,
           destination: _destinationController.text.trim(),
           startDate: _startDate,
@@ -461,30 +474,67 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
               : null,
           budget: budgetAmount,
         );
+        
+        if (sharedTrip != null) {
+          createdTrip = sharedTrip.toTripModel();
+          debugPrint('✅ SHARED_TRIP_CREATED: ${sharedTrip.name} (${sharedTrip.id})');
+          // Force refresh of collaboration data to ensure UI updates
+          await collaborationProvider.initialize();
+        }
+      } else {
+        // Create private trip (original logic)
+        TripPlanningProvider? provider;
+        try {
+          provider = context.read<TripPlanningProvider>();
+        } catch (_) {
+          provider = null;
+        }
 
-        // Create expense budget if budget amount is provided
-        if (budgetAmount != null && createdTrip != null) {
-          await _createExpenseBudget(createdTrip.id!, budgetAmount);
+        if (provider != null) {
+          createdTrip = await provider.createTrip(
+            name: tripName,
+            destination: _destinationController.text.trim(),
+            startDate: _startDate,
+            endDate: _endDate,
+            description: _descriptionController.text.trim().isNotEmpty
+                ? _descriptionController.text.trim()
+                : null,
+            budget: budgetAmount, // Pass double, provider will convert to BudgetModel
+          );
+        } else {
+          createdTrip = await _createTripFallback(
+            tripName: tripName,
+            destination: _destinationController.text.trim(),
+            description: _descriptionController.text.trim().isNotEmpty
+                ? _descriptionController.text.trim()
+                : null,
+            budget: budgetAmount,
+          );
         }
       }
 
-      createdTrip ??= await _createTripFallback(
-        tripName: tripName,
-        destination: _destinationController.text.trim(),
-        description: _descriptionController.text.trim().isNotEmpty
-            ? _descriptionController.text.trim()
-            : null,
-        budget: budgetAmount,
-      );
-
-      // Create expense budget if budget amount is provided and no provider was used
-      if (budgetAmount != null && provider == null) {
+      // Create expense budget if budget amount is provided
+      if (budgetAmount != null && createdTrip != null) {
         await _createExpenseBudget(createdTrip.id!, budgetAmount);
       }
 
       navigator.pop(); // close loading dialog
 
       if (!mounted) return;
+
+      // Show success message
+      final appModeForMessage = context.read<AppModeProvider>();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            appModeForMessage.isCollaborationMode 
+                ? 'Shared trip created successfully!'
+                : 'Trip created successfully!'
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
 
       Navigator.pop(context, createdTrip);
     } catch (e) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../Core/theme/app_theme.dart';
-import '../../Core/providers/app_mode_provider.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';
 import '../models/trip_model.dart';
@@ -70,42 +69,69 @@ class _PlanScreenState extends State<PlanScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // 🎯 Sửa: Sử dụng context.watch để lắng nghe thay đổi từ TripPlanningProvider
     final tripProvider = context.watch<TripPlanningProvider>();
     final allTrips = tripProvider.trips;
     final isLoading = tripProvider.isLoading;
     final visibleTrips = _getVisibleTrips(allTrips);
 
-    debugPrint(
-      'DEBUG: PlanScreen building - Total Trips: ${allTrips.length}, Visible Trips: ${visibleTrips.length}, IsLoading: $isLoading',
-    );
-
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       body: Column(
         children: [
-          // Gradient Header with Search Bar
+          // Header matching plan.png design
           Container(
-            padding: const EdgeInsets.only(bottom: 30.0),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.skyBlue.withValues(alpha: 0.9),
-                  AppColors.steelBlue.withValues(alpha: 0.8),
-                  AppColors.dodgerBlue.withValues(alpha: 0.7),
+                  Color(0xFF4A9EFF), // Light blue
+                  Color(0xFF2196F3), // Medium blue
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
             ),
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0.0),
-                child: Row(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title and subtitle
+                    const Text(
+                      'Plan Your Trip',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontFamily: 'Urbanist-Regular',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Discover amazing destinations and plan your journey',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontFamily: 'Urbanist-Regular',
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     // Search Bar
-                    Expanded(
+                    Container(
+                      height: 65,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
                       child: TextField(
                         controller: _searchController,
                         onChanged: (value) {
@@ -114,34 +140,28 @@ class _PlanScreenState extends State<PlanScreen>
                           });
                         },
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black87,
                           fontSize: 16,
                           fontFamily: 'Urbanist-Regular',
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Places, dates, travel plans...',
+                          hintText: 'Search your trips...',
                           hintStyle: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.grey[500],
                             fontFamily: 'Urbanist-Regular',
                           ),
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.15),
                           prefixIcon: Padding(
-                            padding: const EdgeInsets.only(left: 7),
+                            padding: const EdgeInsets.only(left: 15, right: 10),
                             child: Icon(
                               Icons.search,
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: Colors.grey[500],
                             ),
-                          ),
-                          prefixIconConstraints: const BoxConstraints(
-                            minWidth: 40,
-                            minHeight: 24,
                           ),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
                                   icon: Icon(
                                     Icons.clear,
-                                    color: Colors.white.withValues(alpha: 0.9),
+                                    color: Colors.grey[500],
                                   ),
                                   onPressed: () {
                                     _searchController.clear();
@@ -151,134 +171,80 @@ class _PlanScreenState extends State<PlanScreen>
                                   },
                                 )
                               : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.white,
-                              width: 2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.only(
-                            left: 0,
-                            right: 16,
-                            top: 16,
-                            bottom: 16,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 22,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    // Private/Collaboration Toggle Button
-                    GestureDetector(
-                      onTap: () {
-                        Provider.of<AppModeProvider>(
-                          context,
-                          listen: false,
-                        ).toggleMode();
-                      },
-                      child: Container(
-                        height: 56,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Consumer<AppModeProvider>(
-                              builder: (context, modeProvider, child) {
-                                return Image.asset(
-                                  modeProvider.isPrivateMode
-                                      ? 'images/private.png'
-                                      : 'images/collaboration.png',
-                                  width: 24,
-                                  height: 24,
-                                  color: Colors.white,
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            Consumer<AppModeProvider>(
-                              builder: (context, modeProvider, child) {
-                                return Text(
-                                  modeProvider.isPrivateMode
-                                      ? 'Private'
-                                      : 'Collaboration',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Urbanist-Regular',
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
           ),
 
-          // Trip Cards
+          // Trip Cards List
           Expanded(
-            child: Transform.translate(
-              offset: const Offset(0, 0),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0.0),
-                child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : visibleTrips.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchQuery.isEmpty
-                              ? 'No trips yet. Create your first trip!'
-                              : 'No trips match "$_searchQuery".',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : visibleTrips.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.travel_explore,
+                            size: 80,
+                            color: Colors.grey[300],
                           ),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: visibleTrips.length,
-                        itemBuilder: (context, index) {
-                          final trip = visibleTrips[index];
-                          debugPrint(
-                            'DEBUG: Building trip card ${index + 1}: ${trip.name}',
-                          );
-                          return _buildTripCard(trip, index);
-                        },
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? 'No trips yet'
+                                : 'No trips found',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? 'Create your first trip to get started!'
+                                : 'Try adjusting your search terms',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
-              ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(top: 20),
+                      itemCount: visibleTrips.length,
+                      itemBuilder: (context, index) {
+                        final trip = visibleTrips[index];
+                        return _buildTripCard(trip, index);
+                      },
+                    ),
             ),
           ),
-
-          // Fixed height spacer
-          const SizedBox(height: 20),
         ],
       ),
-      floatingActionButton: _AddButton(
-        onTap: () => _showCreateTripModal(context),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton(
+          onPressed: () => _showCreateTripModal(context),
+          backgroundColor: const Color(0xFF2196F3),
+          child: const Icon(Icons.add, color: Colors.white, size: 30),
+        ),
       ),
     );
   }
@@ -292,18 +258,115 @@ class _PlanScreenState extends State<PlanScreen>
     } else if (trip.endDate.isBefore(now)) {
       status = 'Completed';
     } else {
-      status = 'Ongoing';
+      status = 'In Progress';
     }
 
     // Format date range
     final dateRange =
         '${trip.startDate.day}/${trip.startDate.month}/${trip.startDate.year} - ${trip.endDate.day}/${trip.endDate.month}/${trip.endDate.year}';
 
-    return _TripCard(
-      trip: trip,
-      status: status,
-      dateRange: dateRange,
-      onTap: () => _navigateToTripDetail(trip),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: InkWell(
+          onTap: () => _navigateToTripDetail(trip),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Trip Icon/Image
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4A9EFF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: trip.coverImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            trip.coverImage!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.travel_explore,
+                                color: Colors.white,
+                                size: 28,
+                              );
+                            },
+                          ),
+                        )
+                      : const Icon(
+                          Icons.travel_explore,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                ),
+                const SizedBox(width: 16),
+                
+                // Trip Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        trip.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          fontFamily: 'Urbanist-Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        dateRange,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontFamily: 'Urbanist-Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: status == 'In Progress' 
+                                ? Colors.green 
+                                : status == 'Upcoming' 
+                                  ? Colors.orange 
+                                  : Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontFamily: 'Urbanist-Regular',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -332,7 +395,7 @@ class _PlanScreenState extends State<PlanScreen>
     final provider = Provider.of<TripPlanningProvider>(context, listen: false);
 
     final result = await navigator.push<TripModel>(
-      MaterialPageRoute(builder: (context) => const CreatePlannerScreen()),
+      MaterialPageRoute(builder: (context) => const CreatePlannerScreen(isCollaborative: false)),
     );
 
     if (!mounted) return;
@@ -349,221 +412,3 @@ class _PlanScreenState extends State<PlanScreen>
   }
 }
 
-class _AddButton extends StatefulWidget {
-  final VoidCallback onTap;
-
-  const _AddButton({required this.onTap});
-
-  @override
-  State<_AddButton> createState() => _AddButtonState();
-}
-
-class _AddButtonState extends State<_AddButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 50, // Đẩy nút + lên cao hơn
-      ),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedScale(
-          scale: _isHovered ? 1.1 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: widget.onTap,
-              customBorder: const CircleBorder(),
-              splashColor: Colors.white.withValues(alpha: 0.1),
-              highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.skyBlue.withValues(alpha: 0.9),
-                      AppColors.steelBlue.withValues(alpha: 0.8),
-                      AppColors.dodgerBlue.withValues(alpha: 0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 28),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TripCard extends StatefulWidget {
-  final TripModel trip;
-  final String status;
-  final String dateRange;
-  final VoidCallback onTap;
-
-  const _TripCard({
-    required this.trip,
-    required this.status,
-    required this.dateRange,
-    required this.onTap,
-  });
-
-  @override
-  State<_TripCard> createState() => _TripCardState();
-}
-
-class _TripCardState extends State<_TripCard> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.05 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        child: AnimatedContainer(
-          duration: const Duration(seconds: 9),
-          curve: Curves.easeInOut,
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: _isHovered
-                  ? [
-                      AppColors.dodgerBlue.withValues(alpha: 0.9),
-                      AppColors.steelBlue.withValues(alpha: 0.8),
-                      AppColors.skyBlue.withValues(alpha: 0.7),
-                    ]
-                  : [
-                      AppColors.skyBlue.withValues(alpha: 0.9),
-                      AppColors.steelBlue.withValues(alpha: 0.8),
-                      AppColors.dodgerBlue.withValues(alpha: 0.7),
-                    ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withValues(alpha: _isHovered ? 0.25 : 0.9),
-                blurRadius: _isHovered ? 15 : 10,
-                offset: const Offset(0, 3),
-                spreadRadius: _isHovered ? 2 : 1,
-              ),
-            ],
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: InkWell(
-              onTap: widget.onTap,
-              borderRadius: BorderRadius.circular(0),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    // Trip Image
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: AppColors.skyBlue.withValues(alpha: 0.3),
-                      ),
-                      child: widget.trip.coverImage != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                widget.trip.coverImage!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.travel_explore,
-                                    color: AppColors.primary,
-                                    size: 36,
-                                  );
-                                },
-                              ),
-                            )
-                          : const Icon(
-                              Icons.travel_explore,
-                              color: AppColors.primary,
-                              size: 36,
-                            ),
-                    ),
-                    const SizedBox(width: 16),
-
-                    // Trip Info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            widget.trip.name,
-                            style: TextStyle(
-                              fontFamily: 'Urbanist-Regular',
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            widget.dateRange,
-                            style: TextStyle(
-                              fontFamily: 'Urbanist-Regular',
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.access_time,
-                                size: 14,
-                                color: Colors.grey.shade500,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                widget.status,
-                                style: TextStyle(
-                                  fontFamily: 'Urbanist-Regular',
-                                  fontSize: 12,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
