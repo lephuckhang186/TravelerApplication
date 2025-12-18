@@ -84,130 +84,141 @@ class _ManagePermissionsBottomSheet extends StatefulWidget {
 class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomSheet> {
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      maxChildSize: 0.9,
-      minChildSize: 0.3,
-      builder: (context, scrollController) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+    return Consumer<CollaborationProvider>(
+      builder: (context, collabProvider, child) {
+        // Get the latest shared trip data
+        final latestSharedTrip = collabProvider.mySharedTrips
+            .firstWhere((t) => t.id == widget.sharedTrip.id,
+                orElse: () => collabProvider.sharedWithMeTrips
+                    .firstWhere((t) => t.id == widget.sharedTrip.id,
+                        orElse: () => widget.sharedTrip)); // Fallback to widget data
 
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Manage Permissions',
-                    style: TextStyle(
-                      fontFamily: 'Urbanist-Regular',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          minChildSize: 0.3,
+          builder: (context, scrollController) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  if (widget.sharedTrip.sharedCollaborators.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${widget.sharedTrip.sharedCollaborators.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                ),
+
+                // Header
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Manage Permissions',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-
-            // Trip info
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Trip: ${widget.sharedTrip.name}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${widget.sharedTrip.sharedCollaborators.length} members',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Content
-            Expanded(
-              child: widget.sharedTrip.sharedCollaborators.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: widget.sharedTrip.sharedCollaborators.length,
-                    physics: const BouncingScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      final collaborator = widget.sharedTrip.sharedCollaborators[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: _buildMemberItem(collaborator),
-                      );
-                    },
+                      if (latestSharedTrip.sharedCollaborators.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${latestSharedTrip.sharedCollaborators.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-            ),
-
-            // Close button
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
                 ),
-              ),
+
+                // Trip info
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Trip: ${latestSharedTrip.name}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${latestSharedTrip.sharedCollaborators.length} members',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Content
+                Expanded(
+                  child: latestSharedTrip.sharedCollaborators.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: latestSharedTrip.sharedCollaborators.length,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final collaborator = latestSharedTrip.sharedCollaborators[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: _buildMemberItem(collaborator),
+                          );
+                        },
+                      ),
+                ),
+
+                // Close button
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -499,6 +510,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   bool get isEditor => _userRole == 'editor';
   bool get isViewer => _userRole == 'viewer';
 
+  // Force UI rebuild when permissions might have changed
+  int _permissionUpdateCounter = 0;
+
   @override
   void initState() {
     super.initState();
@@ -514,6 +528,58 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       _initializeSmartNotifications();
       debugPrint('DEBUG: PostFrameCallback - Initialization complete');
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Listen for real-time collaboration provider changes to update permissions
+    _setupCollaborationListener();
+  }
+
+  @override
+  void dispose() {
+    _collaborationSubscription?.cancel();
+    super.dispose();
+  }
+
+  StreamSubscription? _collaborationSubscription;
+
+  void _setupCollaborationListener() {
+    try {
+      final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+
+      // Cancel existing subscription
+      _collaborationSubscription?.cancel();
+
+      // Listen for changes in collaboration data that might affect permissions
+      // Listen to both trip changes and collaborator changes
+      _collaborationSubscription = collabProvider.collaborationService
+          .watchUserSharedTrips()
+          .listen((trips) {
+        // Check if our trip is affected by the changes
+        final ourTrip = trips.cast<SharedTripModel?>().firstWhere(
+          (trip) => trip?.id == _trip.id,
+          orElse: () => null,
+        );
+
+        if (ourTrip != null) {
+          // Re-check permissions when trip data changes
+          final oldRole = _userRole;
+          _checkUserPermissions();
+
+          // If role changed, update UI
+          if (oldRole != _userRole && mounted) {
+            setState(() {});
+            debugPrint('🔄 PERMISSION_UPDATED: Role changed from $oldRole to $_userRole, UI updated');
+          }
+        }
+      });
+
+
+    } catch (e) {
+      debugPrint('❌ Failed to setup collaboration listener: $e');
+    }
   }
 
   void _initializeExpenseProvider() {
@@ -704,7 +770,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   ActivityEditRequestWidget(tripId: _trip.id ?? ''),
                 SmartNotificationWidget(tripId: _trip.id ?? ''),
                 IconButton(
-                  icon: const Icon(Icons.more_horiz, color: Colors.black),
+                  icon: const Icon(Icons.more_vert, color: Colors.black),
                   onPressed: _isDeleting ? null : _showMoreOptions,
                 ),
               ],
@@ -3538,9 +3604,22 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         });
       }
 
+      // IMPORTANT: Force re-check user permissions after refresh
+      // Add a small delay to ensure provider data is fully updated
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final oldRole = _userRole;
+      _checkUserPermissions();
+
+      if (oldRole != _userRole && mounted) {
+        debugPrint('🔄 MANUAL_REFRESH: Role changed from $oldRole to $_userRole during manual refresh');
+        // Force UI rebuild to reflect permission changes
+        setState(() {});
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trip data refreshed')),
+          const SnackBar(content: Text('Trip data and permissions refreshed')),
         );
       }
 
@@ -3793,7 +3872,19 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       builder: (context) => _ManagePermissionsBottomSheet(
         sharedTrip: sharedTrip,
         collabProvider: collabProvider,
-        onPermissionUpdated: () => _manualRefresh(collabProvider),
+        onPermissionUpdated: () async {
+          // Refresh data and update UI immediately when permissions are updated
+          try {
+            await collabProvider.initialize();
+            // Force UI update in the popup
+            if (mounted) {
+              // The popup will automatically update via Provider listener
+              debugPrint('🔄 Permissions updated - refreshing popup data');
+            }
+          } catch (e) {
+            debugPrint('❌ Failed to refresh permissions popup: $e');
+          }
+        },
       ),
     );
   }
