@@ -8,8 +8,13 @@ import '../../Core/theme/app_theme.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../providers/trip_planning_provider.dart';
+import '../providers/collaboration_provider.dart';
+import '../models/collaboration_models.dart';
 import '../services/trip_planning_service.dart';
 import '../services/firebase_trip_service.dart';
+import '../services/activity_edit_request_service.dart';
+import '../widgets/activity_edit_request_approval_dialog.dart';
+import '../widgets/activity_edit_request_widget.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
@@ -60,6 +65,411 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
   }
 }
 
+/// Bottom sheet widget for managing permissions (notification-style)
+class _ManagePermissionsBottomSheet extends StatefulWidget {
+  final SharedTripModel sharedTrip;
+  final CollaborationProvider collabProvider;
+  final VoidCallback onPermissionUpdated;
+
+  const _ManagePermissionsBottomSheet({
+    required this.sharedTrip,
+    required this.collabProvider,
+    required this.onPermissionUpdated,
+  });
+
+  @override
+  State<_ManagePermissionsBottomSheet> createState() => _ManagePermissionsBottomSheetState();
+}
+
+class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomSheet> {
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.9,
+      minChildSize: 0.3,
+      builder: (context, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Manage Permissions',
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  if (widget.sharedTrip.sharedCollaborators.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${widget.sharedTrip.sharedCollaborators.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Trip info
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Trip: ${widget.sharedTrip.name}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${widget.sharedTrip.sharedCollaborators.length} members',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Content
+            Expanded(
+              child: widget.sharedTrip.sharedCollaborators.isEmpty
+                ? _buildEmptyState()
+                : ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: widget.sharedTrip.sharedCollaborators.length,
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      final collaborator = widget.sharedTrip.sharedCollaborators[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _buildMemberItem(collaborator),
+                      );
+                    },
+                  ),
+            ),
+
+            // Close button
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.people_outline,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No collaborators',
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Invite people to collaborate on this trip',
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemberItem(Collaborator collaborator) {
+    final isOwner = collaborator.isOwner;
+    final currentRole = collaborator.role;
+
+    return Dismissible(
+      key: Key(collaborator.id),
+      direction: isOwner ? DismissDirection.none : DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.remove_circle,
+          color: Colors.white,
+        ),
+      ),
+      onDismissed: (direction) {
+        // Handle remove collaborator
+        _removeCollaborator(collaborator);
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          leading: CircleAvatar(
+            backgroundColor: isOwner ? Colors.orange : Colors.blue,
+            child: Text(
+              collaborator.name.isNotEmpty
+                  ? collaborator.name[0].toUpperCase()
+                  : '?',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                collaborator.name,
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                collaborator.email,
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ],
+          ),
+          subtitle: Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: isOwner
+                  ? Colors.orange
+                  : currentRole == 'editor'
+                      ? Colors.blue
+                      : Colors.grey,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              isOwner ? 'Owner' : currentRole == 'editor' ? 'Editor' : 'Viewer',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          trailing: isOwner
+            ? null
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => _showRoleSelector(collaborator),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle, color: Colors.red),
+                    onPressed: () => _removeCollaborator(collaborator),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+        ),
+      ),
+    );
+  }
+
+  void _showRoleSelector(Collaborator collaborator) {
+    final currentRole = collaborator.role;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Change role for ${collaborator.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Editor'),
+              subtitle: const Text('Can add, edit, and delete activities'),
+              leading: Radio<String>(
+                value: 'editor',
+                groupValue: currentRole,
+                onChanged: (value) => _changeRole(collaborator, value!),
+              ),
+            ),
+            ListTile(
+              title: const Text('Viewer'),
+              subtitle: const Text('Can only view the trip'),
+              leading: Radio<String>(
+                value: 'viewer',
+                groupValue: currentRole,
+                onChanged: (value) => _changeRole(collaborator, value!),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _changeRole(Collaborator collaborator, String newRole) async {
+    if (newRole == collaborator.role) {
+      Navigator.pop(context);
+      return;
+    }
+
+    try {
+      await widget.collabProvider.updateCollaboratorPermission(
+        widget.sharedTrip.id!,
+        collaborator.userId,
+        newRole,
+      );
+
+      if (mounted) {
+        Navigator.pop(context); // Close role selector
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${collaborator.name} is now ${newRole == 'editor' ? 'an Editor' : 'a Viewer'}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Refresh the widget
+        setState(() {});
+        widget.onPermissionUpdated();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update permission: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeCollaborator(Collaborator collaborator) async {
+    try {
+      await widget.collabProvider.removeCollaborator(
+        widget.sharedTrip.id!,
+        collaborator.userId,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${collaborator.name} removed from trip'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Refresh the widget
+        setState(() {});
+        widget.onPermissionUpdated();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove collaborator: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
+
 class PlannerDetailScreen extends StatefulWidget {
   final TripModel trip;
 
@@ -81,6 +491,13 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   late List<ActivityModel> _activities;
   bool _isDeleting = false;
   bool _hasChanges = false;
+  bool _isRefreshing = false;
+
+  // User permissions for collaboration trips
+  String? _userRole; // 'owner', 'editor', 'viewer'
+  bool get isOwner => _userRole == 'owner';
+  bool get isEditor => _userRole == 'editor';
+  bool get isViewer => _userRole == 'viewer';
 
   @override
   void initState() {
@@ -88,6 +505,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     _trip = widget.trip;
     _activities = List<ActivityModel>.from(widget.trip.activities);
     _loadActivitiesFromServer();
+    // Check user permissions for collaboration trips
+    _checkUserPermissions();
     // Try to get expense provider from context after first frame (optional)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('DEBUG: PostFrameCallback - Starting initialization');
@@ -166,6 +585,58 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
   }
 
+  /// Check user permissions for collaboration trips
+  void _checkUserPermissions() {
+    try {
+      final collabProvider = context.read<CollaborationProvider>();
+
+      // Check if this is a collaboration trip
+      final isCollaborationTrip = collabProvider.mySharedTrips
+          .any((t) => t.id == _trip.id) ||
+          collabProvider.sharedWithMeTrips
+          .any((t) => t.id == _trip.id);
+
+      if (isCollaborationTrip) {
+        // Find the shared trip
+        SharedTripModel? sharedTrip;
+        try {
+          sharedTrip = collabProvider.mySharedTrips
+              .firstWhere((t) => t.id == _trip.id,
+                  orElse: () => collabProvider.sharedWithMeTrips
+                      .firstWhere((t) => t.id == _trip.id));
+        } catch (e) {
+          sharedTrip = null;
+        }
+
+        if (sharedTrip != null) {
+          // Get current user ID
+          final currentUserId = collabProvider.collaborationService.currentUserId;
+
+          if (currentUserId != null) {
+            if (sharedTrip.isOwnerUser(currentUserId)) {
+              _userRole = 'owner';
+            } else {
+              final collaborator = sharedTrip.getCollaboratorByUserId(currentUserId);
+              if (collaborator != null) {
+                _userRole = collaborator.role; // 'editor' or 'viewer'
+              } else {
+                _userRole = 'viewer'; // Fallback to viewer
+              }
+            }
+          }
+        }
+      } else {
+        // Not a collaboration trip - user is effectively owner
+        _userRole = 'owner';
+      }
+
+      debugPrint('🎯 USER_ROLE: $_userRole for trip ${_trip.id}');
+    } catch (e) {
+      debugPrint('❌ PERMISSION_CHECK_ERROR: $e');
+      _userRole = 'owner'; // Fallback to owner for private trips
+    }
+  }
+
   /// Load activities from local trip data (no longer needed to fetch from server)
   Future<void> _loadActivitiesFromServer() async {
     // Activities are already loaded from trip.activities in initState
@@ -180,98 +651,132 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (bool didPop, dynamic result) async {
-        if (didPop) return;
-        final shouldPop = await _handleWillPop();
-        if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+    // Listen for real-time updates from collaboration provider
+    return Consumer<CollaborationProvider>(
+      builder: (context, collabProvider, child) {
+        // Check if this trip exists in collaboration data
+        final isCollaborationTrip = collabProvider.mySharedTrips
+            .any((t) => t.id == _trip.id) ||
+            collabProvider.sharedWithMeTrips
+            .any((t) => t.id == _trip.id);
+
+        // Auto-refresh local trip data when collaboration provider updates
+        if (isCollaborationTrip && !_isRefreshing) {
+          _autoRefreshFromProvider(collabProvider);
         }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.background,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
-            onPressed: _handleWillPop,
-          ),
-          title: _buildTripHeader(),
-          centerTitle: false,
-          actions: [
-            SmartNotificationWidget(tripId: _trip.id ?? ''),
-            IconButton(
-              icon: const Icon(Icons.more_horiz, color: Colors.black),
-              onPressed: _isDeleting ? null : _showMoreOptions,
+
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (bool didPop, dynamic result) async {
+            if (didPop) return;
+            final shouldPop = await _handleWillPop();
+            if (shouldPop && context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: AppBar(
+              backgroundColor: AppColors.background,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
+                onPressed: _handleWillPop,
+              ),
+              title: _buildTripHeader(),
+              centerTitle: false,
+              actions: [
+                // Refresh button for manual sync
+                if (isCollaborationTrip)
+                  IconButton(
+                    icon: _isRefreshing
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh),
+                    onPressed: _isRefreshing ? null : () => _manualRefresh(collabProvider),
+                    tooltip: 'Sync changes',
+                  ),
+                // Activity requests widget (only for owners)
+                if (isCollaborationTrip && isOwner)
+                  ActivityEditRequestWidget(tripId: _trip.id ?? ''),
+                SmartNotificationWidget(tripId: _trip.id ?? ''),
+                IconButton(
+                  icon: const Icon(Icons.more_horiz, color: Colors.black),
+                  onPressed: _isDeleting ? null : _showMoreOptions,
+                ),
+              ],
             ),
-          ],
-        ),
-        body: _buildTimeline(),
-        floatingActionButton: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Add Activity Button
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.skyBlue.withValues(alpha: 0.9),
-                    AppColors.steelBlue.withValues(alpha: 0.8),
-                    AppColors.dodgerBlue.withValues(alpha: 0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _isDeleting ? null : _showAddActivityModal,
-                  customBorder: const CircleBorder(),
-                  child: const Icon(Icons.add, color: Colors.white, size: 28),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // AI Assistant Button
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.skyBlue.withValues(alpha: 0.9),
-                    AppColors.steelBlue.withValues(alpha: 0.8),
-                    AppColors.dodgerBlue.withValues(alpha: 0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _isDeleting ? null : _openAIAssistant,
-                  customBorder: const CircleBorder(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Image.asset(
-                      'images/chatbot.png',
-                      color: Colors.white,
+            body: _buildTimeline(),
+            floatingActionButton: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Add Activity Button - Hidden for viewers, shown for owners and editors
+                if (!isViewer)
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.skyBlue.withValues(alpha: 0.9),
+                          AppColors.steelBlue.withValues(alpha: 0.8),
+                          AppColors.dodgerBlue.withValues(alpha: 0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _isDeleting ? null : _handleAddActivity,
+                        customBorder: const CircleBorder(),
+                        child: const Icon(Icons.add, color: Colors.white, size: 28),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                if (!isViewer) const SizedBox(height: 16),
+                // AI Assistant Button - Only for Owner
+                if (isOwner)
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.skyBlue.withValues(alpha: 0.9),
+                          AppColors.steelBlue.withValues(alpha: 0.8),
+                          AppColors.dodgerBlue.withValues(alpha: 0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _isDeleting ? null : _openAIAssistant,
+                        customBorder: const CircleBorder(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Image.asset(
+                            'images/chatbot.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -587,42 +1092,43 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           ),
                         ),
                       ),
-                      // Check-in button
-                      Transform.translate(
-                        offset: const Offset(0, -8),
-                        child: IconButton(
-                          icon: activity.checkIn
-                              ? Icon(Icons.check_circle, color: Colors.green)
-                              : Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColors.skyBlue.withValues(
-                                          alpha: 0.9,
-                                        ),
-                                        AppColors.steelBlue.withValues(
-                                          alpha: 0.8,
-                                        ),
-                                        AppColors.dodgerBlue.withValues(
-                                          alpha: 0.7,
-                                        ),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
+                      // Check-in button - Only for Owner
+                      if (isOwner)
+                        Transform.translate(
+                          offset: const Offset(0, -8),
+                          child: IconButton(
+                            icon: activity.checkIn
+                                ? Icon(Icons.check_circle, color: Colors.green)
+                                : Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppColors.skyBlue.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          AppColors.steelBlue.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          AppColors.dodgerBlue.withValues(
+                                            alpha: 0.7,
+                                          ),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.check_circle_outline,
+                                      color: Colors.white,
+                                      size: 24,
                                     ),
                                   ),
-                                  child: Icon(
-                                    Icons.check_circle_outline,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                ),
-                          onPressed: () => _toggleCheckIn(activity),
+                            onPressed: () => _toggleCheckIn(activity),
+                          ),
                         ),
-                      ),
                       Transform.translate(
                         offset: const Offset(0, -8),
                         child: PopupMenuButton<String>(
@@ -815,6 +1321,79 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   void _showEditActivityModal(ActivityModel activity) {
+    // Check permissions: only owner can edit directly, editors must request approval
+    if (isEditor) {
+      _showEditRequestDialog(activity);
+      return;
+    } else if (isViewer) {
+      _showPermissionDeniedDialog('You can only view this trip');
+      return;
+    }
+
+    // Owner can edit directly
+    _showActivityEditForm(activity);
+  }
+
+  /// Show edit request dialog for editors
+  void _showEditRequestDialog(ActivityModel activity) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request Edit Permission'),
+        content: Text(
+          'As an editor, you need approval from the trip owner to edit activities. '
+          'Send a request to the owner to modify "${activity.title}"?'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _sendEditRequest(activity, 'Edit activity: ${activity.title}');
+            },
+            child: const Text('Send Request'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Handle add activity button click based on user role
+  void _handleAddActivity() {
+    if (isOwner) {
+      // Owner can add activities directly
+      _showAddActivityModal();
+    } else if (isEditor) {
+      // Editor can fill activity details and submit for approval
+      _showAddActivityModal();
+    } else if (isViewer) {
+      // Viewer needs to request edit permission from owner
+      _showRequestEditPermissionDialog();
+    }
+  }
+
+  /// Show permission denied dialog
+  void _showPermissionDeniedDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission Denied'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show activity edit form (for owners only)
+  void _showActivityEditForm(ActivityModel activity) {
     final titleController = TextEditingController(text: activity.title);
     final descriptionController = TextEditingController(
       text: activity.description ?? '',
@@ -1085,7 +1664,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           );
                           Navigator.pop(context);
                           _updateActivity(updatedActivity);
-          
+
           // Check budget notification when checking in with actual cost
           if (updatedActivity.checkIn && updatedActivity.budget?.actualCost != null) {
             debugPrint('DEBUG: Activity checked in with actual cost, triggering budget check');
@@ -1113,6 +1692,69 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         );
       },
     );
+  }
+
+  /// Send edit request to owner
+  Future<void> _sendEditRequest(ActivityModel activity, String message) async {
+    try {
+      // Validate time conflicts before creating request (exclude current activity)
+      final validationResult = ActivitySchedulingValidator.validateActivityTime(
+        activity,
+        _activities,
+        excludeActivityId: activity.id,
+      );
+
+      if (validationResult.hasConflicts) {
+        // Show conflict dialog
+        final shouldContinue = await _showTimeConflictDialog(
+          validationResult.message,
+          validationResult.conflictingActivities,
+        );
+
+        if (!shouldContinue) {
+          return; // User chose not to continue
+        }
+      }
+
+      final service = ActivityEditRequestService();
+
+      // Get current activity data as proposed changes
+      final proposedChanges = {
+        'title': activity.title,
+        'description': activity.description,
+        'activityType': activity.activityType.value,
+        'startDate': activity.startDate?.toIso8601String(),
+        'budget': activity.budget?.toJson(),
+        'location': activity.location?.toJson(),
+        'checkIn': activity.checkIn,
+      };
+
+      final request = await service.createEditActivityRequest(
+        tripId: _trip.id!,
+        activity: activity,
+        proposedChanges: proposedChanges,
+        message: message,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Edit request sent to trip owner for "${activity.title}"'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+      debugPrint('📤 EDIT_REQUEST_SENT: Request ${request.id} sent for activity ${activity.id}');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send edit request: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _openAIAssistant() async {
@@ -1896,6 +2538,17 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   void _showMoreOptions() {
+    // Check if this is a collaboration trip (same logic as in Consumer)
+    final isCollaborationTrip = (() {
+      try {
+        final collabProvider = context.read<CollaborationProvider>();
+        return collabProvider.mySharedTrips.any((t) => t.id == _trip.id) ||
+               collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
+      } catch (e) {
+        return false;
+      }
+    })();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1947,6 +2600,26 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                   _showEditTripDialog();
                 },
               ),
+              if (isCollaborationTrip) ...[
+                ListTile(
+                  leading: const Icon(Icons.people_outline, color: Colors.white),
+                  title: const Text(
+                    'Manage Permissions',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Change member roles and permissions',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showManagePermissionsDialog();
+                  },
+                ),
+              ],
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.white),
                 title: const Text(
@@ -2015,6 +2688,13 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _addActivity(ActivityModel activity) async {
     try {
+      // Check user permissions - editors must request approval
+      if (isEditor) {
+        await _createAddActivityRequest(activity);
+        return;
+      }
+
+      // Owners can add directly
       // Validate time conflicts
       final validationResult = ActivitySchedulingValidator.validateActivityTime(
         activity,
@@ -2146,7 +2826,44 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final updatedTrip = _trip.copyWith(
       activities: List<ActivityModel>.from(_activities),
     );
+
+    // Save to Firebase
     await _firebaseService.saveTrip(updatedTrip);
+
+    // Check if this is a collaboration trip and update the provider accordingly
+    try {
+      final collaborationProvider = context.read<CollaborationProvider>();
+      // If we can read CollaborationProvider, this might be a collaboration trip
+      // Check if the trip ID exists in collaboration data
+      final isCollaborationTrip = collaborationProvider.mySharedTrips
+          .any((t) => t.id == _trip.id) ||
+          collaborationProvider.sharedWithMeTrips
+          .any((t) => t.id == _trip.id);
+
+      if (isCollaborationTrip) {
+        // Convert back to SharedTripModel for collaboration provider
+        final sharedTrip = collaborationProvider.mySharedTrips
+            .firstWhere((t) => t.id == _trip.id,
+                orElse: () => collaborationProvider.sharedWithMeTrips
+                    .firstWhere((t) => t.id == _trip.id));
+
+        final updatedSharedTrip = sharedTrip.copyWith(
+          activities: List<ActivityModel>.from(_activities),
+          updatedAt: DateTime.now(),
+        );
+
+        // Update collaboration provider
+        await collaborationProvider.updateSharedTrip(updatedSharedTrip);
+        debugPrint('✅ Persisted AI changes to CollaborationProvider for trip: ${_trip.id}');
+      } else {
+        // Regular private trip - just save to Firebase
+        debugPrint('✅ Persisted AI changes to Firebase for private trip: ${_trip.id}');
+      }
+    } catch (e) {
+      // CollaborationProvider not available - changes are still saved to Firebase above
+      debugPrint('ℹ️ AI changes persisted to Firebase only (no provider update needed): ${_trip.id}');
+    }
+
     final storedTrip = updatedTrip;
     setState(() {
       _trip = storedTrip;
@@ -2726,5 +3443,358 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
 
     return startStr;
+  }
+
+  /// Refresh trip data from provider
+  Future<void> _refreshTripData(SharedTripModel updatedTrip) async {
+    if (_isRefreshing) return;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      // Update trip and activities
+      setState(() {
+        _trip = updatedTrip.toTripModel();
+        _activities = List<ActivityModel>.from(updatedTrip.activities);
+      });
+
+      debugPrint('✅ Refreshed trip data: ${updatedTrip.name} (${updatedTrip.activities.length} activities)');
+    } catch (e) {
+      debugPrint('❌ Failed to refresh trip data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  /// Auto-refresh local trip data when collaboration provider updates
+  void _autoRefreshFromProvider(CollaborationProvider collabProvider) {
+    try {
+      // Find the current trip in collaboration provider data
+      SharedTripModel? updatedTrip;
+      try {
+        updatedTrip = collabProvider.mySharedTrips
+            .firstWhere((t) => t.id == _trip.id,
+                orElse: () => collabProvider.sharedWithMeTrips
+                    .firstWhere((t) => t.id == _trip.id));
+      } catch (e) {
+        // Trip not found in provider
+        return;
+      }
+
+      if (updatedTrip == null) return;
+
+      // Check if the trip data has actually changed
+      final currentActivities = _activities;
+      final providerActivities = updatedTrip.activities;
+
+      // Compare activities count and last updated time
+      final hasChanges = currentActivities.length != providerActivities.length ||
+          updatedTrip.updatedAt != _trip.updatedAt;
+
+      if (hasChanges && updatedTrip != null) {
+        debugPrint('🔄 AUTO_REFRESH: Detected changes in trip ${updatedTrip.id}, updating local state...');
+
+        // Update local state with provider data
+        setState(() {
+          _trip = updatedTrip!.toTripModel();
+          _activities = List<ActivityModel>.from(updatedTrip!.activities);
+        });
+
+        debugPrint('✅ AUTO_REFRESH: Updated local trip data - ${_activities.length} activities');
+      }
+    } catch (e) {
+      debugPrint('❌ AUTO_REFRESH: Failed to auto-refresh from provider: $e');
+    }
+  }
+
+  /// Manual refresh triggered by user
+  Future<void> _manualRefresh(CollaborationProvider collabProvider) async {
+    if (_isRefreshing) return;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      // Force refresh collaboration data
+      await collabProvider.initialize();
+
+      // Find updated trip
+      final updatedTrip = collabProvider.mySharedTrips
+          .firstWhere((t) => t.id == _trip.id,
+              orElse: () => collabProvider.sharedWithMeTrips
+                  .firstWhere((t) => t.id == _trip.id));
+
+      if (updatedTrip != null) {
+        setState(() {
+          _trip = updatedTrip.toTripModel();
+          _activities = List<ActivityModel>.from(updatedTrip.activities);
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trip data refreshed')),
+        );
+      }
+
+      debugPrint('✅ Manual refresh completed');
+    } catch (e) {
+      debugPrint('❌ Manual refresh failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to refresh: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  /// Create add activity request for editors
+  Future<void> _createAddActivityRequest(ActivityModel activity) async {
+    try {
+      // Validate time conflicts before creating request
+      final validationResult = ActivitySchedulingValidator.validateActivityTime(
+        activity,
+        _activities,
+      );
+
+      if (validationResult.hasConflicts) {
+        // Show conflict dialog
+        final shouldContinue = await _showTimeConflictDialog(
+          validationResult.message,
+          validationResult.conflictingActivities,
+        );
+
+        if (!shouldContinue) {
+          return; // User chose not to continue
+        }
+      }
+
+      final service = ActivityEditRequestService();
+
+      // For add activity request, we need to send the full activity data as proposed changes
+      final proposedActivityData = {
+        'title': activity.title,
+        'description': activity.description,
+        'activityType': activity.activityType.value,
+        'startDate': activity.startDate?.toIso8601String(),
+        'budget': activity.budget?.toJson(),
+        'location': activity.location?.toJson(),
+        'checkIn': activity.checkIn,
+      };
+
+      final request = await service.createAddActivityRequest(
+        tripId: _trip.id!,
+        proposedActivityData: proposedActivityData,
+        message: 'Request to add new activity: ${activity.title}',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Add activity request sent to trip owner'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+      debugPrint('📤 ADD_ACTIVITY_REQUEST_SENT: Request ${request.id} sent for new activity ${activity.title}');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send add activity request: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show request edit permission dialog for viewers
+  void _showRequestEditPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request Edit Permission'),
+        content: const Text(
+          'As a viewer, you can only view this trip. To add activities or make changes, '
+          'you need to request edit permission from the trip owner. '
+          'Send a request to become an editor?'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _sendPermissionRequest();
+            },
+            child: const Text('Send Request'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Send permission request to owner
+  Future<void> _sendPermissionRequest() async {
+    try {
+      final service = ActivityEditRequestService();
+
+      // Create a permission change request
+      final request = await service.createActivityEditRequest(
+        tripId: _trip.id!,
+        requestType: 'permission_change',
+        message: 'Request to change my role from viewer to editor so I can contribute to the trip planning.',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permission request sent to trip owner'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+      debugPrint('📤 PERMISSION_REQUEST_SENT: Request ${request.id} sent for role change');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send permission request: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show activity edit requests dialog for owners
+  void _showActivityEditRequestsDialog() async {
+    try {
+      final service = ActivityEditRequestService();
+      final requests = await service.getPendingActivityEditApprovals();
+
+      // Filter requests for this specific trip
+      final tripRequests = requests.where((req) => req.tripId == _trip.id).toList();
+
+      if (mounted) {
+        ActivityEditRequestApprovalDialog.show(
+          context,
+          requests: tripRequests,
+          onRequestHandled: () async {
+            // Refresh trip data directly from Firebase after handling requests
+            try {
+              debugPrint('🔄 Refreshing trip data after request approval...');
+
+              // Force refresh collaboration provider to get latest shared trip data
+              final collabProvider = context.read<CollaborationProvider>();
+              await collabProvider.initialize();
+
+              // Get updated trip from refreshed collaboration provider
+              final updatedTrip = collabProvider.mySharedTrips
+                  .firstWhere((t) => t.id == _trip.id,
+                      orElse: () => collabProvider.sharedWithMeTrips
+                          .firstWhere((t) => t.id == _trip.id));
+
+              if (updatedTrip != null) {
+                setState(() {
+                  _trip = updatedTrip;
+                  _activities = List<ActivityModel>.from(updatedTrip.activities);
+                });
+                debugPrint('✅ Trip data refreshed from Firebase: ${_activities.length} activities');
+
+                // Also update collaboration provider with new data
+                try {
+                  final sharedTrip = collabProvider.mySharedTrips
+                      .firstWhere((t) => t.id == _trip.id,
+                          orElse: () => collabProvider.sharedWithMeTrips
+                              .firstWhere((t) => t.id == _trip.id));
+
+                  if (sharedTrip != null) {
+                    final updatedSharedTrip = sharedTrip.copyWith(
+                      activities: _activities,
+                      updatedAt: DateTime.now(),
+                    );
+                    await collabProvider.updateSharedTrip(updatedSharedTrip);
+                    debugPrint('✅ Collaboration provider updated with new activities');
+                  }
+                } catch (collabError) {
+                  debugPrint('⚠️ Could not update collaboration provider: $collabError');
+                }
+              } else {
+                debugPrint('❌ Trip not found in Firebase after refresh');
+              }
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Trip updated with approved changes')),
+                );
+              }
+            } catch (e) {
+              debugPrint('❌ Failed to refresh after handling requests: $e');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Request processed but failed to refresh: $e')),
+                );
+              }
+            }
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load activity edit requests: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show manage permissions dialog (only for collaboration trips and owners)
+  void _showManagePermissionsDialog() {
+    // Check if user is owner
+    if (!isOwner) {
+      _showPermissionDeniedDialog('Only trip owners can manage permissions');
+      return;
+    }
+
+    final collabProvider = context.read<CollaborationProvider>();
+
+    // Get the shared trip
+    final sharedTrip = collabProvider.mySharedTrips
+        .firstWhere((t) => t.id == _trip.id,
+            orElse: () => collabProvider.sharedWithMeTrips
+                .firstWhere((t) => t.id == _trip.id));
+
+    if (sharedTrip == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ManagePermissionsBottomSheet(
+        sharedTrip: sharedTrip,
+        collabProvider: collabProvider,
+        onPermissionUpdated: () => _manualRefresh(collabProvider),
+      ),
+    );
   }
 }

@@ -8,7 +8,10 @@ import 'package:animate_gradient/animate_gradient.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../Plan/providers/trip_planning_provider.dart';
+import '../../Plan/providers/collaboration_provider.dart';
+import '../../Core/providers/app_mode_provider.dart';
 import '../../Plan/models/trip_model.dart';
+import '../../Plan/models/collaboration_models.dart';
 import '../../Plan/models/activity_models.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../../Core/theme/app_theme.dart';
@@ -25,6 +28,7 @@ class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _googleMapController;
   late flutter_map.MapController _flutterMapController;
   TripModel? _selectedTrip;
+  SharedTripModel? _selectedSharedTrip; // For collab mode
   final Set<Marker> _googleMarkers = {};
   final Set<Polyline> _googlePolylines = {};
   final List<flutter_map.Marker> _flutterMarkers = [];
@@ -38,6 +42,7 @@ class _MapScreenState extends State<MapScreen> {
   bool _clearTripPressed = false;
   bool _centerPressed = false;
   bool _checkInPressed = false;
+  bool _refreshPressed = false;
 
   final MapService _mapService = MapService();
 
@@ -71,32 +76,65 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _loadLastSelectedTrip() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    
+
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
-      
+
       final lastTripId = doc.data()?['lastSelectedTripId'] as String?;
-      
+
       if (lastTripId != null && mounted) {
-        // Load trips and find the one with matching ID
-        final provider = Provider.of<TripPlanningProvider>(context, listen: false);
-        
-        // Initialize provider if trips not loaded yet
-        if (provider.trips.isEmpty) {
-          await provider.initialize();
-        }
-        
-        final trips = provider.trips;
-        final trip = trips.cast<TripModel?>().firstWhere(
-          (t) => t?.id == lastTripId,
-          orElse: () => null,
-        );
-        
-        if (trip != null && mounted) {
-          _selectTrip(trip);
+        final appMode = Provider.of<AppModeProvider>(context, listen: false);
+
+        if (appMode.isPrivateMode) {
+          // Load from private provider
+          final provider = Provider.of<TripPlanningProvider>(context, listen: false);
+
+          // Initialize provider if trips not loaded yet
+          if (provider.trips.isEmpty) {
+            await provider.initialize();
+          }
+
+          final trips = provider.trips;
+          final trip = trips.cast<TripModel?>().firstWhere(
+            (t) => t?.id == lastTripId,
+            orElse: () => null,
+          );
+
+          if (trip != null && mounted) {
+            _selectTrip(trip);
+          }
+        } else {
+          // Load from collaboration provider
+          final provider = Provider.of<CollaborationProvider>(context, listen: false);
+
+          // Initialize provider if trips not loaded yet
+          await provider.ensureInitialized();
+
+          // Find trip in collaboration data
+          SharedTripModel? trip;
+          for (final sharedTrip in provider.mySharedTrips) {
+            if (sharedTrip.id == lastTripId) {
+              trip = sharedTrip;
+              break;
+            }
+          }
+
+          // Also check shared with me trips
+          if (trip == null) {
+            for (final sharedTrip in provider.sharedWithMeTrips) {
+              if (sharedTrip.id == lastTripId) {
+                trip = sharedTrip;
+                break;
+              }
+            }
+          }
+
+          if (trip != null && mounted) {
+            _selectSharedTrip(trip);
+          }
         }
       }
     } catch (e) {
@@ -105,12 +143,23 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadTrips() async {
-    final tripProvider = Provider.of<TripPlanningProvider>(
-      context,
-      listen: false,
-    );
-    if (tripProvider.trips.isNotEmpty) {
-      _showTripSelectionDialog(tripProvider.trips);
+    final appMode = Provider.of<AppModeProvider>(context, listen: false);
+
+    if (appMode.isPrivateMode) {
+      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      if (tripProvider.trips.isNotEmpty) {
+        _showTripSelectionDialog(tripProvider.trips);
+      }
+    } else {
+      final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+      final allTrips = [
+        ...collabProvider.mySharedTrips.map((t) => t.toTripModel()),
+        ...collabProvider.sharedWithMeTrips.map((t) => t.toTripModel()),
+      ];
+
+      if (allTrips.isNotEmpty) {
+        _showTripSelectionDialog(allTrips);
+      }
     }
   }
 
@@ -224,6 +273,7 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _selectTrip(TripModel trip) async {
     setState(() {
       _selectedTrip = trip;
+      _selectedSharedTrip = null; // Clear shared trip when selecting regular trip
       _googleMarkers.clear();
       _googlePolylines.clear();
       _flutterMarkers.clear();
@@ -233,6 +283,26 @@ class _MapScreenState extends State<MapScreen> {
 
     // Save selected trip ID to Firestore
     await _saveSelectedTripId(trip.id);
+
+    await _loadTripData();
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _selectSharedTrip(SharedTripModel sharedTrip) async {
+    setState(() {
+      _selectedTrip = sharedTrip.toTripModel();
+      _selectedSharedTrip = sharedTrip;
+      _googleMarkers.clear();
+      _googlePolylines.clear();
+      _flutterMarkers.clear();
+      _flutterPolylines.clear();
+      _isLoading = true;
+    });
+
+    // Save selected trip ID to Firestore
+    await _saveSelectedTripId(sharedTrip.id);
 
     await _loadTripData();
     setState(() {
@@ -470,20 +540,62 @@ class _MapScreenState extends State<MapScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final costText = actualCostController.text.trim();
               if (costText.isNotEmpty) {
                 final cost = double.tryParse(costText);
-                if (cost != null && cost >= 0) {
+                if (cost != null && cost > 0) {
+                  // Cost > 0 is always valid
                   Navigator.pop(context, cost);
+                } else if (cost == 0) {
+                  // Show confirmation for 0 cost
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirm Free Activity'),
+                      content: const Text('You entered 0 for the actual cost. Are you sure this activity was completely free?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Edit Cost'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Confirm Free'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true) {
+                    Navigator.pop(context, 0.0);
+                  }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid cost')),
+                    const SnackBar(content: Text('Please enter a valid cost (must be > 0)')),
                   );
                 }
               } else {
-                // Allow check-in without cost
-                Navigator.pop(context, 0.0);
+                // No cost entered - require confirmation
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Confirm Free Activity'),
+                    content: const Text('No cost entered. Are you sure this activity was completely free?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Enter Cost'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Confirm Free'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  Navigator.pop(context, 0.0);
+                }
               }
             },
             child: const Text('Check In'),
@@ -512,14 +624,41 @@ class _MapScreenState extends State<MapScreen> {
         budget: updatedBudget,
       );
 
-      final tripProvider = Provider.of<TripPlanningProvider>(
-        context,
-        listen: false,
-      );
-      final success = await tripProvider.updateActivityInTrip(
-        _selectedTrip!.id!,
-        updatedActivity,
-      );
+      bool success;
+      if (_selectedSharedTrip != null) {
+        // Collaboration mode - update shared trip
+        final collabProvider = Provider.of<CollaborationProvider>(
+          context,
+          listen: false,
+        );
+        final updatedSharedTrip = _selectedSharedTrip!.copyWith(
+          activities: _selectedTrip!.activities.map((a) =>
+            a.id == updatedActivity.id ? updatedActivity : a
+          ).toList(),
+        );
+        success = await collabProvider.updateSharedTrip(updatedSharedTrip);
+        if (success) {
+          _selectedSharedTrip = updatedSharedTrip;
+          _selectedTrip = updatedSharedTrip.toTripModel();
+        }
+      } else {
+        // Private mode - update private trip
+        final tripProvider = Provider.of<TripPlanningProvider>(
+          context,
+          listen: false,
+        );
+        success = await tripProvider.updateActivityInTrip(
+          _selectedTrip!.id!,
+          updatedActivity,
+        );
+        if (success) {
+          // Update selected trip from provider to reflect changes
+          final updatedTrip = tripProvider.getTripById(_selectedTrip!.id!);
+          if (updatedTrip != null) {
+            _selectedTrip = updatedTrip;
+          }
+        }
+      }
 
       if (success) {
         // Create expense record for this check-in and get expense ID
@@ -560,28 +699,48 @@ class _MapScreenState extends State<MapScreen> {
               expenseCategory: updatedActivity.activityType.value,
               expenseSynced: true,
             );
-            
+
             updatedActivity = updatedActivity.copyWith(
               expenseInfo: updatedExpenseInfo,
             );
-            
+
             // Save the updated activity with expense info back to provider
-            await tripProvider.updateActivityInTrip(
-              _selectedTrip!.id!,
-              updatedActivity,
-            );
-            
+            if (_selectedSharedTrip != null) {
+              // Update shared trip again with expense info
+              final collabProvider = Provider.of<CollaborationProvider>(
+                context,
+                listen: false,
+              );
+              final updatedSharedTripWithExpense = _selectedSharedTrip!.copyWith(
+                activities: _selectedTrip!.activities.map((a) =>
+                  a.id == updatedActivity.id ? updatedActivity : a
+                ).toList(),
+              );
+              await collabProvider.updateSharedTrip(updatedSharedTripWithExpense);
+              _selectedSharedTrip = updatedSharedTripWithExpense;
+              _selectedTrip = updatedSharedTripWithExpense.toTripModel();
+            } else {
+              // Private mode
+              final tripProvider = Provider.of<TripPlanningProvider>(
+                context,
+                listen: false,
+              );
+              await tripProvider.updateActivityInTrip(
+                _selectedTrip!.id!,
+                updatedActivity,
+              );
+              // Update selected trip from provider to reflect changes
+              final updatedTrip = tripProvider.getTripById(_selectedTrip!.id!);
+              if (updatedTrip != null) {
+                _selectedTrip = updatedTrip;
+              }
+            }
+
             debugPrint('✅ Activity updated with expense info');
           }
         } catch (e) {
           debugPrint('❌ Error creating expense: $e');
           // Continue with check-in even if expense creation fails
-        }
-
-        // Update selected trip from provider to reflect changes
-        final updatedTrip = tripProvider.getTripById(_selectedTrip!.id!);
-        if (updatedTrip != null) {
-          _selectedTrip = updatedTrip;
         }
 
         // Move to next activity
@@ -813,6 +972,53 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {});
   }
 
+  bool _canUserCheckIn() {
+    // Always allow check-in for private mode
+    if (_selectedSharedTrip == null) return true;
+
+    // For collaboration mode, only allow owners to check-in
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+
+    return _selectedSharedTrip!.isOwnerUser(user.uid);
+  }
+
+  Future<void> _refreshTripData() async {
+    if (_selectedSharedTrip == null || _selectedSharedTrip!.id == null) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Reload trip data from collaboration provider
+      final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+      final updatedTrip = await collabProvider.collaborationService.getSharedTrip(_selectedSharedTrip!.id!);
+
+      if (updatedTrip != null && mounted) {
+        _selectSharedTrip(updatedTrip);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã làm mới dữ liệu chuyến đi')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể làm mới dữ liệu')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error refreshing trip data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lỗi khi làm mới dữ liệu')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -896,6 +1102,32 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   if (_selectedTrip != null) ...[
                     const SizedBox(height: 8),
+                    // Refresh button - only show for collaborators (not owners) in collab mode
+                    if (_selectedSharedTrip != null && !_canUserCheckIn())
+                      GestureDetector(
+                        onTapDown: (_) => setState(() => _refreshPressed = true),
+                        onTapUp: (_) {
+                          Future.delayed(const Duration(milliseconds: 200), () {
+                            if (mounted) setState(() => _refreshPressed = false);
+                          });
+                        },
+                        onTapCancel: () => setState(() => _refreshPressed = false),
+                        child: AnimatedScale(
+                          scale: _refreshPressed ? 1.1 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: FloatingActionButton.small(
+                            onPressed: _refreshTripData,
+                            backgroundColor: Colors.white,
+                            tooltip: 'Làm mới dữ liệu',
+                            heroTag: 'refresh_trip',
+                            child: const Icon(
+                              Icons.refresh,
+                              color: AppColors.navyBlue,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_selectedSharedTrip != null && !_canUserCheckIn()) const SizedBox(height: 8),
                     GestureDetector(
                       onTapDown: (_) =>
                           setState(() => _clearTripPressed = true),
@@ -1078,7 +1310,7 @@ class _MapScreenState extends State<MapScreen> {
                 // Center to first activity button - only show when map is ready
                 if (_isMapReady)
                   Container(
-                    margin: const EdgeInsets.only(bottom: 16),
+                    margin: EdgeInsets.only(bottom: _canUserCheckIn() ? 16 : 50), // More margin when checkin button is hidden
                     child: GestureDetector(
                       onTapDown: (_) => setState(() => _centerPressed = true),
                       onTapUp: (_) {
@@ -1102,48 +1334,50 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                   ),
-                // Check-in button
-                Container(
-                  margin: const EdgeInsets.only(
-                    bottom: 50,
-                  ), // Add margin to avoid navigation bar
-                  child: GestureDetector(
-                    onTapDown: (_) => setState(() => _checkInPressed = true),
-                    onTapUp: (_) {
-                      Future.delayed(const Duration(milliseconds: 200), () {
-                        if (mounted) setState(() => _checkInPressed = false);
-                      });
-                    },
-                    onTapCancel: () => setState(() => _checkInPressed = false),
-                    child: AnimatedScale(
-                      scale: _checkInPressed ? 1.1 : 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: AnimateGradient(
-                          duration: const Duration(seconds: 5),
-                          primaryColors: [
-                            AppColors.dodgerBlue.withValues(alpha: 0.9),
-                            AppColors.steelBlue.withValues(alpha: 0.8),
-                            AppColors.skyBlue.withValues(alpha: 0.7),
-                          ],
-                          secondaryColors: [
-                            AppColors.skyBlue.withValues(alpha: 0.7),
-                            AppColors.dodgerBlue.withValues(alpha: 0.9),
-                            AppColors.steelBlue.withValues(alpha: 0.8),
-                          ],
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _checkIn,
-                              child: Container(
-                                width: 56,
-                                height: 56,
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.white,
-                                  size: 28,
+                // Check-in button - only show for owners in collab mode
+                if (_canUserCheckIn())
+                  Container(
+                    margin: const EdgeInsets.only(
+                      bottom: 50,
+                    ), // Add margin to avoid navigation bar
+                    child: GestureDetector(
+                      onTapDown: (_) => setState(() => _checkInPressed = true),
+                      onTapUp: (_) {
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          if (mounted) setState(() => _checkInPressed = false);
+                        });
+                      },
+                      onTapCancel: () => setState(() => _checkInPressed = false),
+                      child: AnimatedScale(
+                        scale: _checkInPressed ? 1.1 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: AnimateGradient(
+                            duration: const Duration(seconds: 5),
+                            primaryColors: [
+                              AppColors.dodgerBlue.withValues(alpha: 0.9),
+                              AppColors.steelBlue.withValues(alpha: 0.8),
+                              AppColors.skyBlue.withValues(alpha: 0.7),
+                            ],
+                            secondaryColors: [
+                              AppColors.skyBlue.withValues(alpha: 0.7),
+                              AppColors.dodgerBlue.withValues(alpha: 0.9),
+                              AppColors.steelBlue.withValues(alpha: 0.8),
+                            ],
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _checkIn,
+                                child: Container(
+                                  width: 56,
+                                  height: 56,
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1152,7 +1386,6 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                   ),
-                ),
               ],
             )
           : null,

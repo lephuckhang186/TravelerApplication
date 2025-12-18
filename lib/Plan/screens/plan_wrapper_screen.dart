@@ -4,7 +4,6 @@ import '../../Core/theme/app_theme.dart';
 import '../../Core/providers/app_mode_provider.dart';
 import '../providers/collaboration_provider.dart';
 import 'plan_screen.dart';
-import 'collaboration_plan_screen.dart';
 
 /// Wrapper screen that displays either Private or Collaboration plan screen
 /// based on current app mode - COMPLETELY SEPARATE SCREENS AND DATA
@@ -23,11 +22,8 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
         return Scaffold(
           body: Stack(
             children: [
-              // Show the appropriate screen based on mode
-              if (appModeProvider.isPrivateMode)
-                const PlanScreen() // Original private plan screen
-              else
-                const CollaborationPlanScreen(), // New collaboration plan screen
+              // Unified PlanScreen handles both modes
+              const PlanScreen(),
               
               // Mode switch button - positioned at top right
               Positioned(

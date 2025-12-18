@@ -7,10 +7,17 @@ import '../models/collaboration_models.dart';
 import '../models/trip_model.dart';
 import '../services/collaboration_trip_service.dart';
 
-/// Provider for collaboration mode - completely separate from private trip provider
+import '../services/trip_planning_service.dart';
+import '../services/firebase_trip_service.dart';
+import '../services/budget_sync_service.dart';
+
+/// Provider for collaboration mode - unified with private mode backend
 class CollaborationProvider extends ChangeNotifier {
   final CollaborationTripService _collaborationService = CollaborationTripService();
-  
+  final TripPlanningService _apiService = TripPlanningService();
+  final FirebaseTripService _firebaseService = FirebaseTripService();
+  final BudgetSyncService _budgetSyncService = BudgetSyncService();
+
   // Getter to access service (for external access)
   CollaborationTripService get collaborationService => _collaborationService;
   
@@ -230,24 +237,33 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Create new shared trip from regular trip
+  /// Create new shared trip from regular trip (collaboration-only backend)
   Future<SharedTripModel?> createSharedTrip(TripModel trip) async {
     try {
       _setLoading(true);
       _clearError();
-      
-      final sharedTrip = await _collaborationService.createSharedTrip(trip);
-      
-      // CRITICAL FIX: Add to local state AND reload from Firestore to ensure consistency
+
+      // For collaboration trips, only save to Firebase (not to TripPlanningProvider)
+      final tripForFirebase = trip.copyWith(
+        id: trip.id ?? 'collab_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      await _firebaseService.saveTrip(tripForFirebase);
+      debugPrint('✅ FIRESTORE_SAVE: Saved collaboration trip to Firestore: ${tripForFirebase.name} (${tripForFirebase.id})');
+
+      // Create shared trip in collaboration service
+      final sharedTrip = await _collaborationService.createSharedTrip(tripForFirebase);
+
+      // Add to local state
       _mySharedTrips.insert(0, sharedTrip);
       notifyListeners(); // Immediate UI update
-      
+
       // Force reload from Firestore to ensure data consistency
       await loadMySharedTrips();
-      
+
       debugPrint('DEBUG: CollaborationProvider.createSharedTrip() - Created: ${sharedTrip.id}');
       debugPrint('DEBUG: CollaborationProvider.createSharedTrip() - Total trips after create: ${_mySharedTrips.length}');
-      
+
       return sharedTrip;
     } catch (e) {
       _setError('Failed to create shared trip: $e');
@@ -735,6 +751,28 @@ class CollaborationProvider extends ChangeNotifier {
       await acceptInvitation(invitationId);
     } else {
       await declineInvitation(invitationId);
+    }
+  }
+
+  /// Update collaborator permission level
+  Future<bool> updateCollaboratorPermission(String tripId, String collaboratorUserId, String newRole) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      await _collaborationService.updateCollaboratorPermission(tripId, collaboratorUserId, newRole);
+
+      // Reload trip data to reflect permission changes
+      await selectSharedTrip(tripId);
+
+      debugPrint('✅ PERMISSION_UPDATED: Updated $collaboratorUserId to $newRole for trip $tripId');
+      return true;
+    } catch (e) {
+      _setError('Failed to update permission: $e');
+      debugPrint('❌ PERMISSION_UPDATE_ERROR: $e');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 }

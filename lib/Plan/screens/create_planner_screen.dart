@@ -455,15 +455,12 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
           ? double.tryParse(_budgetController.text.trim().replaceAll('.', ''))
           : null;
 
-      // Check which mode we're in
-      final appMode = context.read<AppModeProvider>();
-      
       TripModel? createdTrip;
-      
-      if (appMode.isCollaborationMode) {
-        // Create shared trip using the same interface as private mode
+
+      if (widget.isCollaborative) {
+        // Create shared trip using collaboration provider
         final collaborationProvider = context.read<CollaborationProvider>();
-        
+
         final sharedTrip = await collaborationProvider.createTrip(
           name: tripName,
           destination: _destinationController.text.trim(),
@@ -474,7 +471,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
               : null,
           budget: budgetAmount,
         );
-        
+
         if (sharedTrip != null) {
           createdTrip = sharedTrip.toTripModel();
           debugPrint('✅ SHARED_TRIP_CREATED: ${sharedTrip.name} (${sharedTrip.id})');

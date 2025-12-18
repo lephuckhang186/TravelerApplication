@@ -589,6 +589,192 @@ class EditRequest {
   bool get isRejected => status == EditRequestStatus.rejected;
 }
 
+/// Activity Edit Request model for requesting permission to edit specific activities
+class ActivityEditRequest {
+  final String id;
+  final String tripId;
+  final String requesterId;
+  final String requesterName;
+  final String requesterEmail;
+  final String ownerId;
+  final String requestType; // 'edit_activity', 'add_activity', 'delete_activity'
+  final String? activityId; // ID of the activity being edited/deleted, null for add
+  final Map<String, dynamic>? proposedChanges; // The proposed changes
+  final ActivityEditRequestStatus status;
+  final DateTime requestedAt;
+  final DateTime? respondedAt;
+  final String? respondedBy;
+  final String? message;
+  final String? tripTitle;
+  final String? activityTitle; // Title of the activity for display
+
+  const ActivityEditRequest({
+    required this.id,
+    required this.tripId,
+    required this.requesterId,
+    required this.requesterName,
+    required this.requesterEmail,
+    required this.ownerId,
+    required this.requestType,
+    this.activityId,
+    this.proposedChanges,
+    this.status = ActivityEditRequestStatus.pending,
+    required this.requestedAt,
+    this.respondedAt,
+    this.respondedBy,
+    this.message,
+    this.tripTitle,
+    this.activityTitle,
+  });
+
+  factory ActivityEditRequest.fromJson(Map<String, dynamic> json) {
+    DateTime _parseDateTime(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+      if (value is String) return DateTime.parse(value);
+      if (value.runtimeType.toString().contains('Timestamp')) {
+        return (value as dynamic).toDate();
+      }
+      return DateTime.now();
+    }
+
+    return ActivityEditRequest(
+      id: json['id'] ?? '',
+      tripId: json['trip_id'] ?? json['tripId'] ?? '',
+      requesterId: json['requester_id'] ?? json['requesterId'] ?? '',
+      requesterName: json['requester_name'] ?? json['requesterName'] ?? '',
+      requesterEmail: json['requester_email'] ?? json['requesterEmail'] ?? '',
+      ownerId: json['owner_id'] ?? json['ownerId'] ?? '',
+      requestType: json['request_type'] ?? json['requestType'] ?? 'edit_activity',
+      activityId: json['activity_id'] ?? json['activityId'],
+      proposedChanges: json['proposed_changes'] ?? json['proposedChanges'] as Map<String, dynamic>?,
+      status: ActivityEditRequestStatus.fromJson(json['status'] ?? 'pending'),
+      requestedAt: _parseDateTime(json['requested_at'] ?? json['requestedAt']),
+      respondedAt: json['responded_at'] != null || json['respondedAt'] != null
+          ? _parseDateTime(json['responded_at'] ?? json['respondedAt'])
+          : null,
+      respondedBy: json['responded_by'] ?? json['respondedBy'],
+      message: json['message'],
+      tripTitle: json['trip_title'] ?? json['tripTitle'],
+      activityTitle: json['activity_title'] ?? json['activityTitle'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'trip_id': tripId,
+      'requester_id': requesterId,
+      'requester_name': requesterName,
+      'requester_email': requesterEmail,
+      'owner_id': ownerId,
+      'request_type': requestType,
+      'activity_id': activityId,
+      'proposed_changes': proposedChanges,
+      'status': status.toJson(),
+      'requested_at': requestedAt.toIso8601String(),
+      'responded_at': respondedAt?.toIso8601String(),
+      'responded_by': respondedBy,
+      'message': message,
+      'trip_title': tripTitle,
+      'activity_title': activityTitle,
+    };
+  }
+
+  ActivityEditRequest copyWith({
+    String? id,
+    String? tripId,
+    String? requesterId,
+    String? requesterName,
+    String? requesterEmail,
+    String? ownerId,
+    String? requestType,
+    String? activityId,
+    Map<String, dynamic>? proposedChanges,
+    ActivityEditRequestStatus? status,
+    DateTime? requestedAt,
+    DateTime? respondedAt,
+    String? respondedBy,
+    String? message,
+    String? tripTitle,
+    String? activityTitle,
+  }) {
+    return ActivityEditRequest(
+      id: id ?? this.id,
+      tripId: tripId ?? this.tripId,
+      requesterId: requesterId ?? this.requesterId,
+      requesterName: requesterName ?? this.requesterName,
+      requesterEmail: requesterEmail ?? this.requesterEmail,
+      ownerId: ownerId ?? this.ownerId,
+      requestType: requestType ?? this.requestType,
+      activityId: activityId ?? this.activityId,
+      proposedChanges: proposedChanges ?? this.proposedChanges,
+      status: status ?? this.status,
+      requestedAt: requestedAt ?? this.requestedAt,
+      respondedAt: respondedAt ?? this.respondedAt,
+      respondedBy: respondedBy ?? this.respondedBy,
+      message: message ?? this.message,
+      tripTitle: tripTitle ?? this.tripTitle,
+      activityTitle: activityTitle ?? this.activityTitle,
+    );
+  }
+
+  bool get isPending => status == ActivityEditRequestStatus.pending;
+  bool get isApproved => status == ActivityEditRequestStatus.approved;
+  bool get isRejected => status == ActivityEditRequestStatus.rejected;
+
+  String get requestTypeDisplay {
+    switch (requestType) {
+      case 'edit_activity':
+        return 'Edit Activity';
+      case 'add_activity':
+        return 'Add Activity';
+      case 'delete_activity':
+        return 'Delete Activity';
+      default:
+        return 'Activity Change';
+    }
+  }
+}
+
+// Activity edit request status enum
+enum ActivityEditRequestStatus {
+  pending,
+  approved,
+  rejected;
+
+  String toJson() => name;
+
+  static ActivityEditRequestStatus fromJson(String json) {
+    return ActivityEditRequestStatus.values.firstWhere(
+      (e) => e.name == json,
+      orElse: () => ActivityEditRequestStatus.pending,
+    );
+  }
+
+  String get displayName {
+    switch (this) {
+      case ActivityEditRequestStatus.pending:
+        return 'Pending';
+      case ActivityEditRequestStatus.approved:
+        return 'Approved';
+      case ActivityEditRequestStatus.rejected:
+        return 'Rejected';
+    }
+  }
+
+  String get icon {
+    switch (this) {
+      case ActivityEditRequestStatus.pending:
+        return '⏳';
+      case ActivityEditRequestStatus.approved:
+        return '✅';
+      case ActivityEditRequestStatus.rejected:
+        return '❌';
+    }
+  }
+}
+
 // Edit request status enum
 enum EditRequestStatus {
   pending,

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../Core/theme/app_theme.dart';
+import '../../Core/providers/app_mode_provider.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../../Expense/models/expense_models.dart';
 import '../../Login/services/auth_service.dart';
 import '../../Plan/providers/trip_planning_provider.dart';
+import '../../Plan/providers/collaboration_provider.dart';
 import '../../Plan/models/trip_model.dart';
 
 /// Enum for trip date status
@@ -59,6 +62,37 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       );
     }
     return _expenseProvider!;
+  }
+
+  /// Get trips based on current app mode
+  /// In Private mode: returns trips from TripPlanningProvider
+  /// In Collaboration mode: returns only trips where user is OWNER (mySharedTrips)
+  List<TripModel> _getTripsForCurrentMode() {
+    final appModeProvider = context.read<AppModeProvider>();
+    if (appModeProvider.isPrivateMode) {
+      final tripProvider = context.read<TripPlanningProvider>();
+      return tripProvider.trips;
+    } else {
+      // Collaboration mode - only show trips owned by user
+      final collaborationProvider = context.read<CollaborationProvider>();
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUserId == null) return [];
+      
+      // Convert SharedTripModel to TripModel for compatibility
+      return collaborationProvider.mySharedTrips.map<TripModel>((sharedTrip) {
+        return TripModel(
+          id: sharedTrip.id,
+          name: sharedTrip.name,
+          destination: sharedTrip.destination,
+          startDate: sharedTrip.startDate,
+          endDate: sharedTrip.endDate,
+          description: sharedTrip.description,
+          budget: sharedTrip.budget,
+          activities: sharedTrip.activities,
+          
+        );
+      }).toList();
+    }
   }
 
   final List<String> _months = [
@@ -160,32 +194,46 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     }
   }
 
-  /// Initialize trip provider
+  /// Initialize trip provider (and collaboration provider if in collab mode)
   Future<void> _initializeTripProvider() async {
     try {
       if (!mounted) return;
-      final tripProvider = Provider.of<TripPlanningProvider>(
-        context,
-        listen: false,
-      );
-
-      debugPrint(
-        'TRIP_INIT: Current trips: ${tripProvider.trips.length}, isLoading: ${tripProvider.isLoading}',
-      );
-
-      if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
-        debugPrint('TRIP_INIT: Initializing trip provider...');
-        await tripProvider.initialize();
+      
+      final appModeProvider = context.read<AppModeProvider>();
+      
+      if (appModeProvider.isCollaborationMode) {
+        // Initialize CollaborationProvider for collaboration mode
+        final collaborationProvider = context.read<CollaborationProvider>();
+        debugPrint('TRIP_INIT: Initializing collaboration provider...');
+        await collaborationProvider.ensureInitialized();
         debugPrint(
-          'TRIP_INIT: After initialize, trips count: ${tripProvider.trips.length}',
+          'TRIP_INIT: Collaboration mode - mySharedTrips: ${collaborationProvider.mySharedTrips.length}',
+        );
+      } else {
+        // Initialize TripPlanningProvider for private mode
+        final tripProvider = Provider.of<TripPlanningProvider>(
+          context,
+          listen: false,
         );
 
-        if (tripProvider.trips.isNotEmpty) {
-          // Only run cleanup after successful trip loading
+        debugPrint(
+          'TRIP_INIT: Current trips: ${tripProvider.trips.length}, isLoading: ${tripProvider.isLoading}',
+        );
+
+        if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
+          debugPrint('TRIP_INIT: Initializing trip provider...');
+          await tripProvider.initialize();
           debugPrint(
-            'TRIP_INIT: Running initial cleanup with ${tripProvider.trips.length} trips',
+            'TRIP_INIT: After initialize, trips count: ${tripProvider.trips.length}',
           );
-          await _cleanupOrphanedExpenses(tripProvider.trips);
+
+          if (tripProvider.trips.isNotEmpty) {
+            // Only run cleanup after successful trip loading
+            debugPrint(
+              'TRIP_INIT: Running initial cleanup with ${tripProvider.trips.length} trips',
+            );
+            await _cleanupOrphanedExpenses(tripProvider.trips);
+          }
         }
       }
     } catch (e) {
@@ -773,8 +821,12 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Month selector with arrows and trip filter
   Widget _buildMonthSelector() {
-    return Consumer2<TripPlanningProvider, ExpenseProvider>(
-      builder: (context, tripProvider, expenseProvider, child) {
+    return Consumer4<TripPlanningProvider, ExpenseProvider, AppModeProvider, CollaborationProvider>(
+      builder: (context, tripProvider, expenseProvider, appModeProvider, collaborationProvider, child) {
+        // Get trips based on current mode
+        final trips = _getTripsForCurrentMode();
+        final modeLabel = appModeProvider.isCollaborationMode ? ' (Collab)' : '';
+        
         return Column(
           children: [
             // Trip Filter Row - DropdownButtonFormField2
@@ -782,7 +834,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               child: DropdownButton2<String?>(
                 isExpanded: true,
                 hint: Text(
-                  'All Trips',
+                  'All Trips$modeLabel',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 12,
@@ -795,7 +847,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   DropdownItem<String?>(
                     value: null,
                     child: Text(
-                      'All Trips',
+                      'All Trips$modeLabel',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
@@ -804,8 +856,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       ),
                     ),
                   ),
-                  // Individual trips
-                  ...tripProvider.trips.map((trip) {
+                  // Individual trips from current mode
+                  ...trips.map((trip) {
                     return DropdownItem<String?>(
                       value: trip.id,
                       child: Text(
@@ -832,7 +884,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 selectedItemBuilder: (context) {
                   return [
                     Text(
-                      'All Trips',
+                      'All Trips$modeLabel',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
@@ -840,7 +892,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         color: Colors.grey[800],
                       ),
                     ),
-                    ...tripProvider.trips.map((trip) {
+                    ...trips.map((trip) {
                       return Text(
                         trip.name,
                         style: TextStyle(
