@@ -1848,6 +1848,18 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Apply changes made by AI assistant
   void _applyAIChanges(List<dynamic> changes) {
+    // Check if we need to delete all existing activities first
+    final hasDeleteAll = changes.any(
+      (change) => change['action'] == 'delete_all',
+    );
+
+    if (hasDeleteAll) {
+      debugPrint('AI: Deleting all existing activities before adding new ones');
+      setState(() {
+        _activities.clear();
+      });
+    }
+
     // Check if this is a full replacement (all activities should be replaced)
     final hasFullReplace = changes.any(
       (change) => change['action'] == 'replace_all',
@@ -1877,6 +1889,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       // Partial changes: apply individual add/remove/update operations
       for (final change in changes) {
         final action = change['action'];
+        
+        // Skip delete_all as it's already handled above
+        if (action == 'delete_all') continue;
+        
         final activityData = change['activity'];
 
         switch (action) {

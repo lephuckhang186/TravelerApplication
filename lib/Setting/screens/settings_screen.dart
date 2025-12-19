@@ -10,7 +10,6 @@ import '../../Login/screens/auth_screen.dart';
 import 'help_center_screen.dart';
 import 'share_feedback_screen.dart';
 import 'general_info_screen.dart';
-import '../../Analysis/screens/analysis_screen.dart';
 import 'profile_screen.dart';
 import 'travel_stats_screen.dart';
 import '../../Core/utils/translation/screens/translation_screen.dart';
@@ -39,7 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   final UserProfileService _profileService = UserProfileService();
   final AuthService _authService = AuthService();
-  final FirestoreStatisticsService _statisticsService = FirestoreStatisticsService();
+  final FirestoreStatisticsService _statisticsService =
+      FirestoreStatisticsService();
   UserProfile? _userProfile;
   UserTravelStats _stats = UserTravelStats.empty();
 
@@ -129,11 +129,12 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _onUtilitiesScroll() {
     if (!_utilitiesScrollController.hasClients) return;
-    
+
     final scrollOffset = _utilitiesScrollController.offset;
     const itemWidth = 180.0; // Width of first item + spacing
-    const itemWidth2 = 172.0; // Width of second/third/fourth items + spacing (160 + 12)
-    
+    const itemWidth2 =
+        172.0; // Width of second/third/fourth items + spacing (160 + 12)
+
     int newIndex = 0;
     if (scrollOffset < itemWidth * 0.5) {
       newIndex = 0; // First item
@@ -142,11 +143,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     } else {
       newIndex = 2; // Third item (covers weather & world clock)
     }
-    
+
     if (newIndex != _currentUtilityIndex) {
       // Haptic feedback when changing utility
       HapticFeedback.selectionClick();
-      
+
       setState(() {
         _currentUtilityIndex = newIndex;
       });
@@ -243,7 +244,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Đang tải thông tin...',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 14,
                         color: Colors.grey[600],
                       ),
@@ -351,7 +353,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           Text(
             _displayName,
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 24,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -392,7 +395,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const SizedBox(width: 6),
                     Text(
                       'Trang cá nhân',
-                      style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
                         color: Colors.grey[700],
                       ),
@@ -480,7 +484,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 Text(
                   _displayName,
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -583,7 +588,8 @@ class _SettingsScreenState extends State<SettingsScreen>
       child: Center(
         child: Text(
           _currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : 'N',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: size * 0.4,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -602,7 +608,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           Text(
             'Tiện ích',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
@@ -617,8 +624,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                 child: ListView(
                   controller: _utilitiesScrollController,
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(left: 8, right: 16), // Reduce left padding
-                  physics: const BouncingScrollPhysics(), // iOS-style bouncing animation
+                  padding: const EdgeInsets.only(
+                    left: 8,
+                    right: 16,
+                  ), // Reduce left padding
+                  physics:
+                      const BouncingScrollPhysics(), // iOS-style bouncing animation
                   children: [
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -687,8 +698,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           width: _currentUtilityIndex == 0 ? 8 : 6,
           height: _currentUtilityIndex == 0 ? 8 : 6,
           decoration: BoxDecoration(
-            color: _currentUtilityIndex == 0 
-                ? const Color(0xFF7B61FF) 
+            color: _currentUtilityIndex == 0
+                ? const Color(0xFF7B61FF)
                 : Colors.grey[300],
             shape: BoxShape.circle,
           ),
@@ -700,8 +711,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           width: _currentUtilityIndex == 1 ? 8 : 6,
           height: _currentUtilityIndex == 1 ? 8 : 6,
           decoration: BoxDecoration(
-            color: _currentUtilityIndex == 1 
-                ? const Color(0xFF7B61FF) 
+            color: _currentUtilityIndex == 1
+                ? const Color(0xFF7B61FF)
                 : Colors.grey[300],
             shape: BoxShape.circle,
           ),
@@ -713,8 +724,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           width: _currentUtilityIndex == 2 ? 8 : 6,
           height: _currentUtilityIndex == 2 ? 8 : 6,
           decoration: BoxDecoration(
-            color: _currentUtilityIndex == 2 
-                ? const Color(0xFF7B61FF) 
+            color: _currentUtilityIndex == 2
+                ? const Color(0xFF7B61FF)
                 : Colors.grey[300],
             shape: BoxShape.circle,
           ),
@@ -765,7 +776,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             Flexible(
               child: Text(
                 label,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 12, // Larger font for better readability
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -810,7 +822,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                 const SizedBox(width: 8),
                 Text(
                   'Travel Stats',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
@@ -819,7 +832,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                 const Spacer(),
                 Text(
                   'Show All',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 14,
                     color: Colors.blue,
                     fontWeight: FontWeight.w500,
@@ -842,7 +856,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                 children: [
                   Text(
                     'Total Trips',
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -909,12 +924,12 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildTravelTimelineChart() {
     // final currentYear = DateTime.now().year;
     final maxTrips = _stats.completedTrips > 0 ? _stats.completedTrips : 5;
-    
+
     // Calculate column heights based on data
     final trips2024 = 0; // Could add this to stats if needed
     final trips2025 = _stats.completedTrips2025;
     final trips2026 = 0; // Future trips
-    
+
     return SizedBox(
       height: 60,
       child: Row(
@@ -923,21 +938,16 @@ class _SettingsScreenState extends State<SettingsScreen>
           // 2024 column
           Expanded(
             child: _buildTimelineColumn(
-              trips2024, 
+              trips2024,
               maxTrips,
               Colors.grey[400]!,
-              '24'
+              '24',
             ),
           ),
           const SizedBox(width: 8),
           // 2025 column (current year)
           Expanded(
-            child: _buildTimelineColumn(
-              trips2025,
-              maxTrips, 
-              Colors.blue,
-              '25'
-            ),
+            child: _buildTimelineColumn(trips2025, maxTrips, Colors.blue, '25'),
           ),
           const SizedBox(width: 8),
           // 2026 column
@@ -946,7 +956,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               trips2026,
               maxTrips,
               Colors.grey[300]!,
-              '26'
+              '26',
             ),
           ),
         ],
@@ -955,11 +965,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   /// Build individual timeline column
-  Widget _buildTimelineColumn(int trips, int maxTrips, Color color, String year) {
-    final heightPercentage = maxTrips > 0 ? (trips / maxTrips).clamp(0.0, 1.0) : 0.0;
+  Widget _buildTimelineColumn(
+    int trips,
+    int maxTrips,
+    Color color,
+    String year,
+  ) {
+    final heightPercentage = maxTrips > 0
+        ? (trips / maxTrips).clamp(0.0, 1.0)
+        : 0.0;
     final minHeight = trips > 0 ? 0.2 : 0.05; // Minimum height for visibility
-    final finalHeight = (heightPercentage < minHeight ? minHeight : heightPercentage);
-    
+    final finalHeight = (heightPercentage < minHeight
+        ? minHeight
+        : heightPercentage);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -967,15 +986,17 @@ class _SettingsScreenState extends State<SettingsScreen>
         Container(
           height: 16,
           alignment: Alignment.center,
-          child: trips > 0 ? Text(
-            trips.toString(),
-            style: TextStyle(
-              fontFamily: 'Urbanist-Regular',
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ) : null,
+          child: trips > 0
+              ? Text(
+                  trips.toString(),
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                )
+              : null,
         ),
         // Column bar
         Container(
@@ -984,11 +1005,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(4),
-            gradient: trips > 0 ? LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: [color, color.withValues(alpha: 0.7)],
-            ) : null,
+            gradient: trips > 0
+                ? LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [color, color.withValues(alpha: 0.7)],
+                  )
+                : null,
           ),
         ),
         const SizedBox(height: 4),
@@ -1063,7 +1086,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -1110,7 +1134,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: Text(
               'Đăng xuất',
               textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.red[600],
@@ -1122,22 +1147,12 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  // Event handlers for new design
-  // ignore: unused_element
-  void _onExpenseManagement() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AnalysisScreen()),
-    );
-  }
-
   void _onTravelStats() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const TravelStatsScreen()),
     );
   }
-
 
   void _onHelpCenter() {
     Navigator.push(
@@ -1202,18 +1217,24 @@ class _SettingsScreenState extends State<SettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           'Đăng xuất',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
+            fontWeight: FontWeight.w600,
+          ),
         ),
         content: Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+          style: TextStyle(fontFamily: 'Urbanist-Regular'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Hủy',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[600]),
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                color: Colors.grey[600],
+              ),
             ),
           ),
           ElevatedButton(
@@ -1257,7 +1278,10 @@ class _SettingsScreenState extends State<SettingsScreen>
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text('Đăng xuất', style: TextStyle(fontFamily: 'Urbanist-Regular', )),
+            child: Text(
+              'Đăng xuất',
+              style: TextStyle(fontFamily: 'Urbanist-Regular'),
+            ),
           ),
         ],
       ),
