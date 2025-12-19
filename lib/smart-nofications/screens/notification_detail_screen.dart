@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/notification_models.dart';
-import '../../core/theme/app_theme.dart';
+import '../../Core/theme/app_theme.dart';
 
 class NotificationDetailScreen extends StatelessWidget {
   final SmartNotification notification;

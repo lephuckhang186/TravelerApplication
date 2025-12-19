@@ -333,15 +333,19 @@ class ActivityModel {
       title: json['title'] ?? '',
       description: json['description'],
       activityType: ActivityType.fromString(
-        json['activity_type'] ?? 'activity',
+        json['activity_type'] ?? json['activityType'] ?? 'activity',
       ),
       status: ActivityStatus.fromString(json['status'] ?? 'planned'),
       priority: Priority.fromString(json['priority'] ?? 'medium'),
       startDate: json['start_date'] != null
           ? DateTime.parse(json['start_date'])
+          : json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
           : null,
       endDate: json['end_date'] != null
           ? DateTime.parse(json['end_date'])
+          : json['endDate'] != null
+          ? DateTime.parse(json['endDate'])
           : null,
       durationMinutes: json['duration_minutes'],
       location: json['location'] != null
@@ -356,8 +360,8 @@ class ActivityModel {
       notes: json['notes'],
       tags: List<String>.from(json['tags'] ?? []),
       attachments: List<String>.from(json['attachments'] ?? []),
-      tripId: json['trip_id'],
-      checkIn: json['check_in'] ?? false,
+      tripId: json['trip_id'] ?? json['tripId'],
+      checkIn: json['check_in'] ?? json['checkIn'] ?? false,
       createdBy: json['created_by'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])

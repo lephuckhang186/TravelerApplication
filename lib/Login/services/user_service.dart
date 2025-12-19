@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserService {
   static const String _keyUsername = 'username';
@@ -165,7 +167,7 @@ class UserService {
   Future<bool> login(String username, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Check credentials
       final savedHashedPassword = prefs.getString('user_$username');
       if (savedHashedPassword != null && BCrypt.checkpw(password, savedHashedPassword)) {
@@ -173,11 +175,15 @@ class UserService {
         await prefs.setString(_keyUsername, username);
         await prefs.setBool(_keyIsLoggedIn, true);
         _currentUsername = username;
-        
+
         // Load user profile data
         _currentAvatarPath = prefs.getString('${_keyAvatarPath}_$username');
         _currentEmail = prefs.getString('${_keyEmail}_$username');
         _currentFullName = prefs.getString('${_keyFullName}_$username');
+
+        // Authenticate with Firebase anonymously for Firestore access
+        await _authenticateWithFirebase();
+
         return true;
       }
       return false;
@@ -429,35 +435,54 @@ class UserService {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/users.json');
-      
+
       if (!await file.exists()) {
         return false; // File doesn't exist
       }
-      
+
       final jsonString = await file.readAsString();
       if (jsonString.isEmpty) {
         return false; // Empty file
       }
-      
+
       final List<dynamic> jsonList = jsonDecode(jsonString);
       final List<Map<String, dynamic>> users = jsonList.cast<Map<String, dynamic>>();
-      
+
       // Find and update user
       final userIndex = users.indexWhere((user) => user['username'] == username);
       if (userIndex >= 0) {
         users[userIndex]['email'] = email;
         users[userIndex]['updatedAt'] = DateTime.now().toIso8601String();
-        
+
         // Write back to file
         final updatedJsonString = jsonEncode(users);
         await file.writeAsString(updatedJsonString);
-        
+
         return true;
       }
-      
+
       return false; // User not found
     } catch (e) {
       return false;
+    }
+  }
+
+  // Authenticate with Firebase anonymously for Firestore access
+  Future<void> _authenticateWithFirebase() async {
+    try {
+      // Check if already authenticated
+      if (FirebaseAuth.instance.currentUser != null) {
+        debugPrint('DEBUG: UserService - Already authenticated with Firebase');
+        return;
+      }
+
+      // Sign in anonymously to get Firebase Auth context
+      final credential = await FirebaseAuth.instance.signInAnonymously();
+      debugPrint('DEBUG: UserService - Authenticated with Firebase anonymously: ${credential.user?.uid}');
+
+    } catch (e) {
+      debugPrint('DEBUG: UserService - Failed to authenticate with Firebase: $e');
+      // Don't throw error - collaboration features will be limited but app still works
     }
   }
 }

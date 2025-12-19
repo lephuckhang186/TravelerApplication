@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../Setting/screens/settings_screen.dart';
-import '../../Plan/screens/plan_screen.dart';
+import '../../Plan/screens/plan_wrapper_screen.dart';
 import '../../Analysis/screens/analysis_screen.dart';
 import '../../Map/screens/map_screen.dart';
-import '../../AltsManager/screens/alts_manager_screen.dart';
 import '../../Core/theme/app_theme.dart';
 import '../../Core/providers/app_mode_provider.dart';
+import '../../Plan/providers/collaboration_provider.dart';
 
 /// Home Screen - Travel & Tourism Dashboard
 class HomeScreen extends StatefulWidget {
@@ -19,18 +20,39 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize collaboration data only once when dependencies are ready
+    if (!_hasInitialized) {
+      _hasInitialized = true;
+      _initializeCollaborationData();
+    }
+  }
+
+  /// Initialize collaboration data in background
+  Future<void> _initializeCollaborationData() async {
+    try {
+      final collaborationProvider = context.read<CollaborationProvider>();
+      await collaborationProvider.initialize();
+      debugPrint('DEBUG: HomeScreen - Collaboration data initialized successfully');
+    } catch (e) {
+      debugPrint('DEBUG: HomeScreen - Failed to initialize collaboration data: $e');
+    }
+  }
+
   List<Widget> get _screens => [
-    const PlanScreen(),
+    const PlanWrapperScreen(), // Uses plan wrapper to switch between private/collaboration
     const AnalysisScreen(),
     const MapScreen(),
     const SettingsScreen(), // Used for Me
-    const AltsManagerScreen(), // For Collaboration mode
   ];
 
   @override
@@ -88,14 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Show Alts Manager only in Collaboration mode
-                      if (modeProvider.isCollaborationMode)
-                        _buildDynamicNavItem(
-                          iconPath: 'images/accountManager.png',
-                          label: 'Alts Manager',
-                          index: 4,
-                          isSelected: _currentIndex == 4,
-                        ),
                       _buildDynamicNavItem(
                         iconPath: 'images/blueprint.png',
                         label: 'Plan',

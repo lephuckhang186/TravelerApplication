@@ -347,6 +347,35 @@ class FirebaseService:
                     return None
                 return planner_data
             
+            # Pattern 4: shared_trips/{tripId} (Collaboration mode)
+            shared_trip_doc = self.db.collection('shared_trips').document(trip_id).get()
+            if shared_trip_doc.exists:
+                shared_trip_data = shared_trip_doc.to_dict()
+                print(f"✅ FOUND_AS_SHARED_TRIP: Trip {trip_id} exists in 'shared_trips' collection")
+                shared_trip_data['id'] = trip_id  # Ensure ID is set
+                # For shared trips, check if user is owner or collaborator
+                if user_id:
+                    owner_id = shared_trip_data.get('ownerId') or shared_trip_data.get('owner_id')
+                    if owner_id == user_id:
+                        print(f"✅ USER_IS_OWNER: User {user_id} is owner of shared trip")
+                        return shared_trip_data
+                    
+                    # Check if user is collaborator
+                    collaborators = shared_trip_data.get('sharedCollaborators', [])
+                    is_collaborator = any(
+                        c.get('userId') == user_id or c.get('user_id') == user_id 
+                        for c in collaborators
+                    )
+                    if is_collaborator:
+                        print(f"✅ USER_IS_COLLABORATOR: User {user_id} is collaborator on shared trip")
+                        return shared_trip_data
+                    
+                    print(f"❌ USER_NO_ACCESS: User {user_id} has no access to shared trip")
+                    return None
+                
+                # If no user_id provided, return the trip (for public access check later)
+                return shared_trip_data
+            
             print(f"❌ TRIP_NOT_FOUND: Trip {trip_id} not found in any collection")
             return None
         except Exception as e:
@@ -759,6 +788,353 @@ class FirebaseService:
             return True
         except Exception as e:
             print(f"❌ FIRESTORE_DELETE_COLLABORATOR_ERROR: {e}")
+            return False
+    
+    async def update_collaborator_role(self, planner_id: str, user_id: str, new_role: str) -> bool:
+        """Update a collaborator's role"""
+        try:
+            collab_id = f"collab_{planner_id}_{user_id}"
+            self.db.collection('collaborators').document(collab_id).update({
+                'role': new_role,
+                'updated_at': datetime.utcnow().isoformat()
+            })
+            print(f"✅ FIRESTORE: Updated collaborator {collab_id} role to {new_role}")
+            return True
+        except Exception as e:
+            print(f"❌ FIRESTORE_UPDATE_COLLABORATOR_ERROR: {e}")
+            return False
+    
+    # ============= EDIT REQUEST MANAGEMENT =============
+    
+    async def create_edit_request(self, trip_id: str, requester_id: str, requester_name: str, 
+                                  requester_email: str, owner_id: str, message: str = None) -> Dict[str, Any]:
+        """Create a new edit access request"""
+        try:
+            request_id = f"edit_req_{trip_id}_{requester_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            
+            request_doc = {
+                'id': request_id,
+                'trip_id': trip_id,
+                'requester_id': requester_id,
+                'requester_name': requester_name,
+                'requester_email': requester_email,
+                'owner_id': owner_id,
+                'status': 'pending',
+                'message': message,
+                'requested_at': datetime.utcnow().isoformat(),
+                'responded_at': None,
+                'responded_by': None
+            }
+            
+            self.db.collection('edit_requests').document(request_id).set(request_doc)
+            print(f"✅ FIRESTORE: Created edit request {request_id}")
+            return request_doc
+        except Exception as e:
+            print(f"❌ FIRESTORE_EDIT_REQUEST_ERROR: {e}")
+            raise
+    
+    async def get_trip_edit_requests(self, trip_id: str, status: str = None) -> List[Dict[str, Any]]:
+        """Get all edit requests for a trip"""
+        try:
+            query = self.db.collection('edit_requests').where('trip_id', '==', trip_id)
+            if status:
+                query = query.where('status', '==', status)
+            
+            requests_ref = query.stream()
+            requests = [doc.to_dict() for doc in requests_ref]
+            return sorted(requests, key=lambda x: x.get('requested_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_EDIT_REQUESTS_ERROR: {e}")
+            return []
+    
+    async def get_user_edit_requests(self, user_id: str, status: str = None) -> List[Dict[str, Any]]:
+        """Get all edit requests by a user"""
+        try:
+            query = self.db.collection('edit_requests').where('requester_id', '==', user_id)
+            if status:
+                query = query.where('status', '==', status)
+            
+            requests_ref = query.stream()
+            requests = [doc.to_dict() for doc in requests_ref]
+            return sorted(requests, key=lambda x: x.get('requested_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_USER_EDIT_REQUESTS_ERROR: {e}")
+            return []
+    
+    async def get_owner_edit_requests(self, owner_id: str, status: str = None) -> List[Dict[str, Any]]:
+        """Get all edit requests for trips owned by a user"""
+        try:
+            query = self.db.collection('edit_requests').where('owner_id', '==', owner_id)
+            if status:
+                query = query.where('status', '==', status)
+            
+            requests_ref = query.stream()
+            requests = [doc.to_dict() for doc in requests_ref]
+            return sorted(requests, key=lambda x: x.get('requested_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_OWNER_EDIT_REQUESTS_ERROR: {e}")
+            return []
+    
+    async def get_edit_request(self, request_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific edit request"""
+        try:
+            request_doc = self.db.collection('edit_requests').document(request_id).get()
+            if request_doc.exists:
+                return request_doc.to_dict()
+            return None
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_EDIT_REQUEST_ERROR: {e}")
+            return None
+    
+    async def update_edit_request(self, request_id: str, status: str, responded_by: str) -> Optional[Dict[str, Any]]:
+        """Update edit request status"""
+        try:
+            request_ref = self.db.collection('edit_requests').document(request_id)
+            request_doc = request_ref.get()
+            
+            if not request_doc.exists:
+                return None
+            
+            updates = {
+                'status': status,
+                'responded_by': responded_by,
+                'responded_at': datetime.utcnow().isoformat()
+            }
+            
+            request_ref.update(updates)
+            print(f"✅ FIRESTORE: Updated edit request {request_id} to {status}")
+            
+            return await self.get_edit_request(request_id)
+        except Exception as e:
+            print(f"❌ FIRESTORE_UPDATE_EDIT_REQUEST_ERROR: {e}")
+            return None
+    
+    async def delete_edit_request(self, request_id: str) -> bool:
+        """Delete an edit request"""
+        try:
+            self.db.collection('edit_requests').document(request_id).delete()
+            print(f"✅ FIRESTORE: Deleted edit request {request_id}")
+            return True
+        except Exception as e:
+            print(f"❌ FIRESTORE_DELETE_EDIT_REQUEST_ERROR: {e}")
+            return False
+    
+    async def check_pending_edit_request(self, trip_id: str, requester_id: str) -> Optional[Dict[str, Any]]:
+        """Check if user has a pending edit request for this trip"""
+        try:
+            requests_ref = (self.db.collection('edit_requests')
+                          .where('trip_id', '==', trip_id)
+                          .where('requester_id', '==', requester_id)
+                          .where('status', '==', 'pending')
+                          .stream())
+
+            for doc in requests_ref:
+                return doc.to_dict()
+            return None
+        except Exception as e:
+            print(f"❌ FIRESTORE_CHECK_PENDING_REQUEST_ERROR: {e}")
+            return None
+
+    # ============= ACTIVITY EDIT REQUEST MANAGEMENT =============
+
+    async def create_activity_edit_request(self, trip_id: str, request_type: str, requester_id: str,
+                                          requester_name: str, requester_email: str, owner_id: str,
+                                          activity_id: str = None, proposed_changes: dict = None,
+                                          message: str = None, activity_title: str = None) -> Dict[str, Any]:
+        """Create a new activity edit request"""
+        try:
+            request_id = f"activity_req_{trip_id}_{requester_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+            request_doc = {
+                'id': request_id,
+                'trip_id': trip_id,
+                'request_type': request_type,
+                'requester_id': requester_id,
+                'requester_name': requester_name,
+                'requester_email': requester_email,
+                'owner_id': owner_id,
+                'activity_id': activity_id,
+                'proposed_changes': proposed_changes,
+                'status': 'pending',
+                'message': message,
+                'activity_title': activity_title,
+                'requested_at': datetime.utcnow().isoformat(),
+                'responded_at': None,
+                'responded_by': None
+            }
+
+            self.db.collection('activity_edit_requests').document(request_id).set(request_doc)
+            print(f"✅ FIRESTORE: Created activity edit request {request_id}")
+            return request_doc
+        except Exception as e:
+            print(f"❌ FIRESTORE_ACTIVITY_EDIT_REQUEST_ERROR: {e}")
+            raise
+
+    async def get_trip_activity_edit_requests(self, trip_id: str, status: str = None) -> List[Dict[str, Any]]:
+        """Get all activity edit requests for a trip"""
+        try:
+            query = self.db.collection('activity_edit_requests').where('trip_id', '==', trip_id)
+            if status:
+                query = query.where('status', '==', status)
+
+            requests_ref = query.stream()
+            requests = [doc.to_dict() for doc in requests_ref]
+            return sorted(requests, key=lambda x: x.get('requested_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_ACTIVITY_EDIT_REQUESTS_ERROR: {e}")
+            return []
+
+    async def get_user_activity_edit_requests(self, user_id: str, status: str = None) -> List[Dict[str, Any]]:
+        """Get all activity edit requests by a user"""
+        try:
+            query = self.db.collection('activity_edit_requests').where('requester_id', '==', user_id)
+            if status:
+                query = query.where('status', '==', status)
+
+            requests_ref = query.stream()
+            requests = [doc.to_dict() for doc in requests_ref]
+            return sorted(requests, key=lambda x: x.get('requested_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_USER_ACTIVITY_EDIT_REQUESTS_ERROR: {e}")
+            return []
+
+    async def get_owner_activity_edit_requests(self, owner_id: str, status: str = None) -> List[Dict[str, Any]]:
+        """Get all activity edit requests for trips owned by a user"""
+        try:
+            query = self.db.collection('activity_edit_requests').where('owner_id', '==', owner_id)
+            if status:
+                query = query.where('status', '==', status)
+
+            requests_ref = query.stream()
+            requests = [doc.to_dict() for doc in requests_ref]
+            return sorted(requests, key=lambda x: x.get('requested_at', ''), reverse=True)
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_OWNER_ACTIVITY_EDIT_REQUESTS_ERROR: {e}")
+            return []
+
+    async def get_activity_edit_request(self, request_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific activity edit request"""
+        try:
+            request_doc = self.db.collection('activity_edit_requests').document(request_id).get()
+            if request_doc.exists:
+                return request_doc.to_dict()
+            return None
+        except Exception as e:
+            print(f"❌ FIRESTORE_GET_ACTIVITY_EDIT_REQUEST_ERROR: {e}")
+            return None
+
+    async def update_activity_edit_request(self, request_id: str, status: str, responded_by: str) -> Optional[Dict[str, Any]]:
+        """Update activity edit request status"""
+        try:
+            request_ref = self.db.collection('activity_edit_requests').document(request_id)
+            request_doc = request_ref.get()
+
+            if not request_doc.exists:
+                return None
+
+            updates = {
+                'status': status,
+                'responded_by': responded_by,
+                'responded_at': datetime.utcnow().isoformat()
+            }
+
+            request_ref.update(updates)
+            print(f"✅ FIRESTORE: Updated activity edit request {request_id} to {status}")
+
+            return await self.get_activity_edit_request(request_id)
+        except Exception as e:
+            print(f"❌ FIRESTORE_UPDATE_ACTIVITY_EDIT_REQUEST_ERROR: {e}")
+            return None
+
+    async def delete_activity_edit_request(self, request_id: str) -> bool:
+        """Delete an activity edit request"""
+        try:
+            self.db.collection('activity_edit_requests').document(request_id).delete()
+            print(f"✅ FIRESTORE: Deleted activity edit request {request_id}")
+            return True
+        except Exception as e:
+            print(f"❌ FIRESTORE_DELETE_ACTIVITY_EDIT_REQUEST_ERROR: {e}")
+            return False
+
+    async def update_trip_activities(self, trip_id: str, activities: List[Dict[str, Any]]) -> bool:
+        """Update activities for a trip"""
+        try:
+            # Try different storage patterns
+            updated = False
+
+            # Pattern 1: Update trips/{tripId} (Backend structure)
+            try:
+                trip_ref = self.db.collection('trips').document(trip_id)
+                trip_doc = trip_ref.get()
+                if trip_doc.exists:
+                    trip_ref.update({
+                        'activities': activities,
+                        'updated_at': datetime.utcnow().isoformat()
+                    })
+                    print(f"✅ UPDATED_TRIP_ACTIVITIES: trips/{trip_id}")
+                    updated = True
+            except Exception as e:
+                print(f"⚠️ Could not update trips/{trip_id}: {e}")
+
+            # Pattern 2: Update shared_trips/{tripId} (Collaboration mode)
+            try:
+                shared_trip_ref = self.db.collection('shared_trips').document(trip_id)
+                shared_trip_doc = shared_trip_ref.get()
+                if shared_trip_doc.exists:
+                    original_data = shared_trip_doc.to_dict()
+                    print(f"📝 UPDATING_SHARED_TRIP: {trip_id}")
+                    print(f"   Original activities count: {len(original_data.get('activities', []))}")
+                    print(f"   New activities count: {len(activities)}")
+
+                    # Update activities field
+                    update_data = {
+                        'activities': activities,
+                        'updatedAt': datetime.utcnow().isoformat()
+                    }
+
+                    print(f"   Update data: {update_data}")
+                    shared_trip_ref.update(update_data)
+                    print(f"✅ FIRESTORE_UPDATE_CALLED: shared_trips/{trip_id}")
+
+                    # Wait a moment for consistency
+                    import time
+                    time.sleep(0.1)
+
+                    # Verify the update by reading again
+                    updated_doc = shared_trip_ref.get()
+                    if updated_doc.exists:
+                        updated_data = updated_doc.to_dict()
+                        actual_activities = updated_data.get('activities', [])
+                        print(f"🔍 VERIFIED_UPDATE: Trip now has {len(actual_activities)} activities in DB")
+
+                        # Check if activities actually changed
+                        if len(actual_activities) == len(activities):
+                            print(f"✅ ACTIVITIES_COUNT_MATCH: Expected {len(activities)}, got {len(actual_activities)}")
+                        else:
+                            print(f"❌ ACTIVITIES_COUNT_MISMATCH: Expected {len(activities)}, got {len(actual_activities)}")
+
+                        # Print first activity to verify content
+                        if actual_activities:
+                            first_activity = actual_activities[0]
+                            print(f"🔍 FIRST_ACTIVITY: {first_activity.get('title', 'No title')} - {first_activity.get('id', 'No ID')}")
+                    else:
+                        print(f"❌ VERIFICATION_FAILED: Document no longer exists after update")
+
+                    updated = True
+                else:
+                    print(f"❌ SHARED_TRIP_NOT_FOUND: shared_trips/{trip_id} does not exist")
+                    print(f"   Available collections might be: trips, planners, user subcollections")
+            except Exception as e:
+                print(f"⚠️ Could not update shared_trips/{trip_id}: {e}")
+                import traceback
+                traceback.print_exc()
+
+            if not updated:
+                print(f"❌ UPDATE_TRIP_ACTIVITIES_FAILED: Trip {trip_id} not found in any collection")
+            return updated
+
+        except Exception as e:
+            print(f"❌ FIRESTORE_UPDATE_TRIP_ACTIVITIES_ERROR: {e}")
             return False
 
 # Global Firebase service instance
