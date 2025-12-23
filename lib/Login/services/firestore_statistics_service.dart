@@ -134,8 +134,6 @@ class FirestoreStatisticsService {
   /// Listen to trips and expenses changes
   void _listenToTripsAndExpenses(String userId) {
     UserTravelStats currentStats = UserTravelStats.empty();
-    bool tripsLoaded = false;
-    bool expensesLoaded = false;
 
     // Emit empty stats immediately to show UI quickly
     _statsController?.add(currentStats);
@@ -164,12 +162,10 @@ class FirestoreStatisticsService {
         totalDays2025: tripsStats['totalDays2025'],
       );
       
-      tripsLoaded = true;
       // Emit stats immediately when trips are loaded, don't wait for expenses
       _statsController?.add(currentStats);
     }, onError: (error) {
       debugPrint('Error loading trips: $error');
-      tripsLoaded = true;
       _statsController?.add(currentStats);
     });
 
@@ -192,12 +188,10 @@ class FirestoreStatisticsService {
         averageExpensePerTrip: averageExpensePerTrip,
       );
       
-      expensesLoaded = true;
       // Always emit updated stats when expenses are loaded
       _statsController?.add(currentStats);
     }, onError: (error) {
       debugPrint('Error loading expenses: $error');
-      expensesLoaded = true;
       // Continue without expenses data
       _statsController?.add(currentStats);
     });

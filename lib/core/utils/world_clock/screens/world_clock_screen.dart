@@ -43,7 +43,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
             onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
-            'Múi giờ thế giới',
+            'World Clock',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 18,
@@ -62,8 +62,8 @@ class _WorldClockScreenState extends State<WorldClockScreen>
               fontWeight: FontWeight.w600,
             ),
             tabs: const [
-              Tab(text: 'Yêu thích'),
-              Tab(text: 'Tất cả'),
+              Tab(text: 'Favorites'),
+              Tab(text: 'All'),
             ],
           ),
         ),
@@ -79,7 +79,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                     controller: _searchController,
                     onChanged: provider.setSearchQuery,
                     decoration: InputDecoration(
-                      hintText: 'Tìm kiếm thành phố...',
+                      hintText: 'Search city...',
                       hintStyle: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         color: Colors.grey[500],
@@ -146,7 +146,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                 Icon(Icons.favorite_outline, size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
-                  'Chưa có múi giờ yêu thích',
+                  'No favorite time zones yet',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
@@ -156,7 +156,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Thêm múi giờ vào danh sách yêu thích\nđể theo dõi dễ dàng hơn',
+                  'Add time zones to favorites\nfor easier tracking',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
@@ -198,7 +198,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                 Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
-                  'Không tìm thấy kết quả',
+                  'No results found',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
@@ -208,7 +208,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Thử tìm kiếm với từ khóa khác',
+                  'Try searching with different keywords',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 14,
@@ -361,7 +361,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          clockData.isDayTime ? 'Ngày' : 'Đêm',
+                          clockData.isDayTime ? 'Day' : 'Night',
                           style: TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             fontSize: 11,

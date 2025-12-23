@@ -13,7 +13,6 @@ import '../models/collaboration_models.dart';
 import '../services/trip_planning_service.dart';
 import '../services/firebase_trip_service.dart';
 import '../services/activity_edit_request_service.dart';
-import '../widgets/activity_edit_request_approval_dialog.dart';
 import '../widgets/activity_edit_request_widget.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
@@ -511,7 +510,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   bool get isViewer => _userRole == 'viewer';
 
   // Force UI rebuild when permissions might have changed
-  int _permissionUpdateCounter = 0;
 
   @override
   void initState() {
@@ -3527,32 +3525,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     return startStr;
   }
 
-  /// Refresh trip data from provider
-  Future<void> _refreshTripData(SharedTripModel updatedTrip) async {
-    if (_isRefreshing) return;
-
-    setState(() {
-      _isRefreshing = true;
-    });
-
-    try {
-      // Update trip and activities
-      setState(() {
-        _trip = updatedTrip.toTripModel();
-        _activities = List<ActivityModel>.from(updatedTrip.activities);
-      });
-
-      debugPrint('✅ Refreshed trip data: ${updatedTrip.name} (${updatedTrip.activities.length} activities)');
-    } catch (e) {
-      debugPrint('❌ Failed to refresh trip data: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-        });
-      }
-    }
-  }
 
   /// Auto-refresh local trip data when collaboration provider updates
   void _autoRefreshFromProvider(CollaborationProvider collabProvider) {
@@ -3569,7 +3541,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         return;
       }
 
-      if (updatedTrip == null) return;
 
       // Check if the trip data has actually changed
       final currentActivities = _activities;
@@ -3579,13 +3550,13 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       final hasChanges = currentActivities.length != providerActivities.length ||
           updatedTrip.updatedAt != _trip.updatedAt;
 
-      if (hasChanges && updatedTrip != null) {
+      if (hasChanges) {
         debugPrint('🔄 AUTO_REFRESH: Detected changes in trip ${updatedTrip.id}, updating local state...');
 
         // Update local state with provider data
         setState(() {
           _trip = updatedTrip!.toTripModel();
-          _activities = List<ActivityModel>.from(updatedTrip!.activities);
+          _activities = List<ActivityModel>.from(updatedTrip.activities);
         });
 
         debugPrint('✅ AUTO_REFRESH: Updated local trip data - ${_activities.length} activities');
@@ -3613,13 +3584,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               orElse: () => collabProvider.sharedWithMeTrips
                   .firstWhere((t) => t.id == _trip.id));
 
-      if (updatedTrip != null) {
-        setState(() {
-          _trip = updatedTrip.toTripModel();
-          _activities = List<ActivityModel>.from(updatedTrip.activities);
-        });
-      }
-
+      setState(() {
+        _trip = updatedTrip.toTripModel();
+        _activities = List<ActivityModel>.from(updatedTrip.activities);
+      });
+    
       // IMPORTANT: Force re-check user permissions after refresh
       // Add a small delay to ensure provider data is fully updated
       await Future.delayed(const Duration(milliseconds: 500));
@@ -3778,90 +3747,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
   }
 
-  /// Show activity edit requests dialog for owners
-  void _showActivityEditRequestsDialog() async {
-    try {
-      final service = ActivityEditRequestService();
-      final requests = await service.getPendingActivityEditApprovals();
-
-      // Filter requests for this specific trip
-      final tripRequests = requests.where((req) => req.tripId == _trip.id).toList();
-
-      if (mounted) {
-        ActivityEditRequestApprovalDialog.show(
-          context,
-          requests: tripRequests,
-          onRequestHandled: () async {
-            // Refresh trip data directly from Firebase after handling requests
-            try {
-              debugPrint('🔄 Refreshing trip data after request approval...');
-
-              // Force refresh collaboration provider to get latest shared trip data
-              final collabProvider = context.read<CollaborationProvider>();
-              await collabProvider.initialize();
-
-              // Get updated trip from refreshed collaboration provider
-              final updatedTrip = collabProvider.mySharedTrips
-                  .firstWhere((t) => t.id == _trip.id,
-                      orElse: () => collabProvider.sharedWithMeTrips
-                          .firstWhere((t) => t.id == _trip.id));
-
-              if (updatedTrip != null) {
-                setState(() {
-                  _trip = updatedTrip;
-                  _activities = List<ActivityModel>.from(updatedTrip.activities);
-                });
-                debugPrint('✅ Trip data refreshed from Firebase: ${_activities.length} activities');
-
-                // Also update collaboration provider with new data
-                try {
-                  final sharedTrip = collabProvider.mySharedTrips
-                      .firstWhere((t) => t.id == _trip.id,
-                          orElse: () => collabProvider.sharedWithMeTrips
-                              .firstWhere((t) => t.id == _trip.id));
-
-                  if (sharedTrip != null) {
-                    final updatedSharedTrip = sharedTrip.copyWith(
-                      activities: _activities,
-                      updatedAt: DateTime.now(),
-                    );
-                    await collabProvider.updateSharedTrip(updatedSharedTrip);
-                    debugPrint('✅ Collaboration provider updated with new activities');
-                  }
-                } catch (collabError) {
-                  debugPrint('⚠️ Could not update collaboration provider: $collabError');
-                }
-              } else {
-                debugPrint('❌ Trip not found in Firebase after refresh');
-              }
-
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Trip updated with approved changes')),
-                );
-              }
-            } catch (e) {
-              debugPrint('❌ Failed to refresh after handling requests: $e');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Request processed but failed to refresh: $e')),
-                );
-              }
-            }
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load activity edit requests: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
   /// Show manage permissions dialog (only for collaboration trips and owners)
   void _showManagePermissionsDialog() {
@@ -3879,7 +3764,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             orElse: () => collabProvider.sharedWithMeTrips
                 .firstWhere((t) => t.id == _trip.id));
 
-    if (sharedTrip == null) return;
 
     showModalBottomSheet(
       context: context,

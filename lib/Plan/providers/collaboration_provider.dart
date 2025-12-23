@@ -7,16 +7,12 @@ import '../models/collaboration_models.dart';
 import '../models/trip_model.dart';
 import '../services/collaboration_trip_service.dart';
 
-import '../services/trip_planning_service.dart';
 import '../services/firebase_trip_service.dart';
-import '../services/budget_sync_service.dart';
 
 /// Provider for collaboration mode - unified with private mode backend
 class CollaborationProvider extends ChangeNotifier {
   final CollaborationTripService _collaborationService = CollaborationTripService();
-  final TripPlanningService _apiService = TripPlanningService();
   final FirebaseTripService _firebaseService = FirebaseTripService();
-  final BudgetSyncService _budgetSyncService = BudgetSyncService();
 
   // Getter to access service (for external access)
   CollaborationTripService get collaborationService => _collaborationService;
@@ -102,13 +98,6 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Initialize provider automatically when first accessed
-  Future<void> _autoInitializeIfNeeded() async {
-    if (!hasSharedTrips && !_isLoading) {
-      debugPrint('🔄 AUTO_INIT: Auto-initializing provider...');
-      await initialize();
-    }
-  }
 
   /// Initialize collaboration data (kept for backward compatibility)
   Future<void> initializeCollaboration() async {

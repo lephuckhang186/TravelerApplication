@@ -36,7 +36,6 @@ class ActivityEditRequestService {
   }) async {
     try {
       final headers = await _getHeaders();
-      final user = FirebaseAuth.instance.currentUser!;
 
       final response = await http.post(
         Uri.parse('$baseUrl/activity-edit-requests/'),

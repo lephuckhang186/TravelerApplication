@@ -394,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Icon(Icons.qr_code, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 6),
                     Text(
-                      'Trang cá nhân',
+                      'Personal Profile',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
@@ -636,7 +636,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       width: 180, // Fixed width per utility item
                       child: _buildRectangularUtilityItem(
                         Icons.currency_exchange,
-                        'Chuyển đổi tiền tệ',
+                        'Currency Exchange',
                         const Color(0xFFFF9800), // Orange
                         () => _onCurrencyConverter(),
                       ),
@@ -647,7 +647,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       width: 160, // Fixed width per utility item
                       child: _buildRectangularUtilityItem(
                         Icons.translate,
-                        'Dịch văn bản',
+                        'Text Translation',
                         const Color(0xFF9C27B0), // Purple
                         () => _onTranslation(),
                       ),
@@ -658,7 +658,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       width: 160, // Fixed width per utility item
                       child: _buildRectangularUtilityItem(
                         Icons.cloud,
-                        'Thời tiết',
+                        'Weather',
                         const Color(0xFF2196F3), // Blue
                         () => _onWeather(),
                       ),
@@ -669,7 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       width: 160, // Fixed width per utility item
                       child: _buildRectangularUtilityItem(
                         Icons.access_time,
-                        'Múi giờ thế giới',
+                        'World Clock',
                         const Color(0xFF4CAF50), // Green
                         () => _onWorldClock(),
                       ),
@@ -1048,19 +1048,19 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           _buildMenuListItem(
             Icons.help_center_outlined,
-            'Trung tâm trợ giúp',
+            'Help Center',
             () => _onHelpCenter(),
           ),
           _buildMenuDivider(),
           _buildMenuListItem(
             Icons.lock_reset_outlined,
-            'Đổi mật khẩu',
+            'Change Password',
             () => _onChangePassword(),
           ),
           _buildMenuDivider(),
           _buildMenuListItem(
             Icons.share_outlined,
-            'Chia sẻ góp ý',
+            'Share Feedback',
             () => _onShareFeedback(),
           ),
           _buildMenuDivider(),
@@ -1223,14 +1223,14 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
         content: Text(
-          'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
+          'Are you sure you want to logout from the app?',
           style: TextStyle(fontFamily: 'Urbanist-Regular'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Hủy',
+              'Cancel',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 color: Colors.grey[600],

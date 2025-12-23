@@ -44,7 +44,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            'Thời tiết',
+            'Weather',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 18,
@@ -100,7 +100,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
           }
         },
         decoration: InputDecoration(
-          hintText: 'Tìm kiếm thành phố...',
+          hintText: 'Search city...',
           hintStyle: TextStyle(
             fontFamily: 'Urbanist-Regular',
             color: Colors.grey[500],
@@ -174,7 +174,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Đang tải thông tin thời tiết...'),
+            Text('Loading weather information...'),
           ],
         ),
       );
@@ -199,7 +199,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => provider.loadCurrentLocationWeather(),
-              child: const Text('Thử lại'),
+              child: const Text('Try Again'),
             ),
           ],
         ),
@@ -214,7 +214,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
             Icon(Icons.cloud_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Tìm kiếm thành phố để xem thời tiết',
+              'Search for a city to view weather',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
@@ -259,92 +259,53 @@ class _WeatherScreenState extends State<WeatherScreen> {
             ),
             child: Column(
               children: [
-                // Location and Favorite Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Location
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            weather.cityName,
-                            style: TextStyle(
-                              fontFamily: 'Urbanist-Regular',
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            weather.country,
-                            style: TextStyle(
-                              fontFamily: 'Urbanist-Regular',
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        provider.isFavorite(weather)
-                            ? Icons.favorite
-                            : Icons.favorite_border,
+                    Text(
+                      weather.cityName,
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
-                      onPressed: () {
-                        if (provider.isFavorite(weather)) {
-                          provider.removeFromFavorites(weather);
-                        } else {
-                          provider.addToFavorites(weather);
-                        }
-                      },
+                    ),
+                    Text(
+                      weather.country,
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
                     ),
                   ],
                 ),
                 
                 const SizedBox(height: 20),
                 
-                // Temperature and Icon
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                // Temperature and Description
+                Column(
                   children: [
-                    Column(
-                      children: [
-                        Text(
-                          weather.temperatureCelsius,
-                          style: TextStyle(
-                            fontFamily: 'Urbanist-Regular',
-                            fontSize: 64,
-                            fontWeight: FontWeight.w300,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          weather.description.toUpperCase(),
-                          style: TextStyle(
-                            fontFamily: 'Urbanist-Regular',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white70,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      weather.temperatureCelsius,
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 64,
+                        fontWeight: FontWeight.w300,
+                        color: Colors.white,
+                      ),
                     ),
-                    Image.network(
-                      weather.iconUrl,
-                      width: 100,
-                      height: 100,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.cloud,
-                          size: 100,
-                          color: Colors.white70,
-                        );
-                      },
+                    Text(
+                      weather.description.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ],
                 ),
@@ -373,7 +334,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Chi tiết thời tiết',
+                  'Weather Details',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
@@ -388,7 +349,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     Expanded(
                       child: _buildDetailItem(
                         Icons.thermostat,
-                        'Cảm giác như',
+                        'Feels like',
                         weather.feelsLikeCelsius,
                         Colors.orange,
                       ),
@@ -396,7 +357,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     Expanded(
                       child: _buildDetailItem(
                         Icons.water_drop,
-                        'Độ ẩm',
+                        'Humidity',
                         '${weather.humidity}%',
                         Colors.blue,
                       ),
@@ -411,7 +372,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     Expanded(
                       child: _buildDetailItem(
                         Icons.air,
-                        'Gió',
+                        'Wind',
                         '${weather.windSpeed} m/s',
                         Colors.green,
                       ),
@@ -419,7 +380,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     Expanded(
                       child: _buildDetailItem(
                         Icons.speed,
-                        'Áp suất',
+                        'Pressure',
                         '${weather.pressure} hPa',
                         Colors.purple,
                       ),

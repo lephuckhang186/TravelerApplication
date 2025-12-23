@@ -328,7 +328,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Số tiền cần chuyển đổi',
+            'Amount to convert',
             style: TextStyle(fontFamily: 'Urbanist-Regular', 
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -426,7 +426,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               ),
               const SizedBox(width: 10),
               Text(
-                'Kết quả chuyển đổi',
+                'Conversion Result',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 14,
@@ -502,7 +502,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Thông tin tỷ giá',
+                'Exchange Rate Information',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -516,7 +516,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Tỷ giá hiện tại:',
+                'Current Exchange Rate:',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 13,
                   color: Colors.grey[700],
@@ -537,7 +537,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Cập nhật lúc:',
+                'Updated at:',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 13,
                   color: Colors.grey[700],
@@ -580,7 +580,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi tải tỷ giá: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error loading exchange rate: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -616,7 +616,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi chuyển đổi: $e')));
+      ).showSnackBar(SnackBar(content: Text('Conversion error: $e')));
     }
   }
 
@@ -658,7 +658,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               ),
               const SizedBox(height: 20),
               Text(
-                'Chọn tiền tệ',
+                'Select Currency',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 20,
                   fontWeight: FontWeight.w700,

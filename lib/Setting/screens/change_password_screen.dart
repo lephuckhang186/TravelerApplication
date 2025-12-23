@@ -44,7 +44,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Đổi mật khẩu thành công!',
+              'Password changed successfully!',
               style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             backgroundColor: Colors.green,
@@ -139,30 +139,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   String? _validateCurrentPassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Vui lòng nhập mật khẩu hiện tại';
+      return 'Please enter current password';
     }
     return null;
   }
 
   String? _validateNewPassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Vui lòng nhập mật khẩu mới';
+      return 'Please enter new password';
     }
     if (value.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự';
+      return 'Password must be at least 6 characters';
     }
     if (value == _currentPasswordController.text) {
-      return 'Mật khẩu mới phải khác mật khẩu hiện tại';
+      return 'New password must be different from current password';
     }
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Vui lòng xác nhận mật khẩu mới';
+      return 'Please confirm new password';
     }
     if (value != _newPasswordController.text) {
-      return 'Mật khẩu xác nhận không khớp';
+      return 'Confirm password does not match';
     }
     return null;
   }
@@ -179,7 +179,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Đổi mật khẩu',
+          'Change Password',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -199,7 +199,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               
               // Mật khẩu hiện tại
               Text(
-                'Mật khẩu hiện tại',
+                'Current Password',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -213,7 +213,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 validator: _validateCurrentPassword,
                 style: TextStyle(fontFamily: 'Urbanist-Regular', ),
                 decoration: InputDecoration(
-                  hintText: 'Nhập mật khẩu hiện tại',
+                  hintText: 'Enter current password',
                   hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                   suffixIcon: IconButton(
@@ -254,7 +254,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               
               // Mật khẩu mới
               Text(
-                'Mật khẩu mới',
+                'New Password',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -268,7 +268,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 validator: _validateNewPassword,
                 style: TextStyle(fontFamily: 'Urbanist-Regular', ),
                 decoration: InputDecoration(
-                  hintText: 'Nhập mật khẩu mới',
+                  hintText: 'Enter new password',
                   hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                   suffixIcon: IconButton(
@@ -309,7 +309,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               
               // Xác nhận mật khẩu mới
               Text(
-                'Xác nhận mật khẩu mới',
+                'Confirm New Password',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', 
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -323,7 +323,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 validator: _validateConfirmPassword,
                 style: TextStyle(fontFamily: 'Urbanist-Regular', ),
                 decoration: InputDecoration(
-                  hintText: 'Xác nhận mật khẩu mới',
+                  hintText: 'Confirm new password',
                   hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                   suffixIcon: IconButton(
@@ -371,7 +371,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   ),
                   child: Text(
-                    'Quên mật khẩu?',
+                    'Forgot password?',
                     style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 14,
                       color: Colors.blue,
@@ -406,7 +406,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           ),
                         )
                       : Text(
-                          'Đổi mật khẩu',
+                          'Change Password',
                           style: TextStyle(fontFamily: 'Urbanist-Regular', 
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
