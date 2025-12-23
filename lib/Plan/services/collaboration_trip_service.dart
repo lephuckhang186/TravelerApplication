@@ -18,7 +18,6 @@ class CollaborationTripService {
   /// Get current user ID
   String? get _userId => _auth.currentUser?.uid;
   String? get _userEmail => _auth.currentUser?.email;
-  String? get _userName => _auth.currentUser?.displayName ?? _auth.currentUser?.email?.split('@').first;
 
   // Public getter for user ID
   String? get currentUserId => _userId;

@@ -13,90 +13,90 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
 
   final List<Map<String, dynamic>> _helpCategories = [
     {
-      'title': 'Bắt đầu sử dụng',
+      'title': 'Getting Started',
       'icon': Icons.rocket_launch,
       'color': Colors.purple,
       'items': [
         {
-          'question': 'Ứng dụng có những tính năng gì?',
+          'question': 'What features does the app have?',
           'answer':
-              'Ứng dụng có 3 tab chính:\n• Plan: Lập kế hoạch du lịch, tìm kiếm địa điểm, sử dụng AI Assistant\n• Analysis: Quản lý chi tiêu, xem báo cáo tài chính\n• Setting: Cài đặt tài khoản, tiện ích, hỗ trợ',
+              'The app has 3 main tabs:\n• Plan: Travel planning, location search, AI Assistant\n• Analysis: Expense management, financial reports\n• Setting: Account settings, utilities, support',
         },
         {
-          'question': 'Làm thế nào để điều hướng trong ứng dụng?',
+          'question': 'How to navigate in the app?',
           'answer':
-              'Sử dụng thanh điều hướng dưới cùng để chuyển đổi giữa 3 tab chính. Mỗi tab có các tính năng và màn hình con riêng biệt.',
+              'Use the bottom navigation bar to switch between the 3 main tabs. Each tab has its own features and sub-screens.',
         },
         {
-          'question': 'Tôi nên bắt đầu từ đâu?',
+          'question': 'Where should I start?',
           'answer':
-              'Khuyến nghị bắt đầu từ tab "Plan" để tạo kế hoạch du lịch đầu tiên. Sau đó sử dụng tab "Analysis" để theo dõi chi phí và tab "Setting" để tùy chỉnh ứng dụng.',
+              'Recommend starting from the "Plan" tab to create your first travel plan. Then use the "Analysis" tab to track expenses and "Setting" tab to customize the app.',
         },
       ],
     },
     {
-      'title': 'Lập kế hoạch du lịch',
+      'title': 'Travel Planning',
       'icon': Icons.event_note,
       'color': Colors.blue,
       'items': [
         {
-          'question': 'Cách tạo một kế hoạch du lịch mới?',
+          'question': 'How to create a new travel plan?',
           'answer':
-              'Vào tab "Plan" → nhấn nút "+" → nhập tên chuyến đi, thời gian, số người tham gia → chọn "Lưu". Bạn có thể thêm hoạt động, địa điểm, và ghi chú vào kế hoạch của mình.',
+              'Go to "Plan" tab → press "+" button → enter trip name, time, number of participants → select "Save". You can add activities, locations, and notes to your plan.',
         },
         {
-          'question': 'Có thể chia sẻ kế hoạch với bạn bè không?',
+          'question': 'Can I share plans with friends?',
           'answer':
-              'Có! Mở kế hoạch → nhấn nút "Chia sẻ" → chọn cách chia sẻ (link, email, mạng xã hội). Bạn bè có thể xem và đóng góp ý kiến cho kế hoạch của bạn.',
+              'Yes! Open plan → press "Share" button → choose sharing method (link, email, social media). Friends can view and contribute feedback to your plan.',
         },
         {
-          'question': 'Làm thế nào để AI hỗ trợ lập kế hoạch?',
+          'question': 'How does AI assist with planning?',
           'answer':
-              'Sử dụng tính năng AI Assistant bằng cách nhấn vào khung chat "Ask, chat, plan trip with AI...". AI sẽ gợi ý lịch trình, hoạt động phù hợp dựa trên sở thích và ngân sách của bạn.',
+              'Use AI Assistant by clicking the chat box "Ask, chat, plan trip with AI...". AI will suggest itineraries and suitable activities based on your preferences and budget.',
         },
       ],
     },
     {
-      'title': 'Quản lý chi tiêu',
+      'title': 'Expense Management',
       'icon': Icons.account_balance_wallet,
       'color': Colors.green,
       'items': [
         {
-          'question': 'Cách theo dõi chi phí trong chuyến đi?',
+          'question': 'How to track expenses during trips?',
           'answer':
-              'Vào tab "Analysis" → "Quản lý chi tiêu" → nhấn "+" để thêm khoản chi. Bạn có thể phân loại theo: ăn uống, di chuyển, lưu trú, mua sắm, giải trí.',
+              'Go to "Analysis" tab → "Expense Management" → press "+" to add expenses. You can categorize by: food, transportation, accommodation, shopping, entertainment.',
         },
         {
-          'question': 'Có thể đặt ngân sách cho chuyến đi không?',
+          'question': 'Can I set a budget for trips?',
           'answer':
-              'Có! Khi tạo kế hoạch mới, bạn có thể đặt ngân sách tổng. Ứng dụng sẽ theo dõi và cảnh báo khi chi tiêu gần đạt giới hạn đã đặt.',
+              'Yes! When creating a new plan, you can set a total budget. The app will track and alert when expenses approach the set limit.',
         },
         {
-          'question': 'Xem báo cáo chi tiêu như thế nào?',
+          'question': 'How to view expense reports?',
           'answer':
-              'Tab "Analysis" hiển thị biểu đồ chi tiêu theo danh mục, so sánh với tháng trước, và xu hướng chi tiêu. Bạn có thể export báo cáo dạng PDF hoặc Excel.',
+              'The "Analysis" tab displays expense charts by category, comparison with previous month, and spending trends. You can export reports in PDF or Excel format.',
         },
       ],
     },
     {
-      'title': 'Tài khoản & Bảo mật',
+      'title': 'Account & Security',
       'icon': Icons.account_circle,
       'color': Colors.orange,
       'items': [
         {
-          'question': 'Cách thay đổi thông tin cá nhân?',
+          'question': 'How to change personal information?',
           'answer':
-              'Vào tab "Setting" → nhấn vào "Trang cá nhân" hoặc avatar của bạn. Tại đây bạn có thể cập nhật tên, ảnh đại diện, và thông tin liên hệ.',
+              'Go to "Setting" tab → click on "Personal Profile" or your avatar. Here you can update name, profile picture, and contact information.',
         },
         {
-          'question': 'Dữ liệu của tôi có an toàn không?',
+          'question': 'Is my data safe?',
           'answer':
-              'Chúng tôi sử dụng mã hóa SSL và lưu trữ dữ liệu trên server bảo mật. Thông tin cá nhân không được chia sẻ với bên thứ ba mà không có sự đồng ý của bạn.',
+              'We use SSL encryption and store data on secure servers. Personal information is not shared with third parties without your consent.',
         },
         {
-          'question': 'Các tiện ích trong Setting có gì?',
+          'question': 'What utilities are available in Settings?',
           'answer':
-              'Tab Setting cung cấp nhiều tiện ích hữu ích:\n• Chuyển đổi tiền tệ\n• Dịch văn bản\n• Quản lý chi tiêu\n• Travel Stats\n• Cài đặt thông báo\n• Thay đổi mật khẩu',
+              'The Setting tab provides many useful utilities:\n• Currency Exchange\n• Text Translation\n• Expense Management\n• Travel Stats\n• Notification Settings\n• Change Password',
         },
       ],
     },
@@ -140,7 +140,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Trung tâm trợ giúp',
+          'Help Center',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
@@ -162,7 +162,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               child: TextField(
                 onChanged: (value) => setState(() => _searchQuery = value),
                 decoration: InputDecoration(
-                  hintText: 'Tìm kiếm câu hỏi...',
+                  hintText: 'Search questions...',
                   hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[500]),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                   border: InputBorder.none,
@@ -214,8 +214,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           ),
         ),
         subtitle: Text(
-          '${category['items'].length} câu hỏi',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          '${category['items'].length} questions',
+          style: TextStyle(fontFamily: 'Urbanist-Regular',
             fontSize: 12,
             color: Colors.grey[600],
           ),

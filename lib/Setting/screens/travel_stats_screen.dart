@@ -18,6 +18,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
   
   UserTravelStats _stats = UserTravelStats.empty();
   bool _isLoading = true;
+  bool _hasData = false;
   StreamSubscription<UserTravelStats>? _statsSubscription;
   
   @override
@@ -34,6 +35,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           setState(() {
             _stats = stats;
             _isLoading = false;
+            _hasData = true;
           });
         }
       },
@@ -42,10 +44,21 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         if (mounted) {
           setState(() {
             _isLoading = false;
+            _hasData = false;
           });
         }
       },
     );
+    
+    // Add timeout to prevent infinite loading
+    Timer(Duration(seconds: 10), () {
+      if (_isLoading && mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasData = false;
+        });
+      }
+    });
   }
 
   @override
@@ -76,14 +89,6 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.blue),
-            onPressed: () {
-              // Handle share functionality
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -136,8 +141,57 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
 
   Widget _buildAllStatsTab() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Loading your travel stats...',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_hasData) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.analytics_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No travel data yet',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Start planning your first trip to see statistics!',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       );
     }
 
@@ -170,8 +224,57 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
 
   Widget _buildYearStatsTab() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Loading your 2025 stats...',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_hasData) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No 2025 travel data',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Plan your first 2025 trip to see yearly statistics!',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       );
     }
 
@@ -276,11 +379,6 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
   Widget _buildStatsGrid({bool isYear2025 = false}) {
     final statsData = [
       {
-        'icon': Icons.calendar_today, 
-        'title': 'Total Days', 
-        'value': isYear2025 ? _stats.totalDays2025.toString() : _stats.totalDays.toString()
-      },
-      {
         'icon': Icons.card_travel, 
         'title': 'Total Trips', 
         'value': isYear2025 ? _stats.completedTrips2025.toString() : _stats.completedTrips.toString()
@@ -308,11 +406,6 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
 
   Widget _buildStatsList({bool isYear2025 = false}) {
     final statsData = [
-      {
-        'icon': Icons.calendar_today, 
-        'title': 'Total Days', 
-        'value': isYear2025 ? _stats.totalDays2025.toString() : _stats.totalDays.toString()
-      },
       {
         'icon': Icons.card_travel, 
         'title': 'Total Trips', 
@@ -576,28 +669,21 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                   _buildChartColumn(
                     'Plans',
                     _stats.totalPlans,
-                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
+                    _getMaxValue([_stats.totalPlans, _stats.checkedInLocations, _stats.completedTrips]),
                     Icons.event_note,
                     Colors.blue,
                   ),
                   _buildChartColumn(
-                    'Days',
-                    _stats.totalDays,
-                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
-                    Icons.calendar_today,
-                    Colors.green,
-                  ),
-                  _buildChartColumn(
                     'Locations',
                     _stats.checkedInLocations,
-                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
+                    _getMaxValue([_stats.totalPlans, _stats.checkedInLocations, _stats.completedTrips]),
                     Icons.location_on,
                     Colors.orange,
                   ),
                   _buildChartColumn(
                     'Trips',
                     _stats.completedTrips,
-                    _getMaxValue([_stats.totalPlans, _stats.totalDays, _stats.checkedInLocations, _stats.completedTrips]),
+                    _getMaxValue([_stats.totalPlans, _stats.checkedInLocations, _stats.completedTrips]),
                     Icons.flight,
                     Colors.purple,
                   ),
@@ -675,28 +761,21 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                   _buildChartColumn(
                     'Plans',
                     _stats.totalPlans2025,
-                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    _getMaxValue([_stats.totalPlans2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
                     Icons.event_note,
                     Colors.blue,
                   ),
                   _buildChartColumn(
-                    'Days',
-                    _stats.totalDays2025,
-                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
-                    Icons.calendar_today,
-                    Colors.green,
-                  ),
-                  _buildChartColumn(
                     'Locations',
                     _stats.checkedInLocations2025,
-                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    _getMaxValue([_stats.totalPlans2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
                     Icons.location_on,
                     Colors.orange,
                   ),
                   _buildChartColumn(
                     'Trips',
                     _stats.completedTrips2025,
-                    _getMaxValue([_stats.totalPlans2025, _stats.totalDays2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    _getMaxValue([_stats.totalPlans2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
                     Icons.flight,
                     Colors.purple,
                   ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/collaboration_models.dart';
 import '../services/activity_edit_request_service.dart';
 import '../../Core/theme/app_theme.dart';

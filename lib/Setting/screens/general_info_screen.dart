@@ -16,7 +16,7 @@ class GeneralInfoScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Thông tin chung',
+          'General Information',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
@@ -75,7 +75,7 @@ class GeneralInfoScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Ứng dụng lập kế hoạch du lịch thông minh',
+                        'Smart Travel Planning App',
                         style: TextStyle(fontFamily: 'Urbanist-Regular', 
                           fontSize: 14,
                           color: Colors.grey[600],
@@ -88,7 +88,7 @@ class GeneralInfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Travel Planner là ứng dụng giúp bạn khám phá, lên kế hoạch và quản lý chuyến du lịch một cách dễ dàng và thông minh. Với sự hỗ trợ của AI, chúng tôi mang đến trải nghiệm du lịch tuyệt vời nhất cho bạn.',
+              'Travel Planner is an app that helps you discover, plan and manage your travels easily and smartly. With AI support, we bring you the best travel experience possible.',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 14,
                 color: Colors.grey[700],
@@ -105,23 +105,23 @@ class GeneralInfoScreen extends StatelessWidget {
     final features = [
       {
         'icon': Icons.explore,
-        'title': 'Khám phá địa điểm',
-        'description': 'Tìm kiếm và khám phá các điểm đến hấp dẫn',
+        'title': 'Discover Places',
+        'description': 'Search and explore attractive destinations',
       },
       {
         'icon': Icons.event_note,
-        'title': 'Lập kế hoạch',
-        'description': 'Tạo lịch trình chi tiết cho chuyến đi',
+        'title': 'Plan Trips',
+        'description': 'Create detailed itineraries for your travels',
       },
       {
         'icon': Icons.account_balance_wallet,
-        'title': 'Quản lý chi tiêu',
-        'description': 'Theo dõi và phân tích chi phí du lịch',
+        'title': 'Manage Expenses',
+        'description': 'Track and analyze travel costs',
       },
       {
         'icon': Icons.smart_toy,
         'title': 'AI Assistant',
-        'description': 'Trợ lý AI thông minh hỗ trợ lập kế hoạch',
+        'description': 'Smart AI assistant for planning support',
       },
     ];
 
@@ -133,7 +133,7 @@ class GeneralInfoScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tính năng chính',
+              'Main Features',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -206,7 +206,7 @@ class GeneralInfoScreen extends StatelessWidget {
                 Icon(Icons.contact_support, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Liên hệ & Hỗ trợ',
+                  'Contact & Support',
                   style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -218,7 +218,7 @@ class GeneralInfoScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _buildContactItem(Icons.email, 'Email', 'teamtripwise@gmail.com'),
             _buildContactItem(Icons.phone, 'Hotline', '+84 898 999 033'),
-            _buildContactItem(Icons.location_on, 'Địa chỉ', 'Tp HCM, Việt Nam'),
+            _buildContactItem(Icons.location_on, 'Address', 'Ho Chi Minh City, Vietnam'),
           ],
         ),
       ),
@@ -234,7 +234,7 @@ class GeneralInfoScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Thông tin phiên bản',
+              'Version Information',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -242,10 +242,10 @@ class GeneralInfoScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _buildInfoItem('Phiên bản', '1.0.0'),
+            _buildInfoItem('Version', '1.0.0'),
             _buildInfoItem('Build', '2025.11.26'),
             _buildInfoItem('Platform', 'Flutter'),
-            _buildInfoItem('Cập nhật cuối', '26/11/2026'),
+            _buildInfoItem('Last Update', '26/11/2026'),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -259,7 +259,7 @@ class GeneralInfoScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: Text(
-                  'Kiểm tra cập nhật',
+                  'Check for Updates',
                   style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     color: AppColors.primary,
                     fontWeight: FontWeight.w500,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../Core/theme/app_theme.dart';
 import '../../Core/providers/app_mode_provider.dart';
 import 'create_planner_screen.dart';
 import 'planner_detail_screen.dart';

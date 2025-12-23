@@ -10,20 +10,20 @@ class ShareFeedbackScreen extends StatefulWidget {
 }
 
 class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
-  String _selectedCategory = 'Tính năng mới';
+  String _selectedCategory = 'New Feature';
   final TextEditingController _feedbackController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   int _rating = 5;
 
   final List<String> _categories = [
-    'Tính năng mới',
-    'Báo lỗi',
-    'Cải thiện hiệu suất',
-    'Giao diện người dùng',
-    'Quản lý chi tiêu',
-    'Lập kế hoạch du lịch',
-    'Khám phá địa điểm',
-    'Khác',
+    'New Feature',
+    'Bug Report',
+    'Performance Improvement',
+    'User Interface',
+    'Expense Management',
+    'Travel Planning',
+    'Location Discovery',
+    'Other',
   ];
 
   @override
@@ -38,7 +38,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Chia sẻ góp ý',
+          'Share Feedback',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
@@ -100,7 +100,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Góp ý của bạn rất quan trọng!',
+                    'Your feedback is very important!',
                     style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -112,7 +112,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Chúng tôi luôn lắng nghe và cải thiện ứng dụng để mang đến trải nghiệm du lịch tuyệt vời nhất cho bạn.',
+              'We always listen and improve the app to bring you the best travel experience.',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 14,
                 color: Colors.grey[700],
@@ -134,7 +134,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Đánh giá ứng dụng',
+              'Rate the App',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -184,7 +184,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Loại góp ý',
+              'Feedback Type',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -240,7 +240,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Chi tiết góp ý',
+              'Feedback Details',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -257,7 +257,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                 controller: _feedbackController,
                 maxLines: 6,
                 decoration: InputDecoration(
-                  hintText: 'Hãy chia sẻ chi tiết về trải nghiệm của bạn...',
+                  hintText: 'Please share details about your experience...',
                   hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[500]),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
@@ -280,7 +280,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Thông tin liên hệ (tùy chọn)',
+              'Contact Information (Optional)',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -289,7 +289,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Để chúng tôi có thể phản hồi nếu cần',
+              'So we can respond if needed',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -299,7 +299,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
-                hintText: 'Email của bạn',
+                hintText: 'Your email',
                 hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[500]),
                 prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[400]),
                 border: OutlineInputBorder(
@@ -334,7 +334,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           const Icon(Icons.send, color: Colors.white, size: 20),
           const SizedBox(width: 8),
           Text(
-            'Gửi góp ý',
+            'Send Feedback',
             style: TextStyle(fontFamily: 'Urbanist-Regular', 
               color: Colors.white,
               fontSize: 16,
@@ -351,7 +351,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Hoặc liên hệ trực tiếp',
+          'Or contact directly',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -375,7 +375,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                 Icons.phone,
                 'Hotline',
                 '+84 898 999 033',
-                () => _showSnackBar('Đang gọi hotline...'),
+                () => _showSnackBar('Calling hotline...'),
               ),
             ),
           ],
@@ -425,15 +425,15 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
   String _getRatingText() {
     switch (_rating) {
       case 1:
-        return 'Rất không hài lòng';
+        return 'Very Dissatisfied';
       case 2:
-        return 'Không hài lòng';
+        return 'Dissatisfied';
       case 3:
-        return 'Bình thường';
+        return 'Neutral';
       case 4:
-        return 'Hài lòng';
+        return 'Satisfied';
       case 5:
-        return 'Rất hài lòng';
+        return 'Very Satisfied';
       default:
         return '';
     }
@@ -441,7 +441,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
 
   void _submitFeedback() async {
     if (_feedbackController.text.trim().isEmpty) {
-      _showSnackBar('Vui lòng nhập chi tiết góp ý trước khi gửi');
+      _showSnackBar('Please enter feedback details before sending');
       return;
     }
 
@@ -456,7 +456,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text('Đang gửi góp ý...', style: TextStyle(fontFamily: 'Urbanist-Regular', )),
+            Text('Sending feedback...', style: TextStyle(fontFamily: 'Urbanist-Regular', )),
           ],
         ),
       ),
@@ -504,7 +504,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             Icon(Icons.email, color: Colors.green, size: 24),
             const SizedBox(width: 8),
             Text(
-              'Email đã mở!',
+              'Email opened!',
               style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
             ),
           ],
@@ -514,7 +514,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Email client đã được mở với nội dung góp ý được điền sẵn.',
+              'Email client has been opened with feedback content pre-filled.',
               style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             const SizedBox(height: 12),
@@ -531,7 +531,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Vui lòng kiểm tra email client và nhấn Send để gửi góp ý đến team TripWise.',
+                      'Please check your email client and press Send to submit feedback to the TripWise team.',
                       style: TextStyle(fontFamily: 'Urbanist-Regular', 
                         fontSize: 13,
                         color: Colors.blue[700],
@@ -550,7 +550,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               _showManualEmailDialog();
             },
             child: Text(
-              'Xem nội dung',
+              'View Content',
               style: TextStyle(fontFamily: 'Urbanist-Regular', color: AppColors.primary),
             ),
           ),
@@ -559,11 +559,11 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
               Navigator.pop(context);
               Navigator.pop(context);
               _resetForm();
-              _showSnackBar('Cảm ơn bạn đã gửi góp ý! 🎉');
+              _showSnackBar('Thank you for your feedback! 🎉');
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: Text(
-              'Hoàn thành',
+              'Complete',
               style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.white),
             ),
           ),
@@ -591,7 +591,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             Icon(Icons.content_copy, color: AppColors.primary, size: 24),
             const SizedBox(width: 8),
             Text(
-              'Thông tin Email',
+              'Email Information',
               style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
             ),
           ],
@@ -602,7 +602,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Nội dung email đã được copy vào clipboard. Bạn có thể paste vào email client:',
+                'Email content has been copied to clipboard. You can paste it into your email client:',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', ),
               ),
               const SizedBox(height: 16),
@@ -630,7 +630,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: Text(
-              'Đóng',
+              'Close',
               style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.white),
             ),
           ),
@@ -642,7 +642,7 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
   void _resetForm() {
     setState(() {
       _rating = 5;
-      _selectedCategory = 'Tính năng mới';
+      _selectedCategory = 'New Feature';
       _feedbackController.clear();
       _emailController.clear();
     });
@@ -652,20 +652,20 @@ class _ShareFeedbackScreenState extends State<ShareFeedbackScreen> {
     try {
       final success = await EmailService.sendFeedbackEmail(
         rating: _rating,
-        category: 'Liên hệ trực tiếp',
-        feedback: 'Người dùng muốn liên hệ trực tiếp với team',
+        category: 'Direct Contact',
+        feedback: 'User wants to contact the team directly',
         userEmail: _emailController.text.trim().isNotEmpty
             ? _emailController.text.trim()
             : null,
       );
 
       if (success) {
-        _showSnackBar('Đã mở ứng dụng email để liên hệ với team');
+        _showSnackBar('Email app opened to contact the team');
       } else {
-        _showSnackBar('Không thể mở ứng dụng email');
+        _showSnackBar('Cannot open email app');
       }
     } catch (e) {
-      _showSnackBar('Lỗi: Không thể mở email');
+      _showSnackBar('Error: Cannot open email');
     }
   }
 

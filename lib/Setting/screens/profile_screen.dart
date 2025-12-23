@@ -24,7 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
 
   String? _avatarPath;
-  String _gender = 'Chưa cập nhật';
+  String _gender = 'Not specified';
   DateTime _birthDate = DateTime(1990, 1, 1);
   bool _isEditing = false;
   bool _isLoading = true;
@@ -66,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _emailController.text = _userProfile!.email;
         _phoneController.text = _userProfile!.phone ?? '';
         _addressController.text = _userProfile!.address ?? '';
-        _gender = _userProfile!.gender ?? 'Chưa cập nhật';
+        _gender = _userProfile!.gender ?? 'Not specified';
         _birthDate = _userProfile!.dateOfBirth ?? DateTime(1990, 1, 1);
         _avatarPath = _userProfile!.profilePicture ?? currentUser.photoURL;
       } else {
@@ -77,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _emailController.text = currentUser.email ?? '';
         _phoneController.text = '';
         _addressController.text = '';
-        _gender = 'Chưa cập nhật';
+        _gender = 'Not specified';
         _birthDate = DateTime(1990, 1, 1);
         _avatarPath = currentUser.photoURL;
 
@@ -94,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
           } catch (createError) {
             debugPrint('Error creating initial profile: $createError');
-            // Không ném lỗi, vẫn hiển thị thông tin từ Firebase Auth
+            // Don't throw error, still display info from Firebase Auth
           }
         }
       }
@@ -140,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _emailController.text = currentUser.email ?? 'user@example.com';
       _phoneController.text = '';
       _addressController.text = '';
-      _gender = 'Chưa cập nhật';
+      _gender = 'Not specified';
       _birthDate = DateTime(1995, 1, 1);
       _avatarPath = currentUser.photoURL;
     } else {
@@ -149,7 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _emailController.text = 'user@example.com';
       _phoneController.text = '';
       _addressController.text = '';
-      _gender = 'Chưa cập nhật';
+      _gender = 'Not specified';
       _birthDate = DateTime(1995, 1, 1);
       _avatarPath = null;
     }
@@ -157,16 +157,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _getHintText(String label) {
     switch (label) {
-      case 'Họ và tên':
-        return 'Nhập họ và tên của bạn';
+      case 'Full Name':
+        return 'Enter your full name';
       case 'Email':
-        return 'Nhập địa chỉ email';
-      case 'Số điện thoại':
-        return 'Nhập số điện thoại';
-      case 'Địa chỉ':
-        return 'Nhập địa chỉ của bạn';
+        return 'Enter email address';
+      case 'Phone Number':
+        return 'Enter phone number';
+      case 'Address':
+        return 'Enter your address';
       default:
-        return 'Chưa cập nhật';
+        return 'Not updated yet';
     }
   }
 
@@ -182,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Trang cá nhân',
+          'Personal Profile',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             color: Colors.white,
             fontSize: 18,
@@ -303,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               _emailController.text.isNotEmpty
                   ? _emailController.text
-                  : 'Chưa cập nhật email',
+                  : 'Email not updated',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 14,
                 color: _emailController.text.isNotEmpty
@@ -327,7 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icon(Icons.verified, size: 16, color: Colors.green),
                   const SizedBox(width: 4),
                   Text(
-                    'Tài khoản đã xác thực',
+                    'Account Verified',
                     style: TextStyle(fontFamily: 'Urbanist-Regular', 
                       fontSize: 12,
                       color: Colors.green[700],
@@ -379,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Icon(Icons.person, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Thông tin cá nhân',
+                  'Personal Information',
                   style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -390,7 +390,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             _buildEditableField(
-              'Họ và tên',
+              'Full Name',
               _nameController,
               Icons.person_outline,
             ),
@@ -417,7 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Icon(Icons.contact_phone, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Thông tin liên hệ',
+                  'Contact Information',
                   style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -434,13 +434,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 12),
             _buildEditableField(
-              'Số điện thoại',
+              'Phone Number',
               _phoneController,
               Icons.phone_outlined,
             ),
             const SizedBox(height: 12),
             _buildEditableField(
-              'Địa chỉ',
+              'Address',
               _addressController,
               Icons.location_on_outlined,
             ),
@@ -511,7 +511,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Giới tính',
+          'Gender',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -536,10 +536,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _gender,
                   style: TextStyle(fontFamily: 'Urbanist-Regular', 
                     fontSize: 14,
-                    color: _gender == 'Chưa cập nhật'
+                    color: _gender == 'Not specified'
                         ? Colors.grey[400]
                         : Colors.black87,
-                    fontStyle: _gender == 'Chưa cập nhật'
+                    fontStyle: _gender == 'Not specified'
                         ? FontStyle.italic
                         : FontStyle.normal,
                   ),
@@ -560,7 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ngày sinh',
+          'Date of Birth',
           style: TextStyle(fontFamily: 'Urbanist-Regular', 
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -610,7 +610,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final currentUser = _authService.currentUser;
       if (currentUser == null) {
-        _showSnackBar('Lỗi: Người dùng chưa đăng nhập');
+        _showSnackBar('Error: User not logged in');
         return;
       }
 
@@ -635,10 +635,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         avatarPath: _avatarPath,
       );
 
-      _showSnackBar('Đã lưu thông tin cá nhân');
+      _showSnackBar('Personal information saved');
     } catch (e) {
       debugPrint('Error saving profile: $e');
-      _showSnackBar('Lỗi khi lưu thông tin: $e');
+      _showSnackBar('Error saving information: $e');
     }
   }
 
@@ -654,7 +654,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Thay đổi ảnh đại diện',
+              'Change Profile Picture',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -663,18 +663,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 20),
             ListTile(
               leading: const Icon(Icons.photo_camera),
-              title: const Text('Chụp ảnh mới'),
+              title: const Text('Take New Photo'),
               onTap: () {
                 Navigator.pop(context);
-                _showSnackBar('Đang mở camera...');
+                _showSnackBar('Opening camera...');
               },
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Chọn từ thư viện'),
+              title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
-                _showSnackBar('Đang mở thư viện ảnh...');
+                _showSnackBar('Opening photo gallery...');
               },
             ),
           ],
@@ -695,14 +695,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Chọn giới tính',
+              'Select Gender',
               style: TextStyle(fontFamily: 'Urbanist-Regular', 
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 20),
-            ...['Nam', 'Nữ', 'Khác', 'Chưa cập nhật']
+            ...['Male', 'Female', 'Other', 'Not specified']
                 .map(
                   (gender) => ListTile(
                     title: Text(gender),

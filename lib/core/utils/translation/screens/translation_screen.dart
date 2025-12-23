@@ -388,7 +388,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Nhập văn bản',
+                            'Enter Text',
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
                               fontSize: 13,
@@ -428,7 +428,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                   maxLines: 4,
                   maxLength: 5000,
                   decoration: InputDecoration(
-                    hintText: 'Nhập hoặc dán văn bản cần dịch...',
+                    hintText: 'Enter or paste text to translate...',
                     hintStyle: TextStyle(
                       fontFamily: 'Urbanist-Regular',
                       color: AppColors.steelBlue.withValues(alpha: 0.3),
@@ -507,7 +507,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  'Quét ảnh',
+                                  'Scan Image',
                                   style: TextStyle(
                                     fontFamily: 'Urbanist-Regular',
                                     color: Colors.white,
@@ -539,7 +539,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                     if (_sourceController.text.isNotEmpty) ...[
                       _buildModernActionButton(
                         icon: Icons.clear_rounded,
-                        label: 'Xóa',
+                        label: 'Clear',
                         onTap: () {
                           _debounceTimer?.cancel();
                           _sourceController.clear();
@@ -628,7 +628,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Bản dịch',
+                            'Translation',
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
                               fontSize: 13,
@@ -727,7 +727,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Đang dịch văn bản...',
+                          'Translating text...',
                           style: TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             fontSize: 14,
@@ -760,7 +760,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Đang xử lý',
+                                'Processing',
                                 style: TextStyle(
                                   fontFamily: 'Urbanist-Regular',
                                   fontSize: 12,
@@ -788,7 +788,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Bản dịch sẽ xuất hiện ở đây',
+                          'Translation will appear here',
                           style: TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             color: AppColors.steelBlue.withValues(alpha: 0.4),
@@ -826,12 +826,12 @@ class _TranslationScreenState extends State<TranslationScreen>
                           ),
                           _buildModernActionButton(
                             icon: Icons.volume_up_rounded,
-                            label: 'Đọc',
+                            label: 'Read',
                             onTap: () => _speakText(_targetController.text),
                           ),
                           _buildModernActionButton(
                             icon: Icons.share_rounded,
-                            label: 'Chia sẻ',
+                            label: 'Share',
                             onTap: () => _shareText(_targetController.text),
                           ),
                         ],
@@ -941,7 +941,7 @@ class _TranslationScreenState extends State<TranslationScreen>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Dịch tự động khi bạn nhập văn bản',
+              'Auto-translate when you type text',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 14,
@@ -999,7 +999,7 @@ class _TranslationScreenState extends State<TranslationScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _targetController.text = 'Lỗi: Không thể dịch văn bản';
+        _targetController.text = 'Error: Unable to translate text';
       });
     } finally {
       if (mounted) {
@@ -1033,7 +1033,7 @@ class _TranslationScreenState extends State<TranslationScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Không thể hoán đổi khi đang ở chế độ tự động phát hiện',
+            'Cannot swap when in auto-detect mode',
           ),
           duration: Duration(seconds: 2),
         ),
@@ -1086,7 +1086,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               ),
               const SizedBox(height: 20),
               Text(
-                'Chọn ngôn ngữ',
+                'Select Language',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 20,
@@ -1125,7 +1125,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                       ),
                       subtitle: Text(
                         isDisabled
-                            ? '${language.name} (Chỉ dành cho ngôn ngữ nguồn)'
+                            ? '${language.name} (Source language only)'
                             : language.name,
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
@@ -1174,22 +1174,22 @@ class _TranslationScreenState extends State<TranslationScreen>
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Về tính năng dịch',
+          'About Translation Feature',
           style: TextStyle(
             fontFamily: 'Urbanist-Regular',
             fontWeight: FontWeight.w600,
           ),
         ),
         content: Text(
-          'Tính năng dịch văn bản hỗ trợ nhiều ngôn ngữ phổ biến. '
-          'Tự động phát hiện ngôn ngữ và cung cấp bản dịch chính xác.',
+          'The text translation feature supports many popular languages. '
+          'Automatically detects language and provides accurate translation.',
           style: TextStyle(fontFamily: 'Urbanist-Regular'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Đóng',
+              'Close',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 color: AppColors.dodgerBlue,
@@ -1206,20 +1206,20 @@ class _TranslationScreenState extends State<TranslationScreen>
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Đã sao chép')));
+    ).showSnackBar(const SnackBar(content: Text('Copied')));
   }
 
   void _speakText(String text) {
     // TTS implementation
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tính năng đọc văn bản sẽ được thêm')),
+      const SnackBar(content: Text('Text-to-speech feature will be added')),
     );
   }
 
   void _shareText(String text) {
     // Share implementation
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tính năng chia sẻ sẽ được thêm')),
+      const SnackBar(content: Text('Share feature will be added')),
     );
   }
 
@@ -1230,7 +1230,7 @@ class _TranslationScreenState extends State<TranslationScreen>
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Tính năng nhận diện giọng nói sẽ được thêm'),
+        content: Text('Voice recognition feature will be added'),
       ),
     );
   }
@@ -1256,7 +1256,7 @@ class _TranslationScreenState extends State<TranslationScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              'Chọn nguồn ảnh',
+              'Select Image Source',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 18,
@@ -1282,14 +1282,14 @@ class _TranslationScreenState extends State<TranslationScreen>
                 ),
               ),
               title: Text(
-                'Chụp ảnh',
+                'Take Photo',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontWeight: FontWeight.w500,
                 ),
               ),
               subtitle: Text(
-                'Mở camera để chụp ảnh',
+                'Open camera to take photo',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 12,
@@ -1320,14 +1320,14 @@ class _TranslationScreenState extends State<TranslationScreen>
                 ),
               ),
               title: Text(
-                'Chọn từ thư viện',
+                'Select from Gallery',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontWeight: FontWeight.w500,
                 ),
               ),
               subtitle: Text(
-                'Chọn ảnh từ thư viện của bạn',
+                'Select image from your gallery',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 12,
