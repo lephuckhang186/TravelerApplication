@@ -32,7 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     with AutomaticKeepAliveClientMixin {
   String _currentUsername = 'Loading...';
   String? _currentAvatarPath;
-  String _displayName = 'Đang tải...';
+  String _displayName = 'Loading...';
   bool _isVerified = true;
   bool _isLoading = true;
 
@@ -243,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const CircularProgressIndicator(),
                     const SizedBox(height: 16),
                     Text(
-                      'Đang tải thông tin...',
+                      'Loading information...',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 14,
@@ -607,7 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tiện ích',
+            'Utilities',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 16,
@@ -1066,7 +1066,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           _buildMenuDivider(),
           _buildMenuListItem(
             Icons.info_outline,
-            'Thông tin chung',
+            'General Information',
             () => _onGeneralInfo(),
           ),
         ],
@@ -1132,7 +1132,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              'Đăng xuất',
+              'Logout',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
@@ -1216,7 +1216,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
-          'Đăng xuất',
+          'Logout',
           style: TextStyle(
             fontFamily: 'Urbanist-Regular',
             fontWeight: FontWeight.w600,
@@ -1279,7 +1279,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               foregroundColor: Colors.white,
             ),
             child: Text(
-              'Đăng xuất',
+              'Logout',
               style: TextStyle(fontFamily: 'Urbanist-Regular'),
             ),
           ),
