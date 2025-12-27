@@ -248,50 +248,116 @@ notifications/           # Thông báo thông minh
 ```
 
 ## Testing
+### Backend Tests (FastAPI)
+#### Cách Chạy Backend Tests
+```bash
+# Di chuyển vào thư mục Backend
+cd Backend
+
+# Chạy tất cả tests
+python -m pytest tests/ -v
+
+# Chạy file test cụ thể
+python -m pytest tests/test_models.py -v
+
+# Chạy test class cụ thể
+python -m pytest tests/test_models.py::TestUserModels -v
+
+# Chạy test cụ thể
+python -m pytest tests/test_models.py::TestUserModels::test_user_base_creation -v
+
+# Xem coverage report
+python -m pytest tests/ --cov=app --cov-report=html
+
+# Chạy với output đơn giản
+python -m pytest tests/ -q
+
+# Chạy nhanh (dừng ở lỗi đầu tiên)
+python -m pytest tests/ -x
+```
+
+---
+
+### AI Travel Agent Tests (LangChain)
+#### Cách Chạy AI Agent Tests
+```bash
+# Di chuyển vào thư mục travel-agent
+cd travel-agent
+
+# Chạy tất cả tests
+python -m pytest tests/ -v
+
+# Chạy file test cụ thể
+python -m pytest tests/test_models.py -v
+
+# Chạy test class cụ thể
+python -m pytest tests/test_models.py::TestTripPlan -v
+
+# Chạy test cụ thể
+python -m pytest tests/test_models.py::TestTripPlan::test_trip_plan_all_fields -v
+
+# Xem coverage report
+python -m pytest tests/ --cov=. --cov-report=html
+
+# Chạy với output đơn giản
+python -m pytest tests/ -q
+
+# Chạy nhanh (dừng ở lỗi đầu tiên)
+python -m pytest tests/ -x
+```
+---
+
+#### Backend Tests
+```bash
+# Nếu gặp lỗi import
+cd Backend
+pip install -r requirements.txt
+python -m pytest tests/ -v
+
+# Nếu muốn xem chi tiết lỗi
+python -m pytest tests/ -vv --tb=long
+```
+
+#### Travel Agent Tests
+```bash
+# Nếu gặp lỗi import
+cd travel-agent
+pip install -r requirements.txt
+python -m pytest tests/ -v
+
+# Nếu muốn xem chi tiết lỗi
+python -m pytest tests/ -vv --tb=long
+```
 
 ### Frontend Tests
 ```bash
-# Ensure all dependencies are installed
+# Đảm bảo tất cả các thư viện phụ thuộc đã được cài đặt
 npm install
 
-# Run the frontend tests
+# Chạy các bài kiểm tra giao diện người dùng
 npm test
 
-# View test coverage
+# Xem phạm vi kiểm thử
 npm run coverage
-```
-
-### Backend Tests
-```bash
-cd Backend
-pytest tests/
-```
-
-### AI Agent Tests
-```bash
-cd travel-agent
-python -m pytest tests/ -v
 ```
 
 ## Deployment
 
 ### Mobile App
 ```bash
-# Build for Android
+# Phiên bản dành cho Android
 flutter build apk --release
 
-# Build for iOS
+# Phiên bản dành cho Ios
 flutter build ios --release
 ```
 
 ### Backend API
 ```bash
-# Using Docker
+# Sử dụng Docker
 docker build -t tripwise-backend .
 docker run -p 8000:8000 tripwise-backend
 
-# Using Railway/Heroku
-# Thêm Procfile và deploy
 ```
 
 ### AI Travel Agent
