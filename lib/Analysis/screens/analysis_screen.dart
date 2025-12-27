@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../Core/theme/app_theme.dart';
 import '../../Core/providers/app_mode_provider.dart';
 import '../../Expense/providers/expense_provider.dart';
@@ -11,7 +10,6 @@ import '../../Login/services/auth_service.dart';
 import '../../Plan/providers/trip_planning_provider.dart';
 import '../../Plan/providers/collaboration_provider.dart';
 import '../../Plan/models/trip_model.dart';
-import '../../Plan/models/collaboration_models.dart';
 
 /// Enum for trip date status
 enum TripDateStatus { none, upcoming, active, completed }
@@ -239,7 +237,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     try {
       if (!mounted) return;
 
-      final appModeProvider = context.read<AppModeProvider>();
 
       // Always initialize both providers for analysis to show all trips
       debugPrint('TRIP_INIT: Initializing both providers for analysis...');
@@ -1213,8 +1210,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Calendar view with trip status colors (for scrollable version)
   Widget _buildCalendarViewScrollable() {
-    return Consumer<TripPlanningProvider>(
-      builder: (context, tripProvider, child) {
+    return Consumer4<TripPlanningProvider, CollaborationProvider, AppModeProvider, ExpenseProvider>(
+      builder: (context, tripProvider, collaborationProvider, appModeProvider, expenseProvider, child) {
+        // Use the same trip source as the rest of the analysis screen
+        final trips = _getTripsForCurrentMode();
+
         // Calculate the first day of the current month
         final currentMonthDate = DateTime(
           _currentYear,
@@ -1285,9 +1285,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   );
                   final isSelected = expenseProvider.selectedDay == dayOffset;
 
-                  // Get trip status for this date
+                  // Get trip status for this date using the correct trips
                   final tripStatus = _getTripStatusForDate(
-                    tripProvider.trips,
+                    trips,
                     currentDate,
                   );
                   final statusColors = _getStatusColors(tripStatus);

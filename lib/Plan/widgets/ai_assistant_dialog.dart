@@ -41,6 +41,8 @@ class AiAssistantDialog extends StatefulWidget {
 
 class _AiAssistantDialogState extends State<AiAssistantDialog> {
   final TextEditingController _controller = TextEditingController();
+  final TextEditingController _styleController =
+      TextEditingController(); // Travel style input
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
   int _peopleCount = 1;
@@ -52,6 +54,13 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
   void initState() {
     super.initState();
     _loadChatHistories();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _styleController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadChatHistories() async {
@@ -1296,6 +1305,30 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            // Travel style input field
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _styleController,
+                decoration: InputDecoration(
+                  labelText: 'Phong cách du lịch (tuỳ chọn)',
+                  hintText: 'VD: LGBT, sôi động, thiền định, phượt...',
+                  prefixIcon: Icon(Icons.style, color: AppColors.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
             // Confirm button with gradient
             Center(
@@ -1453,7 +1486,14 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
   void _sendPeopleCount(int count) {
     if (_isLoading) return;
 
-    final message = 'Tạo kế hoạch cho $count người';
+    String message = 'Tạo kế hoạch cho $count người';
+
+    // Append travel style if provided
+    final style = _styleController.text.trim();
+    if (style.isNotEmpty) {
+      message += ' với phong cách $style';
+    }
+
     _controller.text = message;
     _sendMessage();
   }
