@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8000",
+  "loginUser": "nguyenkieuanhquan12@gmail.com",
+  "loginPassword": "Tuduytinhtoan25.",
+  "executionArgs": {
+    "projectName": "TravelerApplication",
+    "projectPath": "c:\\HCMUS\\Tư duy tính toán\\TravelerApplication",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-dOLEizNRH5NuzwUFZBe702I4jumoKjIdGQnTwIZyOMVD60vhvBQZY8Gp8UF818bM-j7yPahYK0F8ubxCWd7wjJ1kCqC_-52LvztJYoYXvoQg11SexBmOPesMefIgIQg1o44"
+    }
+  },
+  "proxy": "http://802a755c-087f-4358-b72b-c5500ee39fcc:9liSf9zENEB3jVOkfQzc1rkT4zGhiz4J@tun.testsprite.com:8080"
+}
