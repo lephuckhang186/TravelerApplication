@@ -14,62 +14,62 @@
 
 </div>
 
-## 🌟 Tổng Quan
+## Tổng Quan
 
 **TripWise** là một hệ sinh thái du lịch thông minh bao gồm:
 - **Flutter Mobile App**: Ứng dụng di động đa nền tảng với giao diện hiện đại
 - **FastAPI Backend**: API RESTful mạnh mẽ với tích hợp Firebase
 - **AI Travel Agent**: Agent AI thông minh sử dụng LangChain và LangGraph
 
-## 🏗️ Kiến Trúc Hệ Thống
+## Kiến Trúc Hệ Thống
 
 ```
 TripWise/
-├── 📱 Mobile App (Flutter)          # Giao diện người dùng
-├── 🔧 Backend API (FastAPI)         # Xử lý logic nghiệp vụ  
-├── 🤖 AI Travel Agent (LangChain)   # Tư vấn du lịch thông minh
-└── 🔥 Firebase Services             # Lưu trữ và xác thực
+├── Mobile App (Flutter)          # Giao diện người dùng
+├── Backend API (FastAPI)         # Xử lý logic nghiệp vụ  
+├── AI Travel Agent (LangChain)   # Tư vấn du lịch thông minh
+└── Firebase Services             # Lưu trữ và xác thực
 ```
 
-## ✨ Tính Năng Chính
+## Tính Năng Chính
 
-### 🎯 Quản Lý Chuyến Đi
+### Quản Lý Chuyến Đi
 - **Lập Kế Hoạch Thông Minh**: Tạo lịch trình chi tiết với AI assistant
 - **Quản Lý Hoạt Động**: Thêm, chỉnh sửa và sắp xếp các hoạt động du lịch
 - **Tích Hợp Bản Đồ**: Xem vị trí và điều hướng với Google Maps
 - **Chia Sẻ Collaborative**: Mời bạn bè cùng tham gia lập kế hoạch
 
-### 💰 Quản Lý Chi Phí
+### Quản Lý Chi Phí
 - **Theo Dõi Chi Tiêu Real-time**: Ghi chép và phân loại chi phí
 - **Báo Cáo Tài Chính**: Thống kê chi tiêu theo danh mục và thời gian
 - **Đồng Bộ Ngân Sách**: Tích hợp ngân sách với kế hoạch du lịch
 - **Chia Sẻ Chi Phí**: Tính toán chi phí nhóm một cách công bằng
 
-### 🛠️ Công Cụ Du Lịch Thông Minh
-- **🌍 Dịch Thuật**: Dịch văn bản và OCR hình ảnh đa ngôn ngữ
-- **🌤️ Thời Tiết**: Dự báo thời tiết chi tiết cho điểm đến
-- **💱 Chuyển Đổi Tiền Tệ**: Tỷ giá hối đoái real-time
-- **🕒 Đồng Hồ Thế Giới**: Múi giờ các thành phố trên thế giới
+### Công Cụ Du Lịch Thông Minh
+- **Dịch Thuật**: Dịch văn bản và OCR hình ảnh đa ngôn ngữ
+- **Thời Tiết**: Dự báo thời tiết chi tiết cho điểm đến
+- **Chuyển Đổi Tiền Tệ**: Tỷ giá hối đoái real-time
+- **Đồng Hồ Thế Giới**: Múi giờ các thành phố trên thế giới
 
-### 🤖 AI Travel Agent (LangChain)
+### AI Travel Agent (LangChain)
 - **Tư Vấn Du Lịch Thông Minh**: Gợi ý địa điểm và hoạt động phù hợp
 - **Lập Lịch Trình Tự Động**: Tạo lịch trình chi tiết theo sở thích
 - **Tìm Kiếm Khách Sạn**: Gợi ý chỗ nghỉ phù hợp với ngân sách
 - **Tính Toán Chi Phí**: Ước tính chi phí chuyến đi chính xác
 
-### 🔔 Thông Báo Thông Minh
+### Thông Báo Thông Minh
 - **Nhắc Nhở Hoạt Động**: Thông báo lịch trình sắp tới
 - **Cảnh Báo Ngân Sách**: Thông báo khi chi tiêu vượt quá ngân sách
 - **Dự Báo Thời Tiết**: Cảnh báo thời tiết bất lợi
 - **Thông Báo Cộng Tác**: Cập nhật từ thành viên nhóm
 
-### ⚙️ Cài Đặt & Tài Khoản
+### Cài Đặt & Tài Khoản
 - **Xác Thực Firebase**: Đăng nhập Google và email/mật khẩu
 - **Quản Lý Hồ Sơ**: Cập nhật thông tin cá nhân và ảnh đại diện
 - **Thống Kê Du Lịch**: Xem lịch sử và thống kê chuyến đi
 - **Hỗ Trợ Khách Hàng**: Trung tâm trợ giúp và phản hồi
 
-## 🚀 Cài Đặt và Chạy
+## Cài Đặt và Chạy
 
 ### Yêu Cầu Hệ Thống
 - **Flutter SDK** ≥ 3.9.2
@@ -77,7 +77,7 @@ TripWise/
 - **Node.js** ≥ 16
 - **Firebase Project** với các dịch vụ được kích hoạt
 
-### 1. 📱 Flutter Mobile App
+### 1. Flutter Mobile App
 
 ```bash
 # Clone repository
@@ -94,7 +94,7 @@ flutter pub get
 flutter run
 ```
 
-### 2. 🔧 Backend API (FastAPI)
+### 2. Backend API (FastAPI)
 
 ```bash
 # Di chuyển vào thư mục Backend
@@ -117,7 +117,7 @@ cp .env.example .env
 python run_server.py
 ```
 
-### 3. 🤖 AI Travel Agent
+### 3. AI Travel Agent
 
 ```bash
 # Di chuyển vào thư mục travel-agent
@@ -134,7 +134,7 @@ cp .env.example .env
 python main.py
 ```
 
-## 🔧 Cấu Hình API Keys
+## Cấu Hình API Keys
 
 Tạo file `.env` trong các thư mục tương ứng:
 
@@ -168,9 +168,9 @@ LANGCHAIN_API_KEY=ls__...
 LANGCHAIN_PROJECT=travel-agent
 ```
 
-## 📊 Kiến Trúc Chi Tiết
+## Kiến Trúc Chi Tiết
 
-### 📱 Flutter App Structure
+### Flutter App Structure
 ```
 lib/
 ├── core/                    # Cấu hình và utilities chung
@@ -188,7 +188,7 @@ lib/
 └── AltsManager/           # Quản lý alternatives
 ```
 
-### 🔧 Backend API Structure
+### Backend API Structure
 ```
 Backend/
 ├── app/
@@ -205,7 +205,7 @@ Backend/
 └── tests/                 # Unit tests
 ```
 
-### 🤖 AI Travel Agent Structure
+### AI Travel Agent Structure
 ```
 travel-agent/
 ├── services/              # Các dịch vụ AI
@@ -220,7 +220,7 @@ travel-agent/
 └── main.py              # FastAPI application
 ```
 
-## 🔥 Tích Hợp Firebase
+## Tích Hợp Firebase
 
 ### Services được sử dụng:
 - **Authentication**: Google Sign-in và Email/Password
@@ -247,15 +247,18 @@ notifications/           # Thông báo thông minh
 └── weather_updates     # Cập nhật thời tiết
 ```
 
-## 🧪 Testing
+## Testing
 
-### Flutter Tests
+### Frontend Tests
 ```bash
-# Unit tests
-flutter test
+# Ensure all dependencies are installed
+npm install
 
-# Integration tests
-flutter test integration_test/
+# Run the frontend tests
+npm test
+
+# View test coverage
+npm run coverage
 ```
 
 ### Backend Tests
@@ -270,7 +273,7 @@ cd travel-agent
 python -m pytest tests/ -v
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Mobile App
 ```bash
