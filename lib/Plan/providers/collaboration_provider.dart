@@ -6,8 +6,8 @@ import 'dart:async';
 import '../models/collaboration_models.dart';
 import '../models/trip_model.dart';
 import '../services/collaboration_trip_service.dart';
-
 import '../services/firebase_trip_service.dart';
+import '../utils/activity_scheduling_validator.dart';
 
 /// Provider for collaboration mode - unified with private mode backend
 class CollaborationProvider extends ChangeNotifier {
@@ -522,14 +522,19 @@ class CollaborationProvider extends ChangeNotifier {
 
         // Separate trips correctly based on ownership
         for (final trip in trips) {
-          final isOwner = trip.isOwnerUser(userId!);
-          debugPrint('🎯 REAL_TIME_TRIP: ${trip.name} (${trip.id}) - Owner: ${trip.ownerId}, IsOwner: $isOwner');
+          // Sort activities chronologically for consistent display
+          final sortedTrip = trip.copyWith(
+            activities: ActivitySchedulingValidator.sortActivitiesChronologically(trip.activities),
+          );
+
+          final isOwner = sortedTrip.isOwnerUser(userId!);
+          debugPrint('🎯 REAL_TIME_TRIP: ${sortedTrip.name} (${sortedTrip.id}) - Owner: ${sortedTrip.ownerId}, IsOwner: $isOwner');
 
           if (isOwner) {
-            newMyTrips.add(trip);
+            newMyTrips.add(sortedTrip);
             debugPrint('✅ REAL_TIME_OWNED: Added to owned trips (total: ${newMyTrips.length})');
           } else {
-            newSharedTrips.add(trip);
+            newSharedTrips.add(sortedTrip);
             debugPrint('🤝 REAL_TIME_SHARED: Added to shared trips (total: ${newSharedTrips.length})');
           }
         }
@@ -570,8 +575,12 @@ class CollaborationProvider extends ChangeNotifier {
       (trip) {
         if (trip != null) {
           debugPrint('📡 SELECTED_TRIP_UPDATE: Received update for trip ${trip.id}');
-          _selectedSharedTrip = trip;
-          _updateTripInLists(trip); // Also update in main lists
+          // Sort activities chronologically for consistent display
+          final sortedTrip = trip.copyWith(
+            activities: ActivitySchedulingValidator.sortActivitiesChronologically(trip.activities),
+          );
+          _selectedSharedTrip = sortedTrip;
+          _updateTripInLists(sortedTrip); // Also update in main lists
           notifyListeners();
           debugPrint('✅ SELECTED_TRIP_REFRESHED: UI updated for trip ${trip.id}');
         } else {

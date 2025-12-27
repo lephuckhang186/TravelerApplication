@@ -11,6 +11,7 @@ import '../../Login/services/auth_service.dart';
 import '../../Plan/providers/trip_planning_provider.dart';
 import '../../Plan/providers/collaboration_provider.dart';
 import '../../Plan/models/trip_model.dart';
+import '../../Plan/models/collaboration_models.dart';
 
 /// Enum for trip date status
 enum TripDateStatus { none, upcoming, active, completed }
@@ -44,6 +45,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   int _currentYear = DateTime.now().year;
   int _categoryTabIndex = 0; // 0: Subcategory, 1: Category
   String? _selectedTripId; // Selected trip for filtering
+  bool _isTripSelectionLoading = false; // Loading state for trip selection
   // Removed unused _budgetStatus field
 
   final ValueNotifier<String?> _selectedTripNotifier = ValueNotifier<String?>(
@@ -64,34 +66,72 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     return _expenseProvider!;
   }
 
-  /// Get trips based on current app mode
-  /// In Private mode: returns trips from TripPlanningProvider
-  /// In Collaboration mode: returns only trips where user is OWNER (mySharedTrips)
+  /// Get ALL trips from both private and collaboration providers for analysis
+  /// This ensures tags show the correct source for each activity regardless of current mode
   List<TripModel> _getTripsForCurrentMode() {
-    final appModeProvider = context.read<AppModeProvider>();
-    if (appModeProvider.isPrivateMode) {
+    try {
+      final allTrips = <TripModel>[];
+
+      // Always load private trips
       final tripProvider = context.read<TripPlanningProvider>();
-      return tripProvider.trips;
-    } else {
-      // Collaboration mode - only show trips owned by user
-      final collaborationProvider = context.read<CollaborationProvider>();
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (currentUserId == null) return [];
-      
-      // Convert SharedTripModel to TripModel for compatibility
-      return collaborationProvider.mySharedTrips.map<TripModel>((sharedTrip) {
-        return TripModel(
-          id: sharedTrip.id,
-          name: sharedTrip.name,
-          destination: sharedTrip.destination,
-          startDate: sharedTrip.startDate,
-          endDate: sharedTrip.endDate,
-          description: sharedTrip.description,
-          budget: sharedTrip.budget,
-          activities: sharedTrip.activities,
-          
-        );
+      debugPrint('ANALYSIS_TRIPS: Private trips from provider: ${tripProvider.trips.length}');
+
+      final privateTrips = tripProvider.trips.where((trip) {
+        // Ensure trip ID exists
+        return trip.id != null;
       }).toList();
+
+      allTrips.addAll(privateTrips);
+      debugPrint('ANALYSIS_TRIPS: Added ${privateTrips.length} private trips');
+
+      // Always load collaboration trips
+      final collaborationProvider = context.read<CollaborationProvider>();
+      debugPrint('ANALYSIS_TRIPS: Collaboration trips - owned: ${collaborationProvider.mySharedTrips.length}, shared: ${collaborationProvider.sharedWithMeTrips.length}');
+
+      // Add owned trips
+      allTrips.addAll(
+        collaborationProvider.mySharedTrips.map<TripModel>((sharedTrip) {
+          return TripModel(
+            id: sharedTrip.id,
+            name: sharedTrip.name,
+            destination: sharedTrip.destination,
+            startDate: sharedTrip.startDate,
+            endDate: sharedTrip.endDate,
+            description: sharedTrip.description,
+            budget: sharedTrip.budget,
+            activities: sharedTrip.activities,
+          );
+        }),
+      );
+
+      // Add shared trips
+      allTrips.addAll(
+        collaborationProvider.sharedWithMeTrips.map<TripModel>((sharedTrip) {
+          return TripModel(
+            id: sharedTrip.id,
+            name: sharedTrip.name,
+            destination: sharedTrip.destination,
+            startDate: sharedTrip.startDate,
+            endDate: sharedTrip.endDate,
+            description: sharedTrip.description,
+            budget: sharedTrip.budget,
+            activities: sharedTrip.activities,
+          );
+        }),
+      );
+
+      debugPrint('ANALYSIS_TRIPS: Total trips returned: ${allTrips.length}');
+      return allTrips;
+    } catch (e) {
+      debugPrint('ANALYSIS_TRIPS: Error getting trips: $e');
+      // Fallback: try to get trips from TripPlanningProvider as last resort
+      try {
+        final tripProvider = context.read<TripPlanningProvider>();
+        return tripProvider.trips.where((trip) => trip.id != null).toList();
+      } catch (fallbackError) {
+        debugPrint('ANALYSIS_TRIPS: Fallback also failed: $fallbackError');
+        return [];
+      }
     }
   }
 
@@ -194,46 +234,46 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     }
   }
 
-  /// Initialize trip provider (and collaboration provider if in collab mode)
+  /// Initialize both trip providers for analysis (always load all trips)
   Future<void> _initializeTripProvider() async {
     try {
       if (!mounted) return;
-      
+
       final appModeProvider = context.read<AppModeProvider>();
-      
-      if (appModeProvider.isCollaborationMode) {
-        // Initialize CollaborationProvider for collaboration mode
-        final collaborationProvider = context.read<CollaborationProvider>();
-        debugPrint('TRIP_INIT: Initializing collaboration provider...');
-        await collaborationProvider.ensureInitialized();
+
+      // Always initialize both providers for analysis to show all trips
+      debugPrint('TRIP_INIT: Initializing both providers for analysis...');
+
+      // Initialize CollaborationProvider
+      final collaborationProvider = context.read<CollaborationProvider>();
+      await collaborationProvider.ensureInitialized();
+      debugPrint(
+        'TRIP_INIT: Collaboration provider - mySharedTrips: ${collaborationProvider.mySharedTrips.length}, shared: ${collaborationProvider.sharedWithMeTrips.length}',
+      );
+
+      // Initialize TripPlanningProvider (private trips)
+      final tripProvider = Provider.of<TripPlanningProvider>(
+        context,
+        listen: false,
+      );
+
+      debugPrint(
+        'TRIP_INIT: Private provider - current trips: ${tripProvider.trips.length}, isLoading: ${tripProvider.isLoading}',
+      );
+
+      if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
+        debugPrint('TRIP_INIT: Initializing private trip provider...');
+        await tripProvider.initialize();
         debugPrint(
-          'TRIP_INIT: Collaboration mode - mySharedTrips: ${collaborationProvider.mySharedTrips.length}',
-        );
-      } else {
-        // Initialize TripPlanningProvider for private mode
-        final tripProvider = Provider.of<TripPlanningProvider>(
-          context,
-          listen: false,
+          'TRIP_INIT: Private provider - after initialize, trips count: ${tripProvider.trips.length}',
         );
 
-        debugPrint(
-          'TRIP_INIT: Current trips: ${tripProvider.trips.length}, isLoading: ${tripProvider.isLoading}',
-        );
-
-        if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
-          debugPrint('TRIP_INIT: Initializing trip provider...');
-          await tripProvider.initialize();
+        if (tripProvider.trips.isNotEmpty) {
+          // Only run cleanup after successful trip loading
           debugPrint(
-            'TRIP_INIT: After initialize, trips count: ${tripProvider.trips.length}',
+            'TRIP_INIT: Running initial cleanup with ${tripProvider.trips.length} trips',
           );
-
-          if (tripProvider.trips.isNotEmpty) {
-            // Only run cleanup after successful trip loading
-            debugPrint(
-              'TRIP_INIT: Running initial cleanup with ${tripProvider.trips.length} trips',
-            );
-            await _cleanupOrphanedExpenses(tripProvider.trips);
-          }
+          await _cleanupOrphanedExpenses(tripProvider.trips);
         }
       }
     } catch (e) {
@@ -277,80 +317,128 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   Future<void> _refreshTripData() async {
     try {
       if (!mounted) return;
-      final tripProvider = Provider.of<TripPlanningProvider>(
-        context,
-        listen: false,
-      );
 
-      debugPrint(
-        'TRIP_REFRESH: Starting trip data refresh, current trips: ${tripProvider.trips.length}, selected: $_selectedTripId',
-      );
+      final appModeProvider = Provider.of<AppModeProvider>(context, listen: false);
 
-      // Try to initialize trips with timeout protection
-      try {
-        await tripProvider.initialize().timeout(
-          const Duration(seconds: 20),
-          onTimeout: () {
-            debugPrint(
-              'TRIP_REFRESH: Trip initialization timed out after 20 seconds',
-            );
-            throw Exception('Trip loading timed out');
-          },
+      if (appModeProvider.isCollaborationMode) {
+        // In collaboration mode, refresh collaboration provider
+        final collaborationProvider = Provider.of<CollaborationProvider>(
+          context,
+          listen: false,
         );
 
         debugPrint(
-          'TRIP_REFRESH: After initialize, loaded trips: ${tripProvider.trips.length}',
+          'TRIP_REFRESH: Collaboration mode - refreshing collaboration data',
         );
 
-        // DON'T auto-select trip - let user choose or default to "All Trips"
-        // This prevents filtering out expenses without tripId
-        if (tripProvider.trips.isNotEmpty) {
-          debugPrint(
-            'TRIP_REFRESH: ${tripProvider.trips.length} trips available. Defaulting to "All Trips" view',
+        try {
+          await collaborationProvider.ensureInitialized().timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              debugPrint(
+                'TRIP_REFRESH: Collaboration initialization timed out after 20 seconds',
+              );
+              throw Exception('Collaboration loading timed out');
+            },
           );
-        }
 
-        // Always run cleanup if trip initialization completed successfully (even if result is 0 trips)
-        // This ensures orphaned expenses from deleted trips get cleaned up
-        if (!tripProvider.isLoading && tripProvider.error == null) {
           debugPrint(
-            'TRIP_REFRESH: Trip loading completed successfully, running cleanup with ${tripProvider.trips.length} valid trips',
+            'TRIP_REFRESH: Collaboration mode - loaded trips: ${collaborationProvider.mySharedTrips.length} owned, ${collaborationProvider.sharedWithMeTrips.length} shared',
           );
-          await _cleanupOrphanedExpenses(tripProvider.trips);
-        } else if (tripProvider.error != null) {
+        } catch (timeoutError) {
           debugPrint(
-            'TRIP_REFRESH: Trip loading failed with error: ${tripProvider.error}. Skipping cleanup to prevent false positives',
-          );
-        } else {
-          debugPrint(
-            'TRIP_REFRESH: Trip provider still loading, skipping cleanup',
-          );
-        }
-      } catch (timeoutError) {
-        debugPrint(
-          'TRIP_REFRESH: Timeout or error during initialization: $timeoutError',
-        );
-        // Don't crash the app - use cached trips if available
-        if (tripProvider.trips.isNotEmpty) {
-          debugPrint(
-            'TRIP_REFRESH: Using ${tripProvider.trips.length} cached trips due to timeout',
-          );
-          // Don't auto-select - let user choose
-        } else {
-          debugPrint(
-            'TRIP_REFRESH: No cached trips available, continuing without trip filter',
+            'TRIP_REFRESH: Collaboration timeout or error during initialization: $timeoutError',
           );
           // Show a subtle error message
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text(
-                  'Unable to load trips. Showing all expenses.',
+                  'Unable to load collaboration trips. Showing all expenses.',
                 ),
                 backgroundColor: Colors.orange[700],
                 duration: const Duration(seconds: 2),
               ),
             );
+          }
+        }
+      } else {
+        // In private mode, refresh trip planning provider
+        final tripProvider = Provider.of<TripPlanningProvider>(
+          context,
+          listen: false,
+        );
+
+        debugPrint(
+          'TRIP_REFRESH: Private mode - starting trip data refresh, current trips: ${tripProvider.trips.length}, selected: $_selectedTripId',
+        );
+
+        // Try to initialize trips with timeout protection
+        try {
+          await tripProvider.initialize().timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              debugPrint(
+                'TRIP_REFRESH: Trip initialization timed out after 20 seconds',
+              );
+              throw Exception('Trip loading timed out');
+            },
+          );
+
+          debugPrint(
+            'TRIP_REFRESH: Private mode - after initialize, loaded trips: ${tripProvider.trips.length}',
+          );
+
+          // DON'T auto-select trip - let user choose or default to "All Trips"
+          // This prevents filtering out expenses without tripId
+          if (tripProvider.trips.isNotEmpty) {
+            debugPrint(
+              'TRIP_REFRESH: ${tripProvider.trips.length} trips available. Defaulting to "All Trips" view',
+            );
+          }
+
+          // Always run cleanup if trip initialization completed successfully (even if result is 0 trips)
+          // This ensures orphaned expenses from deleted trips get cleaned up
+          if (!tripProvider.isLoading && tripProvider.error == null) {
+            debugPrint(
+              'TRIP_REFRESH: Trip loading successful, running cleanup with ${tripProvider.trips.length} trips',
+            );
+            await _cleanupOrphanedExpenses(tripProvider.trips);
+          } else if (tripProvider.error != null) {
+            debugPrint(
+              'TRIP_REFRESH: Trip loading failed with error: ${tripProvider.error}. Skipping cleanup to prevent false positives',
+            );
+          } else {
+            debugPrint(
+              'TRIP_REFRESH: Trip loading failed or still loading, skipping cleanup',
+            );
+          }
+        } catch (timeoutError) {
+          debugPrint(
+            'TRIP_REFRESH: Timeout or error during initialization: $timeoutError',
+          );
+          // Don't crash the app - use cached trips if available
+          if (tripProvider.trips.isNotEmpty) {
+            debugPrint(
+              'TRIP_REFRESH: Using ${tripProvider.trips.length} cached trips due to timeout',
+            );
+            // Don't auto-select - let user choose
+          } else {
+            debugPrint(
+              'TRIP_REFRESH: No cached trips available, continuing without trip filter',
+            );
+          // Show a subtle error message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Unable to load collaboration trips. Showing all expenses.',
+                ),
+                backgroundColor: Colors.orange[700],
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
           }
         }
       }
@@ -514,31 +602,47 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     try {
       debugPrint('FORCE_REFRESH: Starting complete data refresh...');
 
-      // First ensure trip provider is properly initialized
-      final tripProvider = Provider.of<TripPlanningProvider>(
-        context,
-        listen: false,
-      );
-      debugPrint(
-        'FORCE_REFRESH: Current trip count before refresh: ${tripProvider.trips.length}',
-      );
+      final appModeProvider = Provider.of<AppModeProvider>(context, listen: false);
 
-      // Force refresh trip data
-      await tripProvider.initialize();
-      debugPrint(
-        'FORCE_REFRESH: Trip count after initialize: ${tripProvider.trips.length}',
-      );
-
-      // Always run cleanup if trip initialization was successful (even with 0 trips)
-      if (!tripProvider.isLoading && tripProvider.error == null) {
-        debugPrint(
-          'FORCE_REFRESH: Trip loading successful, running cleanup with ${tripProvider.trips.length} trips',
+      if (appModeProvider.isCollaborationMode) {
+        // In collaboration mode, refresh collaboration provider
+        final collaborationProvider = Provider.of<CollaborationProvider>(
+          context,
+          listen: false,
         );
-        await _cleanupOrphanedExpenses(tripProvider.trips);
+        debugPrint('FORCE_REFRESH: Collaboration mode - refreshing collaboration data');
+
+        await collaborationProvider.ensureInitialized();
+        debugPrint(
+          'FORCE_REFRESH: Collaboration mode - loaded trips: ${collaborationProvider.mySharedTrips.length} owned, ${collaborationProvider.sharedWithMeTrips.length} shared',
+        );
       } else {
-        debugPrint(
-          'FORCE_REFRESH: Trip loading failed or still loading - skipping cleanup',
+        // In private mode, refresh trip planning provider
+        final tripProvider = Provider.of<TripPlanningProvider>(
+          context,
+          listen: false,
         );
+        debugPrint(
+          'FORCE_REFRESH: Private mode - current trip count: ${tripProvider.trips.length}',
+        );
+
+        // Force refresh trip data
+        await tripProvider.initialize();
+        debugPrint(
+          'FORCE_REFRESH: Private mode - trip count after initialize: ${tripProvider.trips.length}',
+        );
+
+        // Always run cleanup if trip initialization was successful (even with 0 trips)
+        if (!tripProvider.isLoading && tripProvider.error == null) {
+          debugPrint(
+            'FORCE_REFRESH: Trip loading successful, running cleanup with ${tripProvider.trips.length} trips',
+          );
+          await _cleanupOrphanedExpenses(tripProvider.trips);
+        } else {
+          debugPrint(
+            'FORCE_REFRESH: Trip loading failed or still loading - skipping cleanup',
+          );
+        }
       }
 
       // Then reload all expense data
@@ -823,6 +927,19 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   Widget _buildMonthSelector() {
     return Consumer4<TripPlanningProvider, ExpenseProvider, AppModeProvider, CollaborationProvider>(
       builder: (context, tripProvider, expenseProvider, appModeProvider, collaborationProvider, child) {
+        // Ensure collaboration provider is initialized in collaboration mode
+        if (appModeProvider.isCollaborationMode && !collaborationProvider.hasSharedTrips && !collaborationProvider.isLoading) {
+          debugPrint('ANALYSIS_MONTH_SELECTOR: Collaboration provider not initialized, initializing...');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            collaborationProvider.ensureInitialized();
+          });
+          // Return loading state while initializing
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
         // Get trips based on current mode
         final trips = _getTripsForCurrentMode();
         final modeLabel = appModeProvider.isCollaborationMode ? ' (Collab)' : '';
@@ -858,10 +975,34 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   ),
                   // Individual trips from current mode
                   ...trips.map((trip) {
+                    // Determine trip tag (P for Private, C for Collaboration, S for Shared)
+                    String tag;
+                    final collaborationProvider = context.read<CollaborationProvider>();
+
+                    // Check if this trip is in the shared trips list (someone shared with me)
+                    final isSharedTrip = collaborationProvider.sharedWithMeTrips.any(
+                      (sharedTrip) => sharedTrip.id == trip.id,
+                    );
+
+                    if (isSharedTrip) {
+                      tag = '(S)'; // Shared trip
+                    } else {
+                      // Check if this trip is in my owned trips list
+                      final isOwnedCollabTrip = collaborationProvider.mySharedTrips.any(
+                        (ownedTrip) => ownedTrip.id == trip.id,
+                      );
+
+                      if (isOwnedCollabTrip) {
+                        tag = '(C)'; // Owned collaboration trip
+                      } else {
+                        tag = '(P)'; // Private trip
+                      }
+                    }
+
                     return DropdownItem<String?>(
                       value: trip.id,
                       child: Text(
-                        trip.name,
+                        '${trip.name} $tag',
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 12,
@@ -875,11 +1016,49 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 ],
                 valueListenable: _selectedTripNotifier,
                 onChanged: (String? newValue) async {
-                  setState(() {
-                    _selectedTripId = newValue;
-                    _selectedTripNotifier.value = newValue;
-                  });
-                  await _forceRefreshAllData();
+                  if (newValue != _selectedTripId) {
+                    setState(() {
+                      _isTripSelectionLoading = true;
+                      _selectedTripId = newValue;
+                      _selectedTripNotifier.value = newValue;
+                    });
+
+                    try {
+                      // Ensure collaboration provider is initialized first
+                      final collaborationProvider = context.read<CollaborationProvider>();
+                      if (!collaborationProvider.hasSharedTrips) {
+                        debugPrint('TRIP_SELECTION: Initializing collaboration provider...');
+                        await collaborationProvider.ensureInitialized();
+                      }
+
+                      // Small delay to ensure UI updates before heavy data loading
+                      await Future.delayed(const Duration(milliseconds: 100));
+
+                      await _forceRefreshAllData();
+
+                      // Additional delay to ensure data is properly loaded
+                      await Future.delayed(const Duration(milliseconds: 200));
+
+                    } catch (e) {
+                      debugPrint('TRIP_SELECTION_ERROR: $e');
+                      // Show error but don't crash
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error loading trip data: $e'),
+                            backgroundColor: Colors.red,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() {
+                          _isTripSelectionLoading = false;
+                        });
+                      }
+                    }
+                  }
                 },
                 selectedItemBuilder: (context) {
                   return [
@@ -1175,10 +1354,27 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Expense list for activities grouped by trip - Enhanced with proper deletion handling
   Widget _buildExpenseList() {
-    return Consumer<TripPlanningProvider>(
-      builder: (context, tripProvider, child) {
+    return Consumer4<TripPlanningProvider, CollaborationProvider, ExpenseProvider, AppModeProvider>(
+      builder: (context, tripProvider, collaborationProvider, expenseProvider, appModeProvider, child) {
         if (_expenseProvider == null) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        // In collaboration mode, ensure trips are loaded before displaying
+        if (appModeProvider.isCollaborationMode) {
+          if (!collaborationProvider.hasSharedTrips && !collaborationProvider.isLoading) {
+            debugPrint('ANALYSIS_EXPENSE_LIST: Collaboration provider not initialized, forcing initialization...');
+            // Force initialize collaboration provider
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              collaborationProvider.ensureInitialized();
+            });
+            return const Center(child: CircularProgressIndicator());
+          }
+          // If provider is loading, show loading indicator
+          if (collaborationProvider.isLoading) {
+            debugPrint('ANALYSIS_EXPENSE_LIST: Collaboration provider loading...');
+            return const Center(child: CircularProgressIndicator());
+          }
         }
 
         // Note: Removed automatic cleanup trigger to prevent repeated calls with empty trip lists
@@ -1187,7 +1383,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         return AnimatedBuilder(
           animation: expenseProvider,
           builder: (context, child) {
-            if (expenseProvider.isLoading) {
+            if (expenseProvider.isLoading || _isTripSelectionLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
@@ -1250,10 +1446,13 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               );
             }
 
-            // Group expenses by trip with enhanced filtering
+            // Use the same trip list as the dropdown for consistency
+            final availableTrips = _getTripsForCurrentMode();
+
+            // Group expenses by trip with enhanced filtering - PASS THE CORRECT TRIPS
             final groupedExpenses = _groupExpensesByTripWithCleanup(
               expenses,
-              tripProvider.trips,
+              availableTrips, // Use the correct trip list based on mode
             );
 
             if (groupedExpenses.isEmpty) {
@@ -1356,17 +1555,23 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      expense.description.isNotEmpty == true
-                                          ? _extractActivityTitle(
-                                              expense.description,
-                                            )
-                                          : expense.category.displayName,
-                                      style: TextStyle(
-                                        fontFamily: 'Urbanist-Regular',
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            expense.description.isNotEmpty == true
+                                                ? _extractActivityTitle(
+                                                    expense.description,
+                                                  )
+                                                : expense.category.displayName,
+                                            style: TextStyle(
+                                              fontFamily: 'Urbanist-Regular',
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 2),
                                     Row(
@@ -1418,14 +1623,24 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                   ],
                                 ),
                               ),
-                              Text(
-                                '-${_formatMoney(expense.amount)}₫',
-                                style: TextStyle(
-                                  fontFamily: 'Urbanist-Regular',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.red[700],
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '-${_formatMoney(expense.amount)}₫',
+                                    style: TextStyle(
+                                      fontFamily: 'Urbanist-Regular',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.red[700],
+                                    ),
+                                  ),
+                                  // Trip source badge below price (only show in All Trips mode)
+                                  if (tripName != 'Other Expenses' && _selectedTripId == null) ...[
+                                    const SizedBox(height: 4),
+                                    _buildTripSourceBadge(tripName),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
@@ -1477,6 +1692,16 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     List<Expense> expenses,
     List<TripModel> trips,
   ) {
+    debugPrint('GROUP_EXPENSES: Starting expense grouping with ${expenses.length} expenses and ${trips.length} trips');
+
+    // Use the same trip list that the dropdown uses for consistency
+    final availableTrips = _getTripsForCurrentMode();
+    debugPrint('GROUP_EXPENSES: Available trips from _getTripsForCurrentMode(): ${availableTrips.length}');
+
+    // Determine trip source for tagging
+    final appModeProvider = context.read<AppModeProvider>();
+    final isPrivateMode = appModeProvider.isPrivateMode;
+
     final Map<String, List<Expense>> grouped = {};
     final validTripIds = trips.map((trip) => trip.id).toSet();
 
@@ -1488,6 +1713,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       final isCurrentMonth =
           expenseMonth == (_currentMonthIndex + 1) &&
           expenseYear == _currentYear;
+
+      debugPrint('FILTER_EXPENSE: ${expense.id} - Date: ${expense.expenseDate}, Month: $expenseMonth, Year: $expenseYear, Current: ${_currentMonthIndex + 1}/${_currentYear}, IsCurrentMonth: $isCurrentMonth, TripId: ${expense.tripId}');
 
       if (!isCurrentMonth) {
         return false; // Skip expenses from other months
@@ -1501,54 +1728,141 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       return true;
     }).toList();
 
+    debugPrint('FILTER_RESULT: Valid expenses count: ${validExpenses.length}');
+
     for (final expense in validExpenses) {
       String tripName = 'Other Expenses';
       String? associatedTripId;
 
+      debugPrint('PROCESSING_EXPENSE: Expense ${expense.id}, tripId: ${expense.tripId}, description: ${expense.description}');
+
       // First priority: Use expense tripId to find matching trip
       if (expense.tripId != null && validTripIds.contains(expense.tripId)) {
-        final matchingTrip = trips.firstWhere(
+        final matchingTrip = availableTrips.firstWhere(
           (trip) => trip.id == expense.tripId,
           orElse: () =>
-              trips.first, // This should not happen due to filtering above
+              availableTrips.first, // This should not happen due to filtering above
         );
-        tripName = '${matchingTrip.name} (${matchingTrip.destination})';
+
+        // Add tag to identify trip source (P for Private, C for Collaboration, S for Shared)
+        String tag;
+        final collaborationProvider = context.read<CollaborationProvider>();
+
+        // Debug logging
+        debugPrint('TAG_DET: Checking trip ${matchingTrip.id} - ${matchingTrip.name}');
+        debugPrint('TAG_DET: Collab provider - mySharedTrips: ${collaborationProvider.mySharedTrips.length}, sharedWithMe: ${collaborationProvider.sharedWithMeTrips.length}');
+        debugPrint('TAG_DET: My shared trip IDs: ${collaborationProvider.mySharedTrips.map((t) => t.id).toList()}');
+        debugPrint('TAG_DET: Shared with me trip IDs: ${collaborationProvider.sharedWithMeTrips.map((t) => t.id).toList()}');
+
+        // Check if this trip is in the shared trips list (someone shared with me)
+        final isSharedTrip = collaborationProvider.sharedWithMeTrips.any(
+          (trip) => trip.id == matchingTrip.id,
+        );
+
+        if (isSharedTrip) {
+          tag = 'S'; // Shared trip
+          debugPrint('TAG_DET: Trip ${matchingTrip.id} is SHARED (S)');
+        } else {
+          // Check if this trip is in my owned trips list
+          final isOwnedCollabTrip = collaborationProvider.mySharedTrips.any(
+            (trip) => trip.id == matchingTrip.id,
+          );
+
+          if (isOwnedCollabTrip) {
+            tag = 'C'; // Owned collaboration trip
+            debugPrint('TAG_DET: Trip ${matchingTrip.id} is OWNED COLLAB (C)');
+          } else {
+            tag = 'P'; // Private trip
+            debugPrint('TAG_DET: Trip ${matchingTrip.id} is PRIVATE (P)');
+          }
+        }
+
+        tripName = '${matchingTrip.name} (${matchingTrip.destination}) [$tag]';
         associatedTripId = matchingTrip.id;
       }
 
       // Second priority: Try to find trip from expense description
       if (associatedTripId == null) {
-        final tripFromDesc = _extractTripFromDescription(expense.description);
-        if (tripFromDesc != null) {
-          // Find matching trip by name or destination
-          final matchingTrips = trips.where(
-            (trip) =>
-                trip.name == tripFromDesc ||
-                trip.destination == tripFromDesc ||
-                '${trip.name} (${trip.destination})' == tripFromDesc,
-          );
+        final tripIdFromDesc = _extractTripFromDescription(expense.description);
+        if (tripIdFromDesc != null) {
+          // Find matching trip by ID (since descriptions contain trip IDs, not names)
+          TripModel? matchingTrip;
+          try {
+            matchingTrip = availableTrips.firstWhere(
+              (trip) => trip.id == tripIdFromDesc,
+            );
+          } catch (e) {
+            matchingTrip = null;
+          }
 
-          if (matchingTrips.isNotEmpty) {
-            final matchingTrip = matchingTrips.first;
-            tripName = '${matchingTrip.name} (${matchingTrip.destination})';
+          if (matchingTrip != null) {
+            // Add tag to identify trip source (P for Private, C for Collaboration, S for Shared)
+            String tag;
+            final collaborationProvider = context.read<CollaborationProvider>();
+
+            // Check if this trip is in the shared trips list (someone shared with me)
+            final isSharedTrip = collaborationProvider.sharedWithMeTrips.any(
+              (trip) => trip.id == matchingTrip!.id,
+            );
+
+            if (isSharedTrip) {
+              tag = 'S'; // Shared trip
+            } else {
+              // Check if this trip is in my owned trips list
+              final isOwnedCollabTrip = collaborationProvider.mySharedTrips.any(
+                (trip) => trip.id == matchingTrip!.id,
+              );
+
+              if (isOwnedCollabTrip) {
+                tag = 'C'; // Owned collaboration trip
+              } else {
+                tag = 'P'; // Private trip
+              }
+            }
+
+            tripName = '${matchingTrip.name} (${matchingTrip.destination}) [$tag]';
             associatedTripId = matchingTrip.id;
           } else {
             tripName =
-                tripFromDesc; // Keep original description if no trip found
+                tripIdFromDesc; // Keep trip ID as name if no trip found
           }
         }
       }
 
       // Third priority: Try to match expense date with trip dates
       if (associatedTripId == null) {
-        for (final trip in trips) {
+        for (final trip in availableTrips) {
           if (expense.expenseDate.isAfter(
                 trip.startDate.subtract(const Duration(days: 1)),
               ) &&
               expense.expenseDate.isBefore(
                 trip.endDate.add(const Duration(days: 2)),
               )) {
-            tripName = '${trip.name} (${trip.destination})';
+            // Add tag to identify trip source (P for Private, C for Collaboration, S for Shared)
+            String tag;
+            final collaborationProvider = context.read<CollaborationProvider>();
+
+            // Check if this trip is in the shared trips list (someone shared with me)
+            final isSharedTrip = collaborationProvider.sharedWithMeTrips.any(
+              (sharedTrip) => sharedTrip.id == trip.id,
+            );
+
+            if (isSharedTrip) {
+              tag = 'S'; // Shared trip
+            } else {
+              // Check if this trip is in my owned trips list
+              final isOwnedCollabTrip = collaborationProvider.mySharedTrips.any(
+                (ownedTrip) => ownedTrip.id == trip.id,
+              );
+
+              if (isOwnedCollabTrip) {
+                tag = 'C'; // Owned collaboration trip
+              } else {
+                tag = 'P'; // Private trip
+              }
+            }
+
+            tripName = '${trip.name} (${trip.destination}) [$tag]';
             associatedTripId = trip.id;
             break;
           }
@@ -2659,13 +2973,21 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Build compact budget status for calendar view
   Widget _buildBudgetStatus() {
-    return Consumer2<TripPlanningProvider, ExpenseProvider>(
-      builder: (context, tripProvider, expenseProvider, child) {
+    return Consumer4<TripPlanningProvider, CollaborationProvider, ExpenseProvider, AppModeProvider>(
+      builder: (context, tripProvider, collaborationProvider, expenseProvider, appModeProvider, child) {
         if (_selectedTripId == null) return Container();
 
-        final selectedTrip = tripProvider.trips.firstWhere(
+        // Get the correct trip based on mode
+        final availableTrips = _getTripsForCurrentMode();
+        final selectedTrip = availableTrips.firstWhere(
           (trip) => trip.id == _selectedTripId,
-          orElse: () => tripProvider.trips.first,
+          orElse: () => availableTrips.isNotEmpty ? availableTrips.first : TripModel(
+            id: 'dummy',
+            name: 'Unknown Trip',
+            destination: 'Unknown',
+            startDate: DateTime.now(),
+            endDate: DateTime.now(),
+          ),
         );
 
         // Calculate actual spent from current expenses for this specific trip AND current month
@@ -2893,6 +3215,61 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   /// Format expense date
   String _formatExpenseDate(DateTime date) {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  /// Build trip source badge (P for Private, C for Collaboration, S for Shared)
+  Widget _buildTripSourceBadge(String tripName) {
+    // Extract the tag from trip name (format: "Trip Name (Destination) [P|C|S]")
+    final tagMatch = RegExp(r'\[([PCS])\]$').firstMatch(tripName);
+    if (tagMatch == null) return const SizedBox.shrink();
+
+    final tag = tagMatch.group(1)!;
+
+    // Define colors for each tag type
+    Color backgroundColor;
+    Color borderColor;
+    Color textColor;
+
+    switch (tag) {
+      case 'P':
+        backgroundColor = Colors.red[100]!;
+        borderColor = Colors.red[300]!;
+        textColor = Colors.red[700]!;
+        break;
+      case 'C':
+        backgroundColor = Colors.green[100]!;
+        borderColor = Colors.green[300]!;
+        textColor = Colors.green[700]!;
+        break;
+      case 'S':
+        backgroundColor = Colors.blue[100]!;
+        borderColor = Colors.blue[300]!;
+        textColor = Colors.blue[700]!;
+        break;
+      default:
+        return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: borderColor,
+          width: 1,
+        ),
+      ),
+      child: Text(
+        tag,
+        style: TextStyle(
+          fontFamily: 'Urbanist-Regular',
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
+      ),
+    );
   }
 
   /// Format money amount

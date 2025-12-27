@@ -71,16 +71,8 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
           ),
         );
 
+        // Call callback after closing to avoid any interference
         widget.onRequestHandled?.call();
-
-        // Close the bottom sheet after successful operation
-        Navigator.of(context).pop();
-
-        // Close the bottom sheet after successful operation
-        Navigator.of(context).pop();
-
-        // Close the dialog/bottom sheet after successful operation
-        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
@@ -625,6 +617,10 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
           ),
         );
 
+        // Close the bottom sheet immediately after handling the request
+        Navigator.of(context).pop();
+
+        // Call callback after closing to avoid any interference
         widget.onRequestHandled?.call();
       }
     } catch (e) {

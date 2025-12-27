@@ -509,6 +509,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   bool get isEditor => _userRole == 'editor';
   bool get isViewer => _userRole == 'viewer';
 
+  // Prevent auto-refresh during add operations
+  bool _isAddingActivity = false;
+
+  // Auto-refresh timer for collaboration trips
+  Timer? _autoRefreshTimer;
+
   // Force UI rebuild when permissions might have changed
 
   @override
@@ -519,6 +525,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     _loadActivitiesFromServer();
     // Check user permissions for collaboration trips
     _checkUserPermissions();
+    // Start auto-refresh timer for collaboration trips
+    _startAutoRefreshTimer();
     // Try to get expense provider from context after first frame (optional)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('DEBUG: PostFrameCallback - Starting initialization');
@@ -538,6 +546,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   @override
   void dispose() {
     _collaborationSubscription?.cancel();
+    _autoRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -566,10 +575,13 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           final oldRole = _userRole;
           _checkUserPermissions();
 
-          // If role changed, update UI
+          // If role changed, update UI and ensure activities are sorted
           if (oldRole != _userRole && mounted) {
-            setState(() {});
-            debugPrint('🔄 PERMISSION_UPDATED: Role changed from $oldRole to $_userRole, UI updated');
+            setState(() {
+              // Force re-sort activities when permissions change
+              _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
+            });
+            debugPrint('🔄 PERMISSION_UPDATED: Role changed from $oldRole to $_userRole, UI updated and activities resorted');
           }
         }
       });
@@ -724,9 +736,17 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             collabProvider.sharedWithMeTrips
             .any((t) => t.id == _trip.id);
 
-        // Auto-refresh local trip data when collaboration provider updates
-        if (isCollaborationTrip && !_isRefreshing) {
-          _autoRefreshFromProvider(collabProvider);
+        // Schedule auto-refresh for next frame to avoid setState during build
+        // Only refresh if we're not currently adding/refreshing and trip is collaboration
+        if (isCollaborationTrip && !_isRefreshing && !_isAddingActivity) {
+          // Add delay to ensure all operations are complete
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (mounted && !_isRefreshing && !_isAddingActivity) {
+                _autoRefreshFromProvider(collabProvider);
+              }
+            });
+          });
         }
 
         return PopScope(
@@ -2768,6 +2788,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _addActivity(ActivityModel activity) async {
     try {
+      // Set flag to prevent auto-refresh during add operation
+      _isAddingActivity = true;
+
       // Check user permissions - editors must request approval
       if (isEditor) {
         await _createAddActivityRequest(activity);
@@ -2806,6 +2829,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       // Don't auto-create expense - only create on check-in
     } catch (e) {
       debugPrint('Failed to add activity: $e');
+    } finally {
+      // Clear flag after operation completes
+      _isAddingActivity = false;
     }
   }
 
@@ -3552,14 +3578,18 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
       if (hasChanges) {
         debugPrint('🔄 AUTO_REFRESH: Detected changes in trip ${updatedTrip.id}, updating local state...');
+        debugPrint('🔄 AUTO_REFRESH: Before sorting - activities: ${updatedTrip.activities.map((a) => '${a.title} (${a.startDate})').toList()}');
 
-        // Update local state with provider data
+        // Update local state with provider data and ensure activities are sorted
         setState(() {
           _trip = updatedTrip!.toTripModel();
-          _activities = List<ActivityModel>.from(updatedTrip.activities);
+          _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
+            List<ActivityModel>.from(updatedTrip.activities)
+          );
         });
 
-        debugPrint('✅ AUTO_REFRESH: Updated local trip data - ${_activities.length} activities');
+        debugPrint('✅ AUTO_REFRESH: After sorting - activities: ${_activities.map((a) => '${a.title} (${a.startDate})').toList()}');
+        debugPrint('✅ AUTO_REFRESH: Updated local trip data - ${_activities.length} activities (sorted chronologically)');
       }
     } catch (e) {
       debugPrint('❌ AUTO_REFRESH: Failed to auto-refresh from provider: $e');
@@ -3567,7 +3597,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   /// Manual refresh triggered by user
-  Future<void> _manualRefresh(CollaborationProvider collabProvider) async {
+  Future<void> _manualRefresh(CollaborationProvider collabProvider, {bool showNotification = true}) async {
     if (_isRefreshing) return;
 
     setState(() {
@@ -3586,7 +3616,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
       setState(() {
         _trip = updatedTrip.toTripModel();
-        _activities = List<ActivityModel>.from(updatedTrip.activities);
+        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
+          List<ActivityModel>.from(updatedTrip.activities)
+        );
       });
     
       // IMPORTANT: Force re-check user permissions after refresh
@@ -3602,7 +3634,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         setState(() {});
       }
 
-      if (mounted) {
+      if (mounted && showNotification) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Trip data and permissions refreshed')),
         );
@@ -3787,5 +3819,43 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         },
       ),
     );
+  }
+
+  /// Start auto-refresh timer for collaboration trips
+  void _startAutoRefreshTimer() {
+    // Check if this is a collaboration trip
+    try {
+      final collabProvider = context.read<CollaborationProvider>();
+      final isCollaborationTrip = collabProvider.mySharedTrips
+          .any((t) => t.id == _trip.id) ||
+          collabProvider.sharedWithMeTrips
+          .any((t) => t.id == _trip.id);
+
+      if (isCollaborationTrip) {
+        debugPrint('🔄 Starting auto-refresh timer for collaboration trip: ${_trip.id}');
+
+        // Refresh every 15 seconds for collaboration trips
+        _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+          if (!mounted) {
+            timer.cancel();
+            return;
+          }
+
+          try {
+            // Trigger manual refresh to get latest data (without showing notification)
+            final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+            await _manualRefresh(collabProvider, showNotification: false);
+            debugPrint('🔄 Auto-refresh completed for trip: ${_trip.id}');
+          } catch (e) {
+            debugPrint('❌ Auto-refresh failed: $e');
+            // Don't cancel timer on error, just continue
+          }
+        });
+      } else {
+        debugPrint('ℹ️ Not a collaboration trip, skipping auto-refresh timer: ${_trip.id}');
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to start auto-refresh timer: $e');
+    }
   }
 }
