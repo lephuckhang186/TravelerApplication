@@ -213,7 +213,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '❌ Có lỗi xảy ra khi tạo kế hoạch: $e',
+          'content': '❌ An error occurred while creating the plan: $e',
         });
       });
     }
@@ -352,7 +352,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '❌ Có lỗi khi thêm hoạt động vào kế hoạch hiện tại: $e',
+          'content': '❌ An error occurred while adding an activity to the current plan.: $e',
         });
       });
     }
@@ -739,7 +739,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Đang xử lý...',
+                      'Processing...',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
@@ -768,7 +768,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 child: Column(
                   children: [
                     Text(
-                      'Thử với số người khác:',
+                      'Try with a different number of people:',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 14,
@@ -838,7 +838,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'người',
+                                'people',
                                 style: TextStyle(
                                   fontFamily: 'Urbanist-Regular',
                                   fontSize: 14,
@@ -1012,7 +1012,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Xin chào! 👋',
+                  'Hello! 👋',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 24,
@@ -1023,8 +1023,8 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 const SizedBox(height: 6),
                 Text(
                   widget.currentTrip != null
-                      ? 'Tôi sẽ giúp bạn lên kế hoạch!'
-                      : 'Tôi là trợ lý AI du lịch của bạn!',
+                      ? 'I will help you with the planning!'
+                      : 'I am your AI travel assistant!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
@@ -1121,8 +1121,8 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
           const SizedBox(height: 24),
           Text(
             widget.currentTrip != null
-                ? 'Chỉ cần cho tôi biết số người du lịch:'
-                : 'Bạn muốn hỏi gì?',
+                ? 'Just tell me the number of tourists:'
+                : 'What do you want to ask?',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 18,
@@ -1194,7 +1194,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'người',
+                            'people',
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
                               fontSize: 16,
@@ -1233,8 +1233,8 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
               child: TextField(
                 controller: _styleController,
                 decoration: InputDecoration(
-                  labelText: 'Phong cách du lịch (tuỳ chọn)',
-                  hintText: 'VD: LGBT, sôi động, thiền định, phượt...',
+                  labelText: 'Travel style (optional)',
+                  hintText: 'Examples: lively, meditative, backpacking...',
                   prefixIcon: Icon(Icons.style, color: AppColors.primary),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1296,7 +1296,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _isLoading ? 'Đang tạo...' : 'Tạo kế hoạch',
+                          _isLoading ? 'Creating...' : 'Creating a plan',
                           style: const TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             fontSize: 16,
@@ -1391,7 +1391,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
             ),
             const SizedBox(height: 20),
             Text(
-              'Hoặc nhập câu hỏi của bạn bên dưới!',
+              'Or enter your question below!',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 13,
@@ -1407,12 +1407,12 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
   void _sendPeopleCount(int count) {
     if (_isLoading) return;
 
-    String message = 'Tạo kế hoạch cho $count người';
+    String message = 'Create a plan for $count people';
 
     // Append travel style if provided
     final style = _styleController.text.trim();
     if (style.isNotEmpty) {
-      message += ' với phong cách $style';
+      message += ' with style $style';
     }
 
     _controller.text = message;
