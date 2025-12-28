@@ -27,7 +27,6 @@ class _PlanScreenState extends State<PlanScreen>
   // Unified trip filtering for both modes
   List<dynamic> _getVisibleTrips(List<dynamic> allTrips) {
     if (_searchQuery.isEmpty) {
-      debugPrint('DEBUG: No search query, returning all ${allTrips.length} trips');
       return allTrips;
     }
     final query = _searchQuery.toLowerCase();
@@ -37,7 +36,6 @@ class _PlanScreenState extends State<PlanScreen>
       final descriptionMatch = (trip.description ?? '').toLowerCase().contains(query);
       return nameMatch || destinationMatch || descriptionMatch;
     }).toList();
-    debugPrint('DEBUG: Search query "$_searchQuery" filtered ${allTrips.length} trips to ${filtered.length}');
     return filtered;
   }
 
@@ -71,9 +69,8 @@ class _PlanScreenState extends State<PlanScreen>
       if (mounted) {
         setState(() => _isInitialized = true);
       }
-      debugPrint('✅ COLLABORATION_SCREEN: Initialized successfully');
     } catch (e) {
-      debugPrint('❌ COLLABORATION_SCREEN: Failed to initialize: $e');
+      //
     }
   }
 

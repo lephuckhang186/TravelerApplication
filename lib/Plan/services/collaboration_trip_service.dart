@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import '../models/collaboration_models.dart';
 import '../models/trip_model.dart';
 
@@ -51,8 +50,6 @@ class CollaborationTripService {
       final user = _auth.currentUser!;
       final userName = user.displayName ?? user.email?.split('@').first ?? 'Unknown';
 
-      debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - Creating trip: ${trip.name} for user: $_userId ($userName)');
-
       // Create shared trip document
       final sharedTripRef = _sharedTripsRef.doc();
       final tripId = sharedTripRef.id;
@@ -79,16 +76,12 @@ class CollaborationTripService {
         shareableLink: shareableLink,
       );
 
-      debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - Preparing to save trip data...');
-
       // Save to shared trips collection
       await sharedTripRef.set({
         ...sharedTrip.toJson(),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-
-      debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - Saved to shared_trips collection');
 
       // Add reference to user's shared trips
       await _userSharedTripsRef!.doc(tripId).set({
@@ -98,24 +91,17 @@ class CollaborationTripService {
         'isActive': true,
       });
 
-      debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - Saved to user_shared_trips collection');
-
       // Verify the trip was created by reading it back
       final verifyDoc = await _sharedTripsRef.doc(tripId).get();
       if (verifyDoc.exists) {
-        debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - ✅ Verified trip exists in Firestore');
       } else {
-        debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - ❌ Trip not found in Firestore after creation');
       }
-
-      debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - ✅ Successfully created shared trip: $tripId');
 
       return sharedTrip.copyWith(
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.createSharedTrip() - ❌ Error: $e');
       throw Exception('Failed to create shared trip: $e');
     }
   }
@@ -152,10 +138,8 @@ class CollaborationTripService {
         'lastActivityBy': userName,
       });
 
-      debugPrint('DEBUG: CollaborationTripService.updateSharedTrip() - Updated trip: ${trip.id}');
       return updatedTrip;
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.updateSharedTrip() - Error: $e');
       throw Exception('Failed to update shared trip: $e');
     }
   }
@@ -199,10 +183,7 @@ class CollaborationTripService {
       batch.delete(_sharedTripsRef.doc(tripId));
 
       await batch.commit();
-
-      debugPrint('DEBUG: CollaborationTripService.deleteSharedTrip() - Deleted trip: $tripId');
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.deleteSharedTrip() - Error: $e');
       throw Exception('Failed to delete shared trip: $e');
     }
   }
@@ -213,7 +194,6 @@ class CollaborationTripService {
   Future<List<SharedTripModel>> loadUserSharedTrips() async {
     try {
       if (_userId == null) {
-        debugPrint('DEBUG: CollaborationTripService.loadUserSharedTrips() - User not authenticated');
         return [];
       }
 
@@ -224,7 +204,6 @@ class CollaborationTripService {
           .get();
 
       if (userTripsSnapshot.docs.isEmpty) {
-        debugPrint('DEBUG: CollaborationTripService.loadUserSharedTrips() - No shared trips found');
         return [];
       }
 
@@ -242,10 +221,8 @@ class CollaborationTripService {
         }
       }
 
-      debugPrint('DEBUG: CollaborationTripService.loadUserSharedTrips() - Loaded ${trips.length} shared trips');
       return trips;
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.loadUserSharedTrips() - Error: $e');
       throw Exception('Failed to load shared trips: $e');
     }
   }
@@ -254,36 +231,22 @@ class CollaborationTripService {
   Future<List<SharedTripModel>> loadMySharedTrips() async {
     try {
       if (_userId == null) {
-        debugPrint('DEBUG: CollaborationTripService.loadMySharedTrips() - No user authenticated');
         return [];
       }
-
-      debugPrint('DEBUG: CollaborationTripService.loadMySharedTrips() - Loading for user: $_userId');
 
       final snapshot = await _sharedTripsRef
           .where('ownerId', isEqualTo: _userId)
           .orderBy('createdAt', descending: true)
           .get();
 
-      debugPrint('DEBUG: CollaborationTripService.loadMySharedTrips() - Firestore returned ${snapshot.docs.length} documents');
-
       final trips = snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
-        debugPrint('DEBUG: CollaborationTripService.loadMySharedTrips() - Processing trip: ${data['name']} (${doc.id})');
         return SharedTripModel.fromJson(data);
       }).toList();
 
-      debugPrint('DEBUG: CollaborationTripService.loadMySharedTrips() - Final result: ${trips.length} owned trips');
-
-      // Log each trip for debugging
-      for (int i = 0; i < trips.length; i++) {
-        debugPrint('DEBUG: CollaborationTripService.loadMySharedTrips() - Trip ${i + 1}: ${trips[i].name} (${trips[i].id}) - Owner: ${trips[i].ownerId}');
-      }
-
       return trips;
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.loadMySharedTrips() - Error: $e');
       throw Exception('Failed to load my shared trips: $e');
     }
   }
@@ -317,10 +280,8 @@ class CollaborationTripService {
         }
       }
 
-      debugPrint('DEBUG: CollaborationTripService.loadSharedWithMeTrips() - Loaded ${trips.length} shared trips');
       return trips;
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.loadSharedWithMeTrips() - Error: $e');
       throw Exception('Failed to load shared trips: $e');
     }
   }
@@ -348,7 +309,6 @@ class CollaborationTripService {
 
       return trip;
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.getSharedTrip() - Error: $e');
       return null;
     }
   }
@@ -358,56 +318,38 @@ class CollaborationTripService {
   /// Watch shared trips for real-time updates
   Stream<List<SharedTripModel>> watchUserSharedTrips() {
     if (_userId == null) {
-      debugPrint('❌ WATCH_TRIPS: No user ID, returning empty stream');
       return Stream.value([]);
     }
-
-    debugPrint('🎯 WATCH_TRIPS: Setting up real-time listener for user $_userId');
 
     return _userSharedTripsRef!
         .where('isActive', isEqualTo: true)
         .orderBy('addedAt', descending: true)
         .snapshots()
         .handleError((error) {
-          debugPrint('❌ WATCH_TRIPS_STREAM_ERROR: $error');
         })
         .asyncMap((userTripsSnapshot) async {
       try {
-        debugPrint('📡 FIRESTORE_EVENT: Received user trips snapshot with ${userTripsSnapshot.docs.length} docs');
-
         if (userTripsSnapshot.docs.isEmpty) {
-          debugPrint('📭 FIRESTORE_EVENT: No active trips found');
           return <SharedTripModel>[];
         }
 
         final trips = <SharedTripModel>[];
         for (final doc in userTripsSnapshot.docs) {
-          debugPrint('🔍 FIRESTORE_EVENT: Fetching trip ${doc.id}');
-          try {
-            final tripDoc = await _sharedTripsRef.doc(doc.id).get();
-            if (tripDoc.exists) {
-              final tripData = tripDoc.data()!;
-              tripData['id'] = doc.id;
-              final trip = SharedTripModel.fromJson(tripData);
-              trips.add(trip);
-              debugPrint('✅ FIRESTORE_EVENT: Added trip ${trip.name} (${trip.id})');
-            } else {
-              debugPrint('⚠️ FIRESTORE_EVENT: Trip ${doc.id} not found in shared_trips');
-            }
-          } catch (fetchError) {
-            debugPrint('❌ FIRESTORE_EVENT_FETCH_ERROR: Failed to fetch trip ${doc.id}: $fetchError');
+          final tripDoc = await _sharedTripsRef.doc(doc.id).get();
+          if (tripDoc.exists) {
+            final tripData = tripDoc.data()!;
+            tripData['id'] = doc.id;
+            final trip = SharedTripModel.fromJson(tripData);
+            trips.add(trip);
           }
         }
 
-        debugPrint('🎉 FIRESTORE_EVENT: Returning ${trips.length} trips');
         return trips;
       } catch (e) {
-        debugPrint('❌ FIRESTORE_EVENT_PROCESS_ERROR: Failed to process snapshot: $e');
         return <SharedTripModel>[];
       }
     })
         .handleError((error) {
-          debugPrint('❌ WATCH_TRIPS_ASYNC_ERROR: $error');
           return <SharedTripModel>[];
         });
   }
@@ -495,10 +437,8 @@ class CollaborationTripService {
         'sentAt': FieldValue.serverTimestamp(),
       });
 
-      debugPrint('DEBUG: CollaborationTripService.inviteCollaborator() - Sent invitation: ${invitation.id}');
       return invitation;
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.inviteCollaborator() - Error: $e');
       throw Exception('Failed to send invitation: $e');
     }
   }
@@ -522,10 +462,8 @@ class CollaborationTripService {
         return TripInvitation.fromJson(data);
       }).toList();
 
-      debugPrint('DEBUG: CollaborationTripService.getPendingInvitations() - Found ${invitations.length} invitations');
       return invitations;
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.getPendingInvitations() - Error: $e');
       return [];
     }
   }
@@ -595,10 +533,7 @@ class CollaborationTripService {
       );
 
       await batch.commit();
-
-      debugPrint('DEBUG: CollaborationTripService.acceptInvitation() - Accepted invitation: $invitationId');
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.acceptInvitation() - Error: $e');
       throw Exception('Failed to accept invitation: $e');
     }
   }
@@ -627,10 +562,7 @@ class CollaborationTripService {
         'respondedAt': FieldValue.serverTimestamp(),
         'inviteeUserId': _userId,
       });
-
-      debugPrint('DEBUG: CollaborationTripService.declineInvitation() - Declined invitation: $invitationId');
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.declineInvitation() - Error: $e');
       throw Exception('Failed to decline invitation: $e');
     }
   }
@@ -685,10 +617,7 @@ class CollaborationTripService {
       );
 
       await batch.commit();
-
-      debugPrint('DEBUG: CollaborationTripService.removeCollaborator() - Removed collaborator: $collaboratorUserId');
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.removeCollaborator() - Error: $e');
       throw Exception('Failed to remove collaborator: $e');
     }
   }
@@ -726,10 +655,7 @@ class CollaborationTripService {
       batch.update(_userSharedTripsRef!.doc(tripId), {'isActive': false});
 
       await batch.commit();
-
-      debugPrint('DEBUG: CollaborationTripService.leaveSharedTrip() - Left trip: $tripId');
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.leaveSharedTrip() - Error: $e');
       throw Exception('Failed to leave trip: $e');
     }
   }
@@ -784,10 +710,7 @@ class CollaborationTripService {
           .update({
         'role': newRole,
       });
-
-      debugPrint('DEBUG: CollaborationTripService.updateCollaboratorPermission() - Updated permission for collaborator: $collaboratorUserId to $newRole');
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.updateCollaboratorPermission() - Error: $e');
       throw Exception('Failed to update collaborator permission: $e');
     }
   }
@@ -810,7 +733,6 @@ class CollaborationTripService {
       final tripId = segments[1];
       return await getSharedTrip(tripId);
     } catch (e) {
-      debugPrint('DEBUG: CollaborationTripService.getTripByShareableLink() - Error: $e');
       return null;
     }
   }

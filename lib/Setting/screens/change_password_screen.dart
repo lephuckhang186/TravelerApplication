@@ -77,7 +77,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Không tìm thấy email người dùng',
+            'User`s email not found',
             style: TextStyle(fontFamily: 'Urbanist-Regular', ),
           ),
           backgroundColor: Colors.red,
@@ -94,11 +94,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             title: Text(
-              'Email đặt lại mật khẩu đã được gửi',
+              'The password reset email has been sent.',
               style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
             ),
             content: Text(
-              'Chúng tôi đã gửi link đặt lại mật khẩu đến email ${user.email}. Vui lòng kiểm tra hộp thư của bạn.',
+              'We have sent a password reset link to your email address ${user.email}. Please check your inbox.',
               style: TextStyle(fontFamily: 'Urbanist-Regular', ),
             ),
             actions: [

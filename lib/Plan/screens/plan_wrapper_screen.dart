@@ -259,9 +259,8 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
       final collaborationProvider = context.read<CollaborationProvider>();
       // Force re-initialization to ensure fresh data load
       collaborationProvider.initialize().then((_) {
-        debugPrint('🔄 MODE_SWITCH: Collaboration mode initialized with ${collaborationProvider.totalSharedTrips} trips');
       }).catchError((e) {
-        debugPrint('❌ MODE_SWITCH: Failed to initialize collaboration mode: $e');
+        //
       });
     });
   }

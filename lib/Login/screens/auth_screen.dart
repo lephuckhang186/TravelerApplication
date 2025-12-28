@@ -132,7 +132,7 @@ class WelcomeScreen extends StatelessWidget {
                       shadowColor: const Color(0xFF40E0D0).withValues(alpha: 0.3),
                     ),
                     child: const Text(
-                      'Bắt đầu hành trình',
+                      'Begin the journey',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -161,7 +161,7 @@ class WelcomeScreen extends StatelessWidget {
                       backgroundColor: Colors.transparent,
                     ),
                     child: const Text(
-                      'Đăng nhập',
+                      'Log in',
                       style: TextStyle(
                         color: Color(0xFF40E0D0),
                         fontSize: 16,
@@ -245,7 +245,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       // Kiểm tra username không được để trống
       if (username.isEmpty) {
-        _showErrorMessage('Vui lòng nhập username');
+        _showErrorMessage('Please enter your username');
         return;
       }
 
@@ -273,7 +273,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       // Lưu thông tin vào Firestore
       if (userCredential?.user != null) {
-        debugPrint('🔥 Starting Firestore user profile creation...'); // Debug log
+       // Debug log
 
         try {
           await _firestoreService.createEmailUserProfile(
@@ -282,9 +282,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             fullName: username, // Use username from form
             dateOfBirth: DateTime(2000, 1, 1), // Default date
           );
-          debugPrint('✅ Firestore user profile created successfully!'); // Debug log
         } catch (firestoreError) {
-          debugPrint('❌ Firestore error: $firestoreError'); // Debug log
           // Vẫn cho user vào app nếu Firebase Auth thành công
           _showErrorMessage(
             'Account created but profile sync failed. You can update it later.',

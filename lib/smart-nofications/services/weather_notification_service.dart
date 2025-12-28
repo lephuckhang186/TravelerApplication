@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/notification_models.dart';
@@ -8,10 +7,8 @@ import '../../Core/config/api_config.dart';
 class WeatherNotificationService {
   Future<List<WeatherAlert>> checkWeatherAlerts(String tripId) async {
     try {
-      debugPrint('WeatherNotificationService: Checking weather alerts for trip $tripId');
       return await _fetchFromBackendAPI(tripId);
     } catch (e) {
-      debugPrint('WeatherNotificationService: Error checking weather alerts: $e');
       return [];
     }
   }
@@ -26,7 +23,7 @@ class WeatherNotificationService {
           authToken = await auth.currentUser!.getIdToken();
         }
       } catch (authError) {
-        debugPrint('WeatherNotificationService: Auth error: $authError');
+        //
       }
       
       final headers = {
@@ -43,7 +40,7 @@ class WeatherNotificationService {
         final List<dynamic> alertsJson = jsonDecode(response.body);
         final alerts = alertsJson.map((json) => WeatherAlert.fromJson(json)).toList();
         if (alerts.isNotEmpty) {
-          debugPrint('WeatherNotificationService: Found ${alerts.length} weather alerts');
+          //
         }
         return alerts;
       } else if (response.statusCode == 403) {
@@ -54,7 +51,6 @@ class WeatherNotificationService {
       
       return [];
     } catch (e) {
-      debugPrint('WeatherNotificationService: Backend API error: $e');
       return [];
     }
   }
@@ -78,7 +74,6 @@ class WeatherNotificationService {
       
       return null;
     } catch (e) {
-      debugPrint('WeatherNotificationService: Error getting current weather alert: $e');
       return null;
     }
   }

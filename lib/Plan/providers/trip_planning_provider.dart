@@ -27,12 +27,9 @@ class TripPlanningProvider extends ChangeNotifier {
   Future<void> initialize() async {
     _setLoading(true);
     try {
-      debugPrint('🔄 INIT: Loading trips from Firestore only...');
       await _loadTripsFromFirestore();
-      debugPrint('✅ INIT: Loaded ${_trips.length} trips from Firestore');
     } catch (e) {
       _setError('Failed to initialize: $e');
-      debugPrint('❌ INIT: Failed to load trips: $e');
     } finally {
       _setLoading(false);
     }
@@ -65,31 +62,17 @@ class TripPlanningProvider extends ChangeNotifier {
       // Try to create on server first
       TripModel? createdTrip;
       try {
-        debugPrint(
-          'DEBUG: Attempting to create trip on server: ${trip.name} -> ${trip.destination}',
-        );
         createdTrip = await _apiService.createTrip(trip);
-        debugPrint(
-          'DEBUG: Trip created successfully on server with ID: ${createdTrip.id}',
-        );
       } catch (e) {
-        debugPrint('DEBUG: API Error creating trip: $e');
-        debugPrint(
-          'DEBUG: Trip data that failed: name="${trip.name}", dest="${trip.destination}", start=${trip.startDate}, end=${trip.endDate}',
-        );
         // If API fails, create locally with temporary ID
         createdTrip = trip.copyWith(
           id: 'local_${DateTime.now().millisecondsSinceEpoch}',
         );
-        debugPrint('DEBUG: Created local trip with ID: ${createdTrip.id}');
       }
 
       // Add to local list and save to Firestore only
       _trips.add(createdTrip);
       await _firebaseService.saveTrip(createdTrip);
-      debugPrint(
-        '✅ FIRESTORE_SAVE: Saved trip to Firestore: ${createdTrip.name} (${createdTrip.id})',
-      );
 
       _clearError();
       notifyListeners();
@@ -117,15 +100,10 @@ class TripPlanningProvider extends ChangeNotifier {
 
       // Save to Firestore only
       await _firebaseService.saveTrip(trip);
-      debugPrint(
-        '✅ FIRESTORE_SAVE: Saved trip to Firestore: ${trip.name} (${trip.id})',
-      );
 
       _clearError();
       notifyListeners();
-      debugPrint('DEBUG: Added trip to provider: ${trip.name}');
     } catch (e) {
-      debugPrint('DEBUG: Failed to add trip to provider: $e');
       _setError('Failed to add trip: $e');
     }
   }
@@ -134,39 +112,26 @@ class TripPlanningProvider extends ChangeNotifier {
   Future<bool> deleteTrip(String tripId) async {
     _setLoading(true);
     try {
-      debugPrint('DEBUG: Attempting to delete trip: $tripId');
-
       // Check if trip exists locally first
       final tripExists = _trips.any((trip) => trip.id == tripId);
       if (!tripExists) {
-        debugPrint('DEBUG: Trip $tripId not found locally');
         _setError('Trip not found');
         return false;
       }
 
       // For local trips, always proceed with deletion
       if (tripId.startsWith('local_')) {
-        debugPrint(
-          'DEBUG: Local-only trip detected, proceeding with local deletion',
-        );
       } else {
         // Try to delete from server for non-local trips
         try {
-          debugPrint('DEBUG: Deleting from server...');
           await _apiService.deleteTrip(tripId);
-          debugPrint('DEBUG: Server deletion successful');
         } catch (e) {
-          debugPrint('DEBUG: Server deletion failed: $e');
           // For network errors or 404, we'll still proceed with local deletion
           if (e.toString().contains('404') ||
               e.toString().contains('Failed to fetch') ||
               e.toString().contains('ClientException')) {
-            debugPrint(
-              'DEBUG: Network error or 404 - proceeding with local deletion anyway',
-            );
           } else {
             // For other server errors, fail the deletion
-            debugPrint('DEBUG: Unexpected server error - failing deletion');
             _setError(
               'Failed to delete trip from server. Please check your connection and try again.',
             );
@@ -176,28 +141,23 @@ class TripPlanningProvider extends ChangeNotifier {
       }
 
       // Proceed with deletion - Remove from Firestore only
-      debugPrint('DEBUG: Removing trip from Firestore');
       _trips.removeWhere((trip) => trip.id == tripId);
 
       // Delete from Firebase
       try {
         await _firebaseService.deleteTrip(tripId);
-        debugPrint('✅ FIRESTORE_DELETE: Deleted trip from Firestore: $tripId');
       } catch (e) {
-        debugPrint('❌ FIRESTORE_DELETE: Failed to delete from Firestore: $e');
+        //
       }
 
       if (_currentTrip?.id == tripId) {
         _currentTrip = null;
-        debugPrint('DEBUG: Cleared current trip');
       }
 
       _clearError();
       notifyListeners();
-      debugPrint('DEBUG: Trip deletion completed successfully');
       return true;
     } catch (e) {
-      debugPrint('DEBUG: Trip deletion failed: $e');
       _setError('Failed to delete trip: $e');
       return false;
     } finally {
@@ -355,12 +315,8 @@ class TripPlanningProvider extends ChangeNotifier {
   Future<void> _loadTripsFromFirestore() async {
     try {
       _trips = await _firebaseService.loadTrips();
-      debugPrint(
-        '📥 FIRESTORE_LOAD: Loaded ${_trips.length} trips from Firestore',
-      );
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ FIRESTORE_LOAD: Failed to load from Firestore: $e');
       _trips = [];
     }
   }
