@@ -77,20 +77,24 @@ class _ManagePermissionsBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<_ManagePermissionsBottomSheet> createState() => _ManagePermissionsBottomSheetState();
+  State<_ManagePermissionsBottomSheet> createState() =>
+      _ManagePermissionsBottomSheetState();
 }
 
-class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomSheet> {
+class _ManagePermissionsBottomSheetState
+    extends State<_ManagePermissionsBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Consumer<CollaborationProvider>(
       builder: (context, collabProvider, child) {
         // Get the latest shared trip data
-        final latestSharedTrip = collabProvider.mySharedTrips
-            .firstWhere((t) => t.id == widget.sharedTrip.id,
-                orElse: () => collabProvider.sharedWithMeTrips
-                    .firstWhere((t) => t.id == widget.sharedTrip.id,
-                        orElse: () => widget.sharedTrip)); // Fallback to widget data
+        final latestSharedTrip = collabProvider.mySharedTrips.firstWhere(
+          (t) => t.id == widget.sharedTrip.id,
+          orElse: () => collabProvider.sharedWithMeTrips.firstWhere(
+            (t) => t.id == widget.sharedTrip.id,
+            orElse: () => widget.sharedTrip,
+          ),
+        ); // Fallback to widget data
 
         return DraggableScrollableSheet(
           initialChildSize: 0.7,
@@ -131,7 +135,10 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
                       ),
                       if (latestSharedTrip.sharedCollaborators.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue,
                             borderRadius: BorderRadius.circular(12),
@@ -186,20 +193,22 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
                 // Content
                 Expanded(
                   child: latestSharedTrip.sharedCollaborators.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: latestSharedTrip.sharedCollaborators.length,
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final collaborator = latestSharedTrip.sharedCollaborators[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: _buildMemberItem(collaborator),
-                          );
-                        },
-                      ),
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount:
+                              latestSharedTrip.sharedCollaborators.length,
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final collaborator =
+                                latestSharedTrip.sharedCollaborators[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: _buildMemberItem(collaborator),
+                            );
+                          },
+                        ),
                 ),
 
                 // Close button
@@ -226,11 +235,7 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.people_outline,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'No collaborators',
@@ -269,10 +274,7 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
           color: Colors.red,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(
-          Icons.remove_circle,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.remove_circle, color: Colors.white),
       ),
       onDismissed: (direction) {
         // Handle remove collaborator
@@ -286,7 +288,10 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
           border: Border.all(color: Colors.grey[200]!),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
           leading: CircleAvatar(
             backgroundColor: isOwner ? Colors.orange : Colors.blue,
             child: Text(
@@ -333,12 +338,16 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
               color: isOwner
                   ? Colors.orange
                   : currentRole == 'editor'
-                      ? Colors.blue
-                      : Colors.grey,
+                  ? Colors.blue
+                  : Colors.grey,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              isOwner ? 'Owner' : currentRole == 'editor' ? 'Editor' : 'Viewer',
+              isOwner
+                  ? 'Owner'
+                  : currentRole == 'editor'
+                  ? 'Editor'
+                  : 'Viewer',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 11,
@@ -347,24 +356,24 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
             ),
           ),
           trailing: isOwner
-            ? null
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () => _showRoleSelector(collaborator),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle, color: Colors.red),
-                    onPressed: () => _removeCollaborator(collaborator),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
+              ? null
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => _showRoleSelector(collaborator),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle, color: Colors.red),
+                      onPressed: () => _removeCollaborator(collaborator),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -427,7 +436,9 @@ class _ManagePermissionsBottomSheetState extends State<_ManagePermissionsBottomS
         Navigator.pop(context); // Close role selector
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${collaborator.name} is now ${newRole == 'editor' ? 'an Editor' : 'a Viewer'}'),
+            content: Text(
+              '${collaborator.name} is now ${newRole == 'editor' ? 'an Editor' : 'a Viewer'}',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -554,7 +565,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   void _setupCollaborationListener() {
     try {
-      final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+      final collabProvider = Provider.of<CollaborationProvider>(
+        context,
+        listen: false,
+      );
 
       // Cancel existing subscription
       _collaborationSubscription?.cancel();
@@ -564,29 +578,32 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       _collaborationSubscription = collabProvider.collaborationService
           .watchUserSharedTrips()
           .listen((trips) {
-        // Check if our trip is affected by the changes
-        final ourTrip = trips.cast<SharedTripModel?>().firstWhere(
-          (trip) => trip?.id == _trip.id,
-          orElse: () => null,
-        );
+            // Check if our trip is affected by the changes
+            final ourTrip = trips.cast<SharedTripModel?>().firstWhere(
+              (trip) => trip?.id == _trip.id,
+              orElse: () => null,
+            );
 
-        if (ourTrip != null) {
-          // Re-check permissions when trip data changes
-          final oldRole = _userRole;
-          _checkUserPermissions();
+            if (ourTrip != null) {
+              // Re-check permissions when trip data changes
+              final oldRole = _userRole;
+              _checkUserPermissions();
 
-          // If role changed, update UI and ensure activities are sorted
-          if (oldRole != _userRole && mounted) {
-            setState(() {
-              // Force re-sort activities when permissions change
-              _activities = ActivitySchedulingValidator.sortActivitiesChronologically(_activities);
-            });
-            debugPrint('🔄 PERMISSION_UPDATED: Role changed from $oldRole to $_userRole, UI updated and activities resorted');
-          }
-        }
-      });
-
-
+              // If role changed, update UI and ensure activities are sorted
+              if (oldRole != _userRole && mounted) {
+                setState(() {
+                  // Force re-sort activities when permissions change
+                  _activities =
+                      ActivitySchedulingValidator.sortActivitiesChronologically(
+                        _activities,
+                      );
+                });
+                debugPrint(
+                  '🔄 PERMISSION_UPDATED: Role changed from $oldRole to $_userRole, UI updated and activities resorted',
+                );
+              }
+            }
+          });
     } catch (e) {
       debugPrint('❌ Failed to setup collaboration listener: $e');
     }
@@ -611,49 +628,62 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   void _initializeSmartNotifications() async {
     try {
       if (mounted && _trip.id != null) {
-        debugPrint('DEBUG: Attempting to initialize smart notifications for trip: ${_trip.id}');
-        
+        debugPrint(
+          'DEBUG: Attempting to initialize smart notifications for trip: ${_trip.id}',
+        );
+
         // Try to get provider with enhanced error handling
         try {
           final notificationProvider = Provider.of<SmartNotificationProvider>(
-            context, 
-            listen: false
+            context,
+            listen: false,
           );
-          
+
           debugPrint('DEBUG: Provider found, calling initialize...');
-          
+
           // Initialize with timeout to prevent hanging
-          await notificationProvider.initialize(_trip.id!).timeout(
-            const Duration(seconds: 15),
-            onTimeout: () {
-              debugPrint('DEBUG: Smart notifications initialization timed out');
-              throw TimeoutException('Initialization timeout');
-            },
+          await notificationProvider
+              .initialize(_trip.id!)
+              .timeout(
+                const Duration(seconds: 15),
+                onTimeout: () {
+                  debugPrint(
+                    'DEBUG: Smart notifications initialization timed out',
+                  );
+                  throw TimeoutException('Initialization timeout');
+                },
+              );
+
+          debugPrint(
+            'DEBUG: Smart notifications initialization completed for trip: ${_trip.id}',
           );
-          
-          debugPrint('DEBUG: Smart notifications initialization completed for trip: ${_trip.id}');
-          
+
           // Force a rebuild to show notifications
           if (mounted) {
             setState(() {});
           }
-          
         } catch (providerError) {
           debugPrint('DEBUG: Provider error: $providerError');
-          
+
           final errorString = providerError.toString().toLowerCase();
-          if (errorString.contains('failed to fetch') || 
+          if (errorString.contains('failed to fetch') ||
               errorString.contains('clientexception') ||
               errorString.contains('socketexception') ||
               errorString.contains('timeout') ||
               errorString.contains('connection')) {
-            debugPrint('DEBUG: Network issue detected - smart notifications will work when connection is restored');
+            debugPrint(
+              'DEBUG: Network issue detected - smart notifications will work when connection is restored',
+            );
           } else {
-            debugPrint('DEBUG: Other provider error - notifications may be limited');
+            debugPrint(
+              'DEBUG: Other provider error - notifications may be limited',
+            );
           }
         }
       } else {
-        debugPrint('DEBUG: Cannot initialize smart notifications - mounted: $mounted, trip.id: ${_trip.id}');
+        debugPrint(
+          'DEBUG: Cannot initialize smart notifications - mounted: $mounted, trip.id: ${_trip.id}',
+        );
       }
     } catch (e) {
       debugPrint('DEBUG: Smart notifications initialization failed: $e');
@@ -667,32 +697,36 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       final collabProvider = context.read<CollaborationProvider>();
 
       // Check if this is a collaboration trip
-      final isCollaborationTrip = collabProvider.mySharedTrips
-          .any((t) => t.id == _trip.id) ||
-          collabProvider.sharedWithMeTrips
-          .any((t) => t.id == _trip.id);
+      final isCollaborationTrip =
+          collabProvider.mySharedTrips.any((t) => t.id == _trip.id) ||
+          collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
       if (isCollaborationTrip) {
         // Find the shared trip
         SharedTripModel? sharedTrip;
         try {
-          sharedTrip = collabProvider.mySharedTrips
-              .firstWhere((t) => t.id == _trip.id,
-                  orElse: () => collabProvider.sharedWithMeTrips
-                      .firstWhere((t) => t.id == _trip.id));
+          sharedTrip = collabProvider.mySharedTrips.firstWhere(
+            (t) => t.id == _trip.id,
+            orElse: () => collabProvider.sharedWithMeTrips.firstWhere(
+              (t) => t.id == _trip.id,
+            ),
+          );
         } catch (e) {
           sharedTrip = null;
         }
 
         if (sharedTrip != null) {
           // Get current user ID
-          final currentUserId = collabProvider.collaborationService.currentUserId;
+          final currentUserId =
+              collabProvider.collaborationService.currentUserId;
 
           if (currentUserId != null) {
             if (sharedTrip.isOwnerUser(currentUserId)) {
               _userRole = 'owner';
             } else {
-              final collaborator = sharedTrip.getCollaboratorByUserId(currentUserId);
+              final collaborator = sharedTrip.getCollaboratorByUserId(
+                currentUserId,
+              );
               if (collaborator != null) {
                 _userRole = collaborator.role; // 'editor' or 'viewer'
               } else {
@@ -731,10 +765,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     return Consumer<CollaborationProvider>(
       builder: (context, collabProvider, child) {
         // Check if this trip exists in collaboration data
-        final isCollaborationTrip = collabProvider.mySharedTrips
-            .any((t) => t.id == _trip.id) ||
-            collabProvider.sharedWithMeTrips
-            .any((t) => t.id == _trip.id);
+        final isCollaborationTrip =
+            collabProvider.mySharedTrips.any((t) => t.id == _trip.id) ||
+            collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
         // Schedule auto-refresh for next frame to avoid setState during build
         // Only refresh if we're not currently adding/refreshing and trip is collaboration
@@ -764,7 +797,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               backgroundColor: AppColors.background,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
+                icon: const Icon(
+                  Icons.arrow_back_ios,
+                  color: AppColors.primary,
+                ),
                 onPressed: _handleWillPop,
               ),
               title: _buildTripHeader(),
@@ -780,7 +816,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.refresh),
-                    onPressed: _isRefreshing ? null : () => _manualRefresh(collabProvider),
+                    onPressed: _isRefreshing
+                        ? null
+                        : () => _manualRefresh(collabProvider),
                     tooltip: 'Sync changes',
                   ),
                 // Activity requests widget (only for owners)
@@ -819,7 +857,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       child: InkWell(
                         onTap: _isDeleting ? null : _handleAddActivity,
                         customBorder: const CircleBorder(),
-                        child: const Icon(Icons.add, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                     ),
                   ),
@@ -1426,7 +1468,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         title: const Text('Request Edit Permission'),
         content: Text(
           'As an editor, you need approval from the trip owner to edit activities. '
-          'Send a request to the owner to modify "${activity.title}"?'
+          'Send a request to the owner to modify "${activity.title}"?',
         ),
         actions: [
           TextButton(
@@ -1436,7 +1478,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _sendEditRequest(activity, 'Edit activity: ${activity.title}');
+              await _sendEditRequest(
+                activity,
+                'Edit activity: ${activity.title}',
+              );
             },
             child: const Text('Send Request'),
           ),
@@ -1749,13 +1794,18 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           Navigator.pop(context);
                           _updateActivity(updatedActivity);
 
-          // Check budget notification when checking in with actual cost
-          if (updatedActivity.checkIn && updatedActivity.budget?.actualCost != null) {
-            debugPrint('DEBUG: Activity checked in with actual cost, triggering budget check');
-            _checkBudgetNotification(updatedActivity);
-          } else {
-            debugPrint('DEBUG: Activity check-in status: ${updatedActivity.checkIn}, actual cost: ${updatedActivity.budget?.actualCost}');
-          }
+                          // Check budget notification when checking in with actual cost
+                          if (updatedActivity.checkIn &&
+                              updatedActivity.budget?.actualCost != null) {
+                            debugPrint(
+                              'DEBUG: Activity checked in with actual cost, triggering budget check',
+                            );
+                            _checkBudgetNotification(updatedActivity);
+                          } else {
+                            debugPrint(
+                              'DEBUG: Activity check-in status: ${updatedActivity.checkIn}, actual cost: ${updatedActivity.budget?.actualCost}',
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -1823,12 +1873,16 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Edit request sent to trip owner for "${activity.title}"'),
+            content: Text(
+              'Edit request sent to trip owner for "${activity.title}"',
+            ),
             backgroundColor: Colors.blue,
           ),
         );
       }
-      debugPrint('📤 EDIT_REQUEST_SENT: Request ${request.id} sent for activity ${activity.id}');
+      debugPrint(
+        '📤 EDIT_REQUEST_SENT: Request ${request.id} sent for activity ${activity.id}',
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1849,7 +1903,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       final changes = result['changes'] as List?;
       if (changes != null && changes.isNotEmpty) {
         // Apply the changes locally
-        _applyAIChanges(changes);
+        await _applyAIChanges(changes);
       } else if (result.containsKey('new_trip')) {
         // New trip was created - navigate to it
         // final newTrip = result['new_trip'];
@@ -1865,7 +1919,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   /// Apply changes made by AI assistant
-  void _applyAIChanges(List<dynamic> changes) {
+  Future<void> _applyAIChanges(List<dynamic> changes) async {
     // Check if we need to delete all existing activities first
     final hasDeleteAll = changes.any(
       (change) => change['action'] == 'delete_all',
@@ -1873,6 +1927,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
     if (hasDeleteAll) {
       debugPrint('AI: Deleting all existing activities before adding new ones');
+
+      // Delete all expenses associated with existing activities
+      await _deleteExpensesForActivities(_activities);
+
       setState(() {
         _activities.clear();
       });
@@ -1884,6 +1942,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     );
 
     if (hasFullReplace) {
+      // Delete all expenses associated with existing activities before replacing
+      await _deleteExpensesForActivities(_activities);
+
       // Full replacement: clear all existing activities and add the new ones
       final newActivities = changes
           .where((change) => change['action'] == 'replace_all')
@@ -1907,10 +1968,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       // Partial changes: apply individual add/remove/update operations
       for (final change in changes) {
         final action = change['action'];
-        
+
         // Skip delete_all as it's already handled above
         if (action == 'delete_all') continue;
-        
+
         final activityData = change['activity'];
 
         switch (action) {
@@ -1953,6 +2014,80 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
     // Save changes to local storage
     _persistTripChanges();
+  }
+
+  /// Delete expenses for a list of activities
+  /// Called when AI replaces all activities to clean up associated expenses
+  Future<void> _deleteExpensesForActivities(
+    List<ActivityModel> activities,
+  ) async {
+    try {
+      if (_expenseProvider == null) {
+        debugPrint(
+          'AI: ExpenseProvider not available, skipping expense deletion',
+        );
+        return;
+      }
+
+      // Get the tripId from the current trip
+      final tripId = _trip.id;
+      if (tripId == null) {
+        debugPrint('AI: Trip ID is null, skipping expense deletion');
+        return;
+      }
+
+      debugPrint('AI: Deleting all expenses for trip $tripId');
+
+      // APPROACH 1: Delete expenses that have expenseId set on activities
+      int deletedByExpenseId = 0;
+      for (final activity in activities) {
+        if (activity.expenseInfo.expenseId != null) {
+          final expenseId = activity.expenseInfo.expenseId!;
+          debugPrint(
+            'AI: Deleting expense $expenseId for activity ${activity.title}',
+          );
+          try {
+            await _expenseProvider!.deleteExpense(expenseId);
+            deletedByExpenseId++;
+          } catch (e) {
+            debugPrint('AI: Failed to delete expense $expenseId: $e');
+          }
+        }
+      }
+
+      // APPROACH 2: Delete all expenses that match this tripId from the provider's cache
+      // This catches expenses that may not have expenseId set on activities
+      final expensesToDelete = _expenseProvider!.expenses
+          .where((expense) => expense.tripId == tripId)
+          .toList();
+
+      debugPrint(
+        'AI: Found ${expensesToDelete.length} additional expenses for trip $tripId to delete',
+      );
+
+      int deletedByTripId = 0;
+      for (final expense in expensesToDelete) {
+        try {
+          debugPrint(
+            'AI: Deleting expense ${expense.id} (${expense.description})',
+          );
+          await _expenseProvider!.deleteExpense(expense.id);
+          deletedByTripId++;
+        } catch (e) {
+          debugPrint('AI: Failed to delete expense ${expense.id}: $e');
+        }
+      }
+
+      debugPrint(
+        'AI: Deleted $deletedByExpenseId expenses by expenseId, $deletedByTripId expenses by tripId for ${activities.length} activities',
+      );
+
+      // Refresh expense data to ensure UI is updated
+      await _expenseProvider!.loadData(tripId: tripId);
+    } catch (e) {
+      debugPrint('AI: Error in expense deletion: $e');
+      // Continue even if expense deletion fails - activities will still be deleted
+    }
   }
 
   void _showAddActivityModal() {
@@ -2214,23 +2349,30 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _checkBudgetNotification(ActivityModel activity) async {
     try {
-      debugPrint('DEBUG: Checking budget notification for activity: ${activity.title}');
-      debugPrint('DEBUG: Activity check-in: ${activity.checkIn}, actualCost: ${activity.budget?.actualCost}, estimatedCost: ${activity.budget?.estimatedCost}');
-      
-      if (activity.budget?.actualCost != null && 
+      debugPrint(
+        'DEBUG: Checking budget notification for activity: ${activity.title}',
+      );
+      debugPrint(
+        'DEBUG: Activity check-in: ${activity.checkIn}, actualCost: ${activity.budget?.actualCost}, estimatedCost: ${activity.budget?.estimatedCost}',
+      );
+
+      if (activity.budget?.actualCost != null &&
           activity.budget?.estimatedCost != null &&
-          _trip.id != null && 
+          _trip.id != null &&
           activity.id != null) {
-        
         final actualCost = activity.budget!.actualCost!;
         final estimatedCost = activity.budget!.estimatedCost;
         final overage = actualCost - estimatedCost;
-        
-        debugPrint('DEBUG: Budget check - Actual: $actualCost, Estimated: $estimatedCost, Overage: $overage');
-        
+
+        debugPrint(
+          'DEBUG: Budget check - Actual: $actualCost, Estimated: $estimatedCost, Overage: $overage',
+        );
+
         // Only trigger if overage is more than 10%
         if (overage > estimatedCost * 0.1) {
-          debugPrint('DEBUG: Budget overage detected! Triggering notification...');
+          debugPrint(
+            'DEBUG: Budget overage detected! Triggering notification...',
+          );
           try {
             final notificationProvider = Provider.of<SmartNotificationProvider>(
               context,
@@ -2243,7 +2385,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             );
             debugPrint('DEBUG: Budget notification triggered successfully');
           } catch (providerError) {
-            debugPrint('DEBUG: SmartNotificationProvider not available: $providerError');
+            debugPrint(
+              'DEBUG: SmartNotificationProvider not available: $providerError',
+            );
           }
         } else {
           debugPrint('DEBUG: Budget overage within acceptable range (<=10%)');
@@ -2643,7 +2787,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       try {
         final collabProvider = context.read<CollaborationProvider>();
         return collabProvider.mySharedTrips.any((t) => t.id == _trip.id) ||
-               collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
+            collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
       } catch (e) {
         return false;
       }
@@ -2702,7 +2846,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               ),
               if (isCollaborationTrip) ...[
                 ListTile(
-                  leading: const Icon(Icons.people_outline, color: Colors.white),
+                  leading: const Icon(
+                    Icons.people_outline,
+                    color: Colors.white,
+                  ),
                   title: const Text(
                     'Manage Permissions',
                     style: TextStyle(
@@ -2941,17 +3088,18 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       final collaborationProvider = context.read<CollaborationProvider>();
       // If we can read CollaborationProvider, this might be a collaboration trip
       // Check if the trip ID exists in collaboration data
-      final isCollaborationTrip = collaborationProvider.mySharedTrips
-          .any((t) => t.id == _trip.id) ||
-          collaborationProvider.sharedWithMeTrips
-          .any((t) => t.id == _trip.id);
+      final isCollaborationTrip =
+          collaborationProvider.mySharedTrips.any((t) => t.id == _trip.id) ||
+          collaborationProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
       if (isCollaborationTrip) {
         // Convert back to SharedTripModel for collaboration provider
-        final sharedTrip = collaborationProvider.mySharedTrips
-            .firstWhere((t) => t.id == _trip.id,
-                orElse: () => collaborationProvider.sharedWithMeTrips
-                    .firstWhere((t) => t.id == _trip.id));
+        final sharedTrip = collaborationProvider.mySharedTrips.firstWhere(
+          (t) => t.id == _trip.id,
+          orElse: () => collaborationProvider.sharedWithMeTrips.firstWhere(
+            (t) => t.id == _trip.id,
+          ),
+        );
 
         final updatedSharedTrip = sharedTrip.copyWith(
           activities: List<ActivityModel>.from(_activities),
@@ -2960,14 +3108,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
         // Update collaboration provider
         await collaborationProvider.updateSharedTrip(updatedSharedTrip);
-        debugPrint('✅ Persisted AI changes to CollaborationProvider for trip: ${_trip.id}');
+        debugPrint(
+          '✅ Persisted AI changes to CollaborationProvider for trip: ${_trip.id}',
+        );
       } else {
         // Regular private trip - just save to Firebase
-        debugPrint('✅ Persisted AI changes to Firebase for private trip: ${_trip.id}');
+        debugPrint(
+          '✅ Persisted AI changes to Firebase for private trip: ${_trip.id}',
+        );
       }
     } catch (e) {
       // CollaborationProvider not available - changes are still saved to Firebase above
-      debugPrint('ℹ️ AI changes persisted to Firebase only (no provider update needed): ${_trip.id}');
+      debugPrint(
+        'ℹ️ AI changes persisted to Firebase only (no provider update needed): ${_trip.id}',
+      );
     }
 
     final storedTrip = updatedTrip;
@@ -3152,8 +3306,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         // Optimistic update: remove from local cache immediately
         final expenseId = activity.expenseInfo.expenseId!;
         _expenseProvider!.expenses.removeWhere((exp) => exp.id == expenseId);
-        debugPrint('Optimistically removed expense from local cache: $expenseId');
-        
+        debugPrint(
+          'Optimistically removed expense from local cache: $expenseId',
+        );
+
         // Delete on backend in background (fire-and-forget with error handling)
         _expenseProvider!.deleteExpense(expenseId).catchError((e) {
           debugPrint('Failed to delete expense on backend: $e');
@@ -3316,17 +3472,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         // This prevents duplicates if checkout deletion is still pending
         try {
           final existingExpenses = _expenseProvider!.expenses;
-          final duplicateExpense = existingExpenses.where((exp) =>
-            exp.description == activity.title &&
-            exp.tripId == _trip.id &&
-            exp.amount == activity.budget!.actualCost
-          ).firstOrNull;
-          
+          final duplicateExpense = existingExpenses
+              .where(
+                (exp) =>
+                    exp.description == activity.title &&
+                    exp.tripId == _trip.id &&
+                    exp.amount == activity.budget!.actualCost,
+              )
+              .firstOrNull;
+
           if (duplicateExpense != null) {
             debugPrint(
               'Found existing expense for activity: ${activity.title}, reusing expense ID: ${duplicateExpense.id}',
             );
-            
+
             // Reuse existing expense instead of creating new one
             final updatedExpenseInfo = activity.expenseInfo.copyWith(
               expenseId: duplicateExpense.id,
@@ -3352,7 +3511,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           debugPrint('Error checking for duplicate expense: $e');
           // Continue to create new expense
         }
-        
+
         // Create expense and get the expense ID
         final expense = await _expenseService.createExpenseFromActivity(
           amount: activity.budget!.actualCost!,
@@ -3368,33 +3527,44 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
         // Check if backend returned a budget warning
         if (expense.budgetWarning != null) {
-          debugPrint('💰 BUDGET_WARNING from backend: ${expense.budgetWarning}');
-          
+          debugPrint(
+            '💰 BUDGET_WARNING from backend: ${expense.budgetWarning}',
+          );
+
           // Trigger smart notification for budget warning
           try {
             if (mounted) {
-              final notificationProvider = Provider.of<SmartNotificationProvider>(
-                context,
-                listen: false,
-              );
-              
+              final notificationProvider =
+                  Provider.of<SmartNotificationProvider>(
+                    context,
+                    listen: false,
+                  );
+
               final warningType = expense.budgetWarning!['type'] as String?;
-             final message = expense.budgetWarning!['message'] as String?;
-            
-            debugPrint('🔔 Triggering notification for budget warning: $warningType - $message');
-            
-            // Create notification based on warning type
-            if (warningType == 'OVER_BUDGET' || warningType == 'WARNING' || warningType == 'NO_BUDGET') {
-              await notificationProvider.handleExpenseCreatedWithResponse(
-                _trip.id!,
-                expense,
-                activity.id,
+              final message = expense.budgetWarning!['message'] as String?;
+
+              debugPrint(
+                '🔔 Triggering notification for budget warning: $warningType - $message',
               );
-              debugPrint('✅ Budget warning notification created successfully');
-            }
+
+              // Create notification based on warning type
+              if (warningType == 'OVER_BUDGET' ||
+                  warningType == 'WARNING' ||
+                  warningType == 'NO_BUDGET') {
+                await notificationProvider.handleExpenseCreatedWithResponse(
+                  _trip.id!,
+                  expense,
+                  activity.id,
+                );
+                debugPrint(
+                  '✅ Budget warning notification created successfully',
+                );
+              }
             }
           } catch (providerError) {
-            debugPrint('❌ Failed to create budget warning notification: $providerError');
+            debugPrint(
+              '❌ Failed to create budget warning notification: $providerError',
+            );
           }
         } else {
           debugPrint('ℹ️ No budget warning from backend');
@@ -3438,78 +3608,84 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     List<ActivityModel> conflictingActivities,
   ) async {
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber, color: Colors.orange.shade600),
-              const SizedBox(width: 8),
-              const Text('Xung đột thời gian'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(message),
-              const SizedBox(height: 16),
-              if (conflictingActivities.isNotEmpty) ...[
-                const Text(
-                  'Hoạt động bị trùng:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                ...conflictingActivities.map<Widget>((activity) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.circle, size: 6, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${activity.title} (${_formatActivityTime(activity)})',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-              ],
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.lightbulb_outline,
-                      size: 16,
-                      color: Colors.blue.shade700,
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Icon(Icons.warning_amber, color: Colors.orange.shade600),
+                  const SizedBox(width: 8),
+                  const Text('Xung đột thời gian'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(message),
+                  const SizedBox(height: 16),
+                  if (conflictingActivities.isNotEmpty) ...[
+                    const Text(
+                      'Hoạt động bị trùng:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Gợi ý: Chọn thời gian khác để tránh xung đột',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
+                    const SizedBox(height: 8),
+                    ...conflictingActivities.map<Widget>(
+                      (activity) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.circle,
+                              size: 6,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${activity.title} (${_formatActivityTime(activity)})',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
-                ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          size: 16,
+                          color: Colors.blue.shade700,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Gợi ý: Chọn thời gian khác để tránh xung đột',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -3551,45 +3727,55 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     return startStr;
   }
 
-
   /// Auto-refresh local trip data when collaboration provider updates
   void _autoRefreshFromProvider(CollaborationProvider collabProvider) {
     try {
       // Find the current trip in collaboration provider data
       SharedTripModel? updatedTrip;
       try {
-        updatedTrip = collabProvider.mySharedTrips
-            .firstWhere((t) => t.id == _trip.id,
-                orElse: () => collabProvider.sharedWithMeTrips
-                    .firstWhere((t) => t.id == _trip.id));
+        updatedTrip = collabProvider.mySharedTrips.firstWhere(
+          (t) => t.id == _trip.id,
+          orElse: () => collabProvider.sharedWithMeTrips.firstWhere(
+            (t) => t.id == _trip.id,
+          ),
+        );
       } catch (e) {
         // Trip not found in provider
         return;
       }
-
 
       // Check if the trip data has actually changed
       final currentActivities = _activities;
       final providerActivities = updatedTrip.activities;
 
       // Compare activities count and last updated time
-      final hasChanges = currentActivities.length != providerActivities.length ||
+      final hasChanges =
+          currentActivities.length != providerActivities.length ||
           updatedTrip.updatedAt != _trip.updatedAt;
 
       if (hasChanges) {
-        debugPrint('🔄 AUTO_REFRESH: Detected changes in trip ${updatedTrip.id}, updating local state...');
-        debugPrint('🔄 AUTO_REFRESH: Before sorting - activities: ${updatedTrip.activities.map((a) => '${a.title} (${a.startDate})').toList()}');
+        debugPrint(
+          '🔄 AUTO_REFRESH: Detected changes in trip ${updatedTrip.id}, updating local state...',
+        );
+        debugPrint(
+          '🔄 AUTO_REFRESH: Before sorting - activities: ${updatedTrip.activities.map((a) => '${a.title} (${a.startDate})').toList()}',
+        );
 
         // Update local state with provider data and ensure activities are sorted
         setState(() {
           _trip = updatedTrip!.toTripModel();
-          _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
-            List<ActivityModel>.from(updatedTrip.activities)
-          );
+          _activities =
+              ActivitySchedulingValidator.sortActivitiesChronologically(
+                List<ActivityModel>.from(updatedTrip.activities),
+              );
         });
 
-        debugPrint('✅ AUTO_REFRESH: After sorting - activities: ${_activities.map((a) => '${a.title} (${a.startDate})').toList()}');
-        debugPrint('✅ AUTO_REFRESH: Updated local trip data - ${_activities.length} activities (sorted chronologically)');
+        debugPrint(
+          '✅ AUTO_REFRESH: After sorting - activities: ${_activities.map((a) => '${a.title} (${a.startDate})').toList()}',
+        );
+        debugPrint(
+          '✅ AUTO_REFRESH: Updated local trip data - ${_activities.length} activities (sorted chronologically)',
+        );
       }
     } catch (e) {
       debugPrint('❌ AUTO_REFRESH: Failed to auto-refresh from provider: $e');
@@ -3597,7 +3783,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   /// Manual refresh triggered by user
-  Future<void> _manualRefresh(CollaborationProvider collabProvider, {bool showNotification = true}) async {
+  Future<void> _manualRefresh(
+    CollaborationProvider collabProvider, {
+    bool showNotification = true,
+  }) async {
     if (_isRefreshing) return;
 
     setState(() {
@@ -3609,18 +3798,20 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       await collabProvider.initialize();
 
       // Find updated trip
-      final updatedTrip = collabProvider.mySharedTrips
-          .firstWhere((t) => t.id == _trip.id,
-              orElse: () => collabProvider.sharedWithMeTrips
-                  .firstWhere((t) => t.id == _trip.id));
+      final updatedTrip = collabProvider.mySharedTrips.firstWhere(
+        (t) => t.id == _trip.id,
+        orElse: () => collabProvider.sharedWithMeTrips.firstWhere(
+          (t) => t.id == _trip.id,
+        ),
+      );
 
       setState(() {
         _trip = updatedTrip.toTripModel();
         _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
-          List<ActivityModel>.from(updatedTrip.activities)
+          List<ActivityModel>.from(updatedTrip.activities),
         );
       });
-    
+
       // IMPORTANT: Force re-check user permissions after refresh
       // Add a small delay to ensure provider data is fully updated
       await Future.delayed(const Duration(milliseconds: 500));
@@ -3629,7 +3820,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       _checkUserPermissions();
 
       if (oldRole != _userRole && mounted) {
-        debugPrint('🔄 MANUAL_REFRESH: Role changed from $oldRole to $_userRole during manual refresh');
+        debugPrint(
+          '🔄 MANUAL_REFRESH: Role changed from $oldRole to $_userRole during manual refresh',
+        );
         // Force UI rebuild to reflect permission changes
         setState(() {});
       }
@@ -3644,9 +3837,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     } catch (e) {
       debugPrint('❌ Manual refresh failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to refresh: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to refresh: $e')));
       }
     } finally {
       if (mounted) {
@@ -3705,7 +3898,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ),
         );
       }
-      debugPrint('📤 ADD_ACTIVITY_REQUEST_SENT: Request ${request.id} sent for new activity ${activity.title}');
+      debugPrint(
+        '📤 ADD_ACTIVITY_REQUEST_SENT: Request ${request.id} sent for new activity ${activity.title}',
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3727,7 +3922,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         content: const Text(
           'As a viewer, you can only view this trip. To add activities or make changes, '
           'you need to request edit permission from the trip owner. '
-          'Send a request to become an editor?'
+          'Send a request to become an editor?',
         ),
         actions: [
           TextButton(
@@ -3755,7 +3950,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       final request = await service.createActivityEditRequest(
         tripId: _trip.id!,
         requestType: 'permission_change',
-        message: 'Request to change my role from viewer to editor so I can contribute to the trip planning.',
+        message:
+            'Request to change my role from viewer to editor so I can contribute to the trip planning.',
       );
 
       if (mounted) {
@@ -3766,7 +3962,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           ),
         );
       }
-      debugPrint('📤 PERMISSION_REQUEST_SENT: Request ${request.id} sent for role change');
+      debugPrint(
+        '📤 PERMISSION_REQUEST_SENT: Request ${request.id} sent for role change',
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3779,7 +3977,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     }
   }
 
-
   /// Show manage permissions dialog (only for collaboration trips and owners)
   void _showManagePermissionsDialog() {
     // Check if user is owner
@@ -3791,11 +3988,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     final collabProvider = context.read<CollaborationProvider>();
 
     // Get the shared trip
-    final sharedTrip = collabProvider.mySharedTrips
-        .firstWhere((t) => t.id == _trip.id,
-            orElse: () => collabProvider.sharedWithMeTrips
-                .firstWhere((t) => t.id == _trip.id));
-
+    final sharedTrip = collabProvider.mySharedTrips.firstWhere(
+      (t) => t.id == _trip.id,
+      orElse: () =>
+          collabProvider.sharedWithMeTrips.firstWhere((t) => t.id == _trip.id),
+    );
 
     showModalBottomSheet(
       context: context,
@@ -3826,16 +4023,19 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     // Check if this is a collaboration trip
     try {
       final collabProvider = context.read<CollaborationProvider>();
-      final isCollaborationTrip = collabProvider.mySharedTrips
-          .any((t) => t.id == _trip.id) ||
-          collabProvider.sharedWithMeTrips
-          .any((t) => t.id == _trip.id);
+      final isCollaborationTrip =
+          collabProvider.mySharedTrips.any((t) => t.id == _trip.id) ||
+          collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
       if (isCollaborationTrip) {
-        debugPrint('🔄 Starting auto-refresh timer for collaboration trip: ${_trip.id}');
+        debugPrint(
+          '🔄 Starting auto-refresh timer for collaboration trip: ${_trip.id}',
+        );
 
         // Refresh every 15 seconds for collaboration trips
-        _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+        _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (
+          timer,
+        ) async {
           if (!mounted) {
             timer.cancel();
             return;
@@ -3843,7 +4043,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
           try {
             // Trigger manual refresh to get latest data (without showing notification)
-            final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+            final collabProvider = Provider.of<CollaborationProvider>(
+              context,
+              listen: false,
+            );
             await _manualRefresh(collabProvider, showNotification: false);
             debugPrint('🔄 Auto-refresh completed for trip: ${_trip.id}');
           } catch (e) {
@@ -3852,7 +4055,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           }
         });
       } else {
-        debugPrint('ℹ️ Not a collaboration trip, skipping auto-refresh timer: ${_trip.id}');
+        debugPrint(
+          'ℹ️ Not a collaboration trip, skipping auto-refresh timer: ${_trip.id}',
+        );
       }
     } catch (e) {
       debugPrint('❌ Failed to start auto-refresh timer: $e');
