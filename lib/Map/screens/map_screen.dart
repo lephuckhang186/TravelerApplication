@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -27,8 +28,6 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _googleMapController;
   late flutter_map.MapController _flutterMapController;
-  TripModel? _selectedTrip;
-  SharedTripModel? _selectedSharedTrip; // For collab mode
   final Set<Marker> _googleMarkers = {};
   final Set<Polyline> _googlePolylines = {};
   final List<flutter_map.Marker> _flutterMarkers = [];
@@ -36,6 +35,9 @@ class _MapScreenState extends State<MapScreen> {
   int _currentActivityIndex = 0;
   bool _isLoading = false;
   bool _isMapReady = false;
+
+  // Auto refresh timer
+  Timer? _autoRefreshTimer;
 
   // Button scale states
   bool _selectTripPressed = false;
@@ -46,6 +48,12 @@ class _MapScreenState extends State<MapScreen> {
 
   final MapService _mapService = MapService();
 
+  // Local state variables (needed for UI updates)
+  TripModel? _selectedTrip;
+  SharedTripModel? _selectedSharedTrip;
+
+
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +61,12 @@ class _MapScreenState extends State<MapScreen> {
     _flutterMapController = flutter_map.MapController();
     // Load last selected trip from Firestore
     _loadLastSelectedTrip();
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
   }
 
   // Save selected trip ID to Firestore
@@ -76,6 +90,11 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _loadLastSelectedTrip() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+
+    // Set loading state immediately to prevent showing fake interface
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final doc = await FirebaseFirestore.instance
@@ -105,6 +124,11 @@ class _MapScreenState extends State<MapScreen> {
 
           if (trip != null && mounted) {
             _selectTrip(trip);
+          } else {
+            // No trip found, clear loading state
+            setState(() {
+              _isLoading = false;
+            });
           }
         } else {
           // Load from collaboration provider
@@ -133,12 +157,31 @@ class _MapScreenState extends State<MapScreen> {
           }
 
           if (trip != null && mounted) {
-            _selectSharedTrip(trip);
+            // Use provider's selectSharedTrip method to ensure consistency across screens
+            final provider = Provider.of<CollaborationProvider>(context, listen: false);
+            await provider.selectSharedTrip(trip.id!);
+            _selectedSharedTrip = provider.selectedSharedTrip;
+            _selectedTrip = _selectedSharedTrip?.toTripModel();
+            await _loadTripData();
+            _startAutoRefreshTimer();
           }
+
+          setState(() {
+            _isLoading = false;
+          });
         }
+      } else {
+        // No last trip ID, clear loading state
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      //
+      debugPrint('Error loading last selected trip: $e');
+      // Clear loading state on error
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -196,7 +239,7 @@ class _MapScreenState extends State<MapScreen> {
                       children: [
                         const Expanded(
                           child: Text(
-                            'Choose a trip',
+                            'Select Trip',
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
                               fontSize: 24,
@@ -251,9 +294,33 @@ class _MapScreenState extends State<MapScreen> {
                               color: Colors.white.withValues(alpha: 0.8),
                               size: 16,
                             ),
-                            onTap: () {
+                            onTap: () async {
                               Navigator.of(context).pop();
-                              _selectTrip(trip);
+
+                              // Check if this is a collaboration trip
+                              final appMode = Provider.of<AppModeProvider>(context, listen: false);
+                              if (appMode.isPrivateMode) {
+                                _selectTrip(trip);
+                              } else {
+                                // For collaboration trips, use provider's selectSharedTrip method
+                                final provider = Provider.of<CollaborationProvider>(context, listen: false);
+                                final sharedTrip = provider.mySharedTrips.firstWhere(
+                                  (t) => t.id == trip.id,
+                                  orElse: () => provider.sharedWithMeTrips.firstWhere(
+                                    (t) => t.id == trip.id,
+                                  ),
+                                );
+
+                                if (sharedTrip.id != null) {
+                                  setState(() => _isLoading = true);
+                                  await provider.selectSharedTrip(sharedTrip.id!);
+                                  _selectedSharedTrip = provider.selectedSharedTrip;
+                                  _selectedTrip = _selectedSharedTrip?.toTripModel();
+                                  await _loadTripData();
+                                  _startAutoRefreshTimer();
+                                  setState(() => _isLoading = false);
+                                }
+                              }
                             },
                           ),
                         );
@@ -285,30 +352,16 @@ class _MapScreenState extends State<MapScreen> {
     await _saveSelectedTripId(trip.id);
 
     await _loadTripData();
+
+    // Start auto refresh timer for map data
+    _startAutoRefreshTimer();
+
     setState(() {
       _isLoading = false;
     });
   }
 
-  Future<void> _selectSharedTrip(SharedTripModel sharedTrip) async {
-    setState(() {
-      _selectedTrip = sharedTrip.toTripModel();
-      _selectedSharedTrip = sharedTrip;
-      _googleMarkers.clear();
-      _googlePolylines.clear();
-      _flutterMarkers.clear();
-      _flutterPolylines.clear();
-      _isLoading = true;
-    });
 
-    // Save selected trip ID to Firestore
-    await _saveSelectedTripId(sharedTrip.id);
-
-    await _loadTripData();
-    setState(() {
-      _isLoading = false;
-    });
-  }
 
   Future<void> _loadTripData() async {
     if (_selectedTrip == null) return;
@@ -322,9 +375,11 @@ class _MapScreenState extends State<MapScreen> {
         .toList();
 
     if (activities.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No activities have a location.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No activities have locations')),
+        );
+      }
       return;
     }
 
@@ -338,6 +393,12 @@ class _MapScreenState extends State<MapScreen> {
     }
     _currentActivityIndex = firstUncheckedIndex;
 
+
+    // Clear existing markers and polylines first
+    _googleMarkers.clear();
+    _googlePolylines.clear();
+    _flutterMarkers.clear();
+    _flutterPolylines.clear();
 
     // Add markers for activities
     if (!kIsWeb) {
@@ -393,8 +454,9 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
 
-    // Get route for current segment
-    if (_currentActivityIndex < activities.length - 1) {
+    // Get route for current segment - only if next activity is not checked in
+    if (_currentActivityIndex < activities.length - 1 &&
+        !activities[_currentActivityIndex + 1].checkIn) {
       await _loadRoute(
         activities[_currentActivityIndex],
         activities[_currentActivityIndex + 1],
@@ -424,7 +486,7 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
 
-    setState(() {});
+    // Don't call setState here - let the parent method handle the state update
   }
 
   Future<void> _loadRoute(ActivityModel from, ActivityModel to) async {
@@ -478,7 +540,7 @@ class _MapScreenState extends State<MapScreen> {
 
     if (_currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All activities have been completed.')),
+        const SnackBar(content: Text('All activities completed')),
       );
       return;
     }
@@ -753,7 +815,8 @@ class _MapScreenState extends State<MapScreen> {
             )
             .toList();
 
-        if (_currentActivityIndex < updatedActivities.length - 1) {
+        if (_currentActivityIndex < updatedActivities.length - 1 &&
+            !updatedActivities[_currentActivityIndex + 1].checkIn) {
           await _loadRoute(
             updatedActivities[_currentActivityIndex],
             updatedActivities[_currentActivityIndex + 1],
@@ -764,7 +827,7 @@ class _MapScreenState extends State<MapScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Checked in ${updatedActivity.title}!'),
+              content: Text('Checked in at ${updatedActivity.title}!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -782,7 +845,7 @@ class _MapScreenState extends State<MapScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('🎉 Congratulations! You have completed your trip!'),
+              content: const Text('🎉 Congratulations! You have completed the trip!'),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 5),
             ),
@@ -793,7 +856,7 @@ class _MapScreenState extends State<MapScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi check-in: $e'),
+          content: Text('Check-in error: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -814,7 +877,7 @@ class _MapScreenState extends State<MapScreen> {
 
     if (activities.isEmpty || _currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No activities have a location.')),
+        const SnackBar(content: Text('No activities have locations')),
       );
       return;
     }
@@ -836,7 +899,7 @@ class _MapScreenState extends State<MapScreen> {
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('The map is not ready.')));
+        ).showSnackBar(const SnackBar(content: Text('Map not ready')));
         return;
       }
     } else {
@@ -889,10 +952,15 @@ class _MapScreenState extends State<MapScreen> {
         .toList();
 
     if (_currentActivityIndex >= activities.length - 1) {
-      return 'Complete the trip.';
+      return 'Trip completed';
     }
 
     final nextActivity = activities[_currentActivityIndex + 1];
+    // If next activity is already checked in, show completion message
+    if (nextActivity.checkIn) {
+      return 'Trip completed';
+    }
+
     // Display location name or address instead of activity title
     return nextActivity.location?.name ??
         nextActivity.location?.address ??
@@ -966,6 +1034,58 @@ class _MapScreenState extends State<MapScreen> {
     return _selectedSharedTrip!.isOwnerUser(user.uid);
   }
 
+  void _startAutoRefreshTimer() {
+    // Cancel existing timer
+    _autoRefreshTimer?.cancel();
+
+    // Start new timer that refreshes every 10 seconds
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      if (!mounted || _selectedTrip == null) {
+        timer.cancel();
+        return;
+      }
+
+
+      try {
+        // For collaboration trips, refresh from service
+        if (_selectedSharedTrip != null && _selectedSharedTrip!.id != null) {
+          final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+          final updatedTrip = await collabProvider.collaborationService.getSharedTrip(_selectedSharedTrip!.id!);
+
+          if (updatedTrip != null && mounted) {
+            // Update trip data if there are changes
+            if (_tripDataChanged(updatedTrip)) {
+              _selectedSharedTrip = updatedTrip;
+              _selectedTrip = updatedTrip.toTripModel();
+              await _loadTripData(); // Reload markers and routes
+              debugPrint('✅ Auto-refreshed: Trip data updated');
+            }
+          }
+        }
+        // For private trips, we could add similar logic if needed
+      } catch (e) {
+        debugPrint('❌ Auto-refresh error: $e');
+      }
+    });
+
+    debugPrint('✅ Auto-refresh timer started (10 second intervals)');
+  }
+
+  bool _tripDataChanged(SharedTripModel newTrip) {
+    if (_selectedSharedTrip == null) return true;
+
+    // Check if activities have changed (check-in status, etc.)
+    if (newTrip.activities.length != _selectedSharedTrip!.activities.length) return true;
+
+    for (int i = 0; i < newTrip.activities.length; i++) {
+      if (newTrip.activities[i].checkIn != _selectedSharedTrip!.activities[i].checkIn) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   Future<void> _refreshTripData() async {
     if (_selectedSharedTrip == null || _selectedSharedTrip!.id == null) return;
 
@@ -979,13 +1099,20 @@ class _MapScreenState extends State<MapScreen> {
       final updatedTrip = await collabProvider.collaborationService.getSharedTrip(_selectedSharedTrip!.id!);
 
       if (updatedTrip != null && mounted) {
-        _selectSharedTrip(updatedTrip);
+        // Update the provider's selected trip
+        await collabProvider.selectSharedTrip(_selectedSharedTrip!.id!);
+        // Update local state
+        _selectedSharedTrip = collabProvider.selectedSharedTrip;
+        _selectedTrip = _selectedSharedTrip?.toTripModel();
+        // Reload UI data
+        await _loadTripData();
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trip data has been refreshed.')),
+          const SnackBar(content: Text('Trip data refreshed')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to refresh data')),
+          const SnackBar(content: Text('Could not refresh data')),
         );
       }
     } catch (e) {
@@ -1050,7 +1177,15 @@ class _MapScreenState extends State<MapScreen> {
                 flutter_map.PolylineLayer(polylines: _flutterPolylines),
               ],
             ),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
+              ),
+            ),
           // Trip selection buttons at top right
           Positioned(
             right: 16,
@@ -1073,7 +1208,7 @@ class _MapScreenState extends State<MapScreen> {
                       child: FloatingActionButton.small(
                         onPressed: _loadTrips,
                         backgroundColor: Colors.white,
-                        tooltip: 'Choose a trip',
+                        tooltip: 'Select trip',
                         heroTag: 'select_trip',
                         child: const Icon(
                           Icons.list,
@@ -1100,7 +1235,7 @@ class _MapScreenState extends State<MapScreen> {
                           child: FloatingActionButton.small(
                             onPressed: _refreshTripData,
                             backgroundColor: Colors.white,
-                            tooltip: 'Refresh data',
+                        tooltip: 'Refresh data',
                             heroTag: 'refresh_trip',
                             child: const Icon(
                               Icons.refresh,
@@ -1126,19 +1261,24 @@ class _MapScreenState extends State<MapScreen> {
                         scale: _clearTripPressed ? 1.1 : 1.0,
                         duration: const Duration(milliseconds: 200),
                         child: FloatingActionButton.small(
-                          onPressed: () {
-                            setState(() {
-                              _selectedTrip = null;
-                              _googleMarkers.clear();
-                              _googlePolylines.clear();
-                              _flutterMarkers.clear();
-                              _flutterPolylines.clear();
-                            });
-                            // Clear saved trip ID from Firestore
-                            _saveSelectedTripId(null);
-                          },
+                        onPressed: () {
+                          // Cancel auto refresh timer
+                          _autoRefreshTimer?.cancel();
+                          _autoRefreshTimer = null;
+
+                          setState(() {
+                            _selectedTrip = null;
+                            _selectedSharedTrip = null;
+                            _googleMarkers.clear();
+                            _googlePolylines.clear();
+                            _flutterMarkers.clear();
+                            _flutterPolylines.clear();
+                          });
+                          // Clear saved trip ID from Firestore
+                          _saveSelectedTripId(null);
+                        },
                           backgroundColor: Colors.white,
-                          tooltip: 'Deselect the trip',
+                        tooltip: 'Clear selected trip',
                           heroTag: 'clear_trip',
                           child: const Icon(
                             Icons.close,
@@ -1259,7 +1399,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
-                    // "Điểm tiếp theo" label on divider line
+                    // "Next destination" label on divider line
                     Positioned(
                       top: 37,
                       left: 20,
@@ -1270,7 +1410,7 @@ class _MapScreenState extends State<MapScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Next point',
+                          'Next destination',
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey[700],
@@ -1307,7 +1447,7 @@ class _MapScreenState extends State<MapScreen> {
                         child: FloatingActionButton.small(
                           onPressed: _centerToCurrentStartingPoint,
                           backgroundColor: Colors.white,
-                          tooltip: 'Back to the starting point',
+                          tooltip: 'Go to starting point',
                           child: const Icon(
                             Icons.my_location,
                             color: AppColors.navyBlue,
