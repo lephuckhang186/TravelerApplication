@@ -408,21 +408,21 @@ class SmartNotificationProvider extends ChangeNotifier {
       switch (type) {
         case 'OVER_BUDGET':
           severity = NotificationSeverity.critical;
-          title = '🚨 Vượt ngân sách!';
+          title = '🚨 Budget Exceeded!';
           icon = Icons.error;
           color = Colors.red;
           break;
           
         case 'WARNING':
           severity = NotificationSeverity.warning;
-          title = '⚠️ Sắp hết ngân sách';
+          title = '⚠️ Budget Running Low';
           icon = Icons.warning;
           color = Colors.orange;
           break;
           
         case 'NO_BUDGET':
           severity = NotificationSeverity.warning;
-          title = '⚠️ Chưa đặt ngân sách';
+          title = '⚠️ No Budget Set';
           icon = Icons.info;
           color = Colors.blue;
           break;
@@ -506,8 +506,8 @@ class SmartNotificationProvider extends ChangeNotifier {
       id: 'weather_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.weather,
       severity: _getWeatherSeverity(alert.condition),
-      title: 'Cảnh báo thời tiết',
-      message: '${alert.description} tại ${alert.location}. Nhiệt độ: ${alert.temperature.round()}°C',
+      title: 'Weather Alert',
+      message: '${alert.description} at ${alert.location}. Temperature: ${alert.temperature.round()}°C',
       createdAt: DateTime.now(),
       icon: _getWeatherIcon(alert.condition),
       color: Colors.blue,
@@ -537,8 +537,8 @@ class SmartNotificationProvider extends ChangeNotifier {
       id: 'budget_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.budget,
       severity: warning.overagePercentage > 50 ? NotificationSeverity.critical : NotificationSeverity.warning,
-      title: 'Vượt ngân sách',
-      message: '${warning.activityTitle} đã vượt ${warning.overagePercentage.round()}% ngân sách dự kiến',
+      title: 'Budget Exceeded',
+      message: '${warning.activityTitle} has exceeded ${warning.overagePercentage.round()}% of planned budget',
       createdAt: DateTime.now(),
       icon: Icons.warning,
       color: Colors.orange,
@@ -561,8 +561,8 @@ class SmartNotificationProvider extends ChangeNotifier {
       id: 'reminder_${reminder.activityId}_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.activity,
       severity: NotificationSeverity.info,
-      title: 'Sắp đến hoạt động',
-      message: '${reminder.activityTitle} sẽ bắt đầu trong ${reminder.minutesUntilStart} phút tại ${reminder.location}',
+      title: 'Upcoming Activity',
+      message: '${reminder.activityTitle} will start in ${reminder.minutesUntilStart} minutes at ${reminder.location}',
       createdAt: DateTime.now(),
       icon: Icons.schedule,
       color: Colors.green,
