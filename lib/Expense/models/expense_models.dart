@@ -1,6 +1,5 @@
 // Định nghĩa các data models cho expense management
 
-import 'package:flutter/foundation.dart';
 /// Expense category enumeration matching backend
 enum ExpenseCategory {
   // Core categories matching backend ActivityType
@@ -175,12 +174,6 @@ class Expense {
       tripId: json['planner_id'] as String?, // Map backend planner_id to tripId
       budgetWarning: json['budget_warning'] as Map<String, dynamic>?,
     );
-    
-    debugPrint('DEBUG: Expense.fromJson - ID: ${expense.id}, TripId: ${expense.tripId}, planner_id from backend: ${json['planner_id']}');
-    if (expense.budgetWarning != null) {
-      debugPrint('DEBUG: Expense.fromJson - Budget warning detected: ${expense.budgetWarning}');
-    }
-    
     return expense;
   }
 

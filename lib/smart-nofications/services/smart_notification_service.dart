@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/notification_models.dart';
-import 'package:flutter/foundation.dart';
 
 /// Smart Notification Service - Firebase Only
 /// All notifications are stored in Firebase Firestore
@@ -12,11 +11,9 @@ class SmartNotificationService {
 
   Future<List<SmartNotification>> getNotifications(String tripId) async {
     try {
-      debugPrint('SmartNotificationService: Loading notifications for trip $tripId');
       
       final user = _auth.currentUser;
       if (user == null) {
-        debugPrint('SmartNotificationService: No authenticated user');
         return [];
       }
 
@@ -34,21 +31,17 @@ class SmartNotificationService {
           .map((doc) => SmartNotification.fromFirestore(doc.data(), doc.id))
           .toList();
           
-      debugPrint('SmartNotificationService: Loaded ${notifications.length} notifications from Firebase');
       return notifications;
     } catch (e) {
-      debugPrint('SmartNotificationService: Error loading notifications: $e');
       return [];
     }
   }
 
   Future<void> saveNotification(SmartNotification notification, String tripId) async {
     try {
-      debugPrint('SmartNotificationService: Saving notification ${notification.id} for trip $tripId');
       
       final user = _auth.currentUser;
       if (user == null) {
-        debugPrint('SmartNotificationService: No authenticated user');
         return;
       }
 
@@ -65,12 +58,11 @@ class SmartNotificationService {
           .doc(notification.id)
           .set(notificationData);
           
-      debugPrint('SmartNotificationService: Successfully saved notification to Firebase');
       
       // Clean up old notifications (keep only last 100)
       await _cleanupOldNotifications(tripId, user.uid);
     } catch (e) {
-      debugPrint('SmartNotificationService: Error saving notification: $e');
+      //
     }
   }
 
@@ -88,9 +80,8 @@ class SmartNotificationService {
           .doc(notificationId)
           .update({'isRead': true});
           
-      debugPrint('SmartNotificationService: Marked notification $notificationId as read');
     } catch (e) {
-      debugPrint('SmartNotificationService: Error marking notification as read: $e');
+      //
     }
   }
 
@@ -114,9 +105,8 @@ class SmartNotificationService {
       }
       
       await batch.commit();
-      debugPrint('SmartNotificationService: Marked all notifications as read');
     } catch (e) {
-      debugPrint('SmartNotificationService: Error marking all notifications as read: $e');
+      //
     }
   }
 
@@ -134,9 +124,8 @@ class SmartNotificationService {
           .doc(notificationId)
           .delete();
           
-      debugPrint('SmartNotificationService: Deleted notification $notificationId');
     } catch (e) {
-      debugPrint('SmartNotificationService: Error deleting notification: $e');
+      //
     }
   }
 
@@ -160,9 +149,8 @@ class SmartNotificationService {
       }
       
       await batch.commit();
-      debugPrint('SmartNotificationService: Cleared all ${querySnapshot.docs.length} notifications for trip $tripId');
     } catch (e) {
-      debugPrint('SmartNotificationService: Error clearing all notifications: $e');
+      //
     }
   }
 
@@ -186,10 +174,9 @@ class SmartNotificationService {
         }
         
         await batch.commit();
-        debugPrint('SmartNotificationService: Cleaned up ${docsToDelete.length} old notifications');
       }
     } catch (e) {
-      debugPrint('SmartNotificationService: Error cleaning up old notifications: $e');
+      //
     }
   }
 }

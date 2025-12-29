@@ -52,7 +52,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         _userProfile = await _firestoreService.getUserProfile(currentUser.uid);
       } catch (firestoreError) {
-        debugPrint('Firestore error: $firestoreError');
         _userProfile = null;
       }
 
@@ -93,13 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               displayName,
             );
           } catch (createError) {
-            debugPrint('Error creating initial profile: $createError');
             // Don't throw error, still display info from Firebase Auth
           }
         }
       }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
       _setDefaultUserData();
     } finally {
       if (mounted) {
@@ -125,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _firestoreService.createOrUpdateUser(userProfile);
       _userProfile = userProfile;
     } catch (e) {
-      debugPrint('Error creating initial profile: $e');
+      //
     }
   }
 
@@ -637,7 +634,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       _showSnackBar('Personal information saved');
     } catch (e) {
-      debugPrint('Error saving profile: $e');
       _showSnackBar('Error saving information: $e');
     }
   }

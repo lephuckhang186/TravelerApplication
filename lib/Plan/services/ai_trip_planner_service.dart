@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import 'trip_planning_service.dart';
@@ -18,7 +17,6 @@ class AITripPlannerService {
   /// Generate a complete trip plan based on natural language prompt
   Future<Map<String, dynamic>> generateTripPlan(String prompt) async {
     try {
-      debugPrint('AI Trip Planner: Generating plan for prompt: "$prompt"');
 
       final response = await http.post(
         Uri.parse('$baseUrl/generate-trip-plan'),
@@ -54,7 +52,6 @@ class AITripPlannerService {
         };
       }
     } catch (e) {
-      debugPrint('AI Trip Planner Error: $e');
       return {
         'success': false,
         'message': 'Có lỗi xảy ra khi tạo kế hoạch: $e',
@@ -145,7 +142,7 @@ class AITripPlannerService {
                 longitude = double.tryParse(coords[1].trim());
               }
             } catch (e) {
-              debugPrint('Error parsing coordinates: $e');
+              //
             }
           }
 
@@ -204,11 +201,9 @@ class AITripPlannerService {
 
       // Activities are already included in the trip, no need to create them separately
       // They will be saved to Firestore as part of the trip document
-      debugPrint('Trip created with ${trip.activities.length} activities');
       
       return createdTrip.copyWith(activities: trip.activities);
     } catch (e) {
-      debugPrint('Error saving generated trip: $e');
       rethrow;
     }
   }

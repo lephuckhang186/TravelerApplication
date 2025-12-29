@@ -265,7 +265,6 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
       }
     } catch (e) {
       // If provider not available, skip this check
-      debugPrint('Could not check pending invitations: $e');
     }
 
     // Check for common email domains (optional additional validation)
@@ -273,7 +272,6 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
     final domain = email.split('@').last;
     if (!commonDomains.contains(domain) && !domain.contains('.')) {
       // Allow custom domains but warn about unusual formats
-      debugPrint('Unusual email domain: $domain');
     }
 
     return null; // Valid email
@@ -281,7 +279,6 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
 
   Future<void> _sendInvitation() async {
     if (!_formKey.currentState!.validate()) {
-      debugPrint('Form validation failed');
       return;
     }
 
@@ -332,7 +329,6 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
           _showError('Failed to send invitation. Please check your connection and try again.');
         }
       } catch (networkError) {
-        debugPrint('Network error during invitation: $networkError');
 
         // Provide specific error messages based on error type
         String errorMessage = 'Failed to send invitation due to network issues. Please check your internet connection and try again.';
@@ -352,7 +348,6 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
         _showError(errorMessage);
       }
     } catch (e) {
-      debugPrint('Unexpected error during invitation: $e');
       _showError('An unexpected error occurred. Please try again later.');
     } finally {
       if (mounted) {

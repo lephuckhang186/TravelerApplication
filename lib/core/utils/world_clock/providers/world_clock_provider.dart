@@ -47,7 +47,7 @@ class WorldClockProvider with ChangeNotifier {
       _worldClockData = WorldClockService.getAllWorldClockData();
       _loadFavoriteTimeZones();
     } catch (e) {
-      debugPrint('Error loading world clock data: $e');
+      //
     } finally {
       _isLoading = false;
       notifyListeners();

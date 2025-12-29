@@ -59,8 +59,6 @@ class CollaborationProvider extends ChangeNotifier {
   Future<void> initialize() async {
     _setLoading(true);
     try {
-      debugPrint('🔄 INIT: Loading collaboration data...');
-
       // Clear any existing data first to ensure fresh load
       clearAllData();
 
@@ -75,11 +73,8 @@ class CollaborationProvider extends ChangeNotifier {
       _startRealTimeListening();
       _startInvitationsListening();
       _startAuthStateListening();
-
-      debugPrint('✅ INIT: Loaded collaboration data - ${_mySharedTrips.length} my trips, ${_sharedWithMeTrips.length} shared trips');
     } catch (e) {
       _setError('Failed to initialize: $e');
-      debugPrint('❌ INIT: Failed to load collaboration data: $e');
     } finally {
       _setLoading(false);
     }
@@ -88,11 +83,9 @@ class CollaborationProvider extends ChangeNotifier {
   /// Ensure provider is initialized (lazy initialization)
   Future<void> ensureInitialized() async {
     if (!hasSharedTrips && !_isLoading) {
-      debugPrint('🔄 ENSURE_INIT: Provider not initialized, initializing now...');
       await initialize();
     } else if (hasSharedTrips && !_isLoading) {
       // Even if we have trips, ensure real-time listeners are active
-      debugPrint('🔄 ENSURE_INIT: Ensuring real-time listeners are active...');
       _startRealTimeListening();
       _startInvitationsListening();
     }
@@ -112,20 +105,12 @@ class CollaborationProvider extends ChangeNotifier {
   /// Load trips owned by current user
   Future<void> loadMySharedTrips() async {
     try {
-      debugPrint('DEBUG: CollaborationProvider.loadMySharedTrips() - Starting load...');
       final trips = await _collaborationService.loadMySharedTrips();
       _mySharedTrips = trips;
       _clearError();
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.loadMySharedTrips() - Loaded ${_mySharedTrips.length} trips');
-      
-      // Log each trip for debugging
-      for (int i = 0; i < _mySharedTrips.length; i++) {
-        debugPrint('DEBUG: My Shared Trip ${i + 1}: ${_mySharedTrips[i].name} (${_mySharedTrips[i].id})');
-      }
     } catch (e) {
       _setError('Failed to load your shared trips: $e');
-      debugPrint('DEBUG: CollaborationProvider.loadMySharedTrips() - Error: $e');
       rethrow;
     }
   }
@@ -137,15 +122,8 @@ class CollaborationProvider extends ChangeNotifier {
       _sharedWithMeTrips = trips;
       _clearError();
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.loadSharedWithMeTrips() - Loaded ${_sharedWithMeTrips.length} trips');
-      
-      // Log each trip for debugging  
-      for (int i = 0; i < _sharedWithMeTrips.length; i++) {
-        debugPrint('DEBUG: Shared With Me Trip ${i + 1}: ${_sharedWithMeTrips[i].name} (${_sharedWithMeTrips[i].id})');
-      }
     } catch (e) {
       _setError('Failed to load trips shared with you: $e');
-      debugPrint('DEBUG: CollaborationProvider.loadSharedWithMeTrips() - Error: $e');
       rethrow;
     }
   }
@@ -156,9 +134,7 @@ class CollaborationProvider extends ChangeNotifier {
       final invitations = await _collaborationService.getPendingInvitations();
       _pendingInvitations = invitations;
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.loadPendingInvitations() - Loaded ${_pendingInvitations.length} invitations');
     } catch (e) {
-      debugPrint('DEBUG: CollaborationProvider.loadPendingInvitations() - Error: $e');
       // Don't rethrow for invitations as it's not critical
     }
   }
@@ -194,14 +170,10 @@ class CollaborationProvider extends ChangeNotifier {
             : null,
       );
 
-      debugPrint('DEBUG: Creating shared trip: ${trip.name} -> ${trip.destination}');
       final createdTrip = await createSharedTrip(trip);
-      debugPrint('✅ SHARED_TRIP_CREATED: ${createdTrip?.name} (${createdTrip?.id})');
-      
       return createdTrip;
     } catch (e) {
       _setError('Failed to create trip: $e');
-      debugPrint('❌ CREATE_TRIP_ERROR: $e');
       return null;
     } finally {
       _setLoading(false);
@@ -213,7 +185,6 @@ class CollaborationProvider extends ChangeNotifier {
     if (trip is SharedTripModel) {
       _mySharedTrips.insert(0, trip);
       notifyListeners();
-      debugPrint('DEBUG: Added shared trip to local state: ${trip.name}');
     }
   }
 
@@ -222,7 +193,6 @@ class CollaborationProvider extends ChangeNotifier {
     if (trip is SharedTripModel) {
       _selectedSharedTrip = trip;
       notifyListeners();
-      debugPrint('DEBUG: Set current shared trip: ${trip.name}');
     }
   }
 
@@ -238,7 +208,6 @@ class CollaborationProvider extends ChangeNotifier {
       );
 
       await _firebaseService.saveTrip(tripForFirebase);
-      debugPrint('✅ FIRESTORE_SAVE: Saved collaboration trip to Firestore: ${tripForFirebase.name} (${tripForFirebase.id})');
 
       // Create shared trip in collaboration service
       final sharedTrip = await _collaborationService.createSharedTrip(tripForFirebase);
@@ -250,13 +219,9 @@ class CollaborationProvider extends ChangeNotifier {
       // Force reload from Firestore to ensure data consistency
       await loadMySharedTrips();
 
-      debugPrint('DEBUG: CollaborationProvider.createSharedTrip() - Created: ${sharedTrip.id}');
-      debugPrint('DEBUG: CollaborationProvider.createSharedTrip() - Total trips after create: ${_mySharedTrips.length}');
-
       return sharedTrip;
     } catch (e) {
       _setError('Failed to create shared trip: $e');
-      debugPrint('DEBUG: CollaborationProvider.createSharedTrip() - Error: $e');
       return null;
     } finally {
       _setLoading(false);
@@ -269,11 +234,7 @@ class CollaborationProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      debugPrint('🔄 UPDATE_TRIP_START: Updating trip ${trip.id} with ${trip.activities.length} activities');
-
       final updatedTrip = await _collaborationService.updateSharedTrip(trip);
-
-      debugPrint('✅ UPDATE_TRIP_SUCCESS: Trip ${updatedTrip.id} updated in Firestore');
 
       // Update in appropriate list
       _updateTripInLists(updatedTrip);
@@ -281,15 +242,12 @@ class CollaborationProvider extends ChangeNotifier {
       // Update selected trip if it matches
       if (_selectedSharedTrip?.id == trip.id) {
         _selectedSharedTrip = updatedTrip;
-        debugPrint('🎯 UPDATE_TRIP_SELECTED: Updated selected trip');
       }
 
       notifyListeners();
-      debugPrint('🎉 UPDATE_TRIP_COMPLETE: UI notified for trip ${trip.id}');
       return true;
     } catch (e) {
       _setError('Failed to update shared trip: $e');
-      debugPrint('❌ UPDATE_TRIP_ERROR: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -314,11 +272,9 @@ class CollaborationProvider extends ChangeNotifier {
       }
       
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.deleteSharedTrip() - Deleted: $tripId');
       return true;
     } catch (e) {
       _setError('Failed to delete shared trip: $e');
-      debugPrint('DEBUG: CollaborationProvider.deleteSharedTrip() - Error: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -337,10 +293,8 @@ class CollaborationProvider extends ChangeNotifier {
       _startSelectedTripListening(tripId);
       
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.selectSharedTrip() - Selected: $tripId');
     } catch (e) {
       _setError('Failed to load trip details: $e');
-      debugPrint('DEBUG: CollaborationProvider.selectSharedTrip() - Error: $e');
     }
   }
 
@@ -366,11 +320,9 @@ class CollaborationProvider extends ChangeNotifier {
         permissionLevel: permissionLevel,
       );
       
-      debugPrint('DEBUG: CollaborationProvider.inviteCollaborator() - Sent invitation to: $email with role: $permissionLevel');
       return true;
     } catch (e) {
       _setError('Failed to send invitation: $e');
-      debugPrint('DEBUG: CollaborationProvider.inviteCollaborator() - Error: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -392,11 +344,9 @@ class CollaborationProvider extends ChangeNotifier {
       await loadSharedWithMeTrips();
       
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.acceptInvitation() - Accepted: $invitationId');
       return true;
     } catch (e) {
       _setError('Failed to accept invitation: $e');
-      debugPrint('DEBUG: CollaborationProvider.acceptInvitation() - Error: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -415,11 +365,9 @@ class CollaborationProvider extends ChangeNotifier {
       _pendingInvitations.removeWhere((inv) => inv.id == invitationId);
       
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.declineInvitation() - Declined: $invitationId');
       return true;
     } catch (e) {
       _setError('Failed to decline invitation: $e');
-      debugPrint('DEBUG: CollaborationProvider.declineInvitation() - Error: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -437,11 +385,9 @@ class CollaborationProvider extends ChangeNotifier {
       // Reload trip data to reflect changes
       await selectSharedTrip(tripId);
       
-      debugPrint('DEBUG: CollaborationProvider.removeCollaborator() - Removed: $collaboratorUserId');
       return true;
     } catch (e) {
       _setError('Failed to remove collaborator: $e');
-      debugPrint('DEBUG: CollaborationProvider.removeCollaborator() - Error: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -465,11 +411,9 @@ class CollaborationProvider extends ChangeNotifier {
       }
       
       notifyListeners();
-      debugPrint('DEBUG: CollaborationProvider.leaveSharedTrip() - Left: $tripId');
       return true;
     } catch (e) {
       _setError('Failed to leave trip: $e');
-      debugPrint('DEBUG: CollaborationProvider.leaveSharedTrip() - Error: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -480,45 +424,33 @@ class CollaborationProvider extends ChangeNotifier {
 
   /// Start listening to real-time updates
   void _startRealTimeListening() {
-    debugPrint('🔄 REAL_TIME_START: Starting real-time listening...');
-
     // Cancel existing subscription first
     _myTripsSubscription?.cancel();
 
     // Listen to user's shared trips
     _myTripsSubscription = _collaborationService.watchUserSharedTrips().listen(
       (trips) {
-        debugPrint('📡 REAL_TIME_RECEIVED: Received ${trips.length} trips from Firestore');
-
         // Separate owned trips from collaborated trips
         final myTrips = <SharedTripModel>[];
         final sharedTrips = <SharedTripModel>[];
 
         final userId = _collaborationService.currentUserId;
-        debugPrint('👤 REAL_TIME_USER: Current user ID: $userId');
 
         if (userId != null) {
           for (final trip in trips) {
-            debugPrint('🎯 REAL_TIME_PROCESS: Processing trip ${trip.id} - Owner: ${trip.ownerId}');
             if (trip.isOwnerUser(userId)) {
               myTrips.add(trip);
-              debugPrint('✅ REAL_TIME_OWNED: Added to owned trips');
             } else {
               sharedTrips.add(trip);
-              debugPrint('🤝 REAL_TIME_SHARED: Added to shared trips');
             }
           }
         }
 
         // Update state - CORRECTLY SEPARATE OWNED VS SHARED
-        final oldOwnedCount = _mySharedTrips.length;
-        final oldSharedCount = _sharedWithMeTrips.length;
 
         // Clear and rebuild lists from Firestore data
         final newMyTrips = <SharedTripModel>[];
         final newSharedTrips = <SharedTripModel>[];
-
-        debugPrint('👤 REAL_TIME_SEPARATE: Separating trips for user $userId');
 
         // Separate trips correctly based on ownership
         for (final trip in trips) {
@@ -528,53 +460,37 @@ class CollaborationProvider extends ChangeNotifier {
           );
 
           final isOwner = sortedTrip.isOwnerUser(userId!);
-          debugPrint('🎯 REAL_TIME_TRIP: ${sortedTrip.name} (${sortedTrip.id}) - Owner: ${sortedTrip.ownerId}, IsOwner: $isOwner');
 
           if (isOwner) {
             newMyTrips.add(sortedTrip);
-            debugPrint('✅ REAL_TIME_OWNED: Added to owned trips (total: ${newMyTrips.length})');
           } else {
             newSharedTrips.add(sortedTrip);
-            debugPrint('🤝 REAL_TIME_SHARED: Added to shared trips (total: ${newSharedTrips.length})');
           }
         }
-
-        debugPrint('📊 REAL_TIME_COUNTS: Owned: ${newMyTrips.length}, Shared: ${newSharedTrips.length}');
 
         // Update state with correctly separated data
         _mySharedTrips = newMyTrips;
         _sharedWithMeTrips = newSharedTrips;
 
         // CRITICAL: Force UI refresh with logging and timestamp
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        debugPrint('🔄 REAL_TIME_NOTIFY: Calling notifyListeners() at $timestamp...');
         notifyListeners();
-        debugPrint('✅ REAL_TIME_NOTIFIED: notifyListeners() completed at $timestamp');
-
-        debugPrint('🎉 REAL_TIME_UPDATE: UI notified - ${newMyTrips.length} owned (${oldOwnedCount}→${newMyTrips.length}), ${newSharedTrips.length} shared (${oldSharedCount}→${newSharedTrips.length})');
 
         // Check for new invitations
         _checkForNewInvitations();
       },
       onError: (error) {
-        debugPrint('❌ REAL_TIME_ERROR: $error');
         _setError('Real-time sync error: $error');
       },
       cancelOnError: false,
     );
-
-    debugPrint('✅ REAL_TIME_STARTED: Real-time listener active for user: ${_collaborationService.currentUserId}');
   }
 
   /// Start listening to selected trip updates
   void _startSelectedTripListening(String tripId) {
-    debugPrint('🎯 SELECTED_TRIP_START: Starting listener for trip $tripId');
-
     _selectedTripSubscription?.cancel();
     _selectedTripSubscription = _collaborationService.watchSharedTrip(tripId).listen(
       (trip) {
         if (trip != null) {
-          debugPrint('📡 SELECTED_TRIP_UPDATE: Received update for trip ${trip.id}');
           // Sort activities chronologically for consistent display
           final sortedTrip = trip.copyWith(
             activities: ActivitySchedulingValidator.sortActivitiesChronologically(trip.activities),
@@ -582,69 +498,47 @@ class CollaborationProvider extends ChangeNotifier {
           _selectedSharedTrip = sortedTrip;
           _updateTripInLists(sortedTrip); // Also update in main lists
           notifyListeners();
-          debugPrint('✅ SELECTED_TRIP_REFRESHED: UI updated for trip ${trip.id}');
         } else {
-          debugPrint('⚠️ SELECTED_TRIP_NULL: Received null for trip $tripId');
         }
       },
       onError: (error) {
-        debugPrint('❌ SELECTED_TRIP_ERROR: $error for trip $tripId');
       },
       cancelOnError: false,
     );
-
-    debugPrint('✅ SELECTED_TRIP_LISTENER_ACTIVE: Listening to trip $tripId');
   }
 
   /// Start listening to Firebase auth state changes
   void _startAuthStateListening() {
-    debugPrint('DEBUG: CollaborationProvider._startAuthStateListening() - Starting auth state listening');
-
     _authStateSubscription?.cancel();
     _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen(
       (User? user) {
-        debugPrint('DEBUG: CollaborationProvider - Auth state changed: ${user?.email ?? user?.uid ?? 'null'}');
-
         if (user != null) {
           // User is signed in, refresh collaboration data for this user
-          debugPrint('DEBUG: CollaborationProvider - User signed in, refreshing collaboration data');
           refreshCollaborationData();
         } else {
           // User is signed out, clear all data
-          debugPrint('DEBUG: CollaborationProvider - User signed out, clearing collaboration data');
           clearAllData();
         }
       },
       onError: (error) {
-        debugPrint('DEBUG: CollaborationProvider - Auth state error: $error');
       },
     );
   }
 
   /// Start listening to invitation updates
   void _startInvitationsListening() {
-    debugPrint('🔄 INVITATIONS_START: Starting invitations real-time listening...');
-
     _invitationsSubscription?.cancel();
     _invitationsSubscription = _collaborationService.watchPendingInvitations().listen(
       (invitations) {
-        debugPrint('📬 INVITATIONS_RECEIVED: Received ${invitations.length} invitations from Firestore');
-
-        final oldCount = _pendingInvitations.length;
         _pendingInvitations = invitations;
 
         // Force UI refresh
         notifyListeners();
-
-        debugPrint('🎉 INVITATIONS_UPDATE: UI notified - ${invitations.length} invitations (${oldCount}→${invitations.length})');
       },
       onError: (error) {
-        debugPrint('❌ INVITATIONS_ERROR: $error');
       },
       cancelOnError: false,
     );
-
-    debugPrint('✅ INVITATIONS_STARTED: Invitations listener active');
   }
 
   /// Stop real-time listening
@@ -653,7 +547,6 @@ class CollaborationProvider extends ChangeNotifier {
     _selectedTripSubscription?.cancel();
     _authStateSubscription?.cancel();
     _invitationsSubscription?.cancel();
-    debugPrint('DEBUG: CollaborationProvider.stopRealTimeListening() - Stopped real-time listening');
   }
 
   // HELPER METHODS
@@ -723,7 +616,6 @@ class CollaborationProvider extends ChangeNotifier {
 
   /// Check for new invitations when trips are updated
   void _checkForNewInvitations() {
-    debugPrint('🔍 CHECK_INVITATIONS: Checking for new invitations...');
     // Load pending invitations in background
     loadPendingInvitations();
   }
@@ -739,8 +631,6 @@ class CollaborationProvider extends ChangeNotifier {
 
     stopRealTimeListening();
     notifyListeners();
-
-    debugPrint('DEBUG: CollaborationProvider.clearAllData() - Cleared all collaboration data');
   }
 
   /// Respond to invitation (accept or decline)
@@ -763,11 +653,9 @@ class CollaborationProvider extends ChangeNotifier {
       // Reload trip data to reflect permission changes
       await selectSharedTrip(tripId);
 
-      debugPrint('✅ PERMISSION_UPDATED: Updated $collaboratorUserId to $newRole for trip $tripId');
       return true;
     } catch (e) {
       _setError('Failed to update permission: $e');
-      debugPrint('❌ PERMISSION_UPDATE_ERROR: $e');
       return false;
     } finally {
       _setLoading(false);

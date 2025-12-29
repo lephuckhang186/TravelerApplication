@@ -68,7 +68,7 @@ class _MapScreenState extends State<MapScreen> {
         'lastSelectedTripId': tripId,
       }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error saving selected trip ID: $e');
+      //
     }
   }
 
@@ -138,7 +138,7 @@ class _MapScreenState extends State<MapScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error loading last selected trip: $e');
+      //
     }
   }
 
@@ -196,7 +196,7 @@ class _MapScreenState extends State<MapScreen> {
                       children: [
                         const Expanded(
                           child: Text(
-                            'Chọn chuyến đi',
+                            'Choose a trip',
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
                               fontSize: 24,
@@ -323,7 +323,7 @@ class _MapScreenState extends State<MapScreen> {
 
     if (activities.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không có hoạt động nào có vị trí')),
+        const SnackBar(content: Text('No activities have a location.')),
       );
       return;
     }
@@ -338,9 +338,6 @@ class _MapScreenState extends State<MapScreen> {
     }
     _currentActivityIndex = firstUncheckedIndex;
 
-    debugPrint(
-      'Loaded trip with ${activities.length} activities, current index: $_currentActivityIndex',
-    );
 
     // Add markers for activities
     if (!kIsWeb) {
@@ -481,7 +478,7 @@ class _MapScreenState extends State<MapScreen> {
 
     if (_currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã hoàn thành tất cả hoạt động')),
+        const SnackBar(content: Text('All activities have been completed.')),
       );
       return;
     }
@@ -674,9 +671,6 @@ class _MapScreenState extends State<MapScreen> {
           // Check if expense already exists for this activity
           if (updatedActivity.expenseInfo.expenseSynced &&
               updatedActivity.expenseInfo.expenseId != null) {
-            debugPrint(
-              'Expense already exists for activity: ${updatedActivity.title} (expenseId: ${updatedActivity.expenseInfo.expenseId})',
-            );
             createdExpenseId = updatedActivity.expenseInfo.expenseId;
           } else if (actualCost > 0) {
             // Create new expense using ExpenseService directly
@@ -690,7 +684,6 @@ class _MapScreenState extends State<MapScreen> {
             );
             
             createdExpenseId = expense.id;
-            debugPrint('✅ Expense created successfully with ID: $createdExpenseId');
             
             // Update activity with expense info
             final updatedExpenseInfo = updatedActivity.expenseInfo.copyWith(
@@ -736,10 +729,8 @@ class _MapScreenState extends State<MapScreen> {
               }
             }
 
-            debugPrint('✅ Activity updated with expense info');
           }
         } catch (e) {
-          debugPrint('❌ Error creating expense: $e');
           // Continue with check-in even if expense creation fails
         }
 
@@ -773,7 +764,7 @@ class _MapScreenState extends State<MapScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Đã check-in ${updatedActivity.title}!'),
+              content: Text('Checked in ${updatedActivity.title}!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -791,7 +782,7 @@ class _MapScreenState extends State<MapScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('🎉 Chúc mừng! Bạn đã hoàn thành chuyến đi!'),
+              content: const Text('🎉 Congratulations! You have completed your trip!'),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 5),
             ),
@@ -812,12 +803,6 @@ class _MapScreenState extends State<MapScreen> {
   void _centerToCurrentStartingPoint() {
     if (_selectedTrip == null) return;
 
-    // Debug logs
-    debugPrint('Center to current starting point called');
-    debugPrint('isMapReady: $_isMapReady');
-    debugPrint('kIsWeb: $kIsWeb');
-    debugPrint('Current activity index: $_currentActivityIndex');
-    debugPrint('Google controller: ${_googleMapController != null}');
 
     final activities = _selectedTrip!.activities
         .where(
@@ -829,7 +814,7 @@ class _MapScreenState extends State<MapScreen> {
 
     if (activities.isEmpty || _currentActivityIndex >= activities.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không có hoạt động nào có vị trí')),
+        const SnackBar(content: Text('No activities have a location.')),
       );
       return;
     }
@@ -839,7 +824,6 @@ class _MapScreenState extends State<MapScreen> {
     // Center map on current starting point with maximum zoom for clarity
     if (!kIsWeb) {
       if (_googleMapController != null) {
-        debugPrint('Animating Google Maps camera to current starting point');
         _googleMapController!.animateCamera(
           CameraUpdate.newLatLngZoom(
             LatLng(
@@ -850,10 +834,9 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       } else {
-        debugPrint('Google Maps controller is null!');
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Bản đồ chưa sẵn sàng')));
+        ).showSnackBar(const SnackBar(content: Text('The map is not ready.')));
         return;
       }
     } else {
@@ -906,7 +889,7 @@ class _MapScreenState extends State<MapScreen> {
         .toList();
 
     if (_currentActivityIndex >= activities.length - 1) {
-      return 'Hoàn thành chuyến đi';
+      return 'Complete the trip.';
     }
 
     final nextActivity = activities[_currentActivityIndex + 1];
@@ -998,17 +981,16 @@ class _MapScreenState extends State<MapScreen> {
       if (updatedTrip != null && mounted) {
         _selectSharedTrip(updatedTrip);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã làm mới dữ liệu chuyến đi')),
+          const SnackBar(content: Text('Trip data has been refreshed.')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể làm mới dữ liệu')),
+          const SnackBar(content: Text('Unable to refresh data')),
         );
       }
     } catch (e) {
-      debugPrint('Error refreshing trip data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lỗi khi làm mới dữ liệu')),
+        const SnackBar(content: Text('Error refreshing data')),
       );
     } finally {
       if (mounted) {
@@ -1091,7 +1073,7 @@ class _MapScreenState extends State<MapScreen> {
                       child: FloatingActionButton.small(
                         onPressed: _loadTrips,
                         backgroundColor: Colors.white,
-                        tooltip: 'Chọn chuyến đi',
+                        tooltip: 'Choose a trip',
                         heroTag: 'select_trip',
                         child: const Icon(
                           Icons.list,
@@ -1118,7 +1100,7 @@ class _MapScreenState extends State<MapScreen> {
                           child: FloatingActionButton.small(
                             onPressed: _refreshTripData,
                             backgroundColor: Colors.white,
-                            tooltip: 'Làm mới dữ liệu',
+                            tooltip: 'Refresh data',
                             heroTag: 'refresh_trip',
                             child: const Icon(
                               Icons.refresh,
@@ -1156,7 +1138,7 @@ class _MapScreenState extends State<MapScreen> {
                             _saveSelectedTripId(null);
                           },
                           backgroundColor: Colors.white,
-                          tooltip: 'Bỏ chọn chuyến đi',
+                          tooltip: 'Deselect the trip',
                           heroTag: 'clear_trip',
                           child: const Icon(
                             Icons.close,
@@ -1268,7 +1250,7 @@ class _MapScreenState extends State<MapScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          'Điểm xuất phát',
+                          'Starting point',
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey[700],
@@ -1288,7 +1270,7 @@ class _MapScreenState extends State<MapScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Điểm tiếp theo',
+                          'Next point',
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey[700],
@@ -1325,7 +1307,7 @@ class _MapScreenState extends State<MapScreen> {
                         child: FloatingActionButton.small(
                           onPressed: _centerToCurrentStartingPoint,
                           backgroundColor: Colors.white,
-                          tooltip: 'Về điểm xuất phát',
+                          tooltip: 'Back to the starting point',
                           child: const Icon(
                             Icons.my_location,
                             color: AppColors.navyBlue,

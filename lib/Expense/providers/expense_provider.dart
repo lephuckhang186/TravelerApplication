@@ -292,7 +292,6 @@ class ExpenseProvider with ChangeNotifier {
       _startDate = startDate;
       _endDate = endDate;
 
-      debugPrint('FETCH_EXPENSES: Fetching with tripId=$tripId, start=$startDate, end=$endDate');
       
       _expenses = await _expenseService.getExpenses(
         category: category,
@@ -302,15 +301,12 @@ class ExpenseProvider with ChangeNotifier {
       ).timeout(
         const Duration(seconds: 15),
         onTimeout: () {
-          debugPrint('FETCH_EXPENSES: Request timed out after 15 seconds');
           throw Exception('Request timed out. Please check your connection.');
         },
       );
       
-      debugPrint('FETCH_EXPENSES: Successfully loaded ${_expenses.length} expenses');
       _clearError();
     } catch (e) {
-      debugPrint('FETCH_EXPENSES ERROR: $e');
       _setError(e.toString());
     } finally {
       _setLoading(false);
@@ -349,7 +345,6 @@ class ExpenseProvider with ChangeNotifier {
       _budgetError = null;
     } catch (e) {
       _budgetError = e.toString();
-      debugPrint('DEBUG: Failed to fetch budget status: $e');
     } finally {
       _isBudgetLoading = false;
       notifyListeners();
@@ -427,7 +422,6 @@ class ExpenseProvider with ChangeNotifier {
     _setLoading(true);
 
     try {
-      debugPrint('LOAD_DATA: Loading expenses for tripId: $tripId, startDate: $_startDate, endDate: $_endDate, forceRefresh: false');
       
       // Note: Trip model from expense service doesn't have ID
       // tripId must be passed from calling code
@@ -443,7 +437,6 @@ class ExpenseProvider with ChangeNotifier {
         _selectedMonth = _currentTrip!.startDate;
       }
 
-      debugPrint('LOAD_DATA: Using tripId: $tripId for loading data');
 
       // Load all expense data with tripId
       await Future.wait([
@@ -459,7 +452,6 @@ class ExpenseProvider with ChangeNotifier {
         fetchSpendingTrends(),
       ]);
       
-      debugPrint('LOAD_DATA: Loaded ${_expenses.length} expenses');
     } catch (e) {
       _setError('Failed to load data: ${e.toString()}');
     } finally {

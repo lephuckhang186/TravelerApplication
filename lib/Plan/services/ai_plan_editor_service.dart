@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../models/activity_models.dart';
 
 /// Service for AI-powered plan editing with natural language processing
@@ -13,7 +12,6 @@ class AIPlanEditorService {
     String tripId,
   ) async {
     try {
-      debugPrint('AI Plan Editor: Processing command suggestion: "$command"');
 
       // Parse the command to extract action, day, and activity
       final parsedCommand = _parseNaturalLanguageCommand(command);
@@ -26,7 +24,6 @@ class AIPlanEditorService {
         };
       }
 
-      debugPrint('AI Plan Editor: Parsed command: $parsedCommand');
 
       // Generate suggestion message without executing
       switch (parsedCommand['action']) {
@@ -60,7 +57,6 @@ class AIPlanEditorService {
           };
       }
     } catch (e) {
-      debugPrint('AI Plan Editor Error: $e');
       return {
         'success': false,
         'message': 'Có lỗi xảy ra khi xử lý lệnh: $e',
@@ -181,7 +177,6 @@ class AIPlanEditorService {
     required int day,
     required String activity,
   }) {
-    debugPrint('AI Plan Editor: Suggesting to add "$activity" to day $day of trip $tripId');
 
     // Determine activity type based on keywords
     final activityType = _determineActivityType(activity);
@@ -205,7 +200,6 @@ class AIPlanEditorService {
     required int day,
     required String activity,
   }) {
-    debugPrint('AI Plan Editor: Suggesting to remove "$activity" from day $day of trip $tripId');
 
     return {
       'success': true,
@@ -225,7 +219,6 @@ class AIPlanEditorService {
     required String oldActivity,
     required String newActivity,
   }) {
-    debugPrint('AI Plan Editor: Suggesting to update "$oldActivity" to "$newActivity" on day $day of trip $tripId');
 
     // Determine activity type based on keywords
     final activityType = _determineActivityType(newActivity);

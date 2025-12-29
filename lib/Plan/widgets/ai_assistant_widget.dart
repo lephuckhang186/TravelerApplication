@@ -185,7 +185,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
             const SizedBox(height: 20),
 
             Text(
-              'Tùy chọn Chat',
+              'Chat Options',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 18,
@@ -209,11 +209,11 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 ),
               ),
               title: Text(
-                'Chat mới',
+                'New chat',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 16),
               ),
               subtitle: Text(
-                'Bắt đầu cuộc trò chuyện mới',
+                'Start a new conversation',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   color: Colors.grey[600],
@@ -241,11 +241,11 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 ),
               ),
               title: Text(
-                'Lịch sử chat',
+                'Chat history',
                 style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 16),
               ),
               subtitle: Text(
-                '${_chatHistories.length} cuộc trò chuyện đã lưu',
+                '${_chatHistories.length} saved conversations',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   color: Colors.grey[600],
@@ -309,7 +309,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 Icon(Icons.history, color: Colors.blue.shade600, size: 24),
                 const SizedBox(width: 12),
                 Text(
-                  'Lịch sử Chat',
+                  'Chat History',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 18,
@@ -333,7 +333,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Chưa có lịch sử chat',
+                        'No chat history',
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 16,
@@ -375,7 +375,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                           style: TextStyle(fontFamily: 'Urbanist-Regular'),
                         ),
                         subtitle: Text(
-                          preview.isEmpty ? 'Chat trống' : preview,
+                          preview.isEmpty ? 'Empty chat' : preview,
                           style: TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             color: Colors.grey[600],
@@ -508,7 +508,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      _isBackendOnline ? 'Đang hoạt động' : 'Không thể kết nối',
+                      _isBackendOnline ? 'In operation' : 'Unable to connect',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
@@ -608,7 +608,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 Icon(Icons.travel_explore, size: 36, color: Colors.white),
                 const SizedBox(height: 8),
                 Text(
-                  'Xin chào! 👋',
+                  'Hello! 👋',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 20,
@@ -617,7 +617,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Tôi là trợ lý AI du lịch của bạn!',
+                  'I am your AI travel assistant!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
@@ -632,7 +632,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
           const SizedBox(height: 16),
 
           Text(
-            'Bạn muốn hỏi gì? 🤔',
+            'What do you want to ask? 🤔',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 16,
@@ -730,7 +730,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Câu hỏi của bạn:',
+                        'Your question:',
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
@@ -780,7 +780,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
                             vertical: 10,
                           ),
                         ),
-                        child: const Text('Gửi câu hỏi'),
+                        child: const Text('Submit a question'),
                       ),
                     ],
                   ),
@@ -793,7 +793,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
 
           if (_selectedSuggestion == null && _messages.isEmpty)
             Text(
-              'Hoặc nhập câu hỏi của bạn bên dưới! ✨',
+              'Or enter your question below! ✨',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
@@ -878,7 +878,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
           ),
           const SizedBox(width: 12),
           Text(
-            'AI đang suy nghĩ...',
+            'The AI ​​is thinking...',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               color: Colors.grey[600],
@@ -908,7 +908,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
               textInputAction: TextInputAction.newline,
               keyboardType: TextInputType.multiline,
               decoration: InputDecoration(
-                hintText: 'Nhập câu hỏi của bạn...',
+                hintText: 'Enter your question...',
                 hintStyle: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   color: Colors.grey[500],

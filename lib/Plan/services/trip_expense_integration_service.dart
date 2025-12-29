@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
@@ -19,7 +18,6 @@ class TripExpenseIntegrationService {
   /// Set the expense provider reference
   void setExpenseProvider(ExpenseProvider provider) {
     _expenseProvider = provider;
-    debugPrint('DEBUG: Integration - Expense provider set successfully');
 
     // Ensure the expense provider has proper authentication
     _ensureExpenseProviderAuth();
@@ -31,23 +29,17 @@ class TripExpenseIntegrationService {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null && _expenseProvider != null) {
         // The expense service should auto-initialize auth, but let's make sure
-        debugPrint(
-          'DEBUG: Integration - Ensuring expense provider has auth for user: ${user.uid}',
-        );
       } else {
-        debugPrint('DEBUG: Integration - Warning: No authenticated user found');
+        // 
       }
     } catch (e) {
-      debugPrint('DEBUG: Integration - Error ensuring auth: $e');
+      //
     }
   }
 
   /// Create expense from activity cost
   Future<bool> syncActivityExpense(ActivityModel activity) async {
     if (_expenseProvider == null || activity.budget == null) {
-      debugPrint(
-        'DEBUG: Integration - No expense provider or budget available',
-      );
       return false;
     }
 
@@ -55,17 +47,10 @@ class TripExpenseIntegrationService {
     final amount =
         activity.budget!.actualCost ?? activity.budget!.estimatedCost;
     if (amount <= 0) {
-      debugPrint('DEBUG: Integration - No valid amount: $amount');
       return false;
     }
 
     try {
-      debugPrint(
-        'DEBUG: Integration - Attempting to create expense: amount=$amount, type=${activity.activityType.value}',
-      );
-      debugPrint(
-        'DEBUG: Integration - ExpenseProvider available: ${_expenseProvider != null}',
-      );
 
       final expense = await _expenseProvider!.createExpenseFromActivity(
         amount: amount,
@@ -77,7 +62,6 @@ class TripExpenseIntegrationService {
         tripId: activity.tripId ?? '',
       );
 
-      debugPrint('DEBUG: Integration - Expense creation result: ${expense != null}');
 
       if (expense != null && activity.id != null) {
         // Track activity-expense mapping
@@ -105,7 +89,6 @@ class TripExpenseIntegrationService {
 
       return expense != null;
     } catch (e) {
-      debugPrint('DEBUG: Integration - Failed to sync activity expense: $e');
       return false;
     }
   }

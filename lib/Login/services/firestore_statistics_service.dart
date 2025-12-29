@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../Login/services/auth_service.dart';
-import 'package:flutter/foundation.dart';
 
 /// Model for real-time user travel statistics from Firestore
 class UserTravelStats {
@@ -165,7 +164,6 @@ class FirestoreStatisticsService {
       // Emit stats immediately when trips are loaded, don't wait for expenses
       _statsController?.add(currentStats);
     }, onError: (error) {
-      debugPrint('Error loading trips: $error');
       _statsController?.add(currentStats);
     });
 
@@ -191,7 +189,6 @@ class FirestoreStatisticsService {
       // Always emit updated stats when expenses are loaded
       _statsController?.add(currentStats);
     }, onError: (error) {
-      debugPrint('Error loading expenses: $error');
       // Continue without expenses data
       _statsController?.add(currentStats);
     });
@@ -387,7 +384,7 @@ class FirestoreStatisticsService {
         return date;
       }
     } catch (e) {
-      debugPrint('Error parsing date: $e');
+      //
     }
     
     return null;
@@ -442,7 +439,6 @@ class FirestoreStatisticsService {
         totalDays2025: tripsStats['totalDays2025'],
       );
     } catch (e) {
-      debugPrint('Error getting user statistics: $e');
       return UserTravelStats.empty();
     }
   }
