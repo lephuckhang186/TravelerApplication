@@ -128,18 +128,18 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   }
 
   final List<String> _months = [
-    'Tháng 1',
-    'Tháng 2',
-    'Tháng 3',
-    'Tháng 4',
-    'Tháng 5',
-    'Tháng 6',
-    'Tháng 7',
-    'Tháng 8',
-    'Tháng 9',
-    'Tháng 10',
-    'Tháng 11',
-    'Tháng 12',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   @override
@@ -456,13 +456,13 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 const Icon(Icons.error, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
                 const Expanded(
-                  child: Text('Lỗi khi dọn dẹp dữ liệu. Vui lòng thử lại.'),
+                  child: Text('Error cleaning up data. Please try again.'),
                 ),
               ],
             ),
             backgroundColor: Colors.red[600],
             action: SnackBarAction(
-              label: 'Thử lại',
+              label: 'Retry',
               textColor: Colors.white,
               onPressed: () => _cleanupOrphanedExpenses(validTrips),
             ),
@@ -603,7 +603,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               ],
             ),
             child: Transform.scale(
-              scale: 1 / scale, // Scale ngược lại để text giữ nguyên kích thước
+              scale: 1 / scale, // Inverse scale to keep text original size
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -749,7 +749,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       offset: const Offset(
                         0,
                         -50,
-                      ), // Đưa pie chart lên trên 20px
+                      ), // Move pie chart up 20px
                       child: _buildPieChart(),
                     ),
                   ),
@@ -1249,7 +1249,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Lỗi tải dữ liệu',
+                      'Data loading error',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 16,
@@ -1260,7 +1260,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                     const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: _loadData,
-                      child: const Text('Thử lại'),
+                      child: const Text('Try again'),
                     ),
                   ],
                 ),
@@ -1283,7 +1283,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Chưa có giao dịch nào',
+                        'No transactions yet',
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 16,
@@ -1324,7 +1324,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Không có giao dịch phù hợp',
+                        'No matching transactions',
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 16,
@@ -1335,8 +1335,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                       const SizedBox(height: 8),
                       Text(
                         _selectedTripId != null
-                            ? 'Trip đã chọn không có giao dịch nào'
-                            : 'Thử thay đổi bộ lọc hoặc thêm giao dịch mới',
+                            ? 'Selected trip has no transactions'
+                            : 'Try changing filters or adding new transactions',
                         style: TextStyle(
                           fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
@@ -1884,7 +1884,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         title: displayName.length > 15
             ? '${percentage.toStringAsFixed(0)}%'
             : displayName, // Show name or % based on length
-        radius: 80, // Tăng radius lên 100 để pie chart to hơn
+        radius: 80, // Increase radius to 100 to make pie chart bigger
         color: colors[index % colors.length],
         titleStyle: TextStyle(
           fontFamily: 'Urbanist-Regular',
@@ -2182,7 +2182,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 Icon(Icons.category, size: 48, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
-                  'Chưa có dữ liệu danh mục',
+                  'No category data yet',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
@@ -2385,7 +2385,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                           children: [
                             const Expanded(
                               child: Text(
-                                'Chọn tháng & năm',
+                                'Select Month & Year',
                                 style: TextStyle(
                                   fontFamily: 'Urbanist-Regular',
                                   fontSize: 24,
@@ -2430,7 +2430,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                       Padding(
                                         padding: const EdgeInsets.all(12),
                                         child: Text(
-                                          'Tháng',
+                                          'Month',
                                           style: TextStyle(
                                             fontFamily: 'Urbanist-Regular',
                                             fontSize: 16,
@@ -2513,7 +2513,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                                       Padding(
                                         padding: const EdgeInsets.all(12),
                                         child: Text(
-                                          'Năm',
+                                          'Year',
                                           style: TextStyle(
                                             fontFamily: 'Urbanist-Regular',
                                             fontSize: 16,

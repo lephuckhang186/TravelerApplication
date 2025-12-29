@@ -276,7 +276,7 @@ class NotificationDetailScreen extends StatelessWidget {
           const SizedBox(height: 12),
           // Handle both backend response format and BudgetWarning model format
           if (data['activityTitle'] != null)
-            _buildDetailRow('Hoạt động', data['activityTitle']),
+            _buildDetailRow('Activity', data['activityTitle']),
           
           // Backend format (from expense response)
           if (data['total_budget'] != null) 
