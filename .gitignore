@@ -48,6 +48,7 @@ app.*.map.json
 firebase-service-account.json
 *-service-account.json
 service-account-*.json
+Backend/service-account.json
 
 # Environment files
 .env

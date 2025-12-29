@@ -104,7 +104,7 @@ class _GoogleSignupCompletionScreenState
                       const SizedBox(height: 150),
                       // Header
                       const Text(
-                        'Hoàn tất đăng ký',
+                        'Registration completed.',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -113,14 +113,14 @@ class _GoogleSignupCompletionScreenState
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Vui lòng nhập họ tên để hoàn tất tài khoản',
+                        'Please enter your full name to complete your account.',
                         style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
                       const SizedBox(height: 12),
 
                       // Họ tên
                       const Text(
-                        'Họ và tên',
+                        'Full name',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -136,7 +136,7 @@ class _GoogleSignupCompletionScreenState
                           fontFamily: 'Urbanist-Regular',
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Nhập họ và tên',
+                          hintText: 'Enter your first and last name',
                           hintStyle: TextStyle(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontFamily: 'Urbanist-Regular',
@@ -165,10 +165,10 @@ class _GoogleSignupCompletionScreenState
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Vui lòng nhập họ và tên';
+                            return 'Please enter your first and last name.';
                           }
                           if (value.trim().length < 2) {
-                            return 'Họ tên phải có ít nhất 2 ký tự';
+                            return 'Full names must have at least two characters.';
                           }
                           return null;
                         },
@@ -272,7 +272,7 @@ class _GoogleSignupCompletionScreenState
                                   ),
                                 )
                               : const Text(
-                                  'Hoàn tất đăng ký',
+                                  'Registration completed.',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,

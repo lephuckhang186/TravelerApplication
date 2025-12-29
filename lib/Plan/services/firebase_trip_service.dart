@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import '../models/trip_model.dart';
 
 /// Firebase Firestore service for trips - Real cloud persistence
@@ -50,8 +49,6 @@ class FirebaseTripService {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        
-        debugPrint('DEBUG: FirebaseTripService.saveTrip() - Created new trip: ${docRef.id}');
         return savedTrip;
       } else {
         // Update existing trip
@@ -62,11 +59,9 @@ class FirebaseTripService {
         }, SetOptions(merge: true));
         
         final updatedTrip = trip.copyWith(updatedAt: DateTime.now());
-        debugPrint('DEBUG: FirebaseTripService.saveTrip() - Updated trip: ${trip.id}');
         return updatedTrip;
       }
     } catch (e) {
-      debugPrint('DEBUG: FirebaseTripService.saveTrip() - Error: $e');
       throw Exception('Failed to save trip to Firebase: $e');
     }
   }
@@ -75,7 +70,6 @@ class FirebaseTripService {
   Future<List<TripModel>> loadTrips() async {
     try {
       if (_userId == null) {
-        debugPrint('DEBUG: FirebaseTripService.loadTrips() - User not authenticated');
         return [];
       }
       
@@ -90,14 +84,9 @@ class FirebaseTripService {
         return TripModel.fromJson(data);
       }).toList();
       
-      debugPrint('DEBUG: FirebaseTripService.loadTrips() - Loaded ${trips.length} trips from Firebase');
-      for (int i = 0; i < trips.length; i++) {
-        debugPrint('DEBUG: Firebase Trip ${i + 1}: ${trips[i].name} (${trips[i].id})');
-      }
       
       return trips;
     } catch (e) {
-      debugPrint('DEBUG: FirebaseTripService.loadTrips() - Error: $e');
       throw Exception('Failed to load trips from Firebase: $e');
     }
   }
@@ -112,9 +101,7 @@ class FirebaseTripService {
       final collection = _userTripsCollection!;
       await collection.doc(tripId).delete();
       
-      debugPrint('DEBUG: FirebaseTripService.deleteTrip() - Deleted trip: $tripId');
     } catch (e) {
-      debugPrint('DEBUG: FirebaseTripService.deleteTrip() - Error: $e');
       throw Exception('Failed to delete trip from Firebase: $e');
     }
   }
@@ -149,10 +136,8 @@ class FirebaseTripService {
       final cleanTrip = localTrip.copyWith(id: null);
       final cloudTrip = await saveTrip(cleanTrip);
       
-      debugPrint('DEBUG: FirebaseTripService.syncLocalTrip() - Synced local trip ${localTrip.id} → ${cloudTrip.id}');
       return cloudTrip;
     } catch (e) {
-      debugPrint('DEBUG: FirebaseTripService.syncLocalTrip() - Error: $e');
       throw Exception('Failed to sync local trip: $e');
     }
   }
@@ -170,13 +155,11 @@ class FirebaseTripService {
           syncedTrips.add(trip);
         }
       } catch (e) {
-        debugPrint('DEBUG: FirebaseTripService.syncLocalTrips() - Failed to sync ${trip.name}: $e');
         // Keep original trip if sync fails
         syncedTrips.add(trip);
       }
     }
     
-    debugPrint('DEBUG: FirebaseTripService.syncLocalTrips() - Synced ${syncedTrips.length} trips');
     return syncedTrips;
   }
   
@@ -193,7 +176,6 @@ class FirebaseTripService {
       
       return true;
     } catch (e) {
-      debugPrint('DEBUG: FirebaseTripService.checkConnectivity() - No Firebase connectivity: $e');
       return false;
     }
   }

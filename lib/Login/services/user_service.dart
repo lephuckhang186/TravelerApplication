@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bcrypt/bcrypt.dart';
@@ -472,16 +471,13 @@ class UserService {
     try {
       // Check if already authenticated
       if (FirebaseAuth.instance.currentUser != null) {
-        debugPrint('DEBUG: UserService - Already authenticated with Firebase');
         return;
       }
 
       // Sign in anonymously to get Firebase Auth context
-      final credential = await FirebaseAuth.instance.signInAnonymously();
-      debugPrint('DEBUG: UserService - Authenticated with Firebase anonymously: ${credential.user?.uid}');
+      await FirebaseAuth.instance.signInAnonymously();
 
     } catch (e) {
-      debugPrint('DEBUG: UserService - Failed to authenticate with Firebase: $e');
       // Don't throw error - collaboration features will be limited but app still works
     }
   }

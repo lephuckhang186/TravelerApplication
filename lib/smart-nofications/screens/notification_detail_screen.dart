@@ -22,7 +22,7 @@ class NotificationDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Chi tiết thông báo',
+          'Announcement details',
           style: TextStyle(
             fontFamily: 'Urbanist-Regular',
             color: Colors.black,
@@ -116,7 +116,7 @@ class NotificationDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Nội dung',
+                    'Content',
                     style: TextStyle(
                       fontFamily: 'Urbanist-Regular',
                       fontSize: 16,
@@ -160,15 +160,15 @@ class NotificationDetailScreen extends StatelessWidget {
 
     switch (severity) {
       case NotificationSeverity.critical:
-        label = 'Khẩn cấp';
+        label = 'Urgent';
         color = Colors.red;
         break;
       case NotificationSeverity.warning:
-        label = 'Cảnh báo';
+        label = 'Warning';
         color = Colors.orange;
         break;
       case NotificationSeverity.info:
-        label = 'Thông tin';
+        label = 'Information';
         color = Colors.blue;
         break;
     }
@@ -223,7 +223,7 @@ class NotificationDetailScreen extends StatelessWidget {
               Icon(Icons.wb_cloudy, color: Colors.blue[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Chi tiết thời tiết',
+                'Weather details',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
@@ -234,10 +234,10 @@ class NotificationDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildDetailRow('Vị trí', data['location'] ?? 'Không xác định'),
-          _buildDetailRow('Tình trạng', data['condition'] ?? 'Không xác định'),
-          _buildDetailRow('Nhiệt độ', '${data['temperature'] ?? 0}°C'),
-          _buildDetailRow('Mô tả', data['description'] ?? 'Không có mô tả'),
+          _buildDetailRow('Location', data['location'] ?? 'Undetermined'),
+          _buildDetailRow('Status', data['condition'] ?? 'Undetermined'),
+          _buildDetailRow('Temperature', '${data['temperature'] ?? 0}°C'),
+          _buildDetailRow('Description', data['description'] ?? 'No description'),
         ],
       ),
     );
@@ -263,7 +263,7 @@ class NotificationDetailScreen extends StatelessWidget {
               Icon(Icons.account_balance_wallet, color: Colors.orange[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Chi tiết ngân sách',
+                'Budget details',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
@@ -276,27 +276,27 @@ class NotificationDetailScreen extends StatelessWidget {
           const SizedBox(height: 12),
           // Handle both backend response format and BudgetWarning model format
           if (data['activityTitle'] != null)
-            _buildDetailRow('Hoạt động', data['activityTitle']),
+            _buildDetailRow('Activity', data['activityTitle']),
           
           // Backend format (from expense response)
-          if (data['total_budget'] != null)
-            _buildDetailRow('Ngân sách', '${_formatCurrency(data['total_budget'])} ${data['currency'] ?? 'VND'}'),
-          if (data['total_spent'] != null)
-            _buildDetailRow('Đã chi', '${_formatCurrency(data['total_spent'])} ${data['currency'] ?? 'VND'}'),
-          if (data['overage'] != null)
-            _buildDetailRow('Vượt quá', '${_formatCurrency(data['overage'])} ${data['currency'] ?? 'VND'}'),
-          if (data['remaining'] != null)
-            _buildDetailRow('Còn lại', '${_formatCurrency(data['remaining'])} ${data['currency'] ?? 'VND'}'),
-          if (data['percentage_used'] != null)
-            _buildDetailRow('Đã sử dụng', '${(data['percentage_used'] as num).round()}%'),
-          
-          // BudgetWarning model format
-          if (data['estimatedCost'] != null)
-            _buildDetailRow('Dự kiến', '${_formatCurrency(data['estimatedCost'])} ${data['currency'] ?? 'VND'}'),
-          if (data['actualCost'] != null)
-            _buildDetailRow('Thực tế', '${_formatCurrency(data['actualCost'])} ${data['currency'] ?? 'VND'}'),
-          if (data['overageAmount'] != null && data['overagePercentage'] != null)
-            _buildDetailRow('Vượt quá', '${_formatCurrency(data['overageAmount'])} (${(data['overagePercentage'] as num).round()}%)'),
+          if (data['total_budget'] != null) 
+            _buildDetailRow('Budget', '${_formatCurrency(data['total_budget'])} ${data['currency'] ?? 'VND'}'), 
+          if (data['total_spent'] != null) 
+            _buildDetailRow('Spent', '${_formatCurrency(data['total_spent'])} ${data['currency'] ?? 'VND'}'), 
+          if (data['overage'] != null) 
+            _buildDetailRow('Excess', '${_formatCurrency(data['overage'])} ${data['currency'] ?? 'VND'}'), 
+          if (data['remaining'] != null) 
+            _buildDetailRow('Remaining', '${_formatCurrency(data['remaining'])} ${data['currency'] ?? 'VND'}'), 
+          if (data['percentage_used'] != null) 
+            _buildDetailRow('Used', '${(data['percentage_used'] as num).round()}%'), 
+
+          // BudgetWarning model format 
+          if (data['estimatedCost'] != null) 
+            _buildDetailRow('Estimated', '${_formatCurrency(data['estimatedCost'])} ${data['currency'] ?? 'VND'}'), 
+          if (data['actualCost'] != null) 
+            _buildDetailRow('Actual', '${_formatCurrency(data['actualCost'])} ${data['currency'] ?? 'VND'}'), 
+          if (data['overageAmount'] != null && data['overagePercentage'] != null) 
+            _buildDetailRow('Excess', '${_formatCurrency(data['overageAmount'])} (${(data['overagePercentage'] as num).round()}%)'),
         ],
       ),
     );
@@ -322,7 +322,7 @@ class NotificationDetailScreen extends StatelessWidget {
               Icon(Icons.schedule, color: Colors.green[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Chi tiết hoạt động',
+                'Activity details',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
@@ -333,10 +333,10 @@ class NotificationDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildDetailRow('Hoạt động', data['activityTitle'] ?? 'Không xác định'),
-          _buildDetailRow('Địa điểm', data['location'] ?? 'Không xác định'),
-          _buildDetailRow('Thời gian bắt đầu', _formatDateTime(DateTime.parse(data['startTime']))),
-          _buildDetailRow('Còn lại', '${data['minutesUntilStart']} phút'),
+          _buildDetailRow('Activity', data['activityTitle'] ?? 'Undefined'),
+          _buildDetailRow('Location', data['location'] ?? 'Undefined'),
+          _buildDetailRow('Start Time', _formatDateTime(DateTime.parse(data['startTime']))),
+          _buildDetailRow('Remaining', '${data['minutesUntilStart']} minutes'),
         ],
       ),
     );
@@ -390,7 +390,7 @@ class NotificationDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Đóng'),
+            child: const Text('Close'),
           ),
         ),
       ],

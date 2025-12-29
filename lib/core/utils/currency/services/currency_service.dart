@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/currency_models.dart';
-import 'package:flutter/foundation.dart';
 
 class CurrencyService {
   static const String _baseUrl = 'https://api.exchangerate-api.com/v4/latest';
@@ -60,7 +59,7 @@ class CurrencyService {
         return rates;
       }
     } catch (e) {
-      debugPrint('Failed to fetch exchange rates: $e');
+      //
     }
 
     // Fallback to mock rates
@@ -164,7 +163,7 @@ class CurrencyService {
       await prefs.setString('${_cacheKey}_$baseCurrency', json.encode(ratesJson));
       await prefs.setInt('${_cacheTimeKey}_$baseCurrency', DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
-      debugPrint('Failed to cache exchange rates: $e');
+      // 
     }
   }
 
@@ -186,7 +185,7 @@ class CurrencyService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to get cached rates: $e');
+      //
     }
     
     return null;

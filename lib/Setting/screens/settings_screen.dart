@@ -208,7 +208,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
       _setDefaultUserData();
     } finally {
       setState(() => _isLoading = false);
@@ -528,7 +527,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           height: size,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            debugPrint('Network image error: $error');
             return _buildDefaultAvatar(size: size);
           },
           loadingBuilder: (context, child, loadingProgress) {
@@ -561,17 +559,14 @@ class _SettingsScreenState extends State<SettingsScreen>
             height: size,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              debugPrint('Local image error: $error');
               return _buildDefaultAvatar(size: size);
             },
           );
         } else {
-          debugPrint('Local image file does not exist: $imagePath');
           return _buildDefaultAvatar(size: size);
         }
       }
     } catch (e) {
-      debugPrint('Avatar image error: $e');
       return _buildDefaultAvatar(size: size);
     }
   }

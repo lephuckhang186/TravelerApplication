@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -198,7 +197,7 @@ class AuthService {
         ),
       );
     } catch (e) {
-      debugPrint('Lỗi đồng bộ với backend: $e');
+      //
     }
   }
 
@@ -210,7 +209,6 @@ class AuthService {
 
       return await user.getIdToken();
     } catch (e) {
-      debugPrint('Lỗi lấy token: $e');
       return null;
     }
   }

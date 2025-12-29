@@ -1,0 +1,25 @@
+{
+  "tech_stack": ["Python", "Flask", "Firebase", "Docker"],
+  "features": [
+    {
+      "name": "Backend API",
+      "description": "Provides RESTful API endpoints for the application.",
+      "files": ["Backend/app/api/"]
+    },
+    {
+      "name": "Core Logic",
+      "description": "Contains the core business logic of the application.",
+      "files": ["Backend/app/core/"]
+    },
+    {
+      "name": "Firebase Integration",
+      "description": "Handles Firebase authentication and database interactions.",
+      "files": ["Backend/app/api/firebase_service.py"]
+    },
+    {
+      "name": "Docker Configuration",
+      "description": "Docker setup for containerizing the application.",
+      "files": [".devcontainer/Dockerfile"]
+    }
+  ]
+}
