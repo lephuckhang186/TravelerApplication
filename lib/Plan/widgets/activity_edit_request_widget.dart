@@ -40,7 +40,6 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔔 ActivityEditRequestWidget: Building for trip ${widget.tripId} - hasPending: $_hasPendingRequests, cached: ${_cachedRequests?.length ?? 0}');
 
     return Stack(
       children: [
@@ -95,13 +94,11 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
       if (!mounted) return;
 
       try {
-        debugPrint('🔔 ActivityEditRequestWidget: Real-time refresh check...');
         final allRequests = await ActivityEditRequestService().getPendingActivityEditApprovals();
         final previousCount = _pendingRequestCount;
         final newCount = allRequests.where((req) => req.tripId == widget.tripId).length;
 
         if (previousCount != newCount) {
-          debugPrint('🔔 ActivityEditRequestWidget: Badge count changed from $previousCount to $newCount');
           if (mounted) {
             setState(() {
               _cachedRequests = allRequests;
@@ -109,7 +106,6 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
           }
         }
       } catch (e) {
-        debugPrint('❌ REAL_TIME_REFRESH_ERROR: $e');
         // Don't show error to user, just continue
       }
     });
@@ -119,9 +115,7 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
     if (_hasInitialized) return;
 
     try {
-      debugPrint('🔔 ActivityEditRequestWidget: Loading requests for badge...');
       final allRequests = await ActivityEditRequestService().getPendingActivityEditApprovals();
-      debugPrint('🔔 ActivityEditRequestWidget: Loaded ${allRequests.length} requests for badge');
 
       if (mounted) {
         setState(() {
@@ -130,7 +124,6 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
         });
       }
     } catch (e) {
-      debugPrint('❌ GET_PENDING_ACTIVITY_EDIT_APPROVALS_ERROR: $e');
       if (mounted) {
         setState(() {
           _hasInitialized = true; // Mark as initialized even on error
@@ -147,12 +140,9 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
     });
 
     try {
-      debugPrint('🔔 ActivityEditRequestWidget: Loading requests...');
       final allRequests = await ActivityEditRequestService().getPendingActivityEditApprovals();
-      debugPrint('🔔 ActivityEditRequestWidget: Got ${allRequests.length} total requests');
 
       final pendingRequests = allRequests.where((req) => req.tripId == widget.tripId).toList();
-      debugPrint('🔔 ActivityEditRequestWidget: Filtered ${pendingRequests.length} requests for trip ${widget.tripId}');
 
       // Cache the requests for badge display
       if (mounted) {
@@ -177,7 +167,6 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
         );
       }
     } catch (e) {
-      debugPrint('❌ GET_PENDING_ACTIVITY_EDIT_APPROVALS_ERROR: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../models/notification_models.dart';
 import '../../Plan/models/activity_models.dart';
 import '../../Plan/services/trip_planning_service.dart';
@@ -32,7 +31,6 @@ class ActivityReminderService {
 
       return reminders;
     } catch (e) {
-      debugPrint('ActivityReminderService: Error checking upcoming activities: $e');
       return [];
     }
   }
@@ -74,7 +72,6 @@ class ActivityReminderService {
 
       return reminders;
     } catch (e) {
-      debugPrint('ActivityReminderService: Error getting today activities: $e');
       return [];
     }
   }
@@ -103,7 +100,6 @@ class ActivityReminderService {
 
       return nextActivity;
     } catch (e) {
-      debugPrint('ActivityReminderService: Error getting next activity: $e');
       return null;
     }
   }
@@ -140,44 +136,26 @@ class ActivityReminderService {
   /// Check if today is within the trip date range
   Future<bool> isTodayWithinTrip(String tripId) async {
     try {
-      debugPrint('ActivityReminderService: Checking trip $tripId for date range');
       final trip = await _tripService.getTrip(tripId);
       if (trip == null) {
-        debugPrint('ActivityReminderService: Trip $tripId not found');
         return false;
       }
 
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      debugPrint('ActivityReminderService: Today is $today (${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')})');
-      
       // Get trip start and end dates
       final startDate = trip.startDate;
       final endDate = trip.endDate;
-      
-      debugPrint('ActivityReminderService: Trip startDate: $startDate, endDate: $endDate');
-      
       final tripStartDay = DateTime(startDate.year, startDate.month, startDate.day);
       final tripEndDay = DateTime(endDate.year, endDate.month, endDate.day);
-      
-      debugPrint('ActivityReminderService: Trip date range: $tripStartDay to $tripEndDay');
-      debugPrint('ActivityReminderService: Comparison - Today: $today, Start: $tripStartDay, End: $tripEndDay');
       
       // Check if today is within the trip date range (inclusive of both start and end dates)
       final isWithinTrip = (today.isAtSameMomentAs(tripStartDay) || today.isAfter(tripStartDay)) &&
                            (today.isAtSameMomentAs(tripEndDay) || today.isBefore(tripEndDay));
       
-      debugPrint('ActivityReminderService: Today ($today) within trip dates ($tripStartDay to $tripEndDay): $isWithinTrip');
-      
-      // Additional detailed logging
-      debugPrint('ActivityReminderService: Same as start? ${today.isAtSameMomentAs(tripStartDay)}');
-      debugPrint('ActivityReminderService: Same as end? ${today.isAtSameMomentAs(tripEndDay)}');
-      debugPrint('ActivityReminderService: After start? ${today.isAfter(tripStartDay)}');
-      debugPrint('ActivityReminderService: Before end+1? ${today.isBefore(tripEndDay.add(const Duration(days: 1)))}');
       
       return isWithinTrip;
     } catch (e) {
-      debugPrint('ActivityReminderService: Error checking trip dates: $e');
       return false;
     }
   }

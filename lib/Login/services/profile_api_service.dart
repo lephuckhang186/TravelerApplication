@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../Core/config/api_config.dart';
 import '../../Login/services/user_profile.dart';
-import 'package:flutter/foundation.dart';
 
 class ProfileApiService {
   static const String _baseUrl = ApiConfig.baseUrl;
@@ -41,7 +40,6 @@ class ProfileApiService {
         throw Exception('Failed to get profile: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error getting user profile: $e');
       return null;
     }
   }
@@ -87,13 +85,9 @@ class ProfileApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        debugPrint(
-          'Profile update failed: ${response.statusCode} - ${response.body}',
-        );
         return false;
       }
     } catch (e) {
-      debugPrint('Error updating user profile: $e');
       return false;
     }
   }
@@ -123,7 +117,6 @@ class ProfileApiService {
 
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint('Error syncing user data: $e');
       return false;
     }
   }

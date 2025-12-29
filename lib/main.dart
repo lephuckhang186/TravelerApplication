@@ -59,7 +59,6 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _startRealTimeListeners() async {
     try {
-      debugPrint('🚀 APP_INIT: Starting real-time listeners...');
 
       // Access providers to start listeners
       final context = this.context;
@@ -70,13 +69,12 @@ class _MyAppState extends State<MyApp> {
         final user = await FirebaseAuth.instance.authStateChanges().first;
         if (user != null) {
           await collaborationProvider.ensureInitialized();
-          debugPrint('✅ APP_INIT: Real-time listeners started successfully for user: ${user.uid}');
         } else {
-          debugPrint('⚠️ APP_INIT: User not authenticated, skipping real-time listeners');
+          //
         }
       }
     } catch (e) {
-      debugPrint('❌ APP_INIT: Failed to start real-time listeners: $e');
+      //
     }
   }
 

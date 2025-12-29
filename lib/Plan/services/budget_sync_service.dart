@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../../Expense/models/expense_models.dart';
 import '../../Expense/services/expense_service.dart';
 import '../models/trip_model.dart';
@@ -48,11 +47,7 @@ class BudgetSyncService {
         await tripProvider.updateActivityInTrip(trip.id!, updatedActivity);
       }
 
-      debugPrint(
-        'Created expense and synced budget for activity: ${activity.title}',
-      );
     } catch (e) {
-      debugPrint('Failed to create expense and sync budget: $e');
       throw Exception('Failed to sync expense with trip budget: $e');
     }
   }
@@ -71,11 +66,7 @@ class BudgetSyncService {
             endDate: trip.endDate,
             tripId: trip.id!, // Filter by specific trip ID
           );
-          debugPrint(
-            'Found ${tripExpenses.length} expenses for trip ${trip.id}',
-          );
         } catch (e) {
-          debugPrint('Failed to get expenses by trip ID: $e');
           // Fallback to date range and filtering
           final allExpenses = await _expenseService.getExpenses(
             startDate: trip.startDate,
@@ -141,7 +132,6 @@ class BudgetSyncService {
         updatedActivities: updatedActivities,
       );
     } catch (e) {
-      debugPrint('Failed to sync trip budget status: $e');
       return trip; // Return original trip if sync fails
     }
   }
@@ -237,7 +227,6 @@ class BudgetSyncService {
         'daysRemaining': syncedTrip.endDate.difference(DateTime.now()).inDays,
       };
     } catch (e) {
-      debugPrint('Failed to get trip budget status: $e');
       return {
         'totalBudget': trip.totalEstimatedBudget,
         'totalSpent': trip.totalActualSpent,

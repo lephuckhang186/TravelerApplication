@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../Setting/screens/settings_screen.dart';
@@ -42,9 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final collaborationProvider = context.read<CollaborationProvider>();
       await collaborationProvider.initialize();
-      debugPrint('DEBUG: HomeScreen - Collaboration data initialized successfully');
     } catch (e) {
-      debugPrint('DEBUG: HomeScreen - Failed to initialize collaboration data: $e');
+      //      
     }
   }
 

@@ -15,7 +15,6 @@ class AppModeProvider extends ChangeNotifier {
   /// This completely switches the entire app context
   void toggleMode() {
     _isPrivateMode = !_isPrivateMode;
-    debugPrint('DEBUG: AppModeProvider.toggleMode() - Switched to ${currentModeDisplayName}');
     notifyListeners();
   }
 
@@ -23,7 +22,6 @@ class AppModeProvider extends ChangeNotifier {
   void setPrivateMode(bool isPrivate) {
     if (_isPrivateMode != isPrivate) {
       _isPrivateMode = isPrivate;
-      debugPrint('DEBUG: AppModeProvider.setPrivateMode() - Set to ${currentModeDisplayName}');
       notifyListeners();
     }
   }

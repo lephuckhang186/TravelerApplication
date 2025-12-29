@@ -14,11 +14,9 @@ class SmartNotificationWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SmartNotificationProvider>(
       builder: (context, provider, child) {
-        final tripNotifications = provider.getNotifications(tripId);
+        provider.getNotifications(tripId);
         final tripUnreadCount = provider.getUnreadCount(tripId);
         final hasUnreadForTrip = provider.hasUnreadForTrip(tripId);
-        
-        debugPrint('SmartNotificationWidget: Building with ${tripNotifications.length} notifications, unread: $tripUnreadCount for trip $tripId');
         
         return Stack(
           children: [

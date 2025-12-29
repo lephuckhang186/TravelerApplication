@@ -101,29 +101,15 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
 
     try {
       // Debug logging
-      debugPrint('🤖 AI Assistant Debug:');
-      debugPrint('  - Message: "$userMessage"');
-      debugPrint('  - Has current trip: ${widget.currentTrip != null}');
-      debugPrint(
-        '  - Is trip planning: ${_isTripPlanningRequest(userMessage)}',
-      );
-      debugPrint(
-        '  - Is comprehensive planning: ${_isComprehensiveTripPlanning(userMessage)}',
-      );
-      debugPrint('  - Is plan editing: ${_isPlanEditingCommand(userMessage)}');
-
       // Check if this is a comprehensive trip planning request
       if (_isComprehensiveTripPlanning(userMessage)) {
-        debugPrint('  → Route: Comprehensive Trip Planning');
         await _handleTripPlanning(userMessage);
       }
       // Check if we have a current trip - allow Gemini to handle modifications
       else if (widget.currentTrip != null) {
-        debugPrint('  → Route: Plan Modification with Gemini');
         // Use Gemini AI for intelligent plan modifications based on conversation context
         await _handlePlanModificationWithGemini(userMessage, history);
       } else {
-        debugPrint('  → Route: General AI Query (/invoke)');
         // Use regular AI assistant for other queries
         final response = await http.post(
           Uri.parse('http://127.0.0.1:5000/invoke'),
@@ -198,7 +184,6 @@ Yêu cầu của người dùng: $userMessage
 
 Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên và yêu cầu của người dùng. Sử dụng CHÍNH XÁC các thông tin về tên, điểm đến, ngày tháng, ngân sách từ Trip Card ở trên.''';
 
-        debugPrint('Enhanced prompt with trip context:\n$enhancedPrompt');
       }
 
       // Use AI Trip Planner Service
@@ -228,7 +213,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '❌ Có lỗi xảy ra khi tạo kế hoạch: $e',
+          'content': '❌ An error occurred while creating the plan: $e',
         });
       });
     }
@@ -240,16 +225,12 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
     Map<String, dynamic> planData,
   ) async {
     try {
-      debugPrint(
-        'Adding generated activities to current trip: ${widget.currentTrip!.id}',
-      );
 
       // First, collect all existing activities to delete
       final List<Map<String, dynamic>> allChanges = [];
 
       // Load existing activities from the trip (if any exist)
       // We need to check if there are any existing activities to delete
-      debugPrint('Checking for existing activities to delete...');
 
       // Add delete operations for all existing activities
       // This assumes the parent screen will provide us with existing activities
@@ -326,7 +307,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                   longitude = double.tryParse(coords[1].trim());
                 }
               } catch (e) {
-                debugPrint('Error parsing coordinates: $e');
+                //
               }
             }
 
@@ -368,11 +349,10 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
         });
       }
     } catch (e) {
-      debugPrint('Error adding activities to current trip: $e');
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '❌ Có lỗi khi thêm hoạt động vào kế hoạch hiện tại: $e',
+          'content': '❌ An error occurred while adding an activity to the current plan.: $e',
         });
       });
     }
@@ -454,7 +434,6 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
     List<Map<String, String>> conversationHistory,
   ) async {
     try {
-      debugPrint('🤖 AI Plan Modification: Processing with Gemini');
 
       // Call the backend /edit-plan endpoint with conversation context
       final response = await http.post(
@@ -483,7 +462,6 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
 
           // If Gemini determined it can modify the plan, execute the changes
           if (canModify && actionType != 'none') {
-            debugPrint('🤖 AI determined plan can be modified: $actionType');
 
             // Create the activity modifications based on Gemini's response
             final List<Map<String, dynamic>> activityChanges = [];
@@ -533,9 +511,6 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 modifications['activity'] != null) {
               // For remove operations, we would need to find existing activities
               // This is a simplified version - in practice, Gemini would need to specify which activity to remove
-              debugPrint(
-                '🤖 Remove operation detected but not implemented in detail',
-              );
             }
 
             // If we have changes, return them to the parent screen
@@ -564,7 +539,6 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
         });
       }
     } catch (e) {
-      debugPrint('Error in plan modification: $e');
       setState(() {
         _messages.add({
           'role': 'assistant',
@@ -649,60 +623,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
     return paramCount >= 2;
   }
 
-  bool _isTripPlanningRequest(String message) {
-    final lowerMessage = message.toLowerCase();
-    return (lowerMessage.contains('lên kế hoạch') ||
-            lowerMessage.contains('tạo kế hoạch') ||
-            lowerMessage.contains('plan') ||
-            lowerMessage.contains('kế hoạch du lịch')) &&
-        (lowerMessage.contains('ngày') ||
-            lowerMessage.contains('đêm') ||
-            lowerMessage.contains('trip') ||
-            lowerMessage.contains('chuyến đi'));
-  }
 
-  bool _isPlanEditingCommand(String message) {
-    final lowerMessage = message.toLowerCase();
-
-    // Check for explicit edit commands with day reference
-    bool hasEditAction =
-        lowerMessage.contains('thêm') ||
-        lowerMessage.contains('xóa') ||
-        lowerMessage.contains('xoá') ||
-        lowerMessage.contains('thay') ||
-        lowerMessage.contains('đổi') ||
-        lowerMessage.contains('add') ||
-        lowerMessage.contains('remove') ||
-        lowerMessage.contains('update') ||
-        lowerMessage.contains('delete') ||
-        lowerMessage.contains('sửa') ||
-        lowerMessage.contains('chỉnh sửa') ||
-        lowerMessage.contains('edit');
-
-    bool hasDayReference =
-        lowerMessage.contains('ngày') ||
-        lowerMessage.contains('day') ||
-        lowerMessage.contains('hôm') ||
-        lowerMessage.contains('buổi');
-
-    // If both edit action and day reference exist, it's a plan editing command
-    if (hasEditAction && hasDayReference) {
-      return true;
-    }
-
-    // Also check for activity mentions (add/remove specific activities)
-    bool hasActivityKeywords =
-        lowerMessage.contains('hoạt động') ||
-        lowerMessage.contains('activity') ||
-        lowerMessage.contains('món ăn') ||
-        lowerMessage.contains('đi') ||
-        lowerMessage.contains('tham quan') ||
-        lowerMessage.contains('ăn') ||
-        lowerMessage.contains('ở') ||
-        lowerMessage.contains('bay');
-
-    return hasEditAction && hasActivityKeywords;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -818,7 +739,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Đang xử lý...',
+                      'Processing...',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 12,
@@ -847,7 +768,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 child: Column(
                   children: [
                     Text(
-                      'Thử với số người khác:',
+                      'Try with a different number of people:',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
                         fontSize: 14,
@@ -917,7 +838,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'người',
+                                'people',
                                 style: TextStyle(
                                   fontFamily: 'Urbanist-Regular',
                                   fontSize: 14,
@@ -1091,7 +1012,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Xin chào! 👋',
+                  'Hello! 👋',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 24,
@@ -1102,8 +1023,8 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                 const SizedBox(height: 6),
                 Text(
                   widget.currentTrip != null
-                      ? 'Tôi sẽ giúp bạn lên kế hoạch!'
-                      : 'Tôi là trợ lý AI du lịch của bạn!',
+                      ? 'I will help you with the planning!'
+                      : 'I am your AI travel assistant!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
@@ -1200,8 +1121,8 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
           const SizedBox(height: 24),
           Text(
             widget.currentTrip != null
-                ? 'Chỉ cần cho tôi biết số người du lịch:'
-                : 'Bạn muốn hỏi gì?',
+                ? 'Just tell me the number of tourists:'
+                : 'What do you want to ask?',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 18,
@@ -1273,7 +1194,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'người',
+                            'people',
                             style: TextStyle(
                               fontFamily: 'Urbanist-Regular',
                               fontSize: 16,
@@ -1312,8 +1233,8 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
               child: TextField(
                 controller: _styleController,
                 decoration: InputDecoration(
-                  labelText: 'Phong cách du lịch (tuỳ chọn)',
-                  hintText: 'VD: LGBT, sôi động, thiền định, phượt...',
+                  labelText: 'Travel style (optional)',
+                  hintText: 'Examples: lively, meditative, backpacking...',
                   prefixIcon: Icon(Icons.style, color: AppColors.primary),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1375,7 +1296,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _isLoading ? 'Đang tạo...' : 'Tạo kế hoạch',
+                          _isLoading ? 'Creating...' : 'Creating a plan',
                           style: const TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             fontSize: 16,
@@ -1470,7 +1391,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
             ),
             const SizedBox(height: 20),
             Text(
-              'Hoặc nhập câu hỏi của bạn bên dưới!',
+              'Or enter your question below!',
               style: TextStyle(
                 fontFamily: 'Urbanist-Regular',
                 fontSize: 13,
@@ -1486,12 +1407,12 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
   void _sendPeopleCount(int count) {
     if (_isLoading) return;
 
-    String message = 'Tạo kế hoạch cho $count người';
+    String message = 'Create a plan for $count people';
 
     // Append travel style if provided
     final style = _styleController.text.trim();
     if (style.isNotEmpty) {
-      message += ' với phong cách $style';
+      message += ' with style $style';
     }
 
     _controller.text = message;

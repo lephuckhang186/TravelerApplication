@@ -474,7 +474,6 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
 
         if (sharedTrip != null) {
           createdTrip = sharedTrip.toTripModel();
-          debugPrint('✅ SHARED_TRIP_CREATED: ${sharedTrip.name} (${sharedTrip.id})');
           // Force refresh of collaboration data to ensure UI updates
           await collaborationProvider.initialize();
         }
@@ -575,11 +574,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
 
       await expenseService.createBudget(budget);
 
-      debugPrint(
-        'Created expense budget for trip $tripId with amount $budgetAmount VND',
-      );
     } catch (e) {
-      debugPrint('Failed to create expense budget: $e');
       // Don't throw error as this is supplementary functionality
     }
   }
@@ -610,7 +605,6 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       await firebaseService.saveTrip(createdTrip);
       return createdTrip;
     } catch (e) {
-      debugPrint('❌ CREATE_TRIP: Failed to create trip: $e');
       // If API fails, create with Firebase directly
       final firebaseService = FirebaseTripService();
       final tripWithId = trip.copyWith(

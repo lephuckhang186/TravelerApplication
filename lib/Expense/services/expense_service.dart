@@ -1,6 +1,4 @@
 // API Client kết nối với backend
-
-import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../Core/network/api_client.dart';
 import '../../Core/network/exceptions.dart';
@@ -24,22 +22,12 @@ class ExpenseService {
         final token = await user.getIdToken();
         if (token != null) {
           _apiClient.setAuthToken(token);
-          debugPrint(
-            'DEBUG: ExpenseService - Auth token set for user: ${user.uid}',
-          );
-          debugPrint(
-            'DEBUG: ExpenseService - Token: ${token.isNotEmpty ? token.substring(0, 50) : "empty"}...',
-          );
         } else {
-          debugPrint(
-            'DEBUG: ExpenseService - Failed to get token for user: ${user.uid}',
-          );
         }
       } else {
-        debugPrint('DEBUG: ExpenseService - No authenticated user found');
       }
     } catch (e) {
-      debugPrint('DEBUG: ExpenseService - Failed to initialize auth: $e');
+      //
     }
   }
 
@@ -51,24 +39,13 @@ class ExpenseService {
         final token = await user.getIdToken(true); // Force refresh token
         if (token != null) {
           _apiClient.setAuthToken(token);
-          debugPrint(
-            'DEBUG: ExpenseService - Refreshed auth token for user: ${user.uid}',
-          );
-          debugPrint(
-            'DEBUG: ExpenseService - Token preview: ${token.substring(0, 50)}...',
-          );
         } else {
-          debugPrint(
-            'DEBUG: ExpenseService - Failed to refresh token for user: ${user.uid}',
-          );
           throw Exception('Failed to get authentication token');
         }
       } else {
-        debugPrint('DEBUG: ExpenseService - No authenticated user found');
         throw Exception('User not authenticated');
       }
     } catch (e) {
-      debugPrint('DEBUG: ExpenseService - Failed to refresh auth: $e');
       rethrow;
     }
   }
@@ -126,20 +103,13 @@ class ExpenseService {
       // Ensure we have a fresh auth token before making the request
       await _ensureAuthentication();
 
-      debugPrint(
-        'DEBUG: ExpenseService - Creating expense with endpoint: ${ApiConfig.expensesEndpoint}',
-      );
-      debugPrint('DEBUG: ExpenseService - Request body: ${request.toJson()}');
-
       final response = await _apiClient.post(
         ApiConfig.expensesEndpoint,
         body: request.toJson(),
       );
 
-      debugPrint('DEBUG: ExpenseService - Expense created successfully');
       return Expense.fromJson(response as Map<String, dynamic>);
     } catch (e) {
-      debugPrint('DEBUG: ExpenseService - Create expense error: $e');
       throw _handleException(e, 'Failed to create expense');
     }
   }
@@ -172,14 +142,7 @@ class ExpenseService {
       tripId: tripId, // Pass the tripId to associate with the trip
     );
 
-    debugPrint(
-      'DEBUG: Creating expense from activity with amount: $amount, category: $category, tripId: $tripId, description: $enhancedDescription',
-    );
-    debugPrint('DEBUG: ExpenseCreateRequest.toJson(): ${request.toJson()}');
-    
     final createdExpense = await createExpense(request);
-    
-    debugPrint('DEBUG: Created expense - ID: ${createdExpense.id}, TripId: ${createdExpense.tripId}, Description: ${createdExpense.description}');
     
     return createdExpense;
   }
@@ -192,7 +155,6 @@ class ExpenseService {
     String? tripId,
   }) async {
     try {
-      debugPrint('ExpenseService.getExpenses: tripId=$tripId, startDate=$startDate, endDate=$endDate');
       
       final queryParams = <String, String>{};
 
@@ -207,9 +169,7 @@ class ExpenseService {
       }
       if (tripId != null) {
         queryParams['planner_id'] = tripId;
-        debugPrint('ExpenseService.getExpenses: Adding planner_id=$tripId to query');
       } else {
-        debugPrint('ExpenseService.getExpenses: No tripId, loading ALL user expenses');
       }
 
       final response = await _apiClient.get(
@@ -221,12 +181,10 @@ class ExpenseService {
         final expenses = response
             .map((item) => Expense.fromJson(item as Map<String, dynamic>))
             .toList();
-        debugPrint('ExpenseService.getExpenses: Loaded ${expenses.length} expenses');
         return expenses;
       }
       return [];
     } catch (e) {
-      debugPrint('ExpenseService.getExpenses: Error - $e');
       throw _handleException(e, 'Failed to fetch expenses');
     }
   }

@@ -22,7 +22,6 @@ class EmailService {
         return await _openEmailForMobile(rating, category, feedback, userEmail);
       }
     } catch (e) {
-      debugPrint('Error sending email: $e');
       return false;
     }
   }
@@ -44,7 +43,6 @@ class EmailService {
       html.window.location.href = mailtoUrl;
       return true;
     } catch (e) {
-      debugPrint('Error opening email on web: $e');
       // Fallback: copy to clipboard
       return await _copyToClipboard(rating, category, feedback, userEmail);
     }
@@ -67,7 +65,6 @@ class EmailService {
       html.window.open(mailtoUrl, '_self');
       return true;
     } catch (e) {
-      debugPrint('Error opening email on mobile: $e');
       return false;
     }
   }
@@ -91,7 +88,6 @@ ${_buildPlainTextContent(rating, category, feedback, userEmail)}
       await html.window.navigator.clipboard?.writeText(content);
       return true;
     } catch (e) {
-      debugPrint('Error copying to clipboard: $e');
       return false;
     }
   }

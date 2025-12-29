@@ -82,7 +82,7 @@ class _MapScreenState extends State<MapScreen> {
         'lastSelectedTripId': tripId,
       }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error saving selected trip ID: $e');
+      //
     }
   }
 
@@ -393,9 +393,6 @@ class _MapScreenState extends State<MapScreen> {
     }
     _currentActivityIndex = firstUncheckedIndex;
 
-    debugPrint(
-      'Loaded trip with ${activities.length} activities, current index: $_currentActivityIndex',
-    );
 
     // Clear existing markers and polylines first
     _googleMarkers.clear();
@@ -736,9 +733,6 @@ class _MapScreenState extends State<MapScreen> {
           // Check if expense already exists for this activity
           if (updatedActivity.expenseInfo.expenseSynced &&
               updatedActivity.expenseInfo.expenseId != null) {
-            debugPrint(
-              'Expense already exists for activity: ${updatedActivity.title} (expenseId: ${updatedActivity.expenseInfo.expenseId})',
-            );
             createdExpenseId = updatedActivity.expenseInfo.expenseId;
           } else if (actualCost > 0) {
             // Create new expense using ExpenseService directly
@@ -752,7 +746,6 @@ class _MapScreenState extends State<MapScreen> {
             );
             
             createdExpenseId = expense.id;
-            debugPrint('✅ Expense created successfully with ID: $createdExpenseId');
             
             // Update activity with expense info
             final updatedExpenseInfo = updatedActivity.expenseInfo.copyWith(
@@ -798,10 +791,8 @@ class _MapScreenState extends State<MapScreen> {
               }
             }
 
-            debugPrint('✅ Activity updated with expense info');
           }
         } catch (e) {
-          debugPrint('❌ Error creating expense: $e');
           // Continue with check-in even if expense creation fails
         }
 
@@ -875,12 +866,6 @@ class _MapScreenState extends State<MapScreen> {
   void _centerToCurrentStartingPoint() {
     if (_selectedTrip == null) return;
 
-    // Debug logs
-    debugPrint('Center to current starting point called');
-    debugPrint('isMapReady: $_isMapReady');
-    debugPrint('kIsWeb: $kIsWeb');
-    debugPrint('Current activity index: $_currentActivityIndex');
-    debugPrint('Google controller: ${_googleMapController != null}');
 
     final activities = _selectedTrip!.activities
         .where(
@@ -902,7 +887,6 @@ class _MapScreenState extends State<MapScreen> {
     // Center map on current starting point with maximum zoom for clarity
     if (!kIsWeb) {
       if (_googleMapController != null) {
-        debugPrint('Animating Google Maps camera to current starting point');
         _googleMapController!.animateCamera(
           CameraUpdate.newLatLngZoom(
             LatLng(
@@ -913,7 +897,6 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       } else {
-        debugPrint('Google Maps controller is null!');
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Map not ready')));
@@ -1133,7 +1116,6 @@ class _MapScreenState extends State<MapScreen> {
         );
       }
     } catch (e) {
-      debugPrint('Error refreshing trip data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error refreshing data')),
       );

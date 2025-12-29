@@ -20,6 +20,15 @@ class ExpenseCreate(ExpenseBase):
     pass
 
 
+class ExpenseUpdate(BaseModel):
+    """Expense update model - all fields optional."""
+    name: Optional[str] = Field(None, max_length=100)
+    amount: Optional[float] = None
+    currency: Optional[str] = Field(None, max_length=10)
+    category: Optional[str] = Field(None, max_length=50)
+    date: Optional[date] = None
+
+
 class Expense(ExpenseBase):
     """Complete expense model with database fields."""
     id: str

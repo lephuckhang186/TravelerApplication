@@ -14,62 +14,62 @@
 
 </div>
 
-## 🌟 Tổng Quan
+## Tổng Quan
 
 **TripWise** là một hệ sinh thái du lịch thông minh bao gồm:
 - **Flutter Mobile App**: Ứng dụng di động đa nền tảng với giao diện hiện đại
 - **FastAPI Backend**: API RESTful mạnh mẽ với tích hợp Firebase
 - **AI Travel Agent**: Agent AI thông minh sử dụng LangChain và LangGraph
 
-## 🏗️ Kiến Trúc Hệ Thống
+## Kiến Trúc Hệ Thống
 
 ```
 TripWise/
-├── 📱 Mobile App (Flutter)          # Giao diện người dùng
-├── 🔧 Backend API (FastAPI)         # Xử lý logic nghiệp vụ  
-├── 🤖 AI Travel Agent (LangChain)   # Tư vấn du lịch thông minh
-└── 🔥 Firebase Services             # Lưu trữ và xác thực
+├── Mobile App (Flutter)          # Giao diện người dùng
+├── Backend API (FastAPI)         # Xử lý logic nghiệp vụ  
+├── AI Travel Agent (LangChain)   # Tư vấn du lịch thông minh
+└── Firebase Services             # Lưu trữ và xác thực
 ```
 
-## ✨ Tính Năng Chính
+## Tính Năng Chính
 
-### 🎯 Quản Lý Chuyến Đi
+### Quản Lý Chuyến Đi
 - **Lập Kế Hoạch Thông Minh**: Tạo lịch trình chi tiết với AI assistant
 - **Quản Lý Hoạt Động**: Thêm, chỉnh sửa và sắp xếp các hoạt động du lịch
 - **Tích Hợp Bản Đồ**: Xem vị trí và điều hướng với Google Maps
 - **Chia Sẻ Collaborative**: Mời bạn bè cùng tham gia lập kế hoạch
 
-### 💰 Quản Lý Chi Phí
+### Quản Lý Chi Phí
 - **Theo Dõi Chi Tiêu Real-time**: Ghi chép và phân loại chi phí
 - **Báo Cáo Tài Chính**: Thống kê chi tiêu theo danh mục và thời gian
 - **Đồng Bộ Ngân Sách**: Tích hợp ngân sách với kế hoạch du lịch
 - **Chia Sẻ Chi Phí**: Tính toán chi phí nhóm một cách công bằng
 
-### 🛠️ Công Cụ Du Lịch Thông Minh
-- **🌍 Dịch Thuật**: Dịch văn bản và OCR hình ảnh đa ngôn ngữ
-- **🌤️ Thời Tiết**: Dự báo thời tiết chi tiết cho điểm đến
-- **💱 Chuyển Đổi Tiền Tệ**: Tỷ giá hối đoái real-time
-- **🕒 Đồng Hồ Thế Giới**: Múi giờ các thành phố trên thế giới
+### Công Cụ Du Lịch Thông Minh
+- **Dịch Thuật**: Dịch văn bản và OCR hình ảnh đa ngôn ngữ
+- **Thời Tiết**: Dự báo thời tiết chi tiết cho điểm đến
+- **Chuyển Đổi Tiền Tệ**: Tỷ giá hối đoái real-time
+- **Đồng Hồ Thế Giới**: Múi giờ các thành phố trên thế giới
 
-### 🤖 AI Travel Agent (LangChain)
+### AI Travel Agent (LangChain)
 - **Tư Vấn Du Lịch Thông Minh**: Gợi ý địa điểm và hoạt động phù hợp
 - **Lập Lịch Trình Tự Động**: Tạo lịch trình chi tiết theo sở thích
 - **Tìm Kiếm Khách Sạn**: Gợi ý chỗ nghỉ phù hợp với ngân sách
 - **Tính Toán Chi Phí**: Ước tính chi phí chuyến đi chính xác
 
-### 🔔 Thông Báo Thông Minh
+### Thông Báo Thông Minh
 - **Nhắc Nhở Hoạt Động**: Thông báo lịch trình sắp tới
 - **Cảnh Báo Ngân Sách**: Thông báo khi chi tiêu vượt quá ngân sách
 - **Dự Báo Thời Tiết**: Cảnh báo thời tiết bất lợi
 - **Thông Báo Cộng Tác**: Cập nhật từ thành viên nhóm
 
-### ⚙️ Cài Đặt & Tài Khoản
+### Cài Đặt & Tài Khoản
 - **Xác Thực Firebase**: Đăng nhập Google và email/mật khẩu
 - **Quản Lý Hồ Sơ**: Cập nhật thông tin cá nhân và ảnh đại diện
 - **Thống Kê Du Lịch**: Xem lịch sử và thống kê chuyến đi
 - **Hỗ Trợ Khách Hàng**: Trung tâm trợ giúp và phản hồi
 
-## 🚀 Cài Đặt và Chạy
+## Cài Đặt và Chạy
 
 ### Yêu Cầu Hệ Thống
 - **Flutter SDK** ≥ 3.9.2
@@ -77,7 +77,7 @@ TripWise/
 - **Node.js** ≥ 16
 - **Firebase Project** với các dịch vụ được kích hoạt
 
-### 1. 📱 Flutter Mobile App
+### 1. Flutter Mobile App
 
 ```bash
 # Clone repository
@@ -94,7 +94,7 @@ flutter pub get
 flutter run
 ```
 
-### 2. 🔧 Backend API (FastAPI)
+### 2. Backend API (FastAPI)
 
 ```bash
 # Di chuyển vào thư mục Backend
@@ -117,7 +117,7 @@ cp .env.example .env
 python run_server.py
 ```
 
-### 3. 🤖 AI Travel Agent
+### 3. AI Travel Agent
 
 ```bash
 # Di chuyển vào thư mục travel-agent
@@ -134,7 +134,7 @@ cp .env.example .env
 python main.py
 ```
 
-## 🔧 Cấu Hình Environment Variables
+## Cấu Hình Environment Variables
 
 **Quan trọng**: Tất cả cấu hình đã được consolidate vào file `.env` duy nhất ở root directory.
 
@@ -150,47 +150,43 @@ cp .env.example .env
 
 File `.env` chứa các nhóm cấu hình sau:
 
-#### 🏗️ App Configuration
+#### App Configuration
 - `APP_NAME`: Tên ứng dụng
 - `APP_VERSION`: Phiên bản ứng dụng
 - `DEBUG`: Chế độ debug (true/false)
 
-#### 🔐 Security Settings
-- `SECRET_KEY`: Secret key cho JWT
+#### Security Settings
 - `ALGORITHM`: Thuật toán mã hóa
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Thời gian hết hạn access token
 - `REFRESH_TOKEN_EXPIRE_DAYS`: Thời gian hết hạn refresh token
 
-#### 🗄️ Database Configuration
-- `DATABASE_URL`: URL kết nối database
-
-#### 🔥 Firebase Configuration
+#### Firebase Configuration
 - `FIREBASE_SERVICE_ACCOUNT_PATH`: Đường dẫn đến service account JSON
 - `GOOGLE_CLIENT_ID`: Google OAuth Client ID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth Client Secret
 
-#### 🌐 Network Settings
+#### Network Settings
 - `ALLOWED_HOSTS`: Danh sách host được phép
 - `CORS_ORIGINS`: Danh sách origin cho CORS
 - `API_V1_STR`: Base path cho API v1
 
-#### 📁 File Upload Settings
+#### File Upload Settings
 - `MAX_FILE_SIZE`: Kích thước file tối đa
 - `ALLOWED_FILE_TYPES`: Các loại file được phép
 
-#### 📧 Email Configuration
+#### Email Configuration
 - `SMTP_HOST`: SMTP server
 - `SMTP_PORT`: SMTP port
 - `SMTP_USER`: Email người gửi
 - `SMTP_PASSWORD`: Mật khẩu email
 
-#### ⚡ Redis Configuration
+#### Redis Configuration
 - `REDIS_URL`: URL kết nối Redis
 
-#### 🚀 Development Flags
+#### Development Flags
 - `ENABLE_DOCS`: Bật/tắt documentation
 
-#### 🔑 API Keys
+#### API Keys
 
 | API Key | Service | Cách Lấy |
 |---------|---------|----------|
@@ -208,7 +204,7 @@ File `.env` chứa các nhóm cấu hình sau:
 
 ## 📊 Kiến Trúc Chi Tiết
 
-### 📱 Flutter App Structure
+### Flutter App Structure
 ```
 lib/
 ├── core/                    # Cấu hình và utilities chung
@@ -226,7 +222,7 @@ lib/
 └── AltsManager/           # Quản lý alternatives
 ```
 
-### 🔧 Backend API Structure
+### Backend API Structure
 ```
 Backend/
 ├── app/
@@ -243,7 +239,7 @@ Backend/
 └── tests/                 # Unit tests
 ```
 
-### 🤖 AI Travel Agent Structure
+### AI Travel Agent Structure
 ```
 travel-agent/
 ├── services/              # Các dịch vụ AI
@@ -258,7 +254,7 @@ travel-agent/
 └── main.py              # FastAPI application
 ```
 
-## 🔥 Tích Hợp Firebase
+## Tích Hợp Firebase
 
 ### Services được sử dụng:
 - **Authentication**: Google Sign-in và Email/Password
@@ -285,48 +281,117 @@ notifications/           # Thông báo thông minh
 └── weather_updates     # Cập nhật thời tiết
 ```
 
-## 🧪 Testing
-
-### Flutter Tests
+## Testing
+### Backend Tests (FastAPI)
+#### Cách Chạy Backend Tests
 ```bash
-# Unit tests
-flutter test
-
-# Integration tests
-flutter test integration_test/
-```
-
-### Backend Tests
-```bash
+# Di chuyển vào thư mục Backend
 cd Backend
-pytest tests/
-```
 
-### AI Agent Tests
-```bash
-cd travel-agent
+# Chạy tất cả tests
 python -m pytest tests/ -v
+
+# Chạy file test cụ thể
+python -m pytest tests/test_models.py -v
+
+# Chạy test class cụ thể
+python -m pytest tests/test_models.py::TestUserModels -v
+
+# Chạy test cụ thể
+python -m pytest tests/test_models.py::TestUserModels::test_user_base_creation -v
+
+# Xem coverage report
+python -m pytest tests/ --cov=app --cov-report=html
+
+# Chạy với output đơn giản
+python -m pytest tests/ -q
+
+# Chạy nhanh (dừng ở lỗi đầu tiên)
+python -m pytest tests/ -x
 ```
 
-## 🚀 Deployment
+---
+
+### AI Travel Agent Tests (LangChain)
+#### Cách Chạy AI Agent Tests
+```bash
+# Di chuyển vào thư mục travel-agent
+cd travel-agent
+
+# Chạy tất cả tests
+python -m pytest tests/ -v
+
+# Chạy file test cụ thể
+python -m pytest tests/test_models.py -v
+
+# Chạy test class cụ thể
+python -m pytest tests/test_models.py::TestTripPlan -v
+
+# Chạy test cụ thể
+python -m pytest tests/test_models.py::TestTripPlan::test_trip_plan_all_fields -v
+
+# Xem coverage report
+python -m pytest tests/ --cov=. --cov-report=html
+
+# Chạy với output đơn giản
+python -m pytest tests/ -q
+
+# Chạy nhanh (dừng ở lỗi đầu tiên)
+python -m pytest tests/ -x
+```
+---
+
+#### Backend Tests
+```bash
+# Nếu gặp lỗi import
+cd Backend
+pip install -r requirements.txt
+python -m pytest tests/ -v
+
+# Nếu muốn xem chi tiết lỗi
+python -m pytest tests/ -vv --tb=long
+```
+
+#### Travel Agent Tests
+```bash
+# Nếu gặp lỗi import
+cd travel-agent
+pip install -r requirements.txt
+python -m pytest tests/ -v
+
+# Nếu muốn xem chi tiết lỗi
+python -m pytest tests/ -vv --tb=long
+```
+
+### Frontend Tests
+```bash
+# Đảm bảo tất cả các thư viện phụ thuộc đã được cài đặt
+npm install
+
+# Chạy các bài kiểm tra giao diện người dùng
+npm test
+
+# Xem phạm vi kiểm thử
+npm run coverage
+```
+
+## Deployment
 
 ### Mobile App
 ```bash
-# Build for Android
+# Phiên bản dành cho Android
 flutter build apk --release
 
-# Build for iOS
+# Phiên bản dành cho Ios
 flutter build ios --release
 ```
 
 ### Backend API
 ```bash
-# Using Docker
+# Sử dụng Docker
 docker build -t tripwise-backend .
 docker run -p 8000:8000 tripwise-backend
 
-# Using Railway/Heroku
-# Thêm Procfile và deploy
 ```
 
 ### AI Travel Agent

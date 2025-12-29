@@ -40,7 +40,6 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         }
       },
       onError: (error) {
-        debugPrint('Error loading statistics: $error');
         if (mounted) {
           setState(() {
             _isLoading = false;

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../Core/config/api_config.dart';
 import '../../Login/services/auth_service.dart';
-import 'package:flutter/foundation.dart';
 
 /// Model cho thống kê người dùng từ Backend API
 class UserTravelStats {
@@ -63,23 +62,17 @@ class UserStatisticsApiService {
         headers: headers,
       );
 
-      debugPrint('📊 API Request: GET /activities/statistics');
-      debugPrint('📊 Response Status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        debugPrint('📊 API Response: $data');
         
         // Transform API response to match our needs
         return _transformApiResponse(data);
       } else if (response.statusCode == 401) {
         throw Exception('Authentication failed. Please login again.');
       } else {
-        debugPrint('❌ API Error: ${response.body}');
         throw Exception('Failed to load statistics: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ Statistics API Error: $e');
       // Return empty stats instead of throwing
       return UserTravelStats(
         totalActivities: 0,
@@ -132,19 +125,13 @@ class UserStatisticsApiService {
         headers: headers,
       );
 
-      debugPrint('💰 Expense API Request: GET $url');
-      debugPrint('💰 Response Status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        debugPrint('💰 Expense API Response: $data');
         return data;
       } else {
-        debugPrint('❌ Expense API Error: ${response.body}');
         return {};
       }
     } catch (e) {
-      debugPrint('❌ Expense API Error: $e');
       return {};
     }
   }
@@ -158,12 +145,8 @@ class UserStatisticsApiService {
         headers: headers,
       );
 
-      debugPrint('🗺️ Trips API Request: GET /activities/trips');
-      debugPrint('🗺️ Response Status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final List<dynamic> trips = json.decode(response.body);
-        debugPrint('🗺️ Trips API Response: ${trips.length} trips found');
 
         int totalPlans = trips.length;
         int completedTrips = 0;
@@ -183,11 +166,9 @@ class UserStatisticsApiService {
           'completedTrips': completedTrips,
         };
       } else {
-        debugPrint('❌ Trips API Error: ${response.body}');
         return {'totalPlans': 0, 'completedTrips': 0};
       }
     } catch (e) {
-      debugPrint('❌ Trips API Error: $e');
       return {'totalPlans': 0, 'completedTrips': 0};
     }
   }
@@ -206,9 +187,6 @@ class UserStatisticsApiService {
         headers: headers,
       );
 
-      debugPrint('📍 Activities API Request: GET $url');
-      debugPrint('📍 Response Status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> activities = data['activities'] ?? [];
@@ -220,14 +198,11 @@ class UserStatisticsApiService {
           }
         }
 
-        debugPrint('📍 Found $checkedInCount checked-in activities');
         return checkedInCount;
       } else {
-        debugPrint('❌ Activities API Error: ${response.body}');
         return 0;
       }
     } catch (e) {
-      debugPrint('❌ Activities API Error: $e');
       return 0;
     }
   }
@@ -235,8 +210,6 @@ class UserStatisticsApiService {
   /// Lấy thống kê tổng hợp từ nhiều API endpoints
   Future<UserTravelStats> getCompleteUserStatistics() async {
     try {
-      debugPrint('📊 Starting complete statistics fetch...');
-
       // Gọi song song các API để tối ưu performance
       final futures = await Future.wait([
         getUserStatistics(),           // Activity statistics
@@ -261,16 +234,8 @@ class UserStatisticsApiService {
         totalPlans: tripStats['totalPlans'] ?? 0,
       );
 
-      debugPrint('🎯 Complete Statistics:');
-      debugPrint('   📊 Total Activities: ${completeStats.totalActivities}');
-      debugPrint('   ✈️ Completed Trips: ${completeStats.completedTrips}');
-      debugPrint('   📍 Check-in Locations: ${completeStats.checkedInLocations}');
-      debugPrint('   💰 Total Expenses: ${completeStats.totalExpenses}');
-      debugPrint('   📋 Total Plans: ${completeStats.totalPlans}');
-
       return completeStats;
     } catch (e) {
-      debugPrint('❌ Complete statistics error: $e');
       // Return empty stats on error
       return UserTravelStats(
         totalActivities: 0,

@@ -69,7 +69,7 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error searching for places: $e');
+      //
     }
   }
 

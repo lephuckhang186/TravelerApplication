@@ -339,6 +339,6 @@ class GeneralInfoScreen extends StatelessWidget {
   }
 
   void _checkForUpdates() {
-    debugPrint('Checking for updates...');
+    //
   }
 }
