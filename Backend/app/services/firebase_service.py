@@ -429,29 +429,79 @@ class FirebaseService:
             return None
     
     async def delete_trip(self, trip_id: str, user_id: str) -> bool:
-        """Delete trip and all related data"""
+        """Delete trip and all related data - supports multiple storage patterns"""
         try:
             trip_doc = await self.get_trip(trip_id, user_id)
             if not trip_doc:
                 return False
-            
+
+            print(f"🗑️ FIRESTORE_DELETE_TRIP: Starting deletion of trip {trip_id}")
+
             # Delete related expenses
+            expenses_deleted = 0
             expenses_ref = self.db.collection('expenses').where('planner_id', '==', trip_id).stream()
             for exp_doc in expenses_ref:
                 exp_doc.reference.delete()
-            
-            # Delete related activities
+                expenses_deleted += 1
+
+            print(f"✅ DELETED_EXPENSES: Removed {expenses_deleted} expenses for trip {trip_id}")
+
+            # Delete related activities (if stored separately)
+            activities_deleted = 0
             activities_ref = self.db.collection('activities').where('planner_id', '==', trip_id).stream()
             for act_doc in activities_ref:
                 act_doc.reference.delete()
-            
-            # Delete trip
-            self.db.collection('trips').document(trip_id).delete()
-            
-            print(f"✅ FIRESTORE: Deleted trip {trip_id}")
-            return True
+                activities_deleted += 1
+
+            print(f"✅ DELETED_ACTIVITIES: Removed {activities_deleted} activities for trip {trip_id}")
+
+            # Delete from multiple possible collections
+            deleted = False
+
+            # Pattern 1: Delete from trips/{tripId}
+            try:
+                trip_ref = self.db.collection('trips').document(trip_id)
+                trip_doc = trip_ref.get()
+                if trip_doc.exists:
+                    trip_ref.delete()
+                    print(f"✅ DELETED_FROM_TRIPS: trips/{trip_id}")
+                    deleted = True
+            except Exception as e:
+                print(f"⚠️ Could not delete from trips/{trip_id}: {e}")
+
+            # Pattern 2: Delete from shared_trips/{tripId}
+            try:
+                shared_trip_ref = self.db.collection('shared_trips').document(trip_id)
+                shared_trip_doc = shared_trip_ref.get()
+                if shared_trip_doc.exists:
+                    shared_trip_ref.delete()
+                    print(f"✅ DELETED_FROM_SHARED_TRIPS: shared_trips/{trip_id}")
+                    deleted = True
+            except Exception as e:
+                print(f"⚠️ Could not delete from shared_trips/{trip_id}: {e}")
+
+            # Pattern 3: Delete from planners/{plannerId}
+            try:
+                planner_ref = self.db.collection('planners').document(trip_id)
+                planner_doc = planner_ref.get()
+                if planner_doc.exists:
+                    planner_ref.delete()
+                    print(f"✅ DELETED_FROM_PLANNERS: planners/{trip_id}")
+                    deleted = True
+            except Exception as e:
+                print(f"⚠️ Could not delete from planners/{trip_id}: {e}")
+
+            if deleted:
+                print(f"✅ FIRESTORE_TRIP_DELETION_COMPLETE: Trip {trip_id} fully deleted")
+                return True
+            else:
+                print(f"❌ TRIP_DELETION_FAILED: Trip {trip_id} not found in any collection")
+                return False
+
         except Exception as e:
             print(f"❌ FIRESTORE_DELETE_TRIP_ERROR: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     # ============= PLANNER MANAGEMENT =============

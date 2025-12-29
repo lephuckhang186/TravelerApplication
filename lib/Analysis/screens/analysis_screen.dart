@@ -115,6 +115,24 @@ class _AnalysisScreenState extends State<AnalysisScreen>
         }),
       );
 
+      // Check if selected trip still exists, if not clear selection and cleanup
+      if (_selectedTripId != null) {
+        final selectedTripExists = allTrips.any((trip) => trip.id == _selectedTripId);
+        if (!selectedTripExists) {
+          // Clear selection and notify listeners
+          _selectedTripId = null;
+          _selectedTripNotifier.value = null;
+          // Force refresh data and cleanup orphaned expenses
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (mounted) {
+              await _forceRefreshAllData();
+              // Clean up expenses that belong to deleted trips
+              await _cleanupOrphanedExpenses(allTrips);
+            }
+          });
+        }
+      }
+
       return allTrips;
     } catch (e) {
       // Fallback: try to get trips from TripPlanningProvider as last resort
@@ -124,6 +142,20 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       } catch (fallbackError) {
         return [];
       }
+    }
+  }
+
+  /// Check if user has any trips at all
+  bool _hasAnyTrips() {
+    try {
+      final tripProvider = context.read<TripPlanningProvider>();
+      final collaborationProvider = context.read<CollaborationProvider>();
+
+      return tripProvider.trips.isNotEmpty ||
+             collaborationProvider.mySharedTrips.isNotEmpty ||
+             collaborationProvider.sharedWithMeTrips.isNotEmpty;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -218,25 +250,29 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     try {
       if (!mounted) return;
 
-      // Always initialize both providers for analysis to show all trip
+      // Always initialize both providers for analysis to show all trips
+      final appModeProvider = Provider.of<AppModeProvider>(context, listen: false);
 
-      // Initialize CollaborationProvider
-      final collaborationProvider = context.read<CollaborationProvider>();
-      await collaborationProvider.ensureInitialized();
+      if (appModeProvider.isCollaborationMode) {
+        // In collaboration mode, initialize collaboration provider first
+        final collaborationProvider = context.read<CollaborationProvider>();
+        if (!collaborationProvider.hasSharedTrips && !collaborationProvider.isLoading) {
+          await collaborationProvider.initialize();
+        }
+      } else {
+        // In private mode, initialize trip planning provider
+        final tripProvider = Provider.of<TripPlanningProvider>(
+          context,
+          listen: false,
+        );
 
-      // Initialize TripPlanningProvider (private trips)
-      final tripProvider = Provider.of<TripPlanningProvider>(
-        context,
-        listen: false,
-      );
+        if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
+          await tripProvider.initialize();
 
-
-      if (tripProvider.trips.isEmpty && !tripProvider.isLoading) {
-        await tripProvider.initialize();
-
-        if (tripProvider.trips.isNotEmpty) {
-          // Only run cleanup after successful trip loading
-          await _cleanupOrphanedExpenses(tripProvider.trips);
+          if (tripProvider.trips.isNotEmpty) {
+            // Only run cleanup after successful trip loading
+            await _cleanupOrphanedExpenses(tripProvider.trips);
+          }
         }
       }
     } catch (e) {
@@ -531,19 +567,104 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Main tabs (Activities/Statistic)
-            _buildMainTabs(),
+    // Listen to both expense provider and collaboration provider changes
+    return Consumer2<ExpenseProvider, CollaborationProvider>(
+      builder: (context, expenseProvider, collaborationProvider, child) {
+        // Show loading state until providers are initialized
+        if (!_hasInitialized) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: const SafeArea(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
 
-            // Content
-            Expanded(child: _buildContent()),
-          ],
-        ),
-      ),
+        // Check if user has any trips at all
+        final hasAnyTrips = _hasAnyTrips();
+
+        if (!hasAnyTrips) {
+          // Show empty state when no trips exist
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.flight_takeoff,
+                        size: 80,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'No trips yet',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Create your first trip to start tracking expenses and analyzing your travel spending patterns.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Navigate to trip creation screen
+                          Navigator.pushReplacementNamed(context, '/home');
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Create Your First Trip'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Main tabs (Activities/Statistic)
+                _buildMainTabs(),
+
+                // Content
+                Expanded(child: _buildContent()),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
