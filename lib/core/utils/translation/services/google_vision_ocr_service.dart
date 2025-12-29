@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GoogleVisionOCRService {
-  // Google Cloud Vision API key
-  static const String _apiKey = 'AIzaSyC0ohJjPWJvWIJFyN6vVPCj0gkO8Hzd_RA';
+  // Google Cloud Vision API key loaded from environment variables
+  static String get _apiKey => dotenv.env['GOOGLE_VISION_API_KEY'] ?? '';
   static const String _apiUrl = 'https://vision.googleapis.com/v1/images:annotate';
 
   /// Extract text from image bytes using Google Cloud Vision API

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MapService {
   // Free Routing APIs:
@@ -69,15 +70,8 @@ class MapService {
     List<String> avoidFeatures = const [],
     Map<String, dynamic> vehicleOptions = const {},
   }) async {
-    // 🚀 HƯỚNG DẪN LẤY API KEY MIỄN PHÍ:
-    // 1. Vào: https://openrouteservice.org/dev/#/signup
-    // 2. Đăng ký tài khoản miễn phí
-    // 3. Verify email
-    // 4. Vào Dashboard > Tokens > Tạo API key
-    // 5. Copy API key và thay thế dòng dưới đây
-
-    const String orsApiKey =
-        'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImE5NGY4ZmVmOWM4NjQwOTdhMTIzOWE0NDQzMWM4ZWMxIiwiaCI6Im11cm11cjY0In0='; // 🔑 OpenRouteService API Key
+    // API key loaded from environment variables
+    final String orsApiKey = dotenv.env['ORS_API_KEY'] ?? '';
 
     // Build URL with advanced parameters
     final baseUrl = 'https://api.openrouteservice.org/v2/directions/$profile';

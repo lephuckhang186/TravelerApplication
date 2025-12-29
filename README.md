@@ -134,39 +134,77 @@ cp .env.example .env
 python main.py
 ```
 
-## 🔧 Cấu Hình API Keys
+## 🔧 Cấu Hình Environment Variables
 
-Tạo file `.env` trong các thư mục tương ứng:
+**Quan trọng**: Tất cả cấu hình đã được consolidate vào file `.env` duy nhất ở root directory.
 
-### Backend/.env
 ```bash
-# Firebase
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
-FIREBASE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+# Copy file example
+cp .env.example .env
 
-# Database
-DATABASE_URL=sqlite:///./app.db
-
-# Security
-SECRET_KEY=your-secret-key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+# Chỉnh sửa file .env với các giá trị thực của bạn
+# Đừng commit file .env vào git - nó đã được thêm vào .gitignore
 ```
 
-### travel-agent/.env
-```bash
-# AI Services
-OPENAI_API_KEY=sk-...
-GOOGLE_API_KEY=AIza...
-TAVILY_API_KEY=tvly-...
-GEOAPIFY_API_KEY=...
+### Cấu Trúc File .env
 
-# LangSmith (tùy chọn)
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=ls__...
-LANGCHAIN_PROJECT=travel-agent
-```
+File `.env` chứa các nhóm cấu hình sau:
+
+#### 🏗️ App Configuration
+- `APP_NAME`: Tên ứng dụng
+- `APP_VERSION`: Phiên bản ứng dụng
+- `DEBUG`: Chế độ debug (true/false)
+
+#### 🔐 Security Settings
+- `SECRET_KEY`: Secret key cho JWT
+- `ALGORITHM`: Thuật toán mã hóa
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Thời gian hết hạn access token
+- `REFRESH_TOKEN_EXPIRE_DAYS`: Thời gian hết hạn refresh token
+
+#### 🗄️ Database Configuration
+- `DATABASE_URL`: URL kết nối database
+
+#### 🔥 Firebase Configuration
+- `FIREBASE_SERVICE_ACCOUNT_PATH`: Đường dẫn đến service account JSON
+- `GOOGLE_CLIENT_ID`: Google OAuth Client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth Client Secret
+
+#### 🌐 Network Settings
+- `ALLOWED_HOSTS`: Danh sách host được phép
+- `CORS_ORIGINS`: Danh sách origin cho CORS
+- `API_V1_STR`: Base path cho API v1
+
+#### 📁 File Upload Settings
+- `MAX_FILE_SIZE`: Kích thước file tối đa
+- `ALLOWED_FILE_TYPES`: Các loại file được phép
+
+#### 📧 Email Configuration
+- `SMTP_HOST`: SMTP server
+- `SMTP_PORT`: SMTP port
+- `SMTP_USER`: Email người gửi
+- `SMTP_PASSWORD`: Mật khẩu email
+
+#### ⚡ Redis Configuration
+- `REDIS_URL`: URL kết nối Redis
+
+#### 🚀 Development Flags
+- `ENABLE_DOCS`: Bật/tắt documentation
+
+#### 🔑 API Keys
+
+| API Key | Service | Cách Lấy |
+|---------|---------|----------|
+| `ORS_API_KEY` | OpenRouteService | https://openrouteservice.org/dev/#/signup |
+| `GOOGLE_API_KEY` | Google Gemini AI | https://makersuite.google.com/app/apikey |
+| `TAVILY_API_KEY` | Tavily Search | https://tavily.com/ |
+| `OPENWEATHER_API_KEY` | OpenWeatherMap | https://openweathermap.org/api |
+| `GEOAPIFY_API_KEY` | Geoapify Geocoding | https://www.geoapify.com/ |
+| `RAPIDAPI_KEY` | RapidAPI (Booking.com) | https://rapidapi.com/ |
+| `WEATHER_API_KEY` | Weather API (backup) | https://openweathermap.org/api |
+| `EXCHANGERATE_API_KEY` | Exchange Rate API | https://exchangerate-api.com/ |
+| `OCR_API_KEY` | OCR.space | https://ocr.space/ocrapi |
+| `GOOGLE_VISION_API_KEY` | Google Vision OCR | https://console.cloud.google.com/apis/credentials |
+| `LANGCHAIN_API_KEY` | LangChain | https://smith.langchain.com/ |
 
 ## 📊 Kiến Trúc Chi Tiết
 

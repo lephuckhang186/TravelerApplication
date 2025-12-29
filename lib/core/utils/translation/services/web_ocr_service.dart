@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class WebOCRService {
-  // OCR.space free API key
-  static const String _apiKey = 'K87899142388957';
+  // OCR.space API key loaded from environment variables
+  static String get _apiKey => dotenv.env['OCR_API_KEY'] ?? '';
   static const String _apiUrl = 'https://api.ocr.space/parse/image';
 
   /// Extract text from image bytes (for web)
