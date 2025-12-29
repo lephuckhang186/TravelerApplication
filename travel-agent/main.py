@@ -7,8 +7,8 @@ import os
 from dotenv import load_dotenv
 import json
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from root .env file
+load_dotenv(dotenv_path="../.env")
 
 # Create the FastAPI app
 api = FastAPI()
@@ -326,7 +326,7 @@ async def generate_trip_plan(request: TripPlanRequest):
 
         # Get AI response with timeout
         try:
-            print(f"Calling Gemini API with model: {os.getenv('LLM_MODEL', 'gemini-1.5-flash')}")
+            print(f"Calling Gemini API with model: {os.getenv('LLM_MODEL', 'gemini-2.5-flash')}")
             print(f"API Key configured: {bool(os.getenv('GOOGLE_API_KEY'))}")
             response = chain.invoke({})
             print(f"Gemini API call successful")

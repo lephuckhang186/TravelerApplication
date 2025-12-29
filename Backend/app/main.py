@@ -10,8 +10,8 @@ import logging
 import os
 from dotenv import load_dotenv
 
-# Load environment variables first
-load_dotenv()
+# Load environment variables from root .env file
+load_dotenv(dotenv_path="../.env")
 
 # Travel-agent environment is loaded in the travel_agent endpoint module
 
