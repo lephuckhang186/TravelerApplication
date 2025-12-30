@@ -738,8 +738,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
         // Schedule auto-refresh for next frame to avoid setState during build
-        // Only refresh if we're not currently adding/refreshing and trip is collaboration
-        if (isCollaborationTrip && !_isRefreshing && !_isAddingActivity) {
+        // Only refresh if we're not currently adding/refreshing/deleting and trip is collaboration
+        if (isCollaborationTrip && !_isRefreshing && !_isAddingActivity && !_isDeleting) {
           // Add delay to ensure all operations are complete
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Future.delayed(const Duration(milliseconds: 100), () {
@@ -2906,13 +2906,78 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _deleteActivity(ActivityModel activity) async {
     try {
+      // Debug logging
+      print('🗑️ DELETE_ACTIVITY: Attempting to delete ${activity.title}');
+      print('   User role: $_userRole, isOwner: $isOwner, isEditor: $isEditor, isViewer: $isViewer');
+
+      // For collaboration trips, check permissions
+      if (isEditor) {
+        print('   User is editor - requesting deletion approval');
+        // Editors need to request deletion approval
+        await _createDeleteActivityRequest(activity);
+        return;
+      } else if (isViewer) {
+        print('   User is viewer - cannot delete');
+        // Viewers cannot delete activities
+        _showPermissionDeniedDialog('You can only view this trip');
+        return;
+      }
+
+      // Owners can delete directly
+      print('   User is owner - deleting directly');
+
+      // Check if activity exists in current list
+      final activityIndex = _activities.indexWhere((a) => a.id == activity.id);
+      if (activityIndex == -1) {
+        print('   ❌ Activity not found in local list');
+        return;
+      }
+
+      print('   ✅ Activity found at index $activityIndex, removing from local list');
+
+      // Prevent auto-refresh during deletion to avoid overwriting local changes
+      _isDeleting = true;
+
+      // Delete associated expense if it exists (to remove from analysis)
+      if (activity.expenseInfo.expenseSynced &&
+          activity.expenseInfo.expenseId != null &&
+          _expenseProvider != null) {
+        print('   💰 Deleting associated expense...');
+        try {
+          await _expenseProvider!.deleteExpense(activity.expenseInfo.expenseId!);
+          print('   ✅ Associated expense deleted');
+        } catch (expenseError) {
+          print('   ⚠️ Could not delete associated expense: $expenseError');
+          // Continue with activity deletion even if expense deletion fails
+        }
+      }
+
       // Delete locally only - no backend API call needed
+      print('   🗑️ Removing activity from local list...');
+      final oldLength = _activities.length;
       setState(() {
         _activities.remove(activity);
+        // Force UI rebuild by creating a new list
+        _activities = List<ActivityModel>.from(_activities);
       });
+      print('   ✅ Local list updated: $oldLength -> ${_activities.length} activities');
+
+      print('   📝 Persisting trip changes...');
       await _persistTripChanges();
+
+      print('   ✅ Activity deleted successfully');
+
+      // Note: Associated expenses will be cleaned up by analysis screen
     } catch (e) {
+      print('   ❌ DELETE_ACTIVITY_ERROR: $e');
       //
+    } finally {
+      // Re-enable auto-refresh after a short delay
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          _isDeleting = false;
+        }
+      });
     }
   }
 
@@ -3076,28 +3141,50 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     });
 
     try {
-      TripPlanningProvider? provider;
-      try {
-        provider = context.read<TripPlanningProvider>();
-      } catch (_) {
-        provider = null;
-      }
+      // Check if this is a collaboration trip
+      final collabProvider = context.read<CollaborationProvider>();
+      final isCollaborationTrip =
+          collabProvider.mySharedTrips.any((t) => t.id == _trip.id) ||
+          collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
-      if (provider != null && _trip.id != null) {
-        await provider.deleteTrip(_trip.id!);
-      } else if (_trip.id != null) {
+      if (isCollaborationTrip && _trip.id != null) {
+        // Delete collaboration trip
+        print('🗑️ Deleting collaboration trip: ${_trip.id}');
+        await collabProvider.deleteSharedTrip(_trip.id!);
+        print('✅ Collaboration trip deleted successfully');
+      } else {
+        // Delete private trip
+        TripPlanningProvider? provider;
         try {
-          await _tripService.deleteTrip(_trip.id!);
+          provider = context.read<TripPlanningProvider>();
         } catch (_) {
-          // ignore server failure, we'll still remove locally
+          provider = null;
         }
-        await _firebaseService.deleteTrip(_trip.id!);
+
+        if (provider != null && _trip.id != null) {
+          await provider.deleteTrip(_trip.id!);
+        } else if (_trip.id != null) {
+          try {
+            await _tripService.deleteTrip(_trip.id!);
+          } catch (_) {
+            // ignore server failure, we'll still remove locally
+          }
+          await _firebaseService.deleteTrip(_trip.id!);
+        }
       }
 
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
-      //
+      print('❌ TRIP_DELETE_ERROR: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete trip: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -3763,6 +3850,39 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to send add activity request: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Create delete activity request for editors
+  Future<void> _createDeleteActivityRequest(ActivityModel activity) async {
+    try {
+      final service = ActivityEditRequestService();
+
+      // Create a delete activity request
+      final request = await service.createActivityEditRequest(
+        tripId: _trip.id!,
+        requestType: 'delete_activity',
+        activityId: activity.id,
+        message: 'Request to delete activity: ${activity.title}',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Delete activity request sent to trip owner'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send delete activity request: $e'),
             backgroundColor: Colors.red,
           ),
         );

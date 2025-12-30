@@ -269,9 +269,12 @@ async def get_trip_budget_status(
         
         trip_expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         
-        # Calculate budget statistics - handle None values
-        budget_value = trip.get('total_budget')
-        total_budget = float(budget_value) if budget_value is not None else 0.0
+        # Calculate budget statistics - handle both storage formats
+        total_budget = 0.0
+        if 'total_budget' in trip:
+            total_budget = float(trip.get('total_budget', 0))
+        elif 'budget' in trip and isinstance(trip['budget'], dict):
+            total_budget = float(trip['budget'].get('estimated_cost', 0))
         total_spent = sum(float(exp['amount']) for exp in trip_expenses)
         
         # Parse dates - handle both ISO format with time and date-only format
@@ -406,9 +409,16 @@ async def create_expense(
         budget_warning = None
         try:
             trip = await firebase_service.get_trip(final_trip_id, current_user.id)
-            
-            # Get budget value (default to 0 if not set)
-            total_budget = float(trip.get('total_budget', 0)) if trip else 0.0
+
+            # Get budget value - handle both storage formats
+            # Regular trips: 'total_budget' field
+            # Shared trips: 'budget.estimated_cost' sub-object
+            total_budget = 0.0
+            if trip:
+                if 'total_budget' in trip:
+                    total_budget = float(trip.get('total_budget', 0))
+                elif 'budget' in trip and isinstance(trip['budget'], dict):
+                    total_budget = float(trip['budget'].get('estimated_cost', 0))
             
             # Get all expenses for this trip
             trip_expenses = await firebase_service.get_trip_expenses(final_trip_id, current_user.id)
@@ -620,9 +630,14 @@ async def get_category_status(
         # Get expenses from Firestore
         if trip_id:
             expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
-            # Get trip budget info
+            # Get trip budget info - handle both storage formats
             trip = await firebase_service.get_trip(trip_id, current_user.id)
-            total_budget = float(trip.get('total_budget', 0)) if trip else 0.0
+            total_budget = 0.0
+            if trip:
+                if 'total_budget' in trip:
+                    total_budget = float(trip.get('total_budget', 0))
+                elif 'budget' in trip and isinstance(trip['budget'], dict):
+                    total_budget = float(trip['budget'].get('estimated_cost', 0))
         else:
             expenses = await firebase_service.get_user_expenses(current_user.id)
             total_budget = 0.0
@@ -1081,5 +1096,3 @@ async def health_check():
             "error": str(e),
             "timestamp": datetime.now().isoformat()
         }
-
-    
