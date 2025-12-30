@@ -107,7 +107,7 @@ class SmartNotificationWidget extends StatelessWidget {
                       TextButton(
                         onPressed: () => provider.markAllAsRead(tripId),
                         child: Text(
-                          'Mark all as read',
+                          'Mark All Read',
                           style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 14,
@@ -161,7 +161,7 @@ class SmartNotificationWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No notifications',
+            'No Notifications',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 16,
@@ -170,7 +170,7 @@ class SmartNotificationWidget extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Smart notifications will appear here',
+            'Smart notifications will appear here when available',
             style: TextStyle(
               fontFamily: 'Urbanist-Regular',
               fontSize: 14,
@@ -207,7 +207,7 @@ class SmartNotificationWidget extends StatelessWidget {
       onDismissed: (direction) {
         provider.deleteNotification(notification.id, tripId);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification deleted')),
+          const SnackBar(content: Text('Notification Deleted')),
         );
       },
       child: Container(

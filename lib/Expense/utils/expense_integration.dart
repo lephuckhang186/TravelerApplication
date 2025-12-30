@@ -51,37 +51,37 @@ class ExpenseIntegration {
   static String getExpenseCategoryDisplayName(String category) {
     switch (category.toLowerCase()) {
       case 'flight':
-        return 'Chuyến bay';
+        return 'Flight';
       case 'activity':
-        return 'Hoạt động';
+        return 'Activity';
       case 'lodging':
-        return 'Lưu trú';
+        return 'Lodging';
       case 'car_rental':
-        return 'Thuê xe';
+        return 'Car Rental';
       case 'concert':
-        return 'Hòa nhạc';
+        return 'Concert';
       case 'cruising':
-        return 'Du thuyền';
+        return 'Cruising';
       case 'ferry':
-        return 'Phà';
+        return 'Ferry';
       case 'ground_transportation':
-        return 'Di chuyển mặt đất';
+        return 'Ground Transportation';
       case 'rail':
-        return 'Tàu hỏa';
+        return 'Rail';
       case 'restaurant':
-        return 'Nhà hàng';
+        return 'Restaurant';
       case 'theater':
-        return 'Rạp hát';
+        return 'Theater';
       case 'tour':
-        return 'Tour du lịch';
+        return 'Tour';
       case 'transportation':
-        return 'Di chuyển';
+        return 'Transportation';
       case 'shopping':
-        return 'Mua sắm';
+        return 'Shopping';
       case 'miscellaneous':
-        return 'Khác';
+        return 'Miscellaneous';
       case 'emergency':
-        return 'Khẩn cấp';
+        return 'Emergency';
       default:
         return category;
     }

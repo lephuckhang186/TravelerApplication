@@ -153,7 +153,7 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '🎯 Đang phân tích yêu cầu và tạo kế hoạch du lịch...',
+          'content': '🎯 Analyzing request and creating travel plan...',
         });
       });
 
@@ -172,17 +172,17 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
         // Build structured prompt with trip card information
         enhancedPrompt =
             '''
-Thông tin chuyến đi hiện tại (từ Trip Card):
-- Tên chuyến đi: "${trip.name}"
-- Điểm đến: "${trip.destination}"
-- Ngày bắt đầu: "$startDateStr"
-- Ngày kết thúc: "$endDateStr"
-- Số ngày: $durationDays ngày
-- Tổng ngân sách: $totalBudget $currency
+Current trip information (from Trip Card):
+- Trip name: "${trip.name}"
+- Destination: "${trip.destination}"
+- Start date: "$startDateStr"
+- End date: "$endDateStr"
+- Duration: $durationDays days
+- Total budget: $totalBudget $currency
 
-Yêu cầu của người dùng: $userMessage
+User request: $userMessage
 
-Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên và yêu cầu của người dùng. Sử dụng CHÍNH XÁC các thông tin về tên, điểm đến, ngày tháng, ngân sách từ Trip Card ở trên.''';
+Please create a detailed plan based on the trip information above and the user's request. Use EXACTLY the trip name, destination, dates, and budget information from the Trip Card above.''';
 
       }
 
@@ -368,13 +368,13 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
       _messages.add({
         'role': 'assistant',
         'content':
-            '✅ Đã tạo kế hoạch du lịch thành công!\n\n'
+            '✅ Travel plan created successfully!\n\n'
             '📋 **${generatedTrip.name}**\n'
-            '📍 **Điểm đến:** ${generatedTrip.destination}\n'
-            '📅 **Thời gian:** ${generatedTrip.startDate.day}/${generatedTrip.startDate.month} - ${generatedTrip.endDate.day}/${generatedTrip.endDate.month}/${generatedTrip.endDate.year}\n'
-            '👥 **Số người:** ${planData['trip_info']['travelers_count'] ?? 1}\n'
-            '💰 **Ngân sách dự kiến:** ${planData['summary']['total_estimated_cost']?.toStringAsFixed(0) ?? 'N/A'} VND\n\n'
-            '🎯 **Các hoạt động chính:**',
+            '📍 **Destination:** ${generatedTrip.destination}\n'
+            '📅 **Duration:** ${generatedTrip.startDate.day}/${generatedTrip.startDate.month} - ${generatedTrip.endDate.day}/${generatedTrip.endDate.month}/${generatedTrip.endDate.year}\n'
+            '👥 **Number of people:** ${planData['trip_info']['travelers_count'] ?? 1}\n'
+            '💰 **Estimated budget:** ${planData['summary']['total_estimated_cost']?.toStringAsFixed(0) ?? 'N/A'} VND\n\n'
+            '🎯 **Main activities:**',
       });
     });
 
@@ -388,7 +388,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '📅 **Ngày $day:** $activityCount hoạt động',
+          'content': '📅 **Day $day:** $activityCount activities',
         });
       });
     }
@@ -398,10 +398,10 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
       _messages.add({
         'role': 'assistant',
         'content':
-            '🔗 **Tùy chọn:**\n'
-            '• Nhấn "Xem chi tiết" để xem kế hoạch đầy đủ\n'
-            '• Nhấn "Lưu kế hoạch" để lưu vào tài khoản\n'
-            '• Tiếp tục chat để chỉnh sửa kế hoạch',
+            '🔗 **Options:**\n'
+            '• Click "View details" to see the full plan\n'
+            '• Click "Save plan" to save to your account\n'
+            '• Continue chatting to edit the plan',
       });
     });
 
@@ -422,7 +422,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
           'new_trip': generatedTrip,
           'plan_data': planData,
           'error':
-              'Kế hoạch được tạo nhưng chưa lưu. Bạn có thể sao chép thông tin để tạo thủ công.',
+              'Plan was created but not saved. You can copy the information to create manually.',
         });
       }
     }
@@ -526,7 +526,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
             _messages.add({
               'role': 'assistant',
               'content':
-                  responseData['message'] ?? 'Có lỗi xảy ra khi xử lý yêu cầu.',
+                  responseData['message'] ?? 'An error occurred while processing the request.',
             });
           });
         }
@@ -534,7 +534,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
         setState(() {
           _messages.add({
             'role': 'assistant',
-            'content': 'Lỗi kết nối đến máy chủ AI.',
+            'content': 'Error connecting to AI server.',
           });
         });
       }
@@ -542,7 +542,7 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': 'Có lỗi xảy ra khi xử lý yêu cầu chỉnh sửa kế hoạch.',
+          'content': 'An error occurred while processing the plan editing request.',
         });
       });
     }
@@ -554,13 +554,13 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
 
     // Must contain planning keywords
     bool hasPlanningIntent =
-        lowerMessage.contains('lên kế hoạch') ||
-        lowerMessage.contains('tạo kế hoạch') ||
-        lowerMessage.contains('lập kế hoạch') ||
+        lowerMessage.contains('create plan') ||
+        lowerMessage.contains('make plan') ||
+        lowerMessage.contains('plan trip') ||
         lowerMessage.contains('plan') ||
-        lowerMessage.contains('kế hoạch du lịch') ||
+        lowerMessage.contains('travel plan') ||
         lowerMessage.contains('trip') ||
-        lowerMessage.contains('chuyến đi');
+        lowerMessage.contains('journey');
 
     if (!hasPlanningIntent) return false;
 
@@ -575,18 +575,18 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
     int paramCount = 0;
 
     // Check for duration (days/nights)
-    if (lowerMessage.contains('ngày') ||
-        lowerMessage.contains('đêm') ||
+    if (lowerMessage.contains('day') ||
+        lowerMessage.contains('night') ||
         lowerMessage.contains('day') ||
         lowerMessage.contains('night')) {
       paramCount++;
     }
 
     // Check for budget (money terms)
-    if (lowerMessage.contains('ngân sách') ||
-        lowerMessage.contains('tiền') ||
+    if (lowerMessage.contains('budget') ||
+        lowerMessage.contains('money') ||
         lowerMessage.contains('vnd') ||
-        lowerMessage.contains('triệu') ||
+        lowerMessage.contains('million') ||
         lowerMessage.contains('budget') ||
         lowerMessage.contains('cost') ||
         lowerMessage.contains('million') ||
@@ -595,16 +595,16 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
     }
 
     // Check for number of people
-    if (lowerMessage.contains('người') ||
+    if (lowerMessage.contains('people') ||
         lowerMessage.contains('people') ||
         lowerMessage.contains('person')) {
       paramCount++;
     }
 
-    // Check for destination (common destinations or "tại" keyword)
-    if (lowerMessage.contains('tại ') ||
-        lowerMessage.contains('ở ') ||
-        lowerMessage.contains('đến ') ||
+    // Check for destination (common destinations or "to" keyword)
+    if (lowerMessage.contains('to ') ||
+        lowerMessage.contains('at ') ||
+        lowerMessage.contains('visit ') ||
         lowerMessage.contains('to ') ||
         lowerMessage.contains('tokyo') ||
         lowerMessage.contains('japan') ||
@@ -903,68 +903,68 @@ Hãy tạo kế hoạch chi tiết dựa trên thông tin chuyến đi ở trên
         ? [
             {
               'icon': Icons.people,
-              'text': 'Tạo kế hoạch cho 2 người',
-              'query': 'Tạo kế hoạch cho 2 người',
+              'text': 'Create plan for 2 people',
+              'query': 'Create plan for 2 people',
             },
             {
               'icon': Icons.group,
-              'text': 'Tạo kế hoạch cho 4 người',
-              'query': 'Tạo kế hoạch cho 4 người',
+              'text': 'Create plan for 4 people',
+              'query': 'Create plan for 4 people',
             },
             {
               'icon': Icons.family_restroom,
-              'text': 'Tạo kế hoạch cho gia đình 5 người',
-              'query': 'Tạo kế hoạch cho gia đình 5 người',
+              'text': 'Create plan for family of 5',
+              'query': 'Create plan for family of 5 people',
             },
             {
               'icon': Icons.restaurant,
-              'text': 'Thêm hoạt động ăn uống',
-              'query': 'Thêm các nhà hàng địa phương nổi tiếng vào ngày 1',
+              'text': 'Add dining activities',
+              'query': 'Add famous local restaurants to day 1',
             },
             {
               'icon': Icons.tour,
-              'text': 'Thêm điểm tham quan',
-              'query': 'Thêm các địa điểm tham quan phổ biến vào kế hoạch',
+              'text': 'Add sightseeing',
+              'query': 'Add popular tourist attractions to the plan',
             },
             {
               'icon': Icons.edit_calendar,
-              'text': 'Sửa kế hoạch hiện tại',
-              'query': 'Tôi muốn thay đổi lịch trình ngày đầu tiên',
+              'text': 'Edit current plan',
+              'query': 'I want to change the first day schedule',
             },
           ]
         : [
             {
               'icon': Icons.location_on,
-              'text': 'Gợi ý địa điểm du lịch Việt Nam',
+              'text': 'Suggest Vietnam travel destinations',
               'query':
-                  'Bạn có thể gợi ý cho tôi những địa điểm du lịch nổi tiếng ở Việt Nam không?',
+                  'Can you suggest some famous tourist destinations in Vietnam?',
             },
             {
               'icon': Icons.flight,
-              'text': 'Lên kế hoạch chuyến đi',
+              'text': 'Plan a trip',
               'query':
-                  'Tôi muốn lên kế hoạch cho một chuyến du lịch 3 ngày 2 đêm',
+                  'I want to plan a 3-day 2-night trip',
             },
             {
               'icon': Icons.restaurant,
-              'text': 'Khám phá ẩm thực địa phương',
-              'query': 'Những món ăn đặc sản nào tôi nên thử khi du lịch?',
+              'text': 'Explore local cuisine',
+              'query': 'What local specialties should I try when traveling?',
             },
             {
               'icon': Icons.hotel,
-              'text': 'Tìm chỗ ở phù hợp',
+              'text': 'Find suitable accommodation',
               'query':
-                  'Bạn có thể giúp tôi tìm khách sạn với ngân sách hợp lý không?',
+                  'Can you help me find hotels within a reasonable budget?',
             },
             {
               'icon': Icons.directions_car,
-              'text': 'Phương tiện di chuyển',
-              'query': 'Cách di chuyển tốt nhất giữa các thành phố là gì?',
+              'text': 'Transportation options',
+              'query': 'What is the best way to travel between cities?',
             },
             {
               'icon': Icons.attach_money,
-              'text': 'Ước tính chi phí',
-              'query': 'Chi phí cho một chuyến du lịch thường là bao nhiêu?',
+              'text': 'Estimate costs',
+              'query': 'How much does a trip typically cost?',
             },
           ];
 
