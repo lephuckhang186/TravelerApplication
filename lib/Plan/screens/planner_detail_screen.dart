@@ -1879,20 +1879,25 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Apply changes made by AI assistant
   Future<void> _applyAIChanges(List<dynamic> changes) async {
-    // Check if we need to delete all existing activities first
-    final hasDeleteAll = changes.any(
-      (change) => change['action'] == 'delete_all',
-    );
+    // Temporarily disable auto-refresh to prevent overwriting AI changes
+    final wasAutoRefreshActive = _autoRefreshTimer?.isActive ?? false;
+    _autoRefreshTimer?.cancel();
 
-    if (hasDeleteAll) {
+    try {
+      // Check if we need to delete all existing activities first
+      final hasDeleteAll = changes.any(
+        (change) => change['action'] == 'delete_all',
+      );
 
-      // Delete all expenses associated with existing activities
-      await _deleteExpensesForActivities(_activities);
+      if (hasDeleteAll) {
 
-      setState(() {
-        _activities.clear();
-      });
-    }
+        // Delete all expenses associated with existing activities
+        await _deleteExpensesForActivities(_activities);
+
+        setState(() {
+          _activities.clear();
+        });
+      }
 
     // Check if this is a full replacement (all activities should be replaced)
     final hasFullReplace = changes.any(
@@ -1969,6 +1974,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
     // Save changes to local storage
     _persistTripChanges();
+    } finally {
+      // Restart auto-refresh if it was previously active
+      if (wasAutoRefreshActive && mounted) {
+        _startAutoRefreshTimer();
+      }
+    }
   }
 
   /// Delete expenses for a list of activities
