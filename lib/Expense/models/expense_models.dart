@@ -64,37 +64,37 @@ extension ExpenseCategoryExtension on ExpenseCategory {
   String get displayName {
     switch (this) {
       case ExpenseCategory.flight:
-        return 'Chuyến bay';
+        return 'Flight';
       case ExpenseCategory.activity:
-        return 'Hoạt động';
+        return 'Activity';
       case ExpenseCategory.lodging:
-        return 'Lưu trú';
+        return 'Lodging';
       case ExpenseCategory.carRental:
-        return 'Thuê xe';
+        return 'Car Rental';
       case ExpenseCategory.concert:
-        return 'Hòa nhạc';
+        return 'Concert';
       case ExpenseCategory.cruising:
-        return 'Du thuyền';
+        return 'Cruising';
       case ExpenseCategory.ferry:
-        return 'Phà';
+        return 'Ferry';
       case ExpenseCategory.groundTransportation:
-        return 'Di chuyển mặt đất';
+        return 'Ground Transportation';
       case ExpenseCategory.rail:
-        return 'Tàu hỏa';
+        return 'Rail';
       case ExpenseCategory.restaurant:
-        return 'Nhà hàng';
+        return 'Restaurant';
       case ExpenseCategory.theater:
-        return 'Rạp hát';
+        return 'Theater';
       case ExpenseCategory.tour:
-        return 'Tour du lịch';
+        return 'Tour';
       case ExpenseCategory.transportation:
-        return 'Di chuyển';
+        return 'Transportation';
       case ExpenseCategory.shopping:
-        return 'Mua sắm';
+        return 'Shopping';
       case ExpenseCategory.miscellaneous:
-        return 'Khác';
+        return 'Miscellaneous';
       case ExpenseCategory.emergency:
-        return 'Khẩn cấp';
+        return 'Emergency';
     }
   }
 

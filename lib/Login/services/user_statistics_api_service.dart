@@ -3,13 +3,13 @@ import 'package:http/http.dart' as http;
 import '../../Core/config/api_config.dart';
 import '../../Login/services/auth_service.dart';
 
-/// Model cho thống kê người dùng từ Backend API
+/// Model for user statistics from Backend API
 class UserTravelStats {
-  final int totalActivities;     // Tổng số activities
-  final int completedTrips;      // Chuyến đi đã hoàn thành (status completed)
-  final int checkedInLocations;  // Địa điểm đã check-in (check_in = true)
-  final double totalExpenses;    // Tổng chi tiêu thực tế
-  final int totalPlans;          // Tổng số kế hoạch (trips)
+  final int totalActivities;     // Total activities
+  final int completedTrips;      // Completed trips (status completed)
+  final int checkedInLocations;  // Checked-in locations (check_in = true)
+  final double totalExpenses;    // Total actual expenses
+  final int totalPlans;          // Total plans (trips)
 
   UserTravelStats({
     required this.totalActivities,
@@ -30,7 +30,7 @@ class UserTravelStats {
   }
 }
 
-/// Service để lấy thống kê du lịch từ Backend API
+/// Service to get travel statistics from Backend API
 class UserStatisticsApiService {
   static final UserStatisticsApiService _instance = UserStatisticsApiService._internal();
   factory UserStatisticsApiService() => _instance;
@@ -38,7 +38,7 @@ class UserStatisticsApiService {
 
   final AuthService _authService = AuthService();
 
-  /// Lấy headers với Authorization token
+  /// Get headers with Authorization token
   Future<Map<String, String>> _getAuthHeaders() async {
     final token = await _authService.getIdToken();
     final headers = <String, String>{
@@ -53,7 +53,7 @@ class UserStatisticsApiService {
     return headers;
   }
 
-  /// Lấy thống kê từ API activities/statistics  
+  /// Get statistics from API activities/statistics  
   Future<UserTravelStats> getUserStatistics() async {
     try {
       final headers = await _getAuthHeaders();
@@ -86,7 +86,7 @@ class UserStatisticsApiService {
 
   /// Transform API response to our statistics model
   UserTravelStats _transformApiResponse(Map<String, dynamic> data) {
-    // API trả về activity statistics, ta cần transform cho phù hợp
+    // API returns activity statistics, we need to transform for compatibility
     int totalActivities = data['total_activities'] ?? 0;
     // int completedActivities = 0;
     int checkedInLocations = 0;
@@ -111,7 +111,7 @@ class UserStatisticsApiService {
     );
   }
 
-  /// Lấy thống kê expenses summary từ API
+  /// Get expense summary statistics from API
   Future<Map<String, dynamic>> getExpenseSummary({String? tripId}) async {
     try {
       final headers = await _getAuthHeaders();
@@ -136,7 +136,7 @@ class UserStatisticsApiService {
     }
   }
 
-  /// Lấy trips từ API để đếm tổng plans và completed trips
+  /// Get trips from API to count total plans and completed trips
   Future<Map<String, int>> getTripStatistics() async {
     try {
       final headers = await _getAuthHeaders();
@@ -173,7 +173,7 @@ class UserStatisticsApiService {
     }
   }
 
-  /// Lấy activities để đếm check-in locations
+  /// Get activities to count check-in locations
   Future<int> getCheckedInLocations({String? tripId}) async {
     try {
       final headers = await _getAuthHeaders();
@@ -207,10 +207,10 @@ class UserStatisticsApiService {
     }
   }
 
-  /// Lấy thống kê tổng hợp từ nhiều API endpoints
+  /// Get comprehensive statistics from multiple API endpoints
   Future<UserTravelStats> getCompleteUserStatistics() async {
     try {
-      // Gọi song song các API để tối ưu performance
+      // Call APIs in parallel to optimize performance
       final futures = await Future.wait([
         getUserStatistics(),           // Activity statistics
         getTripStatistics(),          // Trip statistics  
@@ -247,7 +247,7 @@ class UserStatisticsApiService {
     }
   }
 
-  /// Format currency cho display
+  /// Format currency for display
   String formatCurrency(double amount) {
     if (amount >= 1000000000) {
       return '${(amount / 1000000000).toStringAsFixed(1)}B';

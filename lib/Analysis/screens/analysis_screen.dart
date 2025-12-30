@@ -2032,7 +2032,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Tổng chi tiêu',
+                  'Total Expenses',
                   style: TextStyle(
                     fontFamily: 'Urbanist-Regular',
                     fontSize: 12,

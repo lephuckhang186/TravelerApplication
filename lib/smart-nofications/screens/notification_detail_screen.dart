@@ -22,7 +22,7 @@ class NotificationDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Announcement details',
+          'Notification Details',
           style: TextStyle(
             fontFamily: 'Urbanist-Regular',
             color: Colors.black,
@@ -116,7 +116,7 @@ class NotificationDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Content',
+                    'Message',
                     style: TextStyle(
                       fontFamily: 'Urbanist-Regular',
                       fontSize: 16,
@@ -160,7 +160,7 @@ class NotificationDetailScreen extends StatelessWidget {
 
     switch (severity) {
       case NotificationSeverity.critical:
-        label = 'Urgent';
+        label = 'Critical';
         color = Colors.red;
         break;
       case NotificationSeverity.warning:
@@ -168,7 +168,7 @@ class NotificationDetailScreen extends StatelessWidget {
         color = Colors.orange;
         break;
       case NotificationSeverity.info:
-        label = 'Information';
+        label = 'Info';
         color = Colors.blue;
         break;
     }
@@ -223,7 +223,7 @@ class NotificationDetailScreen extends StatelessWidget {
               Icon(Icons.wb_cloudy, color: Colors.blue[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Weather details',
+                'Weather Information',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
@@ -234,10 +234,10 @@ class NotificationDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildDetailRow('Location', data['location'] ?? 'Undetermined'),
-          _buildDetailRow('Status', data['condition'] ?? 'Undetermined'),
+          _buildDetailRow('Location', data['location'] ?? 'Unknown'),
+          _buildDetailRow('Condition', data['condition'] ?? 'Unknown'),
           _buildDetailRow('Temperature', '${data['temperature'] ?? 0}°C'),
-          _buildDetailRow('Description', data['description'] ?? 'No description'),
+          _buildDetailRow('Description', data['description'] ?? 'No details available'),
         ],
       ),
     );
@@ -263,7 +263,7 @@ class NotificationDetailScreen extends StatelessWidget {
               Icon(Icons.account_balance_wallet, color: Colors.orange[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Budget details',
+                'Budget Information',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
@@ -322,7 +322,7 @@ class NotificationDetailScreen extends StatelessWidget {
               Icon(Icons.schedule, color: Colors.green[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                'Activity details',
+                'Activity Information',
                 style: TextStyle(
                   fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
@@ -333,10 +333,10 @@ class NotificationDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildDetailRow('Activity', data['activityTitle'] ?? 'Undefined'),
-          _buildDetailRow('Location', data['location'] ?? 'Undefined'),
+          _buildDetailRow('Activity', data['activityTitle'] ?? 'Unknown'),
+          _buildDetailRow('Location', data['location'] ?? 'Unknown'),
           _buildDetailRow('Start Time', _formatDateTime(DateTime.parse(data['startTime']))),
-          _buildDetailRow('Remaining', '${data['minutesUntilStart']} minutes'),
+          _buildDetailRow('Time Until Start', '${data['minutesUntilStart']} minutes'),
         ],
       ),
     );

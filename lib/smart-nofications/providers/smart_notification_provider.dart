@@ -408,14 +408,14 @@ class SmartNotificationProvider extends ChangeNotifier {
       switch (type) {
         case 'OVER_BUDGET':
           severity = NotificationSeverity.critical;
-          title = '🚨 Budget Exceeded!';
+          title = '🚨 Budget Exceeded';
           icon = Icons.error;
           color = Colors.red;
           break;
           
         case 'WARNING':
           severity = NotificationSeverity.warning;
-          title = '⚠️ Budget Running Low';
+          title = '⚠️ Budget Warning';
           icon = Icons.warning;
           color = Colors.orange;
           break;
@@ -537,7 +537,7 @@ class SmartNotificationProvider extends ChangeNotifier {
       id: 'budget_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.budget,
       severity: warning.overagePercentage > 50 ? NotificationSeverity.critical : NotificationSeverity.warning,
-      title: 'Budget Exceeded',
+      title: 'Budget Alert',
       message: '${warning.activityTitle} has exceeded ${warning.overagePercentage.round()}% of planned budget',
       createdAt: DateTime.now(),
       icon: Icons.warning,
@@ -561,7 +561,7 @@ class SmartNotificationProvider extends ChangeNotifier {
       id: 'reminder_${reminder.activityId}_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.activity,
       severity: NotificationSeverity.info,
-      title: 'Upcoming Activity',
+      title: 'Activity Reminder',
       message: '${reminder.activityTitle} will start in ${reminder.minutesUntilStart} minutes at ${reminder.location}',
       createdAt: DateTime.now(),
       icon: Icons.schedule,

@@ -19,7 +19,7 @@ class AIPlanEditorService {
       if (parsedCommand == null) {
         return {
           'success': false,
-          'message': 'Không thể hiểu lệnh. Vui lòng thử lại với định dạng khác.',
+          'message': 'Cannot understand the command. Please try again with a different format.',
           'action': 'unknown',
         };
       }
@@ -69,27 +69,26 @@ class AIPlanEditorService {
   Map<String, dynamic>? _parseNaturalLanguageCommand(String command) {
     final normalizedCommand = command.toLowerCase().trim();
 
-    // Vietnamese patterns for adding activities
+    // English patterns for adding activities
     final addPatterns = [
-      RegExp(r'thêm\s+(.+?)\s+vào\s+ngày\s+(\d+)'),
-      RegExp(r'thêm\s+(.+?)\s+ngày\s+(\d+)'),
       RegExp(r'add\s+(.+?)\s+to\s+day\s+(\d+)'),
       RegExp(r'add\s+(.+?)\s+on\s+day\s+(\d+)'),
+      RegExp(r'include\s+(.+?)\s+in\s+day\s+(\d+)'),
+      RegExp(r'put\s+(.+?)\s+on\s+day\s+(\d+)'),
     ];
 
-    // Vietnamese patterns for removing activities
+    // English patterns for removing activities
     final removePatterns = [
-      RegExp(r'xóa\s+(.+?)\s+trong\s+ngày\s+(\d+)'),
-      RegExp(r'xóa\s+(.+?)\s+ngày\s+(\d+)'),
-      RegExp(r'xóa\s+(.+?)\s+từ\s+ngày\s+(\d+)'),
       RegExp(r'remove\s+(.+?)\s+from\s+day\s+(\d+)'),
       RegExp(r'delete\s+(.+?)\s+on\s+day\s+(\d+)'),
+      RegExp(r'cancel\s+(.+?)\s+on\s+day\s+(\d+)'),
+      RegExp(r'drop\s+(.+?)\s+from\s+day\s+(\d+)'),
     ];
 
-    // Vietnamese patterns for updating activities
+    // English patterns for updating activities
     final updatePatterns = [
-      RegExp(r'thay\s+(.+?)\s+bằng\s+(.+?)\s+trong\s+ngày\s+(\d+)'),
-      RegExp(r'đổi\s+(.+?)\s+thành\s+(.+?)\s+ngày\s+(\d+)'),
+      RegExp(r'change\s+(.+?)\s+to\s+(.+?)\s+on\s+day\s+(\d+)'),
+      RegExp(r'replace\s+(.+?)\s+with\s+(.+?)\s+on\s+day\s+(\d+)'),
       RegExp(r'update\s+(.+?)\s+to\s+(.+?)\s+on\s+day\s+(\d+)'),
     ];
 
@@ -157,9 +156,9 @@ class AIPlanEditorService {
 
   /// Clean and normalize activity name
   String _cleanActivityName(String activity) {
-    // Remove common Vietnamese words and normalize
+    // Remove common words and normalize
     final cleaned = activity
-        .replaceAll(RegExp(r'\b(đi|đến|thăm|tham quan|xem|ăn|chơi)\b'), '')
+        .replaceAll(RegExp(r'\b(go|to|visit|see|eat|play|do|the|a|an)\b', caseSensitive: false), '')
         .trim();
 
     // Capitalize first letter of each word
@@ -183,10 +182,10 @@ class AIPlanEditorService {
 
     return {
       'success': true,
-      'message': '💡 **Đề xuất thêm hoạt động:**\n\n'
-          '📅 **Ngày $day:** Thêm hoạt động "$activity"\n'
-          '🏷️ **Loại:** ${_getActivityTypeName(activityType)}\n\n'
-          '⚠️ **Lưu ý:** Đây chỉ là đề xuất. Vui lòng thêm thủ công trong trang kế hoạch.',
+      'message': '💡 **Activity Suggestion:**\n\n'
+          '📅 **Day $day:** Add activity "$activity"\n'
+          '🏷️ **Type:** ${_getActivityTypeName(activityType)}\n\n'
+          '⚠️ **Note:** This is just a suggestion. Please add manually in the plan page.',
       'action': 'suggest_add',
       'day': day,
       'activity': activity,
@@ -203,9 +202,9 @@ class AIPlanEditorService {
 
     return {
       'success': true,
-      'message': '💡 **Đề xuất xóa hoạt động:**\n\n'
-          '📅 **Ngày $day:** Xóa hoạt động "$activity"\n\n'
-          '⚠️ **Lưu ý:** Đây chỉ là đề xuất. Vui lòng xóa thủ công trong trang kế hoạch.',
+      'message': '💡 **Remove Activity Suggestion:**\n\n'
+          '📅 **Day $day:** Remove activity "$activity"\n\n'
+          '⚠️ **Note:** This is just a suggestion. Please remove manually in the plan page.',
       'action': 'suggest_remove',
       'day': day,
       'activity': activity,
@@ -225,12 +224,12 @@ class AIPlanEditorService {
 
     return {
       'success': true,
-      'message': '💡 **Đề xuất thay đổi hoạt động:**\n\n'
-          '📅 **Ngày $day:**\n'
-          '🔄 **Từ:** "$oldActivity"\n'
-          '➡️ **Thành:** "$newActivity"\n'
-          '🏷️ **Loại mới:** ${_getActivityTypeName(activityType)}\n\n'
-          '⚠️ **Lưu ý:** Đây chỉ là đề xuất. Vui lòng chỉnh sửa thủ công trong trang kế hoạch.',
+      'message': '💡 **Update Activity Suggestion:**\n\n'
+          '📅 **Day $day:**\n'
+          '🔄 **From:** "$oldActivity"\n'
+          '➡️ **To:** "$newActivity"\n'
+          '🏷️ **New Type:** ${_getActivityTypeName(activityType)}\n\n'
+          '⚠️ **Note:** This is just a suggestion. Please edit manually in the plan page.',
       'action': 'suggest_update',
       'day': day,
       'oldActivity': oldActivity,
@@ -243,17 +242,17 @@ class AIPlanEditorService {
   String _getActivityTypeName(ActivityType type) {
     switch (type) {
       case ActivityType.activity:
-        return 'Hoạt động';
+        return 'Activity';
       case ActivityType.restaurant:
-        return 'Nhà hàng';
+        return 'Restaurant';
       case ActivityType.lodging:
-        return 'Lưu trú';
+        return 'Lodging';
       case ActivityType.flight:
-        return 'Chuyến bay';
+        return 'Flight';
       case ActivityType.tour:
-        return 'Tour tham quan';
+        return 'Tour';
       default:
-        return 'Hoạt động';
+        return 'Activity';
     }
   }
 
@@ -261,28 +260,28 @@ class AIPlanEditorService {
   ActivityType _determineActivityType(String activity) {
     final lowerActivity = activity.toLowerCase();
 
-    if (lowerActivity.contains('biển') ||
-        lowerActivity.contains('beach') ||
-        lowerActivity.contains('bơi')) {
+    if (lowerActivity.contains('beach') ||
+        lowerActivity.contains('sea') ||
+        lowerActivity.contains('swim')) {
       return ActivityType.activity;
-    } else if (lowerActivity.contains('ăn') ||
-               lowerActivity.contains('nhà hàng') ||
+    } else if (lowerActivity.contains('eat') ||
+               lowerActivity.contains('restaurant') ||
                lowerActivity.contains('food') ||
-               lowerActivity.contains('restaurant')) {
+               lowerActivity.contains('dining')) {
       return ActivityType.restaurant;
-    } else if (lowerActivity.contains('khách sạn') ||
-               lowerActivity.contains('hotel') ||
-               lowerActivity.contains('lưu trú')) {
+    } else if (lowerActivity.contains('hotel') ||
+               lowerActivity.contains('accommodation') ||
+               lowerActivity.contains('lodging')) {
       return ActivityType.lodging;
-    } else if (lowerActivity.contains('bay') ||
-               lowerActivity.contains('máy bay') ||
-               lowerActivity.contains('flight')) {
+    } else if (lowerActivity.contains('flight') ||
+               lowerActivity.contains('airplane') ||
+               lowerActivity.contains('plane')) {
       return ActivityType.flight;
     } else if (lowerActivity.contains('tour') ||
-               lowerActivity.contains('tham quan')) {
+               lowerActivity.contains('sightseeing')) {
       return ActivityType.tour;
-    } else if (lowerActivity.contains('mua sắm') ||
-               lowerActivity.contains('shopping')) {
+    } else if (lowerActivity.contains('shopping') ||
+               lowerActivity.contains('market')) {
       return ActivityType.activity;
     }
 
@@ -292,18 +291,18 @@ class AIPlanEditorService {
   /// Get AI suggestions for plan editing commands (manual operation only)
   List<String> getSuggestedCommands(String tripName, int tripDuration) {
     final suggestions = [
-      'Gợi ý hoạt động cho ngày 2',
-      'Những món ăn nên thử ở đây?',
-      'Thời tiết như thế nào vào ngày mai?',
-      'Cách di chuyển đến điểm tham quan?',
-      'Khách sạn giá rẻ gần trung tâm',
+      'Suggest activities for day 2',
+      'What food should I try here?',
+      'What\'s the weather like tomorrow?',
+      'How to get to tourist attractions?',
+      'Cheap hotels near city center',
     ];
 
     // Customize suggestions based on trip duration
     if (tripDuration > 3) {
       suggestions.addAll([
-        'Địa điểm mua sắm ở đây?',
-        'Tour tham quan nửa ngày',
+        'Shopping places here?',
+        'Half-day tour',
       ]);
     }
 

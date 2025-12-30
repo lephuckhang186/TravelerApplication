@@ -83,7 +83,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
         setState(() {
           _messages.add({
             'content':
-                'Xin lỗi, tôi không thể kết nối đến server AI ngay lúc này. Vui lòng thử lại sau. \n\nLỗi: $e',
+                'Sorry, I cannot connect to the AI server at the moment. Please try again later. \n\nError: $e',
             'role': 'assistant',
           });
           _isLoading = false;
@@ -143,7 +143,7 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         return responseData['summary'] ??
-            'Xin lỗi, tôi không thể tạo phản hồi.';
+            'Sorry, I cannot generate a response.';
       } else {
         throw Exception('API Error: ${response.statusCode}');
       }

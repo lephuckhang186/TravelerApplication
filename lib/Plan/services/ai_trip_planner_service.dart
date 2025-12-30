@@ -42,7 +42,7 @@ class AITripPlannerService {
         } else {
           return {
             'success': false,
-            'message': responseData['message'] ?? 'Không thể tạo kế hoạch du lịch.',
+            'message': responseData['message'] ?? 'Cannot create travel plan.',
           };
         }
       } else {
