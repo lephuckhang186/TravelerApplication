@@ -3,8 +3,16 @@ import 'package:provider/provider.dart';
 import '../models/trip_model.dart';
 import '../providers/trip_planning_provider.dart';
 
+/// Dashboard-style widget that provides a visual overview of a trip's budget health.
+///
+/// Displays total budget, total spent, and remaining balance. Includes a colored
+/// progress bar that changes based on usage percentage (over budget, warning, healthy).
+/// Optionally shows detailed metrics like days remaining and recommended daily spend.
 class TripBudgetStatusWidget extends StatefulWidget {
+  /// The trip whose budget needs to be tracked.
   final TripModel trip;
+
+  /// Whether to show advanced metrics like recommended daily spending.
   final bool showDetails;
 
   const TripBudgetStatusWidget({
@@ -35,15 +43,19 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
     }
   }
 
+  /// Fetches calculated budget analytics from the [TripPlanningProvider].
   Future<void> _loadBudgetStatus() async {
     if (widget.trip.id == null) return;
 
     setState(() => _isLoading = true);
-    
+
     try {
-      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      final tripProvider = Provider.of<TripPlanningProvider>(
+        context,
+        listen: false,
+      );
       final status = await tripProvider.getTripBudgetStatus(widget.trip.id!);
-      
+
       if (mounted) {
         setState(() {
           _budgetStatus = status;
@@ -63,9 +75,7 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
       return const Card(
         child: Padding(
           padding: EdgeInsets.all(16.0),
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
+          child: Center(child: CircularProgressIndicator()),
         ),
       );
     }
@@ -78,14 +88,18 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
       builder: (context, tripProvider, child) {
         final budget = widget.trip.budget;
         final status = _budgetStatus ?? {};
-        
-        final totalBudget = status['totalBudget']?.toDouble() ?? budget?.estimatedCost ?? 0.0;
-        final totalSpent = status['totalSpent']?.toDouble() ?? budget?.actualCost ?? 0.0;
+
+        final totalBudget =
+            status['totalBudget']?.toDouble() ?? budget?.estimatedCost ?? 0.0;
+        final totalSpent =
+            status['totalSpent']?.toDouble() ?? budget?.actualCost ?? 0.0;
         final usagePercentage = status['usagePercentage']?.toDouble() ?? 0.0;
         final isOverBudget = status['isOverBudget'] ?? false;
-        final remainingBudget = status['remainingBudget']?.toDouble() ?? (totalBudget - totalSpent);
+        final remainingBudget =
+            status['remainingBudget']?.toDouble() ?? (totalBudget - totalSpent);
         final daysRemaining = status['daysRemaining'] ?? 0;
-        final recommendedDaily = status['recommendedDailySpending']?.toDouble() ?? 0.0;
+        final recommendedDaily =
+            status['recommendedDailySpending']?.toDouble() ?? 0.0;
 
         return Card(
           child: Padding(
@@ -115,7 +129,7 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Budget overview
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -138,9 +152,8 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                           ),
                           Text(
                             '${totalBudget.toStringAsFixed(0)} VND',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -148,16 +161,16 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Total Spent',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
+                          const Text('Total Spent'),
                           Text(
                             '${totalSpent.toStringAsFixed(0)} VND',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isOverBudget ? Colors.red[600] : Colors.grey[700],
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: isOverBudget
+                                      ? Colors.red[600]
+                                      : Colors.grey[700],
+                                ),
                           ),
                         ],
                       ),
@@ -165,25 +178,25 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Remaining',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
+                          const Text('Remaining'),
                           Text(
                             '${remainingBudget.toStringAsFixed(0)} VND',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: remainingBudget < 0 ? Colors.red[600] : Colors.grey[700],
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: remainingBudget < 0
+                                      ? Colors.red[600]
+                                      : Colors.grey[700],
+                                ),
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Progress bar
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,10 +210,13 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                         ),
                         Text(
                           '${usagePercentage.toStringAsFixed(1)}%',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isOverBudget ? Colors.red[600] : Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isOverBudget
+                                    ? Colors.red[600]
+                                    : Colors.grey[600],
+                              ),
                         ),
                       ],
                     ),
@@ -209,16 +225,19 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                       value: (usagePercentage / 100).clamp(0.0, 1.0),
                       backgroundColor: Colors.grey[200],
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        usagePercentage > 100 ? Colors.red[400]! :
-                        usagePercentage > 80 ? Colors.orange[400]! : Colors.blue[400]!,
+                        usagePercentage > 100
+                            ? Colors.red[400]!
+                            : usagePercentage > 80
+                            ? Colors.orange[400]!
+                            : Colors.blue[400]!,
                       ),
                     ),
                   ],
                 ),
-                
+
                 if (widget.showDetails) ...[
                   const SizedBox(height: 16),
-                  
+
                   // Additional details
                   Row(
                     children: [
@@ -228,7 +247,9 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                           'Days Left',
                           daysRemaining.toString(),
                           Icons.calendar_today,
-                          daysRemaining <= 0 ? Colors.red[400]! : Colors.grey[600]!,
+                          daysRemaining <= 0
+                              ? Colors.red[400]!
+                              : Colors.grey[600]!,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -238,13 +259,15 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                           'Recommended Daily',
                           '${recommendedDaily.toStringAsFixed(0)} VND',
                           Icons.trending_down,
-                          recommendedDaily > (totalBudget / 10) ? Colors.orange[400]! : Colors.grey[600]!,
+                          recommendedDaily > (totalBudget / 10)
+                              ? Colors.orange[400]!
+                              : Colors.grey[600]!,
                         ),
                       ),
                     ],
                   ),
                 ],
-                
+
                 // Warning messages
                 if (isOverBudget) ...[
                   const SizedBox(height: 12),
@@ -254,7 +277,10 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.red.withValues(alpha: 0.3), width: 1),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -263,7 +289,10 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                         Expanded(
                           child: Text(
                             'Over budget by ${(totalSpent - totalBudget).toStringAsFixed(0)} VND',
-                            style: TextStyle(color: Colors.red[600], fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.red[600],
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -277,7 +306,10 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                     decoration: BoxDecoration(
                       color: Colors.orange.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3), width: 1),
+                      border: Border.all(
+                        color: Colors.orange.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -286,7 +318,10 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
                         Expanded(
                           child: Text(
                             'Warning: ${usagePercentage.toStringAsFixed(1)}% of budget used',
-                            style: TextStyle(color: Colors.orange[600], fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.orange[600],
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -301,7 +336,14 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
     );
   }
 
-  Widget _buildDetailCard(BuildContext context, String label, String value, IconData icon, Color color) {
+  /// Builds a small square card for secondary metrics like days left.
+  Widget _buildDetailCard(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -315,9 +357,9 @@ class _TripBudgetStatusWidgetState extends State<TripBudgetStatusWidget> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: color),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 2),

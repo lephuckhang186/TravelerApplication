@@ -4,7 +4,12 @@ import '../services/firestore_user_service.dart';
 import '../../Home/screens/home_screen.dart';
 import '../../Core/theme/app_theme.dart';
 
+/// Screen displayed after a user signs in with Google for the first time.
+///
+/// Requires the user to confirm or enter their full name to complete the registration.
+/// Creates the user's profile in Firestore upon completion.
 class GoogleSignupCompletionScreen extends StatefulWidget {
+  /// The Firebase user object returned from Google Sign-In.
   final User user;
 
   const GoogleSignupCompletionScreen({super.key, required this.user});
@@ -24,7 +29,7 @@ class _GoogleSignupCompletionScreenState
   @override
   void initState() {
     super.initState();
-    // Pre-fill tên từ Google nếu có
+    // Pre-fill name from Google account if available
     _fullNameController.text = widget.user.displayName ?? '';
   }
 
@@ -34,6 +39,9 @@ class _GoogleSignupCompletionScreenState
     super.dispose();
   }
 
+  /// Handles the completion of the signup process.
+  ///
+  /// Validates the form, creates a Firestore profile, and navigates to [HomeScreen].
   Future<void> _completeSignup() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -44,15 +52,15 @@ class _GoogleSignupCompletionScreenState
     });
 
     try {
-      // Lưu thông tin vào Firestore
+      // Create user profile in Firestore
       await _firestoreService.createGoogleUserProfile(
         uid: widget.user.uid,
         email: widget.user.email ?? '',
         fullName: _fullNameController.text.trim(),
-        dateOfBirth: DateTime(2000, 1, 1), // Ngày mặc định
+        dateOfBirth: DateTime(2000, 1, 1), // Default date, can be updated later
       );
 
-      // Chuyển đến home screen
+      // Navigate to home screen
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -77,8 +85,8 @@ class _GoogleSignupCompletionScreenState
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.steelBlue, // #87CEEB - Sky Blue (top - đậm hơn)
-              AppColors.surface, // #F0F8FF - Alice Blue (bottom - nhạt hơn)
+              AppColors.steelBlue, // #87CEEB - Sky Blue (top)
+              AppColors.surface, // #F0F8FF - Alice Blue (bottom)
             ],
           ),
         ),
@@ -118,7 +126,7 @@ class _GoogleSignupCompletionScreenState
                       ),
                       const SizedBox(height: 12),
 
-                      // Họ tên
+                      // Full Name Input
                       const Text(
                         'Full name',
                         style: TextStyle(
@@ -215,7 +223,7 @@ class _GoogleSignupCompletionScreenState
                       ),
                       const SizedBox(height: 40),
 
-                      // Button hoàn tất
+                      // Complete Button
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -223,7 +231,9 @@ class _GoogleSignupCompletionScreenState
                           onPressed: _isLoading ? null : _completeSignup,
                           style:
                               ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(alpha: 0.9),
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.9,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -245,7 +255,9 @@ class _GoogleSignupCompletionScreenState
                                           0xFF4682B4,
                                         ); // AppColors.steelBlue
                                       }
-                                      return Colors.white.withValues(alpha: 0.9);
+                                      return Colors.white.withValues(
+                                        alpha: 0.9,
+                                      );
                                     }),
                                 foregroundColor:
                                     WidgetStateProperty.resolveWith((states) {

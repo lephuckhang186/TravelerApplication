@@ -1,29 +1,33 @@
 import '../models/activity_models.dart';
 
-/// Service for AI-powered plan editing with natural language processing
+/// Service for AI-powered plan editing with natural language processing.
+///
+/// Parses natural language commands to suggest modifications to a trip plan,
+/// such as adding, removing, or updating activities.
 class AIPlanEditorService {
   // For demo purposes, we'll simulate successful operations
   // In production, this would connect to the actual backend API
 
-
-  /// Parse natural language command and suggest plan update (no automatic execution)
+  /// Parse natural language command and suggest plan update.
+  ///
+  /// Does NOT automatically execute the command.
+  /// Returns a map with the parsed action and details (day, activity, etc.) or an error message.
   Future<Map<String, dynamic>> suggestPlanCommand(
     String command,
     String tripId,
   ) async {
     try {
-
       // Parse the command to extract action, day, and activity
       final parsedCommand = _parseNaturalLanguageCommand(command);
 
       if (parsedCommand == null) {
         return {
           'success': false,
-          'message': 'Cannot understand the command. Please try again with a different format.',
+          'message':
+              'Cannot understand the command. Please try again with a different format.',
           'action': 'unknown',
         };
       }
-
 
       // Generate suggestion message without executing
       switch (parsedCommand['action']) {
@@ -65,7 +69,9 @@ class AIPlanEditorService {
     }
   }
 
-  /// Parse natural language command into structured data
+  /// Parse natural language command into structured data using Regex.
+  ///
+  /// Supports 'add', 'remove', and 'update' patterns in English.
   Map<String, dynamic>? _parseNaturalLanguageCommand(String command) {
     final normalizedCommand = command.toLowerCase().trim();
 
@@ -154,35 +160,45 @@ class AIPlanEditorService {
     return null;
   }
 
-  /// Clean and normalize activity name
+  /// Clean and normalize activity name.
+  ///
+  /// Removes common stop words and capitalizes words.
   String _cleanActivityName(String activity) {
     // Remove common words and normalize
     final cleaned = activity
-        .replaceAll(RegExp(r'\b(go|to|visit|see|eat|play|do|the|a|an)\b', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(
+            r'\b(go|to|visit|see|eat|play|do|the|a|an)\b',
+            caseSensitive: false,
+          ),
+          '',
+        )
         .trim();
 
     // Capitalize first letter of each word
-    return cleaned.split(' ')
-        .map((word) => word.isNotEmpty
-            ? '${word[0].toUpperCase()}${word.substring(1)}'
-            : '')
+    return cleaned
+        .split(' ')
+        .map(
+          (word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1)}'
+              : '',
+        )
         .join(' ');
   }
 
-
-  /// Suggest adding activity to plan for specific day (no execution)
+  /// Suggest adding activity to plan for specific day (no execution).
   Map<String, dynamic> _suggestAddActivity({
     required String tripId,
     required int day,
     required String activity,
   }) {
-
     // Determine activity type based on keywords
     final activityType = _determineActivityType(activity);
 
     return {
       'success': true,
-      'message': '💡 **Activity Suggestion:**\n\n'
+      'message':
+          '💡 **Activity Suggestion:**\n\n'
           '📅 **Day $day:** Add activity "$activity"\n'
           '🏷️ **Type:** ${_getActivityTypeName(activityType)}\n\n'
           '⚠️ **Note:** This is just a suggestion. Please add manually in the plan page.',
@@ -193,16 +209,16 @@ class AIPlanEditorService {
     };
   }
 
-  /// Suggest removing activity from plan for specific day (no execution)
+  /// Suggest removing activity from plan for specific day (no execution).
   Map<String, dynamic> _suggestRemoveActivity({
     required String tripId,
     required int day,
     required String activity,
   }) {
-
     return {
       'success': true,
-      'message': '💡 **Remove Activity Suggestion:**\n\n'
+      'message':
+          '💡 **Remove Activity Suggestion:**\n\n'
           '📅 **Day $day:** Remove activity "$activity"\n\n'
           '⚠️ **Note:** This is just a suggestion. Please remove manually in the plan page.',
       'action': 'suggest_remove',
@@ -211,20 +227,20 @@ class AIPlanEditorService {
     };
   }
 
-  /// Suggest updating activity in plan for specific day (no execution)
+  /// Suggest updating activity in plan for specific day (no execution).
   Map<String, dynamic> _suggestUpdateActivity({
     required String tripId,
     required int day,
     required String oldActivity,
     required String newActivity,
   }) {
-
     // Determine activity type based on keywords
     final activityType = _determineActivityType(newActivity);
 
     return {
       'success': true,
-      'message': '💡 **Update Activity Suggestion:**\n\n'
+      'message':
+          '💡 **Update Activity Suggestion:**\n\n'
           '📅 **Day $day:**\n'
           '🔄 **From:** "$oldActivity"\n'
           '➡️ **To:** "$newActivity"\n'
@@ -238,7 +254,7 @@ class AIPlanEditorService {
     };
   }
 
-  /// Get human-readable name for activity type
+  /// Get human-readable name for activity type.
   String _getActivityTypeName(ActivityType type) {
     switch (type) {
       case ActivityType.activity:
@@ -256,7 +272,7 @@ class AIPlanEditorService {
     }
   }
 
-  /// Determine activity type based on keywords
+  /// Determine activity type based on keywords in the activity name.
   ActivityType _determineActivityType(String activity) {
     final lowerActivity = activity.toLowerCase();
 
@@ -265,30 +281,32 @@ class AIPlanEditorService {
         lowerActivity.contains('swim')) {
       return ActivityType.activity;
     } else if (lowerActivity.contains('eat') ||
-               lowerActivity.contains('restaurant') ||
-               lowerActivity.contains('food') ||
-               lowerActivity.contains('dining')) {
+        lowerActivity.contains('restaurant') ||
+        lowerActivity.contains('food') ||
+        lowerActivity.contains('dining')) {
       return ActivityType.restaurant;
     } else if (lowerActivity.contains('hotel') ||
-               lowerActivity.contains('accommodation') ||
-               lowerActivity.contains('lodging')) {
+        lowerActivity.contains('accommodation') ||
+        lowerActivity.contains('lodging')) {
       return ActivityType.lodging;
     } else if (lowerActivity.contains('flight') ||
-               lowerActivity.contains('airplane') ||
-               lowerActivity.contains('plane')) {
+        lowerActivity.contains('airplane') ||
+        lowerActivity.contains('plane')) {
       return ActivityType.flight;
     } else if (lowerActivity.contains('tour') ||
-               lowerActivity.contains('sightseeing')) {
+        lowerActivity.contains('sightseeing')) {
       return ActivityType.tour;
     } else if (lowerActivity.contains('shopping') ||
-               lowerActivity.contains('market')) {
+        lowerActivity.contains('market')) {
       return ActivityType.activity;
     }
 
     return ActivityType.activity; // Default
   }
 
-  /// Get AI suggestions for plan editing commands (manual operation only)
+  /// Get AI suggestions for plan editing commands (manual operation only).
+  ///
+  /// Returns a list of example commands a user might issue.
   List<String> getSuggestedCommands(String tripName, int tripDuration) {
     final suggestions = [
       'Suggest activities for day 2',
@@ -300,10 +318,7 @@ class AIPlanEditorService {
 
     // Customize suggestions based on trip duration
     if (tripDuration > 3) {
-      suggestions.addAll([
-        'Shopping places here?',
-        'Half-day tour',
-      ]);
+      suggestions.addAll(['Shopping places here?', 'Half-day tour']);
     }
 
     return suggestions.take(6).toList(); // Limit to 6 suggestions

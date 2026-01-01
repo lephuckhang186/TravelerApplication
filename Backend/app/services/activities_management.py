@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Any
 from datetime import datetime, date, timedelta
 from decimal import Decimal, getcontext
 from dataclasses import dataclass
@@ -8,7 +8,9 @@ import json
 
 
 class ActivityType(Enum):
-    """Enumeration of different activity types."""
+    """
+    Enumeration of different activity types supported in the application.
+    """
     FLIGHT = "flight"
     ACTIVITY = "activity"
     LODGING = "lodging"
@@ -30,7 +32,9 @@ class ActivityType(Enum):
 
 
 class ActivityStatus(Enum):
-    """Enumeration of activity statuses."""
+    """
+    Enumeration of possible statuses for an activity.
+    """
     PLANNED = "planned"
     CONFIRMED = "confirmed"
     IN_PROGRESS = "in_progress"
@@ -39,7 +43,9 @@ class ActivityStatus(Enum):
 
 
 class Priority(Enum):
-    """Enumeration of priority levels."""
+    """
+    Enumeration of priority levels for activities.
+    """
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -48,7 +54,18 @@ class Priority(Enum):
 
 @dataclass
 class Location:
-    """Location information for activities."""
+    """
+    Location information for activities.
+
+    Attributes:
+        name (str): Name of the location.
+        address (Optional[str]): Street address.
+        latitude (Optional[float]): Geographical latitude.
+        longitude (Optional[float]): Geographical longitude.
+        city (Optional[str]): City name.
+        country (Optional[str]): Country name.
+        postal_code (Optional[str]): Postal/ZIP code.
+    """
     name: str
     address: Optional[str] = None
     latitude: Optional[float] = None
@@ -60,7 +77,15 @@ class Location:
 
 @dataclass
 class Budget:
-    """Budget information for activities."""
+    """
+    Budget information for activities.
+
+    Attributes:
+        estimated_cost (Decimal): The estimated cost of the activity.
+        actual_cost (Optional[Decimal]): The actual cost incurred.
+        currency (str): Currency code (default: "VND").
+        category (Optional[str]): Budget category (e.g., "Food", "Transport").
+    """
     estimated_cost: Decimal
     actual_cost: Optional[Decimal] = None
     currency: str = "VND"
@@ -69,7 +94,15 @@ class Budget:
 
 @dataclass
 class Contact:
-    """Contact information for activities."""
+    """
+    Contact information for activities.
+
+    Attributes:
+        name (Optional[str]): Contact person or organization name.
+        phone (Optional[str]): Phone number.
+        email (Optional[str]): Email address.
+        website (Optional[str]): Website URL.
+    """
     name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
@@ -77,7 +110,34 @@ class Contact:
     
 @dataclass
 class Activity:
-    """Dataclass representing an activity."""
+    """
+    Dataclass representing a travel activity.
+
+    Attributes:
+        activity_type (ActivityType): The type of activity.
+        name (str): The name or title of the activity.
+        start_date (date): The starting date.
+        end_date (date): The ending date.
+        real_cost (Optional[Decimal]): The actual cost.
+        expected_cost (Optional[Decimal]): The expected/budgeted cost.
+        currency (Optional[str]): Currency code.
+        start_time (Optional[datetime]): Specific start time.
+        end_time (Optional[datetime]): Specific end time.
+        location (Optional[Location]): Location details.
+        details (Optional[str]): Detailed description.
+        check_in (bool): Whether the user has checked in.
+        status (ActivityStatus): Current status of the activity.
+        priority (Priority): Priority level.
+        budget (Optional[Budget]): Detailed budget information.
+        contact (Optional[Contact]): Contact information.
+        notes (Optional[str]): User notes.
+        tags (List[str]): List of tags for categorization.
+        trip_id (Optional[str]): Associated trip ID.
+        id (Optional[str]): Unique activity ID.
+        created_by (Optional[str]): User ID of the creator.
+        created_at (Optional[datetime]): Creation timestamp.
+        updated_at (Optional[datetime]): Last update timestamp.
+    """
     activity_type: ActivityType
     name: str
     start_date: date
@@ -116,13 +176,32 @@ class Activity:
             self.id = str(uuid.uuid4())
 
 class ActivityManager:
+    """
+    Manages the lifecycle and storage of travel activities.
+    
+    This class handles in-memory management of activities, providing methods
+    to add, update, retrieve, and delete activities. It is designed to work
+    in conjunction with a persistence layer (like Firestore or a local DB).
+    """
     def __init__(self):
+        """
+        Initialize the ActivityManager.
+        
+        Sets up the internal dictionary for storing activities and attempts
+        to load existing data from the configured storage.
+        """
         self.activities: Dict[str, Activity] = {}
         # ✅ CRITICAL FIX: Load existing activities from SQLite database
         self._load_activities_from_database()
     
     def _load_activities_from_database(self):
-        """Load all activities from SQLite database into memory - DISABLED"""
+        """
+        Load all activities from the database into memory.
+
+        Note:
+            This method is currently disabled ("Database removed - using Firebase only").
+            It acts as a placeholder or legacy hook.
+        """
         try:
             # Database removed - using Firebase only
             return  # Skip database loading
@@ -196,7 +275,15 @@ class ActivityManager:
             print(f"❌ ACTIVITIES_LOAD_ERROR: Failed to load activities from database: {e}")
         
     def add_activity(self, activity: Activity) -> str:
-        """Adds an activity to the manager and returns its ID."""
+        """
+        Add a new activity to the manager.
+
+        Args:
+            activity (Activity): The activity object to add.
+
+        Returns:
+            str: The ID of the added activity (generated if not present).
+        """
         if activity.id is None:
             import uuid
             activity.id = str(uuid.uuid4())
@@ -206,15 +293,40 @@ class ActivityManager:
         return activity.id
         
     def get_activity_by_id(self, activity_id: str) -> Optional[Activity]:
-        """Retrieves an activity by its ID."""
+        """
+        Retrieve an activity by its unique ID.
+
+        Args:
+            activity_id (str): The ID of the activity.
+
+        Returns:
+            Optional[Activity]: The activity object if found, None otherwise.
+        """
         return self.activities.get(activity_id)
         
     def get_activities_by_type(self, activity_type: ActivityType) -> List[Activity]:
-        """Retrieves activities of a specific type."""
+        """
+        Retrieve all activities of a specific type.
+
+        Args:
+            activity_type (ActivityType): The type filter.
+
+        Returns:
+            List[Activity]: A list of matching activities.
+        """
         return [activity for activity in self.activities.values() if activity.activity_type == activity_type]
     
     def get_activities_in_date_range(self, start_date: date, end_date: date) -> List[Activity]:
-        """Retrieves activities within a specific date range."""
+        """
+        Retrieve activities occurring within a specific date range.
+
+        Args:
+            start_date (date): The start of the date range.
+            end_date (date): The end of the date range.
+
+        Returns:
+            List[Activity]: A list of activities overlapping with the range.
+        """
         result = []
         for activity in self.activities.values():
             if activity.start_time and activity.end_time:
@@ -223,13 +335,30 @@ class ActivityManager:
         return result
     
     def get_all_activities(self, user_id: Optional[str] = None) -> List[Activity]:
-        """Retrieves all activities, optionally filtered by user."""
+        """
+        Retrieve all activities, optionally filtered by user.
+
+        Args:
+            user_id (Optional[str]): If provided, only returns activities created by this user.
+
+        Returns:
+            List[Activity]: A list of all (or filtered) activities.
+        """
         if user_id:
             return [activity for activity in self.activities.values() if activity.created_by == user_id]
         return list(self.activities.values())
     
     def update_activity(self, activity_id: str, updates: Dict) -> bool:
-        """Updates an activity with the given updates."""
+        """
+        Update an existing activity with new values.
+
+        Args:
+            activity_id (str): The ID of the activity to update.
+            updates (Dict): A dictionary of field names and new values.
+
+        Returns:
+            bool: True if the update was successful, False if activity not found.
+        """
         activity = self.activities.get(activity_id)
         if not activity:
             return False
@@ -242,51 +371,123 @@ class ActivityManager:
         return True
     
     def remove_activity(self, activity: Activity) -> bool:
-        """Removes an activity from the manager."""
+        """
+        Remove an activity object from the manager.
+
+        Args:
+            activity (Activity): The activity object to remove.
+
+        Returns:
+            bool: True if removed, False if not found.
+        """
         if activity.id in self.activities:
             del self.activities[activity.id]
             return True
         return False
     
     def remove_activity_by_id(self, activity_id: str) -> bool:
-        """Removes an activity by its ID."""
+        """
+        Remove an activity by its unique ID.
+
+        Args:
+            activity_id (str): The ID of the activity to remove.
+
+        Returns:
+            bool: True if removed, False if not found.
+        """
         if activity_id in self.activities:
             del self.activities[activity_id]
             return True
         return False
 
     def checkin_activity(self, activity: Activity):
-        """Marks an activity as checked in."""
+        """
+        Mark an activity as checked in and update its status to IN_PROGRESS.
+
+        Args:
+            activity (Activity): The activity to check in.
+        """
         activity.check_in = True
         activity.status = ActivityStatus.IN_PROGRESS
         activity.updated_at = datetime.now()
 
     def add_details_to_activity(self, activity: Activity, details: str):
-        """Adds additional details to an activity."""
+        """
+        Append additional details to an activity's description.
+
+        Args:
+            activity (Activity): The activity to update.
+            details (str): The text to append to the existing details.
+        """
         if activity.details is None:
             activity.details = ""
         activity.details += details
         activity.updated_at = datetime.now()
         
     def get_activities_by_status(self, status: ActivityStatus) -> List[Activity]:
-        """Retrieves activities by status."""
+        """
+        Retrieve all activities with a specific status.
+
+        Args:
+            status (ActivityStatus): The status to filter by.
+
+        Returns:
+            List[Activity]: List of matching activities.
+        """
         return [activity for activity in self.activities.values() if activity.status == status]
         
     def get_activities_by_priority(self, priority: Priority) -> List[Activity]:
-        """Retrieves activities by priority."""
+        """
+        Retrieve all activities with a specific priority level.
+
+        Args:
+            priority (Priority): The priority to filter by.
+
+        Returns:
+            List[Activity]: List of matching activities.
+        """
         return [activity for activity in self.activities.values() if activity.priority == priority]
     
     def get_activities_by_user(self, user_id: str) -> List[Activity]:
-        """Get activities by user ID"""
+        """
+        Retrieve all activities created by a specific user.
+
+        Args:
+            user_id (str): The user ID.
+
+        Returns:
+            List[Activity]: List of matching activities.
+        """
         return [activity for activity in self.activities.values() if activity.created_by == user_id]
     
     def get_activity(self, activity_id: str) -> Optional[Activity]:
-        """Get activity by ID"""
+        """
+        Retrieve an activity by ID (Alias for get_activity_by_id).
+
+        Args:
+            activity_id (str): The activity ID.
+
+        Returns:
+            Optional[Activity]: The activity if found, None otherwise.
+        """
         return self.activities.get(activity_id)
     
     def schedule_activity(self, activity_id: str, start_date: datetime, 
                          end_date: Optional[datetime] = None, duration_minutes: Optional[int] = None):
-        """Schedule an activity"""
+        """
+        Schedule or reschedule an activity.
+        
+        This method updates the start and end times of an activity.
+
+        Args:
+            activity_id (str): The ID of the activity.
+            start_date (datetime): The new start datetime.
+            end_date (Optional[datetime]): The new end datetime.
+            duration_minutes (Optional[int]): Duration in minutes (used if end_date is not provided).
+
+        Returns:
+            Optional[Activity]: The updated activity object if found, None otherwise.
+        """
         activity = self.activities.get(activity_id)
         if not activity:
             return None
@@ -302,7 +503,18 @@ class ActivityManager:
     
     def check_schedule_conflicts(self, start_date: datetime, end_date: datetime,
                                trip_id: Optional[str] = None, exclude_activity_id: Optional[str] = None):
-        """Check for schedule conflicts"""
+        """
+        Check for any activities that conflict with the given time range.
+
+        Args:
+            start_date (datetime): The start of the proposed time slot.
+            end_date (datetime): The end of the proposed time slot.
+            trip_id (Optional[str]): If provided, only check against activities in this trip.
+            exclude_activity_id (Optional[str]): ID of an activity to ignore (e.g., the one being rescheduled).
+
+        Returns:
+            List[Activity]: A list of conflicting activities.
+        """
         conflicts = []
         for activity in self.activities.values():
             if exclude_activity_id and activity.id == exclude_activity_id:
@@ -316,8 +528,19 @@ class ActivityManager:
                 
         return conflicts
     
-    def get_activity_statistics(self):
-        """Get activity statistics"""
+    def get_activity_statistics(self) -> Dict[str, Any]:
+        """
+        Calculate statistics for all managed activities.
+        
+        Aggregates counts by status, type, and priority.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing statistical data:
+                - 'total_activities' (int)
+                - 'by_status' (Dict[str, int])
+                - 'by_type' (Dict[str, int])
+                - 'by_priority' (Dict[str, int])
+        """
         total_activities = len(self.activities)
         status_counts = {}
         type_counts = {}
@@ -343,8 +566,16 @@ class ActivityManager:
             'by_priority': priority_counts
         }
     
-    def export_activities(self, trip_id: Optional[str] = None):
-        """Export activities"""
+    def export_activities(self, trip_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Export activities to a dictionary format suitable for serialization (e.g., JSON).
+
+        Args:
+            trip_id (Optional[str]): If provided, only exports activities for this trip.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the list of exported activities and metadata.
+        """
         activities_to_export = []
         
         for activity in self.activities.values():

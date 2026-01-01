@@ -18,6 +18,11 @@ import '../../Expense/providers/expense_provider.dart';
 import '../../Core/theme/app_theme.dart';
 import '../services/map_service.dart';
 
+/// Interactive map interface for visualizing trip itineraries and real-time navigation.
+///
+/// Supports both Google Maps (mobile) and Flutter Map (web fallback). It allows
+/// users to select a trip, view activity locations, see route segments between
+/// activities, and perform check-ins directly from the map.
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -52,8 +57,6 @@ class _MapScreenState extends State<MapScreen> {
   TripModel? _selectedTrip;
   SharedTripModel? _selectedSharedTrip;
 
-
-
   @override
   void initState() {
     super.initState();
@@ -69,16 +72,13 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
-  // Save selected trip ID to Firestore
+  /// Persists the ID of the last selected trip to Firestore for cross-session continuity.
   Future<void> _saveSelectedTripId(String? tripId) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    
+
     try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set({
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'lastSelectedTripId': tripId,
       }, SetOptions(merge: true));
     } catch (e) {
@@ -86,7 +86,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  // Load last selected trip from Firestore on init
+  /// Retrieves and restores the last selected trip context from Firestore on initialization.
   Future<void> _loadLastSelectedTrip() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -109,7 +109,10 @@ class _MapScreenState extends State<MapScreen> {
 
         if (appMode.isPrivateMode) {
           // Load from private provider
-          final provider = Provider.of<TripPlanningProvider>(context, listen: false);
+          final provider = Provider.of<TripPlanningProvider>(
+            context,
+            listen: false,
+          );
 
           // Initialize provider if trips not loaded yet
           if (provider.trips.isEmpty) {
@@ -132,7 +135,10 @@ class _MapScreenState extends State<MapScreen> {
           }
         } else {
           // Load from collaboration provider
-          final provider = Provider.of<CollaborationProvider>(context, listen: false);
+          final provider = Provider.of<CollaborationProvider>(
+            context,
+            listen: false,
+          );
 
           // Initialize provider if trips not loaded yet
           await provider.ensureInitialized();
@@ -158,7 +164,10 @@ class _MapScreenState extends State<MapScreen> {
 
           if (trip != null && mounted) {
             // Use provider's selectSharedTrip method to ensure consistency across screens
-            final provider = Provider.of<CollaborationProvider>(context, listen: false);
+            final provider = Provider.of<CollaborationProvider>(
+              context,
+              listen: false,
+            );
             await provider.selectSharedTrip(trip.id!);
             _selectedSharedTrip = provider.selectedSharedTrip;
             _selectedTrip = _selectedSharedTrip?.toTripModel();
@@ -189,12 +198,18 @@ class _MapScreenState extends State<MapScreen> {
     final appMode = Provider.of<AppModeProvider>(context, listen: false);
 
     if (appMode.isPrivateMode) {
-      final tripProvider = Provider.of<TripPlanningProvider>(context, listen: false);
+      final tripProvider = Provider.of<TripPlanningProvider>(
+        context,
+        listen: false,
+      );
       if (tripProvider.trips.isNotEmpty) {
         _showTripSelectionDialog(tripProvider.trips);
       }
     } else {
-      final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
+      final collabProvider = Provider.of<CollaborationProvider>(
+        context,
+        listen: false,
+      );
       final allTrips = [
         ...collabProvider.mySharedTrips.map((t) => t.toTripModel()),
         ...collabProvider.sharedWithMeTrips.map((t) => t.toTripModel()),
@@ -298,24 +313,35 @@ class _MapScreenState extends State<MapScreen> {
                               Navigator.of(context).pop();
 
                               // Check if this is a collaboration trip
-                              final appMode = Provider.of<AppModeProvider>(context, listen: false);
+                              final appMode = Provider.of<AppModeProvider>(
+                                context,
+                                listen: false,
+                              );
                               if (appMode.isPrivateMode) {
                                 _selectTrip(trip);
                               } else {
                                 // For collaboration trips, use provider's selectSharedTrip method
-                                final provider = Provider.of<CollaborationProvider>(context, listen: false);
-                                final sharedTrip = provider.mySharedTrips.firstWhere(
-                                  (t) => t.id == trip.id,
-                                  orElse: () => provider.sharedWithMeTrips.firstWhere(
-                                    (t) => t.id == trip.id,
-                                  ),
-                                );
+                                final provider =
+                                    Provider.of<CollaborationProvider>(
+                                      context,
+                                      listen: false,
+                                    );
+                                final sharedTrip = provider.mySharedTrips
+                                    .firstWhere(
+                                      (t) => t.id == trip.id,
+                                      orElse: () => provider.sharedWithMeTrips
+                                          .firstWhere((t) => t.id == trip.id),
+                                    );
 
                                 if (sharedTrip.id != null) {
                                   setState(() => _isLoading = true);
-                                  await provider.selectSharedTrip(sharedTrip.id!);
-                                  _selectedSharedTrip = provider.selectedSharedTrip;
-                                  _selectedTrip = _selectedSharedTrip?.toTripModel();
+                                  await provider.selectSharedTrip(
+                                    sharedTrip.id!,
+                                  );
+                                  _selectedSharedTrip =
+                                      provider.selectedSharedTrip;
+                                  _selectedTrip = _selectedSharedTrip
+                                      ?.toTripModel();
                                   await _loadTripData();
                                   _startAutoRefreshTimer();
                                   setState(() => _isLoading = false);
@@ -337,10 +363,12 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// Updates the map focus and data markers for a newly selected [TripModel].
   Future<void> _selectTrip(TripModel trip) async {
     setState(() {
       _selectedTrip = trip;
-      _selectedSharedTrip = null; // Clear shared trip when selecting regular trip
+      _selectedSharedTrip =
+          null; // Clear shared trip when selecting regular trip
       _googleMarkers.clear();
       _googlePolylines.clear();
       _flutterMarkers.clear();
@@ -361,8 +389,7 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-
-
+  /// Processes trip activity locations into map markers and calculates segments.
   Future<void> _loadTripData() async {
     if (_selectedTrip == null) return;
 
@@ -392,7 +419,6 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
     _currentActivityIndex = firstUncheckedIndex;
-
 
     // Clear existing markers and polylines first
     _googleMarkers.clear();
@@ -539,9 +565,9 @@ class _MapScreenState extends State<MapScreen> {
         .toList();
 
     if (_currentActivityIndex >= activities.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All activities completed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('All activities completed')));
       return;
     }
 
@@ -612,7 +638,9 @@ class _MapScreenState extends State<MapScreen> {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Confirm Free Activity'),
-                      content: const Text('You entered 0 for the actual cost. Are you sure this activity was completely free?'),
+                      content: const Text(
+                        'You entered 0 for the actual cost. Are you sure this activity was completely free?',
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
@@ -626,11 +654,14 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   );
                   if (confirmed == true) {
+                    if (!context.mounted) return;
                     Navigator.pop(context, 0.0);
                   }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid cost (must be > 0)')),
+                    const SnackBar(
+                      content: Text('Please enter a valid cost (must be > 0)'),
+                    ),
                   );
                 }
               } else {
@@ -639,7 +670,9 @@ class _MapScreenState extends State<MapScreen> {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('Confirm Free Activity'),
-                    content: const Text('No cost entered. Are you sure this activity was completely free?'),
+                    content: const Text(
+                      'No cost entered. Are you sure this activity was completely free?',
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
@@ -653,6 +686,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 );
                 if (confirmed == true) {
+                  if (!context.mounted) return;
                   Navigator.pop(context, 0.0);
                 }
               }
@@ -669,6 +703,10 @@ class _MapScreenState extends State<MapScreen> {
     double actualCost,
     List<ActivityModel> activities,
   ) async {
+    final collabProvider = context.read<CollaborationProvider>();
+    final tripProvider = context.read<TripPlanningProvider>();
+    final expenseProvider = context.read<ExpenseProvider>();
+
     try {
       // Update activity with actual cost and check-in status
       final updatedBudget = BudgetModel(
@@ -686,14 +724,10 @@ class _MapScreenState extends State<MapScreen> {
       bool success;
       if (_selectedSharedTrip != null) {
         // Collaboration mode - update shared trip
-        final collabProvider = Provider.of<CollaborationProvider>(
-          context,
-          listen: false,
-        );
         final updatedSharedTrip = _selectedSharedTrip!.copyWith(
-          activities: _selectedTrip!.activities.map((a) =>
-            a.id == updatedActivity.id ? updatedActivity : a
-          ).toList(),
+          activities: _selectedTrip!.activities
+              .map((a) => a.id == updatedActivity.id ? updatedActivity : a)
+              .toList(),
         );
         success = await collabProvider.updateSharedTrip(updatedSharedTrip);
         if (success) {
@@ -702,10 +736,6 @@ class _MapScreenState extends State<MapScreen> {
         }
       } else {
         // Private mode - update private trip
-        final tripProvider = Provider.of<TripPlanningProvider>(
-          context,
-          listen: false,
-        );
         success = await tripProvider.updateActivityInTrip(
           _selectedTrip!.id!,
           updatedActivity,
@@ -723,30 +753,26 @@ class _MapScreenState extends State<MapScreen> {
         // Create expense record for this check-in and get expense ID
         String? createdExpenseId;
         if (!mounted) return;
-        
+
         try {
-          final expenseProvider = Provider.of<ExpenseProvider>(
-            context,
-            listen: false,
-          );
-          
           // Check if expense already exists for this activity
           if (updatedActivity.expenseInfo.expenseSynced &&
               updatedActivity.expenseInfo.expenseId != null) {
             createdExpenseId = updatedActivity.expenseInfo.expenseId;
           } else if (actualCost > 0) {
-            // Create new expense using ExpenseService directly
-            final expenseService = expenseProvider.expenseService;
-            final expense = await expenseService.createExpenseFromActivity(
+            // Create new expense using provider to ensure state synchronization
+            final expense = await expenseProvider.createExpenseFromActivity(
               amount: actualCost,
               category: updatedActivity.activityType.value,
               description: updatedActivity.title,
               activityId: updatedActivity.id,
               tripId: _selectedTrip!.id,
             );
-            
+
+            if (expense == null) throw Exception('Failed to create expense');
+
             createdExpenseId = expense.id;
-            
+
             // Update activity with expense info
             final updatedExpenseInfo = updatedActivity.expenseInfo.copyWith(
               expenseId: createdExpenseId,
@@ -762,24 +788,22 @@ class _MapScreenState extends State<MapScreen> {
             // Save the updated activity with expense info back to provider
             if (_selectedSharedTrip != null) {
               // Update shared trip again with expense info
-              final collabProvider = Provider.of<CollaborationProvider>(
-                context,
-                listen: false,
+              final updatedSharedTripWithExpense = _selectedSharedTrip!
+                  .copyWith(
+                    activities: _selectedTrip!.activities
+                        .map(
+                          (a) =>
+                              a.id == updatedActivity.id ? updatedActivity : a,
+                        )
+                        .toList(),
+                  );
+              await collabProvider.updateSharedTrip(
+                updatedSharedTripWithExpense,
               );
-              final updatedSharedTripWithExpense = _selectedSharedTrip!.copyWith(
-                activities: _selectedTrip!.activities.map((a) =>
-                  a.id == updatedActivity.id ? updatedActivity : a
-                ).toList(),
-              );
-              await collabProvider.updateSharedTrip(updatedSharedTripWithExpense);
               _selectedSharedTrip = updatedSharedTripWithExpense;
               _selectedTrip = updatedSharedTripWithExpense.toTripModel();
             } else {
               // Private mode
-              final tripProvider = Provider.of<TripPlanningProvider>(
-                context,
-                listen: false,
-              );
               await tripProvider.updateActivityInTrip(
                 _selectedTrip!.id!,
                 updatedActivity,
@@ -790,7 +814,6 @@ class _MapScreenState extends State<MapScreen> {
                 _selectedTrip = updatedTrip;
               }
             }
-
           }
         } catch (e) {
           // Continue with check-in even if expense creation fails
@@ -845,7 +868,9 @@ class _MapScreenState extends State<MapScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('🎉 Congratulations! You have completed the trip!'),
+              content: const Text(
+                '🎉 Congratulations! You have completed the trip!',
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 5),
             ),
@@ -865,7 +890,6 @@ class _MapScreenState extends State<MapScreen> {
 
   void _centerToCurrentStartingPoint() {
     if (_selectedTrip == null) return;
-
 
     final activities = _selectedTrip!.activities
         .where(
@@ -1039,18 +1063,23 @@ class _MapScreenState extends State<MapScreen> {
     _autoRefreshTimer?.cancel();
 
     // Start new timer that refreshes every 10 seconds
-    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (
+      timer,
+    ) async {
       if (!mounted || _selectedTrip == null) {
         timer.cancel();
         return;
       }
 
-
       try {
         // For collaboration trips, refresh from service
         if (_selectedSharedTrip != null && _selectedSharedTrip!.id != null) {
-          final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
-          final updatedTrip = await collabProvider.collaborationService.getSharedTrip(_selectedSharedTrip!.id!);
+          final collabProvider = Provider.of<CollaborationProvider>(
+            context,
+            listen: false,
+          );
+          final updatedTrip = await collabProvider.collaborationService
+              .getSharedTrip(_selectedSharedTrip!.id!);
 
           if (updatedTrip != null && mounted) {
             // Update trip data if there are changes
@@ -1075,10 +1104,13 @@ class _MapScreenState extends State<MapScreen> {
     if (_selectedSharedTrip == null) return true;
 
     // Check if activities have changed (check-in status, etc.)
-    if (newTrip.activities.length != _selectedSharedTrip!.activities.length) return true;
+    if (newTrip.activities.length != _selectedSharedTrip!.activities.length) {
+      return true;
+    }
 
     for (int i = 0; i < newTrip.activities.length; i++) {
-      if (newTrip.activities[i].checkIn != _selectedSharedTrip!.activities[i].checkIn) {
+      if (newTrip.activities[i].checkIn !=
+          _selectedSharedTrip!.activities[i].checkIn) {
         return true;
       }
     }
@@ -1095,8 +1127,12 @@ class _MapScreenState extends State<MapScreen> {
 
     try {
       // Reload trip data from collaboration provider
-      final collabProvider = Provider.of<CollaborationProvider>(context, listen: false);
-      final updatedTrip = await collabProvider.collaborationService.getSharedTrip(_selectedSharedTrip!.id!);
+      final collabProvider = Provider.of<CollaborationProvider>(
+        context,
+        listen: false,
+      );
+      final updatedTrip = await collabProvider.collaborationService
+          .getSharedTrip(_selectedSharedTrip!.id!);
 
       if (updatedTrip != null && mounted) {
         // Update the provider's selected trip
@@ -1107,18 +1143,24 @@ class _MapScreenState extends State<MapScreen> {
         // Reload UI data
         await _loadTripData();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trip data refreshed')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Trip data refreshed')));
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not refresh data')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not refresh data')),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error refreshing data')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Error refreshing data')));
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -1181,9 +1223,7 @@ class _MapScreenState extends State<MapScreen> {
             Container(
               color: Colors.black.withValues(alpha: 0.5),
               child: const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(color: Colors.white),
               ),
             ),
           // Trip selection buttons at top right
@@ -1222,20 +1262,24 @@ class _MapScreenState extends State<MapScreen> {
                     // Refresh button - only show for collaborators (not owners) in collab mode
                     if (_selectedSharedTrip != null && !_canUserCheckIn())
                       GestureDetector(
-                        onTapDown: (_) => setState(() => _refreshPressed = true),
+                        onTapDown: (_) =>
+                            setState(() => _refreshPressed = true),
                         onTapUp: (_) {
                           Future.delayed(const Duration(milliseconds: 200), () {
-                            if (mounted) setState(() => _refreshPressed = false);
+                            if (mounted) {
+                              setState(() => _refreshPressed = false);
+                            }
                           });
                         },
-                        onTapCancel: () => setState(() => _refreshPressed = false),
+                        onTapCancel: () =>
+                            setState(() => _refreshPressed = false),
                         child: AnimatedScale(
                           scale: _refreshPressed ? 1.1 : 1.0,
                           duration: const Duration(milliseconds: 200),
                           child: FloatingActionButton.small(
                             onPressed: _refreshTripData,
                             backgroundColor: Colors.white,
-                        tooltip: 'Refresh data',
+                            tooltip: 'Refresh data',
                             heroTag: 'refresh_trip',
                             child: const Icon(
                               Icons.refresh,
@@ -1244,7 +1288,8 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         ),
                       ),
-                    if (_selectedSharedTrip != null && !_canUserCheckIn()) const SizedBox(height: 8),
+                    if (_selectedSharedTrip != null && !_canUserCheckIn())
+                      const SizedBox(height: 8),
                     GestureDetector(
                       onTapDown: (_) =>
                           setState(() => _clearTripPressed = true),
@@ -1261,24 +1306,24 @@ class _MapScreenState extends State<MapScreen> {
                         scale: _clearTripPressed ? 1.1 : 1.0,
                         duration: const Duration(milliseconds: 200),
                         child: FloatingActionButton.small(
-                        onPressed: () {
-                          // Cancel auto refresh timer
-                          _autoRefreshTimer?.cancel();
-                          _autoRefreshTimer = null;
+                          onPressed: () {
+                            // Cancel auto refresh timer
+                            _autoRefreshTimer?.cancel();
+                            _autoRefreshTimer = null;
 
-                          setState(() {
-                            _selectedTrip = null;
-                            _selectedSharedTrip = null;
-                            _googleMarkers.clear();
-                            _googlePolylines.clear();
-                            _flutterMarkers.clear();
-                            _flutterPolylines.clear();
-                          });
-                          // Clear saved trip ID from Firestore
-                          _saveSelectedTripId(null);
-                        },
+                            setState(() {
+                              _selectedTrip = null;
+                              _selectedSharedTrip = null;
+                              _googleMarkers.clear();
+                              _googlePolylines.clear();
+                              _flutterMarkers.clear();
+                              _flutterPolylines.clear();
+                            });
+                            // Clear saved trip ID from Firestore
+                            _saveSelectedTripId(null);
+                          },
                           backgroundColor: Colors.white,
-                        tooltip: 'Clear selected trip',
+                          tooltip: 'Clear selected trip',
                           heroTag: 'clear_trip',
                           child: const Icon(
                             Icons.close,
@@ -1432,7 +1477,9 @@ class _MapScreenState extends State<MapScreen> {
                 // Center to first activity button - only show when map is ready
                 if (_isMapReady)
                   Container(
-                    margin: EdgeInsets.only(bottom: _canUserCheckIn() ? 16 : 50), // More margin when checkin button is hidden
+                    margin: EdgeInsets.only(
+                      bottom: _canUserCheckIn() ? 16 : 50,
+                    ), // More margin when checkin button is hidden
                     child: GestureDetector(
                       onTapDown: (_) => setState(() => _centerPressed = true),
                       onTapUp: (_) {
@@ -1469,7 +1516,8 @@ class _MapScreenState extends State<MapScreen> {
                           if (mounted) setState(() => _checkInPressed = false);
                         });
                       },
-                      onTapCancel: () => setState(() => _checkInPressed = false),
+                      onTapCancel: () =>
+                          setState(() => _checkInPressed = false),
                       child: AnimatedScale(
                         scale: _checkInPressed ? 1.1 : 1.0,
                         duration: const Duration(milliseconds: 200),

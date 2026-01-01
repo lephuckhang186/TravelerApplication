@@ -2,32 +2,42 @@ import 'package:flutter/material.dart';
 import '../models/collaboration_models.dart';
 import '../services/edit_request_service.dart';
 
-/// Dialog for owner to approve/reject edit requests
+/// Interactive dialog for trip owners to review and act on permission elevation requests.
+///
+/// Displays a list of requests from [Viewer] collaborators who wish to become
+/// [Editor]s. Provides options to approve (promoting the user) or reject the request.
 class EditRequestApprovalDialog extends StatefulWidget {
+  /// The list of pending permission requests to display.
   final List<EditRequest> requests;
+
+  /// Optional callback invoked after a request is successfully handled.
   final VoidCallback? onRequestHandled;
 
   const EditRequestApprovalDialog({
-    Key? key,
+    super.key,
     required this.requests,
     this.onRequestHandled,
-  }) : super(key: key);
+  });
 
   @override
-  State<EditRequestApprovalDialog> createState() => _EditRequestApprovalDialogState();
+  State<EditRequestApprovalDialog> createState() =>
+      _EditRequestApprovalDialogState();
 }
 
 class _EditRequestApprovalDialogState extends State<EditRequestApprovalDialog> {
   final EditRequestService _editRequestService = EditRequestService();
   final Set<String> _processing = {};
 
+  /// Processes the [EditRequest] by either approving or rejecting it.
   Future<void> _handleRequest(EditRequest request, bool approve) async {
     setState(() => _processing.add(request.id));
 
     try {
       await _editRequestService.updateEditRequest(
         requestId: request.id,
-        status: approve ? EditRequestStatus.approved : EditRequestStatus.rejected,
+        status: approve
+            ? EditRequestStatus.approved
+            : EditRequestStatus.rejected,
         promoteToEditor: approve, // Promote to editor if approved
       );
 
@@ -47,7 +57,7 @@ class _EditRequestApprovalDialogState extends State<EditRequestApprovalDialog> {
 
         widget.onRequestHandled?.call();
 
-        // Remove from list
+        // Remove from current list view
         widget.requests.remove(request);
         if (widget.requests.isEmpty) {
           Navigator.pop(context);
@@ -61,7 +71,7 @@ class _EditRequestApprovalDialogState extends State<EditRequestApprovalDialog> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed: ${e.toString()}'),
+            content: Text('Failed to process request: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -117,7 +127,9 @@ class _EditRequestApprovalDialogState extends State<EditRequestApprovalDialog> {
                         CircleAvatar(
                           backgroundColor: Colors.blue,
                           child: Text(
-                            request.requesterName[0].toUpperCase(),
+                            request.requesterName.isNotEmpty
+                                ? request.requesterName[0].toUpperCase()
+                                : '?',
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
@@ -167,7 +179,8 @@ class _EditRequestApprovalDialogState extends State<EditRequestApprovalDialog> {
                     ],
 
                     // Message
-                    if (request.message != null && request.message!.isNotEmpty) ...[
+                    if (request.message != null &&
+                        request.message!.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -188,11 +201,8 @@ class _EditRequestApprovalDialogState extends State<EditRequestApprovalDialog> {
                     // Requested time
                     const SizedBox(height: 8),
                     Text(
-                      'Requested ${_formatTime(request.requestedAt)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      'Requested ${_formatRelativeTime(request.requestedAt)}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
 
                     // Action buttons
@@ -239,7 +249,8 @@ class _EditRequestApprovalDialogState extends State<EditRequestApprovalDialog> {
     );
   }
 
-  String _formatTime(DateTime time) {
+  /// Formats the request timestamp as a human-readable relative duration.
+  String _formatRelativeTime(DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
 

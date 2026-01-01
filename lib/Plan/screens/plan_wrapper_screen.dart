@@ -5,8 +5,11 @@ import '../../Core/providers/app_mode_provider.dart';
 import '../providers/collaboration_provider.dart';
 import 'plan_screen.dart';
 
-/// Wrapper screen that displays either Private or Collaboration plan screen
-/// based on current app mode - COMPLETELY SEPARATE SCREENS AND DATA
+/// A wrapper widget that toggles between Private and Collaboration planning modes.
+///
+/// This screen uses [AppModeProvider] to determine which mode is active and
+/// displays the appropriate [PlanScreen] content. It also provides a global
+/// floating toggle button to switch modes.
 class PlanWrapperScreen extends StatefulWidget {
   const PlanWrapperScreen({super.key});
 
@@ -24,7 +27,7 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
             children: [
               // Unified PlanScreen handles both modes
               const PlanScreen(),
-              
+
               // Mode switch button - positioned at top right
               Positioned(
                 top: MediaQuery.of(context).padding.top + 10,
@@ -38,14 +41,15 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
     );
   }
 
+  /// Builds a floating toggle button that shows the current mode and allows switching.
   Widget _buildModeToggleButton(AppModeProvider appModeProvider) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha:0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -62,11 +66,11 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  appModeProvider.isPrivateMode 
-                      ? Icons.person 
+                  appModeProvider.isPrivateMode
+                      ? Icons.person
                       : Icons.group_work,
                   size: 20,
-                  color: appModeProvider.isPrivateMode 
+                  color: appModeProvider.isPrivateMode
                       ? const Color(0xFF1976D2)
                       : AppColors.primary,
                 ),
@@ -76,17 +80,13 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: appModeProvider.isPrivateMode 
+                    color: appModeProvider.isPrivateMode
                         ? const Color(0xFF1976D2)
                         : AppColors.primary,
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(
-                  Icons.swap_horiz,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
+                Icon(Icons.swap_horiz, size: 16, color: Colors.grey[600]),
               ],
             ),
           ),
@@ -95,6 +95,7 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
     );
   }
 
+  /// Displays a selection dialog for choosing between Private and Collaboration modes.
   void _showModeSelectionDialog(AppModeProvider appModeProvider) {
     showDialog(
       context: context,
@@ -108,13 +109,10 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
           children: [
             Text(
               'Select how you want to plan your trips:',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
             const SizedBox(height: 20),
-            
+
             // Private Mode Option
             _buildModeOption(
               icon: Icons.person,
@@ -128,21 +126,22 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
                 // _showModeChangedSnackBar('Private Mode');
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Collaboration Mode Option
             _buildModeOption(
               icon: Icons.group_work,
               title: 'Collaboration Mode',
-              description: 'Plan trips with others, invite collaborators, real-time sync',
+              description:
+                  'Plan trips with others, invite collaborators, real-time sync',
               color: AppColors.primary,
               isSelected: appModeProvider.isCollaborationMode,
               onTap: () {
                 Navigator.pop(context);
                 appModeProvider.switchToCollaborationMode();
                 //_showModeChangedSnackBar('Collaboration Mode');
-                
+
                 // Initialize collaboration if needed
                 _initializeCollaborationMode();
               },
@@ -159,6 +158,7 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
     );
   }
 
+  /// Builds an individual mode selection card for the dialog.
   Widget _buildModeOption({
     required IconData icon,
     required String title,
@@ -178,7 +178,7 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
-          color: isSelected ? color.withValues(alpha:0.1) : null,
+          color: isSelected ? color.withValues(alpha: 0.1) : null,
         ),
         child: Row(
           children: [
@@ -204,21 +204,14 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
                       ),
                       if (isSelected) ...[
                         const SizedBox(width: 8),
-                        Icon(
-                          Icons.check_circle,
-                          color: color,
-                          size: 20,
-                        ),
+                        Icon(Icons.check_circle, color: color, size: 20),
                       ],
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -244,7 +237,7 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
   //             Text('Switched to $modeName'),
   //           ],
   //         ),
-  //         backgroundColor: modeName.contains('Private') 
+  //         backgroundColor: modeName.contains('Private')
   //             ? const Color(0xFF1976D2)
   //             : AppColors.primary,
   //         duration: const Duration(seconds: 2),
@@ -253,13 +246,13 @@ class _PlanWrapperScreenState extends State<PlanWrapperScreen> {
   //   }
   // }
 
+  /// Triggers a fresh data fetch when switching to collaboration mode.
   void _initializeCollaborationMode() {
     // Initialize collaboration provider when switching to collaboration mode
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final collaborationProvider = context.read<CollaborationProvider>();
       // Force re-initialization to ensure fresh data load
-      collaborationProvider.initialize().then((_) {
-      }).catchError((e) {
+      collaborationProvider.initialize().then((_) {}).catchError((e) {
         //
       });
     });

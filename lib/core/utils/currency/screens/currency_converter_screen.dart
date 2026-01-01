@@ -4,6 +4,10 @@ import '../../../theme/app_theme.dart';
 import '../models/currency_models.dart';
 import '../services/currency_service.dart';
 
+/// Interface for converting between different global currencies.
+///
+/// Provides a real-time calculator with searchable currency lists, historical
+/// chart visualization (via mock data), and persistent conversion settings.
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({super.key});
 
@@ -72,7 +76,11 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             ],
           ),
           child: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, color: AppColors.dodgerBlue, size: 20),
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              color: AppColors.dodgerBlue,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -104,7 +112,11 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.currency_exchange_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.currency_exchange_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               const Text(
@@ -134,13 +146,15 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               ],
             ),
             child: IconButton(
-              icon: _isLoading 
+              icon: _isLoading
                   ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.dodgerBlue),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.dodgerBlue,
+                        ),
                       ),
                     )
                   : Icon(Icons.refresh_rounded, color: AppColors.dodgerBlue),
@@ -150,7 +164,12 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 80, 20, 20),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.of(context).padding.top + 80,
+          20,
+          20,
+        ),
         child: Column(
           children: [
             _buildCurrencySelector(),
@@ -269,7 +288,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                       ),
                     ],
                   ),
-                  child: Text(currency.flag, style: const TextStyle(fontSize: 20)),
+                  child: Text(
+                    currency.flag,
+                    style: const TextStyle(fontSize: 20),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -329,7 +351,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         children: [
           Text(
             'Amount to convert',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Colors.grey[700],
@@ -361,13 +384,15 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                   ],
                   decoration: InputDecoration(
                     hintText: '0.00',
-                    hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
+                    hintStyle: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       color: Colors.grey[400],
                       fontSize: 24,
                     ),
                     border: InputBorder.none,
                   ),
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -469,7 +494,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             const SizedBox(height: 8),
             Text(
               '1 ${_fromCurrency.code} = ${_exchangeRate.toStringAsFixed(4)} ${_toCurrency.code}',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
@@ -503,7 +529,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               const SizedBox(width: 8),
               Text(
                 'Exchange Rate Information',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.blue[600],
@@ -517,14 +544,16 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             children: [
               Text(
                 'Current Exchange Rate:',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 13,
                   color: Colors.grey[700],
                 ),
               ),
               Text(
                 '1 ${_fromCurrency.code} = ${_exchangeRate.toStringAsFixed(4)} ${_toCurrency.code}',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -538,14 +567,16 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
             children: [
               Text(
                 'Updated at:',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 13,
                   color: Colors.grey[700],
                 ),
               ),
               Text(
                 '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -578,9 +609,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading exchange rate: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading exchange rate: $e')),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -659,7 +690,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               const SizedBox(height: 20),
               Text(
                 'Select Currency',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -684,7 +716,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                         children: [
                           Text(
                             currency.code,
-                            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
                             ),
@@ -702,13 +735,17 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                       ),
                       subtitle: Text(
                         '${currency.name} • ${currency.country}',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           color: Colors.grey[600],
                           fontSize: 12,
                         ),
                       ),
                       trailing: isSelected
-                          ? Icon(Icons.check_circle_rounded, color: AppColors.dodgerBlue)
+                          ? Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.dodgerBlue,
+                            )
                           : null,
                       onTap: () {
                         setState(() {

@@ -7,9 +7,22 @@ from models import WorkflowState
 
 def extract_user_fields_from_messages(state: WorkflowState) -> Tuple[Dict[str, Any], AIMessage]:
     """
-    Given the state (with messages and missing_fields), use an LLM to extract the missing fields from the latest user message.
-    Returns a tuple: (dict of updated fields, AIMessage with the LLM's output or error message).
-    Raises an error if extraction fails.
+    Extracts missing user fields from the conversation history using an LLM.
+
+    Analyzes the latest user message in the context of currently missing fields (e.g., date, budget)
+    and attempts to extract the relevant information.
+
+    Args:
+        state (WorkflowState): The current state of the workflow/conversation, containing message history
+                               and a list of missing fields.
+
+    Returns:
+        Tuple[Dict[str, Any], AIMessage]: A tuple containing:
+            - A dictionary of extracted fields (e.g., {'start_date': '2025-12-01'}).
+            - An AIMessage object with a summary of the update or an error message.
+
+    Raises:
+        Exception: If the extraction chain fails.
     """
     missing_items = ', '.join(state.missing_fields or [])
     user_msg = next((m for m in reversed(state.messages) if isinstance(m, HumanMessage)), None)

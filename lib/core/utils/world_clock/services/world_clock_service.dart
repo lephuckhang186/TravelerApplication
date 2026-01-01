@@ -1,6 +1,10 @@
 import 'dart:async';
 import '../models/world_clock_models.dart';
 
+/// Service for managing global time zones and current time data across the world.
+///
+/// Provides offset-based time calculations for a predefined list of popular
+/// global cities and supports real-time updates via Streams.
 class WorldClockService {
   static const List<WorldTimeZone> popularTimeZones = [
     // Việt Nam và khu vực Đông Nam Á
@@ -46,7 +50,7 @@ class WorldClockService {
       flag: '🇵🇭',
       utcOffset: 8,
     ),
-    
+
     // Các thành phố lớn trên thế giới
     WorldTimeZone(
       name: 'Tokyo',
@@ -128,7 +132,7 @@ class WorldClockService {
         (tz) => tz.timeZone == timeZoneId,
         orElse: () => popularTimeZones.first,
       );
-      
+
       return now.add(Duration(hours: timeZone.utcOffset.round()));
     } catch (e) {
       return DateTime.now();
@@ -139,7 +143,7 @@ class WorldClockService {
   static WorldClockData getWorldClockData(WorldTimeZone timeZone) {
     final currentTime = getCurrentTimeInTimeZone(timeZone.timeZone);
     final isDayTime = currentTime.hour >= 6 && currentTime.hour < 18;
-    
+
     return WorldClockData(
       timeZone: timeZone,
       currentTime: currentTime,
@@ -149,17 +153,19 @@ class WorldClockService {
 
   /// Lấy danh sách world clock data cho tất cả múi giờ
   static List<WorldClockData> getAllWorldClockData() {
-    return popularTimeZones.map((timeZone) => getWorldClockData(timeZone)).toList();
+    return popularTimeZones
+        .map((timeZone) => getWorldClockData(timeZone))
+        .toList();
   }
 
   /// Tìm kiếm múi giờ theo tên
   static List<WorldTimeZone> searchTimeZones(String query) {
     if (query.isEmpty) return popularTimeZones;
-    
+
     final lowerQuery = query.toLowerCase();
     return popularTimeZones.where((timeZone) {
       return timeZone.name.toLowerCase().contains(lowerQuery) ||
-             timeZone.country.toLowerCase().contains(lowerQuery);
+          timeZone.country.toLowerCase().contains(lowerQuery);
     }).toList();
   }
 
@@ -174,7 +180,7 @@ class WorldClockService {
   static String getTimeDifferenceFromVietnam(WorldTimeZone timeZone) {
     const vietnamOffset = 7.0;
     final difference = timeZone.utcOffset - vietnamOffset;
-    
+
     if (difference == 0) {
       return 'Cùng múi giờ';
     } else if (difference > 0) {

@@ -1,5 +1,5 @@
 """
-Travel Agent API endpoints for AI-powered trip planning
+Travel Agent API endpoints for AI-powered trip planning.
 """
 import logging
 import sys
@@ -23,12 +23,24 @@ logger = logging.getLogger(__name__)
 
 # Request/Response models
 class TravelAgentRequest(BaseModel):
-    """Request model for travel agent queries"""
+    """
+    Request model for travel agent queries.
+
+    Attributes:
+        input (str): The travel planning query.
+        history (List[Dict[str, str]]): Conversation history. Defaults to empty list.
+    """
     input: str = Field(..., description="The travel planning query")
     history: List[Dict[str, str]] = Field(default=[], description="Conversation history")
 
 class TravelAgentResponse(BaseModel):
-    """Response model for travel agent results"""
+    """
+    Response model for travel agent results.
+
+    Attributes:
+        summary (str): Travel plan summary or response message.
+        status (str): Response status ("success" or "error").
+    """
     summary: str = Field(..., description="Travel plan summary")
     status: str = Field(default="success", description="Response status")
 
@@ -37,7 +49,14 @@ router = APIRouter(prefix="/travel-agent", tags=["Travel Agent"])
 
 def call_travel_agent_service(input_text: str, history: List[Dict[str, str]] = None) -> dict:
     """
-    Process travel agent request with AI travel planning workflow
+    Process travel agent request with AI travel planning workflow.
+
+    Args:
+        input_text (str): The user's travel query or command.
+        history (List[Dict[str, str]], optional): Chat history context.
+
+    Returns:
+        dict: A dictionary containing 'summary' and 'status'.
     """
     try:
         # Validate input
@@ -82,7 +101,13 @@ def call_travel_agent_service(input_text: str, history: List[Dict[str, str]] = N
 @router.post("/invoke", response_model=TravelAgentResponse)
 async def invoke_travel_agent(request: TravelAgentRequest) -> TravelAgentResponse:
     """
-    Invoke the AI travel agent with user input and conversation history
+    Invoke the AI travel agent with user input and conversation history.
+
+    Args:
+        request (TravelAgentRequest): The request object containing input and history.
+
+    Returns:
+        TravelAgentResponse: The response from the AI agent containing a summary status.
     """
     try:
         logger.info(f"Processing travel query: {request.input}")
@@ -105,7 +130,10 @@ async def invoke_travel_agent(request: TravelAgentRequest) -> TravelAgentRespons
 @router.get("/health")
 async def health_check():
     """
-    Health check for travel agent service
+    Health check for travel agent service.
+
+    Returns:
+        dict: Status dictionary with service name and message.
     """
     return {
         "status": "healthy",

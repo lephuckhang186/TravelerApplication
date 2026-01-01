@@ -24,17 +24,39 @@ api.add_middleware(
 
 # Define the request body model
 class InvokeRequest(BaseModel):
+    """
+    Request model for the general invocation endpoint.
+
+    Attributes:
+        input (str): The user's input message.
+        history (List[Dict[str, str]]): Conversation history, default is empty.
+    """
     input: str
     history: List[Dict[str, str]] = []
 
 # Define the request body model for plan editing
 class PlanEditRequest(BaseModel):
+    """
+    Request model for editing an existing trip plan.
+
+    Attributes:
+        command (str): The user's command describing how to modify the plan.
+        trip_id (str): The unique identifier of the trip to edit.
+        conversation_history (List[Dict[str, str]]): Recent chat history for context.
+    """
     command: str
     trip_id: str
     conversation_history: List[Dict[str, str]] = []
 
 # Define the request body model for trip planning
 class TripPlanRequest(BaseModel):
+    """
+    Request model for generating a new trip plan.
+
+    Attributes:
+        prompt (str): The user's prompt describing the desired trip.
+        user_id (Optional[str]): The user's ID, if authenticated.
+    """
     prompt: str
     user_id: Optional[str] = None
 
@@ -43,7 +65,15 @@ class TripPlanRequest(BaseModel):
 async def invoke_workflow(request: InvokeRequest):
     """
     General AI assistant endpoint for queries that don't involve plan modifications.
-    Plan modifications are handled by the /edit-plan endpoint with Gemini AI.
+    
+    This endpoint handles general conversation. Plan modifications are routed 
+    separately to the /edit-plan endpoint.
+
+    Args:
+        request (InvokeRequest): The request payload containing user input.
+
+    Returns:
+        dict: A simple acknowledgment summary.
     """
     user_input = request.input.strip()
 
@@ -56,7 +86,16 @@ async def invoke_workflow(request: InvokeRequest):
 async def edit_plan(request: PlanEditRequest):
     """
     Handles intelligent plan editing using Gemini AI with conversation context.
-    When user wants to edit plan, AI generates a completely new plan that replaces the old one.
+
+    When a user wants to edit a plan, this endpoint uses an LLM to generate a 
+    completely new plan structure that incorporates the requested changes 
+    while maintaining the logic of the original plan.
+
+    Args:
+        request (PlanEditRequest): The request payload with edit command and context.
+
+    Returns:
+        dict: A response indicating success/failure and containing the new plan data.
     """
     try:
         command = request.command.strip()
@@ -235,7 +274,15 @@ async def edit_plan(request: PlanEditRequest):
 async def generate_trip_plan(request: TripPlanRequest):
     """
     Generates a complete trip plan based on user prompt using AI.
-    Returns a structured trip plan that can be imported into the app.
+    
+    This endpoint uses a comprehensive prompt to generate a detailed day-by-day
+    itinerary, including logistics, estimated costs, and specific addresses.
+
+    Args:
+        request (TripPlanRequest): The request payload containing the trip prompt.
+
+    Returns:
+        dict: A structured JSON trip plan or an error message.
     """
     try:
         from services.llm_utils import get_llm, get_default_prompt
@@ -257,16 +304,58 @@ async def generate_trip_plan(request: TripPlanRequest):
         llm = get_llm()
 
         system_message = """
-        Bạn là một chuyên gia lên kế hoạch du lịch chuyên nghiệp. Nhiệm vụ của bạn là tạo ra một kế hoạch du lịch hoàn chỉnh và chi tiết dựa trên yêu cầu của người dùng.
+        Bạn là một chuyên gia lên kế hoạch du lịch chuyên nghiệp với kiến thức thực tế về Việt Nam. Nhiệm vụ của bạn là tạo ra một kế hoạch du lịch hoàn chỉnh và chi tiết dựa trên yêu cầu của người dùng.
 
         Yêu cầu đầu ra:
-        1. Phân tích yêu cầu và trích xuất thông tin chính (điểm đến, thời gian, số người, ngân sách)
-        2. Tạo kế hoạch chi tiết cho từng ngày với các hoạt động cụ thể
+        1. Phân tích yêu cầu và trích xuất thông tin chính (điểm đến, thời gian, số người, ngân sách, ĐIỂM KHỞI HÀNH, PHƯƠNG TIỆN DI CHUYỂN ƯA THÍCH)
+        2. Tạo kế hoạch chi tiết cho từng ngày với các hoạt động cụ thể THEO TRẬT TỰ ĐỊA LÝ LOGIC
         3. Ước tính chi phí cho từng hoạt động và tổng cộng
         4. Gợi ý phương tiện di chuyển và chỗ ở phù hợp
         5. Trả về JSON với cấu trúc chuẩn để ứng dụng có thể import
 
-        QUAN TRỌNG: Mỗi hoạt động PHẢI có địa chỉ CHI TIẾT, đầy đủ để có thể load trên bản đồ và route đường đi.
+        QUAN TRỌNG VỀ TỔ CHỨC ĐƯỜNG ĐI:
+        - XÁC ĐỊNH ĐIỂM KHỞI HÀNH từ yêu cầu người dùng (ví dụ: ga xe lửa Hồ Chí Minh, sân bay, nhà ga...)
+        - XÁC ĐỊNH MÚI GIỜ: Tự động xác định múi giờ của điểm khởi hành và điểm đến (ví dụ: VN UTC+7, Mỹ UTC-5, châu Âu UTC+1)
+        - CHUYỂN ĐỔI THỜI GIAN: Điều chỉnh giờ khởi hành và hoạt động theo múi giờ địa phương
+        - XỬ LÝ JET LAG: Cân nhắc thời gian bay dài và hiệu ứng jet lag khi lên lịch hoạt động
+        - SẮP XẾP HOẠT ĐỘNG THEO MÚI GIỜ: Đảm bảo giờ hoạt động hợp lý theo thời gian địa phương
+        - TÍNH TOÁN THỜI GIAN DI CHUYỂN THỰC TẾ: Sử dụng khoảng cách địa lý và phương tiện để ước lượng chính xác
+        - TRÁNH nhảy cóc giữa các địa điểm xa xôi không hợp lý
+        - ĐẢM BẢO kế hoạch có thể thực hiện được về mặt logistics và múi giờ
+
+        QUAN TRỌNG VỀ ƯỚC LƯỢNG THỜI GIAN DI CHUYỂN:
+        - TÍNH TOÁN DỰA TRÊN KHOẢNG CÁCH THỰC TẾ: Sử dụng khoảng cách địa lý và tốc độ di chuyển hợp lý
+        - ĐI BỘ: ~5km/h trong thành phố, cộng thêm thời gian chờ đèn đỏ và đường cong
+        - XE CỘ: Tùy traffic, giờ cao điểm có thể chậm hơn 2-3 lần so với bình thường
+        - PHƯƠNG TIỆN CÔNG CỘNG: Bao gồm thời gian chờ, mua vé, di chuyển đến điểm dừng
+        - MÁY BAY: Thời gian bay thực tế + thời gian sân bay (check-in, security, boarding, lấy hành lý)
+        - TÀU/XE BUÝT LIÊN THÀNH PHỐ: Tra cứu lịch trình thực tế, cộng thời gian lên/xuống phương tiện
+        - THỜI GIAN DỰ PHÒNG: Cộng thêm 15-30 phút cho các yếu tố bất ngờ (traffic, thời tiết, nghỉ ngơi)
+        - CẬP NHẬT THEO THỜI GIAN THỰC: Xem xét điều kiện traffic hiện tại, mùa vụ, giờ cao điểm
+
+        QUAN TRỌNG VỀ LỰA CHỌN PHƯƠNG TIỆN DI CHUYỂN THEO KHOẢNG CÁCH:
+        - ĐÁNH GIÁ KHOẢNG CÁCH: Tính toán khoảng cách địa lý giữa các điểm đến để chọn phương tiện phù hợp
+        - KHOẢNG CÁCH NGẮN (< 5km): Đi bộ, xe đạp, xe máy, taxi/Grab - ưu tiên đi bộ nếu thời tiết thuận lợi
+        - KHOẢNG CÁCH TRUNG BÌNH (5-50km): Xe buýt, tàu điện ngầm, taxi, xe thuê - cân nhắc thời gian và chi phí
+        - KHOẢNG CÁCH DÀI (50-500km): Tàu hỏa, máy bay nội địa - ưu tiên máy bay nếu muốn nhanh, tàu nếu muốn tiết kiệm
+        - KHOẢNG CÁCH RẤT DÀI (>500km): Máy bay quốc tế - thường là lựa chọn duy nhất thực tế
+        - CÂN NHẮC YẾU TỐ: Thời gian, chi phí, tiện nghi, sở thích người dùng, điều kiện thời tiết, giờ cao điểm
+        - ƯU TIÊN PHƯƠNG TIỆN NGƯỜI DÙNG CHỌN: Nếu người dùng chỉ định phương tiện cụ thể, ưu tiên phương tiện đó nhưng vẫn xem xét tính thực tế
+
+        QUAN TRỌNG VỀ PHƯƠNG TIỆN DI CHUYỂN CỤ THỂ:
+        - BAY: Sử dụng lịch bay thực tế (Vietnam Airlines, VietJet, Bamboo Airways) - phù hợp cho >50km
+        - TÀU: Ga Sapa, Hà Nội, Đà Nẵng, Hồ Chí Minh - phù hợp cho 100-800km, tiết kiệm và thoải mái
+        - XE BUÝT: The Sinh Tourist, Sapaco Tourist, Kumho Samco - phù hợp cho 5-200km, giá rẻ
+        - XE Ô TÔ/XE MÁY: Thuê xe hoặc Grab - phù hợp cho <50km trong thành phố
+        - KHÔNG sáng tạo lịch trình không tồn tại - chỉ đề xuất phương tiện có thực tại điểm đến
+
+        QUAN TRỌNG VỀ ƯỚC LƯỢNG CHI PHÍ THỰC TẾ:
+        - NGHIÊN CỨU GIÁ THỰC TẾ: Sử dụng kiến thức cập nhật về giá cả tại điểm đến cụ thể
+        - ĐIỀU CHỈNH THEO QUỐC GIA: Sử dụng đơn vị tiền tệ phù hợp (VND ở VN, USD ở Mỹ, EUR ở châu Âu, etc.)
+        - PHÙ HỢP VỚI MỨC ĐỘ SANG TRỌNG: Budget (tiết kiệm), Mid-range (trung cấp), Luxury (sang trọng) (tính toán dựa trên total budget và số người)
+        - CẬP NHẬT THEO THỜI GIAN: Giá có thể thay đổi theo mùa, sự kiện đặc biệt
+
+        QUAN TRỌNG VỀ ĐỊA CHỈ: Mỗi hoạt động PHẢI có địa chỉ CHI TIẾT, đầy đủ để có thể load trên bản đồ và route đường đi.
         Địa chỉ phải bao gồm: tên địa điểm cụ thể, tên đường, phường/xã, quận/huyện, thành phố/tỉnh, mã bưu chính, quốc gia.
         Ví dụ: "Ar Ti So, Hồ Tùng Mậu, Ấp Xuân An, Da Lat, Phường Xuân Hương - Đà Lạt, Lâm Đồng Province, 02633, Vietnam" thay vì chỉ "Phố cổ Hà Nội".
         Tọa độ GPS PHẢI được cung cấp ở định dạng "latitude,longitude" với độ chính xác cao (ví dụ: "11.9404,108.4583" cho Đà Lạt).
@@ -282,7 +371,8 @@ async def generate_trip_plan(request: TripPlanRequest):
                 "duration_days": số,
                 "travelers_count": số,
                 "total_budget": số,
-                "currency": "VND"
+                "currency": "VND",
+                "starting_point": "Điểm khởi hành từ yêu cầu người dùng"
             }},
             "daily_plans": [
                 {{
@@ -291,22 +381,23 @@ async def generate_trip_plan(request: TripPlanRequest):
                     "activities": [
                         {{
                             "title": "Tên hoạt động",
-                            "description": "Mô tả chi tiết",
+                            "description": "Mô tả chi tiết với thông tin di chuyển từ điểm trước",
                             "start_time": "HH:MM",
                             "duration_hours": số,
                             "activity_type": "activity|restaurant|lodging|flight|tour",
                             "estimated_cost": số,
                             "location": "Tên địa điểm",
                             "address": "Địa chỉ đầy đủ cho bản đồ (đường, quận/huyện, thành phố)",
-                            "coordinates": "Tọa độ GPS (latitude,longitude) nếu có thể"
+                            "coordinates": "Tọa độ GPS (latitude,longitude) nếu có thể",
+                            "travel_from_previous": "Mô tả cách di chuyển từ hoạt động trước với thời gian thực tế"
                         }}
                     ]
                 }}
             ],
             "summary": {{
                 "total_estimated_cost": số,
-                "recommendations": ["Lời khuyên hữu ích"],
-                "tips": ["Mẹo du lịch"]
+                "recommendations": ["Lời khuyên hữu ích về logistics và di chuyển với thông tin thực tế"],
+                "tips": ["Mẹo du lịch và tối ưu hóa đường đi dựa trên kinh nghiệm thực tế"]
             }}
         }}
 
@@ -315,6 +406,8 @@ async def generate_trip_plan(request: TripPlanRequest):
         - Chi phí tính bằng VND
         - Hoạt động phải đa dạng và thực tế
         - Bao gồm ăn uống, di chuyển, tham quan, nghỉ ngơi
+        - SỬ DỤNG THÔNG TIN PHƯƠNG TIỆN DI CHUYỂN THỰC TẾ, không bịa đặt
+        - ĐẶC BIỆT CHÚ Ý đến điểm khởi hành và sắp xếp hoạt động theo thứ tự địa lý hợp lý
 
         Trả về CHỈ JSON, không có text khác.
         """

@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import '../../Core/theme/app_theme.dart';
 import '../models/collaboration_models.dart';
 
+/// Presentation card for a trip invitation received by the current user.
+///
+/// Displays details about the inviter, the target trip, and any personal message
+/// included. Provides primary action buttons to Accept or Decline the invitation.
 class TripInvitationCard extends StatelessWidget {
+  /// The invitation data to display.
   final TripInvitation invitation;
+
+  /// Callback invoked when the user taps "Accept".
   final VoidCallback onAccept;
+
+  /// Callback invoked when the user taps "Decline".
   final VoidCallback onDecline;
 
   const TripInvitationCard({
@@ -31,7 +40,7 @@ class TripInvitationCard extends StatelessWidget {
                 CircleAvatar(
                   backgroundColor: Colors.blue,
                   child: Text(
-                    invitation.inviterName.isNotEmpty 
+                    invitation.inviterName.isNotEmpty
                         ? invitation.inviterName[0].toUpperCase()
                         : '?',
                     style: const TextStyle(
@@ -64,7 +73,10 @@ class TripInvitationCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange,
                     borderRadius: BorderRadius.circular(8),
@@ -81,20 +93,19 @@ class TripInvitationCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
-            // Invitation details
+
+            // Invitation details text summary
             RichText(
               text: TextSpan(
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 children: [
                   TextSpan(
                     text: invitation.inviterName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const TextSpan(text: ' has invited you to collaborate on the trip '),
+                  const TextSpan(
+                    text: ' has invited you to collaborate on the trip ',
+                  ),
                   TextSpan(
                     text: '"${invitation.tripName}"',
                     style: const TextStyle(fontWeight: FontWeight.bold),
@@ -103,38 +114,33 @@ class TripInvitationCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             Row(
               children: [
                 Icon(Icons.email, size: 14, color: Colors.grey[600]),
                 const SizedBox(width: 4),
                 Text(
                   'From: ${invitation.inviterEmail}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            
+
             Row(
               children: [
                 Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
                 const SizedBox(width: 4),
                 Text(
-                  'Sent: ${_formatDate(invitation.sentAt)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  'Sent: ${_formatRelativeDate(invitation.sentAt)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
-            
-            // Personal message
-            if (invitation.message != null && invitation.message!.isNotEmpty) ...[
+
+            // Personal message if provided
+            if (invitation.message != null &&
+                invitation.message!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -168,9 +174,9 @@ class TripInvitationCard extends StatelessWidget {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 16),
-            
+
             // Action buttons
             Row(
               children: [
@@ -207,10 +213,11 @@ class TripInvitationCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  /// Formats the invitation timestamp as a human-friendly relative duration.
+  String _formatRelativeDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
         if (difference.inMinutes < 1) {

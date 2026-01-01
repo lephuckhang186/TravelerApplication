@@ -2,6 +2,10 @@ import '../models/notification_models.dart';
 import '../../Plan/models/activity_models.dart';
 import '../../Plan/services/trip_planning_service.dart';
 
+/// Service for managing activity reminders and time-based notifications.
+///
+/// Checks for upcoming activities within specific time windows and identifies
+/// the next immediate activity in the itinerary.
 class ActivityReminderService {
   final TripPlanningService _tripService = TripPlanningService();
 
@@ -18,13 +22,15 @@ class ActivityReminderService {
 
           // Send reminder 2 hours before activity starts
           if (minutesUntilStart > 0 && minutesUntilStart <= 120) {
-            reminders.add(ActivityReminder(
-              activityId: activity.id ?? '',
-              activityTitle: activity.title,
-              location: activity.location?.name ?? 'Not specified',
-              startTime: activity.startDate!,
-              minutesUntilStart: minutesUntilStart,
-            ));
+            reminders.add(
+              ActivityReminder(
+                activityId: activity.id ?? '',
+                activityTitle: activity.title,
+                location: activity.location?.name ?? 'Not specified',
+                startTime: activity.startDate!,
+                minutesUntilStart: minutesUntilStart,
+              ),
+            );
           }
         }
       }
@@ -53,16 +59,19 @@ class ActivityReminderService {
 
           // Check if activity is today
           if (activityDate.isAtSameMomentAs(today) ||
-              (activityDate.isAfter(today) && activityDate.isBefore(tomorrow))) {
+              (activityDate.isAfter(today) &&
+                  activityDate.isBefore(tomorrow))) {
             final timeDiff = activity.startDate!.difference(now);
-            
-            reminders.add(ActivityReminder(
-              activityId: activity.id ?? '',
-              activityTitle: activity.title,
-              location: activity.location?.name ?? 'Not specified',
-              startTime: activity.startDate!,
-              minutesUntilStart: timeDiff.inMinutes,
-            ));
+
+            reminders.add(
+              ActivityReminder(
+                activityId: activity.id ?? '',
+                activityTitle: activity.title,
+                location: activity.location?.name ?? 'Not specified',
+                startTime: activity.startDate!,
+                minutesUntilStart: timeDiff.inMinutes,
+              ),
+            );
           }
         }
       }
@@ -80,17 +89,16 @@ class ActivityReminderService {
     try {
       final activities = await _tripService.getActivities(tripId: tripId);
       final now = DateTime.now();
-      
+
       ActivityModel? nextActivity;
       Duration? shortestDuration;
 
       for (final activity in activities) {
-        if (activity.startDate != null && 
-            activity.startDate!.isAfter(now) && 
+        if (activity.startDate != null &&
+            activity.startDate!.isAfter(now) &&
             !activity.checkIn) {
-          
           final timeDiff = activity.startDate!.difference(now);
-          
+
           if (shortestDuration == null || timeDiff < shortestDuration) {
             shortestDuration = timeDiff;
             nextActivity = activity;
@@ -146,14 +154,19 @@ class ActivityReminderService {
       // Get trip start and end dates
       final startDate = trip.startDate;
       final endDate = trip.endDate;
-      final tripStartDay = DateTime(startDate.year, startDate.month, startDate.day);
+      final tripStartDay = DateTime(
+        startDate.year,
+        startDate.month,
+        startDate.day,
+      );
       final tripEndDay = DateTime(endDate.year, endDate.month, endDate.day);
-      
+
       // Check if today is within the trip date range (inclusive of both start and end dates)
-      final isWithinTrip = (today.isAtSameMomentAs(tripStartDay) || today.isAfter(tripStartDay)) &&
-                           (today.isAtSameMomentAs(tripEndDay) || today.isBefore(tripEndDay));
-      
-      
+      final isWithinTrip =
+          (today.isAtSameMomentAs(tripStartDay) ||
+              today.isAfter(tripStartDay)) &&
+          (today.isAtSameMomentAs(tripEndDay) || today.isBefore(tripEndDay));
+
       return isWithinTrip;
     } catch (e) {
       return false;

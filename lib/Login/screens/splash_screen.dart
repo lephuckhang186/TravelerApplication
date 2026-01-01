@@ -4,6 +4,12 @@ import '../services/auth_service.dart';
 import 'auth_screen.dart';
 import '../../Home/screens/home_screen.dart';
 
+/// The splash screen displayed when the app launches.
+///
+/// Features:
+/// - A rotating loading indicator animation.
+/// - Determines the user's authentication state.
+/// - Navigates to either [HomeScreen] or [AuthScreen] after a delay.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,12 +26,13 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
+    // Initialize rotation animation
     _animationController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat();
 
-    // Navigate to auth/home screen after 3 seconds
+    // Navigate to respective screen after 3 seconds
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
         _navigateToMain();
@@ -33,6 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
     });
   }
 
+  /// Navigates to the main screen based on authentication status.
   void _navigateToMain() {
     // Check auth state
     final isLoggedIn = _authService.isLoggedIn;

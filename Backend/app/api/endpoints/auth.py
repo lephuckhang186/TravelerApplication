@@ -1,5 +1,5 @@
 """
-Authentication endpoints for TravelPro backend
+Authentication endpoints for TravelPro backend.
 """
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer
@@ -21,21 +21,46 @@ settings = get_settings()
 security = HTTPBearer()
 
 class GoogleSignInRequest(BaseModel):
-    """Google Sign-In request model"""
+    """
+    Google Sign-In request model.
+
+    Attributes:
+        id_token (str): The Google ID token.
+        access_token (Optional[str]): The Google Access Token (optional).
+    """
     id_token: str
     access_token: Optional[str] = None
 
 class FirebaseSignInRequest(BaseModel):
-    """Firebase Sign-In request model"""  
+    """
+    Firebase Sign-In request model.
+
+    Attributes:
+        id_token (str): The Firebase ID token.
+    """
     id_token: str
 
 class CustomTokenRequest(BaseModel):
-    """Custom token request model"""
+    """
+    Custom token request model.
+
+    Attributes:
+        uid (str): The specific user ID.
+        additional_claims (Optional[dict]): Additional custom claims for the token.
+    """
     uid: str
     additional_claims: Optional[dict] = None
 
 class SyncUserRequest(BaseModel):
-    """Sync user data request model"""
+    """
+    Sync user data request model.
+
+    Attributes:
+        uid (str): The user ID (Firebase UID).
+        email (str): The user's email address.
+        display_name (Optional[str]): The user's display name.
+        photo_url (Optional[str]): The URL to the user's photo.
+    """
     uid: str
     email: str
     display_name: Optional[str] = None
@@ -46,7 +71,19 @@ class SyncUserRequest(BaseModel):
 @router.post("/google/signin", response_model=LoginResponse)
 async def google_sign_in(request: GoogleSignInRequest):
     """
-    Sign in with Google OAuth token
+    Sign in with Google OAuth token.
+
+    Verifies the Google ID token, retrieves or creates the user, and issues a custom access token.
+
+    Args:
+        request (GoogleSignInRequest): The Google sign-in request containing the ID token.
+
+    Returns:
+        LoginResponse: An object containing tokens and user information.
+
+    Raises:
+        HTTPException(401): If the Google token is invalid.
+        HTTPException(500): If authentication fails.
     """
     try:
         # Verify Google OAuth token
@@ -90,7 +127,19 @@ async def google_sign_in(request: GoogleSignInRequest):
 @router.post("/firebase/signin", response_model=LoginResponse)
 async def firebase_sign_in(request: FirebaseSignInRequest):
     """
-    Sign in with Firebase ID token
+    Sign in with Firebase ID token.
+
+    Verifies a standard Firebase ID token, ensuring the user exists.
+
+    Args:
+        request (FirebaseSignInRequest): The Firebase sign-in request containing the ID token.
+
+    Returns:
+        LoginResponse: An object containing tokens and user information.
+
+    Raises:
+        HTTPException(401): If the Firebase token is invalid.
+        HTTPException(500): If authentication fails.
     """
     try:
         # Verify Firebase ID token
@@ -128,7 +177,18 @@ async def firebase_sign_in(request: FirebaseSignInRequest):
 @router.post("/sync-user")
 async def sync_user(request: SyncUserRequest):
     """
-    Sync user data with backend (called from Flutter app)
+    Sync user data with backend (called from Flutter app).
+
+    Updates the user's profile information in the backend database based on FirebaseAuth user data.
+
+    Args:
+        request (SyncUserRequest): The user data to sync.
+
+    Returns:
+        dict: A success message and the user UID.
+
+    Raises:
+        HTTPException(500): If the sync operation fails.
     """
     try:
         # Update user profile with data from Firebase
@@ -172,7 +232,18 @@ async def create_custom_token(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Create custom Firebase token (admin only)
+    Create custom Firebase token (admin only).
+
+    Args:
+        request (CustomTokenRequest): The request details for the custom token.
+        current_user (User): The current authenticated user (must be admin).
+
+    Returns:
+        dict: The custom token and its expiration details.
+
+    Raises:
+        HTTPException(403): If the user is not an admin.
+        HTTPException(500): If token creation fails.
     """
     if not current_user.is_admin:
         raise HTTPException(
@@ -203,8 +274,19 @@ async def create_custom_token(
 @router.post("/refresh")
 async def refresh_token(request: RefreshTokenRequest):
     """
-    Refresh access token using Firebase Admin SDK
-    Note: This validates the refresh token and returns user info
+    Refresh access token using Firebase Admin SDK.
+
+    Note: This validates the refresh token (acting as an ID token here for simplicity) and returns user info.
+    In a full production flow, this would handle actual refresh token rotation.
+
+    Args:
+        request (RefreshTokenRequest): The request containing the refresh token.
+
+    Returns:
+        dict: Status message and user ID.
+
+    Raises:
+        HTTPException(500): If token refresh fails.
     """
     try:
         # Verify the refresh token is actually a valid Firebase ID token
@@ -233,7 +315,13 @@ async def refresh_token(request: RefreshTokenRequest):
 @router.get("/me", response_model=User)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """
-    Get current authenticated user information
+    Get current authenticated user information.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        User: The user profile information.
     """
     return current_user
 
@@ -243,7 +331,20 @@ async def update_current_user(
     current_user: User = Depends(get_active_user)
 ):
     """
-    Update current user profile
+    Update current user profile.
+
+    Filtering limits updates to allowed fields only.
+
+    Args:
+        update_data (dict): The fields to update.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Success message.
+
+    Raises:
+        HTTPException(400): If no valid fields are provided.
+        HTTPException(500): If the profile update fails.
     """
     try:
         # Remove sensitive fields
@@ -291,8 +392,18 @@ async def update_current_user(
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):
     """
-    Logout user
-    Note: Firebase tokens are stateless, so logout is mainly client-side
+    Logout user.
+    
+    Note: Firebase tokens are stateless, so logout is mainly client-side clearing.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Logout success message.
+
+    Raises:
+        HTTPException(500): If the logout process fails.
     """
     try:
         # In a full implementation, you might:
@@ -317,7 +428,18 @@ async def logout(current_user: User = Depends(get_current_user)):
 @router.delete("/me")
 async def delete_account(current_user: User = Depends(get_current_user)):
     """
-    Delete current user account
+    Delete current user account.
+
+    Removes the user from both the application database and Firebase Authentication.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Success message.
+
+    Raises:
+        HTTPException(500): If account deletion fails.
     """
     try:
         success = await firebase_service.delete_user(current_user.id)
@@ -344,7 +466,10 @@ async def delete_account(current_user: User = Depends(get_current_user)):
 @router.get("/health")
 async def auth_health_check():
     """
-    Authentication service health check
+    Authentication service health check.
+
+    Returns:
+        dict: Health status and capabilities.
     """
     return {
         "status": "healthy",
@@ -362,8 +487,10 @@ async def auth_health_check():
 
 def generate_refresh_token() -> str:
     """
-    Generate a random refresh token
-    In production, store this in database with expiration
+    Generate a random refresh token.
+
+    Returns:
+        str: A random string to be used as a refresh token.
     """
     return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
 

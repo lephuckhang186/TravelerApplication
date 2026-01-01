@@ -2,30 +2,31 @@ import 'package:flutter/material.dart';
 import '../../Analysis/screens/analysis_screen.dart';
 import '../../Map/screens/map_screen.dart';
 
-/// Helper class for unified navigation between trip detail screens
-/// Supports both private trips (TripModel) and collaboration trips (SharedTripModel)
+/// Helper class for unified navigation between trip detail screens.
+///
+/// Provides static methods to navigate to Analysis and Map modules,
+/// and builds shared UI components for trip-related navigation.
+/// Supports both private trips and collaboration trips.
 class TripNavigationHelper {
-  /// Navigate to Analysis screen
+  /// Navigates the user to the [AnalysisScreen].
   static void navigateToAnalysis(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AnalysisScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AnalysisScreen()),
     );
   }
 
-  /// Navigate to Map screen
+  /// Navigates the user to the [MapScreen].
   static void navigateToMap(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const MapScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const MapScreen()),
     );
   }
 
-  /// Build navigation buttons for trip detail screens
+  /// Builds a row of navigation buttons for trip detail screens.
+  ///
+  /// Currently includes buttons for 'Analysis' and 'Map'.
   static Widget buildNavigationButtons(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -42,11 +43,11 @@ class TripNavigationHelper {
           label: 'Map',
           onPressed: () => navigateToMap(context),
         ),
-        // Add more navigation buttons here as needed
       ],
     );
   }
 
+  /// Internal helper to construct a standardized elevated button with an icon.
   static Widget _buildNavigationButton({
     required BuildContext context,
     required IconData icon,

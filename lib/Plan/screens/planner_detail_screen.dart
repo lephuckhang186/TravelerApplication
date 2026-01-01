@@ -1,6 +1,4 @@
-// ignore_for_file: unused_local_variable
-
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -16,14 +14,12 @@ import '../services/trip_planning_service.dart';
 import '../services/firebase_trip_service.dart';
 import '../services/activity_edit_request_service.dart';
 import '../widgets/activity_edit_request_widget.dart';
-import '../../Expense/services/expense_service.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../services/trip_expense_integration_service.dart';
 import '../utils/activity_scheduling_validator.dart';
 import '../../smart-nofications/widgets/smart_notification_widget.dart';
 import '../../smart-nofications/providers/smart_notification_provider.dart';
 
-/// Formatter để tự động thêm dấu chấm sau mỗi 3 chữ số
 class ThousandsSeparatorInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -34,17 +30,14 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
       return newValue;
     }
 
-    // Loại bỏ tất cả dấu chấm hiện có
     String newText = newValue.text.replaceAll('.', '');
 
-    // Chỉ giữ lại số
     newText = newText.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (newText.isEmpty) {
       return const TextEditingValue();
     }
 
-    // Thêm dấu chấm sau mỗi 3 chữ số từ phải sang trái
     String formatted = '';
     int count = 0;
     for (int i = newText.length - 1; i >= 0; i--) {
@@ -56,7 +49,6 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
       count++;
     }
 
-    // Tính toán vị trí con trở mới
     int cursorPosition = formatted.length;
 
     return TextEditingValue(
@@ -396,7 +388,9 @@ class _ManagePermissionsBottomSheetState
               subtitle: const Text('Can add, edit, and delete activities'),
               leading: Radio<String>(
                 value: 'editor',
+                // ignore: deprecated_member_use
                 groupValue: currentRole,
+                // ignore: deprecated_member_use
                 onChanged: (value) => _changeRole(collaborator, value!),
               ),
             ),
@@ -405,7 +399,9 @@ class _ManagePermissionsBottomSheetState
               subtitle: const Text('Can only view the trip'),
               leading: Radio<String>(
                 value: 'viewer',
+                // ignore: deprecated_member_use
                 groupValue: currentRole,
+                // ignore: deprecated_member_use
                 onChanged: (value) => _changeRole(collaborator, value!),
               ),
             ),
@@ -505,7 +501,6 @@ class PlannerDetailScreen extends StatefulWidget {
 class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   final TripPlanningService _tripService = TripPlanningService();
   final FirebaseTripService _firebaseService = FirebaseTripService();
-  final ExpenseService _expenseService = ExpenseService();
   final TripExpenseIntegrationService _integrationService =
       TripExpenseIntegrationService();
   ExpenseProvider? _expenseProvider;
@@ -524,6 +519,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   // Prevent auto-refresh during add operations
   bool _isAddingActivity = false;
+
+  // Prevent auto-refresh during AI operations
+  bool _isApplyingAIChanges = false;
 
   // Auto-refresh timer for collaboration trips
   Timer? _autoRefreshTimer;
@@ -621,14 +619,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   void _initializeSmartNotifications() async {
     try {
       if (mounted && _trip.id != null) {
-
         // Try to get provider with enhanced error handling
         try {
           final notificationProvider = Provider.of<SmartNotificationProvider>(
             context,
             listen: false,
           );
-
 
           // Initialize with timeout to prevent hanging
           await notificationProvider
@@ -645,18 +641,15 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             setState(() {});
           }
         } catch (providerError) {
-
           final errorString = providerError.toString().toLowerCase();
           if (errorString.contains('failed to fetch') ||
               errorString.contains('clientexception') ||
               errorString.contains('socketexception') ||
               errorString.contains('timeout') ||
               errorString.contains('connection')) {
-          } else {
-          }
+          } else {}
         }
-      } else {
-      }
+      } else {}
     } catch (e) {
       // Don't show error to user - notifications are a nice-to-have feature
     }
@@ -710,7 +703,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         // Not a collaboration trip - user is effectively owner
         _userRole = 'owner';
       }
-
     } catch (e) {
       _userRole = 'owner'; // Fallback to owner for private trips
     }
@@ -738,12 +730,16 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
         // Schedule auto-refresh for next frame to avoid setState during build
-        // Only refresh if we're not currently adding/refreshing/deleting and trip is collaboration
-        if (isCollaborationTrip && !_isRefreshing && !_isAddingActivity && !_isDeleting) {
+        // Only refresh if we're not currently adding/refreshing/deleting/applying AI changes and trip is collaboration
+        if (isCollaborationTrip &&
+            !_isRefreshing &&
+            !_isAddingActivity &&
+            !_isDeleting &&
+            !_isApplyingAIChanges) {
           // Add delay to ensure all operations are complete
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Future.delayed(const Duration(milliseconds: 100), () {
-              if (mounted && !_isRefreshing && !_isAddingActivity) {
+              if (mounted && !_isRefreshing && !_isAddingActivity && !_isApplyingAIChanges) {
                 _autoRefreshFromProvider(collabProvider);
               }
             });
@@ -1766,8 +1762,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                           if (updatedActivity.checkIn &&
                               updatedActivity.budget?.actualCost != null) {
                             _checkBudgetNotification(updatedActivity);
-                          } else {
-                          }
+                          } else {}
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -1879,6 +1874,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Apply changes made by AI assistant
   Future<void> _applyAIChanges(List<dynamic> changes) async {
+    // Set flag to prevent auto-refresh during AI operations
+    _isApplyingAIChanges = true;
+
     // Temporarily disable auto-refresh to prevent overwriting AI changes
     final wasAutoRefreshActive = _autoRefreshTimer?.isActive ?? false;
     _autoRefreshTimer?.cancel();
@@ -1890,7 +1888,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       );
 
       if (hasDeleteAll) {
-
         // Delete all expenses associated with existing activities
         await _deleteExpensesForActivities(_activities);
 
@@ -1899,86 +1896,91 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         });
       }
 
-    // Check if this is a full replacement (all activities should be replaced)
-    final hasFullReplace = changes.any(
-      (change) => change['action'] == 'replace_all',
-    );
+      // Check if this is a full replacement (all activities should be replaced)
+      final hasFullReplace = changes.any(
+        (change) => change['action'] == 'replace_all',
+      );
 
-    if (hasFullReplace) {
-      // Delete all expenses associated with existing activities before replacing
-      await _deleteExpensesForActivities(_activities);
+      if (hasFullReplace) {
+        // Delete all expenses associated with existing activities before replacing
+        await _deleteExpensesForActivities(_activities);
 
-      // Full replacement: clear all existing activities and add the new ones
-      final newActivities = changes
-          .where((change) => change['action'] == 'replace_all')
-          .map(
-            (change) => ActivityModel.fromJson(
-              change['activity'] as Map<String, dynamic>,
-            ),
-          )
-          .toList();
+        // Full replacement: clear all existing activities and add the new ones
+        final newActivities = changes
+            .where((change) => change['action'] == 'replace_all')
+            .map(
+              (change) => ActivityModel.fromJson(
+                change['activity'] as Map<String, dynamic>,
+              ),
+            )
+            .toList();
 
-      setState(() {
-        _activities = ActivitySchedulingValidator.sortActivitiesChronologically(
-          newActivities,
-        );
-      });
+        setState(() {
+          _activities =
+              ActivitySchedulingValidator.sortActivitiesChronologically(
+                newActivities,
+              );
+        });
+      } else {
+        // Partial changes: apply individual add/remove/update operations
+        for (final change in changes) {
+          final action = change['action'];
 
-    } else {
-      // Partial changes: apply individual add/remove/update operations
-      for (final change in changes) {
-        final action = change['action'];
+          // Skip delete_all as it's already handled above
+          if (action == 'delete_all') continue;
 
-        // Skip delete_all as it's already handled above
-        if (action == 'delete_all') continue;
+          final activityData = change['activity'];
 
-        final activityData = change['activity'];
-
-        switch (action) {
-          case 'add':
-            final newActivity = ActivityModel.fromJson(activityData);
-            setState(() {
-              _activities.add(newActivity);
-              _activities =
-                  ActivitySchedulingValidator.sortActivitiesChronologically(
-                    _activities,
-                  );
-            });
-            break;
-
-          case 'remove':
-            final activityId = activityData['id'];
-            setState(() {
-              _activities.removeWhere((activity) => activity.id == activityId);
-            });
-            break;
-
-          case 'update':
-            final updatedActivity = ActivityModel.fromJson(activityData);
-            final index = _activities.indexWhere(
-              (activity) => activity.id == updatedActivity.id,
-            );
-            if (index != -1) {
+          switch (action) {
+            case 'add':
+              final newActivity = ActivityModel.fromJson(activityData);
               setState(() {
-                _activities[index] = updatedActivity;
+                _activities.add(newActivity);
                 _activities =
                     ActivitySchedulingValidator.sortActivitiesChronologically(
                       _activities,
                     );
               });
-            }
-            break;
+              break;
+
+            case 'remove':
+              final activityId = activityData['id'];
+              setState(() {
+                _activities.removeWhere(
+                  (activity) => activity.id == activityId,
+                );
+              });
+              break;
+
+            case 'update':
+              final updatedActivity = ActivityModel.fromJson(activityData);
+              final index = _activities.indexWhere(
+                (activity) => activity.id == updatedActivity.id,
+              );
+              if (index != -1) {
+                setState(() {
+                  _activities[index] = updatedActivity;
+                  _activities =
+                      ActivitySchedulingValidator.sortActivitiesChronologically(
+                        _activities,
+                      );
+                });
+              }
+              break;
+          }
         }
       }
-    }
 
-    // Save changes to local storage
-    _persistTripChanges();
+      // Save changes to local storage
+      _persistTripChanges();
     } finally {
       // Restart auto-refresh if it was previously active
       if (wasAutoRefreshActive && mounted) {
         _startAutoRefreshTimer();
       }
+
+      // Clear flag after operation completes
+      _isApplyingAIChanges = false;
     }
   }
 
@@ -1997,7 +1999,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       if (tripId == null) {
         return;
       }
-
 
       // APPROACH 1: Delete expenses that have expenseId set on activities
       // ignore: duplicate_ignore
@@ -2021,7 +2022,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           .where((expense) => expense.tripId == tripId)
           .toList();
 
-
       int deletedByTripId = 0;
       for (final expense in expensesToDelete) {
         try {
@@ -2031,7 +2031,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           //
         }
       }
-
 
       // Refresh expense data to ensure UI is updated
       await _expenseProvider!.loadData(tripId: tripId);
@@ -2299,7 +2298,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   Future<void> _checkBudgetNotification(ActivityModel activity) async {
     try {
-
       if (activity.budget?.actualCost != null &&
           activity.budget?.estimatedCost != null &&
           _trip.id != null &&
@@ -2307,7 +2305,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
         final actualCost = activity.budget!.actualCost!;
         final estimatedCost = activity.budget!.estimatedCost;
         final overage = actualCost - estimatedCost;
-
 
         // Only trigger if overage is more than 10%
         if (overage > estimatedCost * 0.1) {
@@ -2324,10 +2321,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           } catch (providerError) {
             //
           }
-        } else {
-        }
-      } else {
-      }
+        } else {}
+      } else {}
     } catch (e) {
       //
     }
@@ -2340,7 +2335,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
   }) {
-    // Áp dụng formatter cho số tiền khi keyboardType là number
+    // Ãp dá»¥ng formatter cho sá»‘ tiá»n khi keyboardType lÃ  number
     final inputFormatters = keyboardType == TextInputType.number
         ? [ThousandsSeparatorInputFormatter()]
         : <TextInputFormatter>[];
@@ -2448,41 +2443,41 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   String _getActivityTypeDisplayName(ActivityType type) {
     switch (type) {
       case ActivityType.flight:
-        return '✈️ Flight';
+        return 'Flight';
       case ActivityType.activity:
-        return '🎯 Activity';
+        return 'Activity';
       case ActivityType.lodging:
-        return '🏨 Lodging';
+        return 'Lodging';
       case ActivityType.carRental:
-        return '🚗 Car Rental';
+        return 'Car Rental';
       case ActivityType.concert:
-        return '🎵 Concert';
+        return 'Concert';
       case ActivityType.cruising:
-        return '🛳️ Cruise';
+        return 'Cruise';
       case ActivityType.direction:
-        return '🧭 Directions';
+        return 'Directions';
       case ActivityType.ferry:
-        return '⛴️ Ferry';
+        return 'Ferry';
       case ActivityType.groundTransportation:
-        return '🚌 Ground Transportation';
+        return 'Ground Transportation';
       case ActivityType.map:
-        return '🗺️ Map';
+        return 'Map';
       case ActivityType.meeting:
-        return '🤝 Meeting';
+        return 'Meeting';
       case ActivityType.note:
-        return '📝 Note';
+        return 'Note';
       case ActivityType.parking:
-        return '🅿️ Parking';
+        return 'Parking';
       case ActivityType.rail:
-        return '🚂 Rail';
+        return 'Rail';
       case ActivityType.restaurant:
-        return '🍽️ Restaurant';
+        return 'Restaurant';
       case ActivityType.theater:
-        return '🎭 Theater';
+        return 'Theater';
       case ActivityType.tour:
-        return '🎫 Tour';
+        return 'Tour';
       case ActivityType.transportation:
-        return '🚇 Transportation';
+        return 'Transportation';
     }
   }
 
@@ -2918,33 +2913,37 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   Future<void> _deleteActivity(ActivityModel activity) async {
     try {
       // Debug logging
-      print('🗑️ DELETE_ACTIVITY: Attempting to delete ${activity.title}');
-      print('   User role: $_userRole, isOwner: $isOwner, isEditor: $isEditor, isViewer: $isViewer');
+      debugPrint('DELETE_ACTIVITY: Attempting to delete ${activity.title}');
+      debugPrint(
+        '   User role: $_userRole, isOwner: $isOwner, isEditor: $isEditor, isViewer: $isViewer',
+      );
 
       // For collaboration trips, check permissions
       if (isEditor) {
-        print('   User is editor - requesting deletion approval');
+        debugPrint('User is editor - requesting deletion approval');
         // Editors need to request deletion approval
         await _createDeleteActivityRequest(activity);
         return;
       } else if (isViewer) {
-        print('   User is viewer - cannot delete');
+        debugPrint('User is viewer - cannot delete');
         // Viewers cannot delete activities
         _showPermissionDeniedDialog('You can only view this trip');
         return;
       }
 
       // Owners can delete directly
-      print('   User is owner - deleting directly');
+      debugPrint('User is owner - deleting directly');
 
       // Check if activity exists in current list
       final activityIndex = _activities.indexWhere((a) => a.id == activity.id);
       if (activityIndex == -1) {
-        print('   ❌ Activity not found in local list');
+        debugPrint('Activity not found in local list');
         return;
       }
 
-      print('   ✅ Activity found at index $activityIndex, removing from local list');
+      debugPrint(
+        'Activity found at index $activityIndex, removing from local list',
+      );
 
       // Prevent auto-refresh during deletion to avoid overwriting local changes
       _isDeleting = true;
@@ -2953,34 +2952,38 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       if (activity.expenseInfo.expenseSynced &&
           activity.expenseInfo.expenseId != null &&
           _expenseProvider != null) {
-        print('   💰 Deleting associated expense...');
+        debugPrint('Deleting associated expense...');
         try {
-          await _expenseProvider!.deleteExpense(activity.expenseInfo.expenseId!);
-          print('   ✅ Associated expense deleted');
+          await _expenseProvider!.deleteExpense(
+            activity.expenseInfo.expenseId!,
+          );
+          debugPrint('Associated expense deleted');
         } catch (expenseError) {
-          print('   ⚠️ Could not delete associated expense: $expenseError');
+          debugPrint('Could not delete associated expense: $expenseError');
           // Continue with activity deletion even if expense deletion fails
         }
       }
 
       // Delete locally only - no backend API call needed
-      print('   🗑️ Removing activity from local list...');
+      debugPrint('Removing activity from local list...');
       final oldLength = _activities.length;
       setState(() {
         _activities.remove(activity);
         // Force UI rebuild by creating a new list
         _activities = List<ActivityModel>.from(_activities);
       });
-      print('   ✅ Local list updated: $oldLength -> ${_activities.length} activities');
+      debugPrint(
+        'Local list updated: $oldLength -> ${_activities.length} activities',
+      );
 
-      print('   📝 Persisting trip changes...');
+      debugPrint('Persisting trip changes...');
       await _persistTripChanges();
 
-      print('   ✅ Activity deleted successfully');
+      debugPrint('Activity deleted successfully');
 
       // Note: Associated expenses will be cleaned up by analysis screen
     } catch (e) {
-      print('   ❌ DELETE_ACTIVITY_ERROR: $e');
+      debugPrint('DELETE_ACTIVITY_ERROR: $e');
       //
     } finally {
       // Re-enable auto-refresh after a short delay
@@ -3073,6 +3076,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
 
   Future<void> _persistTripChanges() async {
+    final collaborationProvider = context.read<CollaborationProvider>();
     final updatedTrip = _trip.copyWith(
       activities: List<ActivityModel>.from(_activities),
     );
@@ -3082,7 +3086,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
     // Check if this is a collaboration trip and update the provider accordingly
     try {
-      final collaborationProvider = context.read<CollaborationProvider>();
       // If we can read CollaborationProvider, this might be a collaboration trip
       // Check if the trip ID exists in collaboration data
       final isCollaborationTrip =
@@ -3160,9 +3163,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
       if (isCollaborationTrip && _trip.id != null) {
         // Delete collaboration trip
-        print('🗑️ Deleting collaboration trip: ${_trip.id}');
+        debugPrint('Deleting collaboration trip: ${_trip.id}');
         await collabProvider.deleteSharedTrip(_trip.id!);
-        print('✅ Collaboration trip deleted successfully');
+        debugPrint('Collaboration trip deleted successfully');
       } else {
         // Delete private trip
         TripPlanningProvider? provider;
@@ -3187,7 +3190,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
-      print('❌ TRIP_DELETE_ERROR: $e');
+      debugPrint('TRIP_DELETE_ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3431,7 +3434,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
   /// Update activity check-in status
   Future<void> _updateActivityCheckIn(ActivityModel updatedActivity) async {
-
     final index = _activities.indexWhere((a) => a.id == updatedActivity.id);
     if (index == -1) {
       return;
@@ -3480,7 +3482,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
               .firstOrNull;
 
           if (duplicateExpense != null) {
-
             // Reuse existing expense instead of creating new one
             final updatedExpenseInfo = activity.expenseInfo.copyWith(
               expenseId: duplicateExpense.id,
@@ -3506,8 +3507,8 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           // Continue to create new expense
         }
 
-        // Create expense and get the expense ID
-        final expense = await _expenseService.createExpenseFromActivity(
+        // Create expense using provider to ensure state synchronization
+        final expense = await _expenseProvider!.createExpenseFromActivity(
           amount: activity.budget!.actualCost!,
           category: activity.activityType.value,
           description: activity.title,
@@ -3515,10 +3516,10 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           tripId: _trip.id,
         );
 
+        if (expense == null) return;
 
         // Check if backend returned a budget warning
         if (expense.budgetWarning != null) {
-
           // Trigger smart notification for budget warning
           try {
             if (mounted) {
@@ -3530,7 +3531,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
 
               final warningType = expense.budgetWarning!['type'] as String?;
               final message = expense.budgetWarning!['message'] as String?;
-
 
               // Create notification based on warning type
               if (warningType == 'OVER_BUDGET' ||
@@ -3546,8 +3546,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           } catch (providerError) {
             //
           }
-        } else {
-        }
+        } else {}
 
         // Update activity with expense info
         final updatedExpenseInfo = activity.expenseInfo.copyWith(
@@ -3729,7 +3728,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           updatedTrip.updatedAt != _trip.updatedAt;
 
       if (hasChanges) {
-
         // Update local state with provider data and ensure activities are sorted
         setState(() {
           _trip = updatedTrip!.toTripModel();
@@ -3738,7 +3736,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 List<ActivityModel>.from(updatedTrip.activities),
               );
         });
-
       }
     } catch (e) {
       //
@@ -3792,7 +3789,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           const SnackBar(content: Text('Trip data and permissions refreshed')),
         );
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -4012,7 +4008,6 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
           collabProvider.sharedWithMeTrips.any((t) => t.id == _trip.id);
 
       if (isCollaborationTrip) {
-
         // Refresh every 15 seconds for collaboration trips
         _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (
           timer,
@@ -4033,8 +4028,7 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             //
           }
         });
-      } else {
-      }
+      } else {}
     } catch (e) {
       //
     }

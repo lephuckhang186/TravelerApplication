@@ -1,5 +1,5 @@
 """
-API endpoints for planners
+API endpoints for planners.
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,7 +20,15 @@ def create_planner(
     current_user: User = Depends(dependencies.get_current_active_user),
 ) -> planner_model.Planner:
     """
-    Create new planner.
+    Create a new planner.
+
+    Args:
+        db (Session): The database session.
+        planner_in (planner_model.PlannerCreate): The planner creation data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The created planner object.
     """
     planner = planner_service.create_with_owner(
         db=db, obj_in=planner_in, user_id=current_user.id
@@ -36,7 +44,16 @@ def read_planners(
     current_user: User = Depends(dependencies.get_current_active_user),
 ) -> List[planner_model.Planner]:
     """
-    Retrieve planners.
+    Retrieve planners belonging to the current user.
+
+    Args:
+        db (Session): The database session.
+        skip (int): Number of planners to skip. Defaults to 0.
+        limit (int): Maximum number of planners to return. Defaults to 100.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[planner_model.Planner]: A list of planner objects.
     """
     planners = planner_service.get_multi_by_owner(
         db=db, user_id=current_user.id, skip=skip, limit=limit
@@ -52,7 +69,19 @@ def read_planner(
     current_user: User = Depends(dependencies.get_current_active_user),
 ) -> planner_model.Planner:
     """
-    Get planner by ID.
+    Get a specific planner by ID.
+
+    Args:
+        db (Session): The database session.
+        id (int): The ID of the planner to retrieve.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The requested planner object.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user does not have permission to access the planner.
     """
     planner = planner_service.get(db=db, id=id)
     if not planner:
@@ -72,6 +101,19 @@ def update_planner(
 ) -> planner_model.Planner:
     """
     Update a planner.
+
+    Args:
+        db (Session): The database session.
+        id (int): The ID of the planner to update.
+        planner_in (planner_model.PlannerUpdate): The planner update data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The updated planner object.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user does not have permission to update the planner.
     """
     planner = planner_service.get(db=db, id=id)
     if not planner:
@@ -91,6 +133,18 @@ def delete_planner(
 ) -> planner_model.Planner:
     """
     Delete a planner.
+
+    Args:
+        db (Session): The database session.
+        id (int): The ID of the planner to delete.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The deleted planner object.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user does not have permission to delete the planner.
     """
     planner = planner_service.get(db=db, id=id)
     if not planner:

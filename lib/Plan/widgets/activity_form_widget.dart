@@ -3,10 +3,18 @@ import 'package:flutter/services.dart';
 import '../models/activity_models.dart';
 import '../../Expense/utils/expense_integration.dart';
 
-/// Form widget for creating/editing activities with expense integration
+/// Comprehensive form widget for creating or editing trip activities.
+///
+/// Manages input for basic activity info, scheduling (date/time),
+/// budgeting with expense integration, location mapping, and contact details.
 class ActivityFormWidget extends StatefulWidget {
+  /// The activity to edit. If null, a new activity is created.
   final ActivityModel? activity;
+
+  /// Callback invoked when the user saves the activity.
   final Function(ActivityModel) onSave;
+
+  /// Optional callback invoked when the user cancels the operation.
   final VoidCallback? onCancel;
 
   const ActivityFormWidget({
@@ -55,6 +63,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     _initializeForm();
   }
 
+  /// Populate controllers and state with existing activity data if editing.
   void _initializeForm() {
     if (widget.activity != null) {
       final activity = widget.activity!;
@@ -153,6 +162,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Builds input fields for Title, Description, Type, Status, and Priority.
   Widget _buildBasicInfoSection() {
     return Card(
       child: Padding(
@@ -189,9 +199,8 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<ActivityType>(
-              // ignore: deprecated_member_use
               value: _selectedType,
-              decoration: const InputDecoration(labelText: 'Loại hoạt động *'),
+              decoration: const InputDecoration(labelText: 'Activity Type *'),
               items: ActivityType.values.map((type) {
                 return DropdownMenuItem(
                   value: type,
@@ -209,7 +218,6 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<ActivityStatus>(
-                    // ignore: deprecated_member_use
                     value: _selectedStatus,
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: ActivityStatus.values.map((status) {
@@ -230,7 +238,6 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<Priority>(
-                    // ignore: deprecated_member_use
                     value: _selectedPriority,
                     decoration: const InputDecoration(labelText: 'Priority'),
                     items: Priority.values.map((priority) {
@@ -254,6 +261,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Builds date and time pickers for activity scheduling.
   Widget _buildDateTimeSection() {
     return Card(
       child: Padding(
@@ -324,6 +332,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Builds budgeting fields and shows expense synchronization status.
   Widget _buildBudgetSection() {
     return Card(
       child: Padding(
@@ -389,7 +398,6 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              // ignore: deprecated_member_use
               value: _selectedCurrency,
               decoration: const InputDecoration(labelText: 'Currency'),
               items: ['VND', 'USD', 'EUR'].map((currency) {
@@ -429,6 +437,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Builds fields for activity location (Address, City, Country).
   Widget _buildLocationSection() {
     return Card(
       child: Padding(
@@ -480,6 +489,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Builds contact fields (Name, Phone, Email, Website).
   Widget _buildContactSection() {
     return Card(
       child: Padding(
@@ -537,6 +547,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Builds inputs for extra notes and check-in requirements.
   Widget _buildAdditionalOptionsSection() {
     return Card(
       child: Padding(
@@ -574,6 +585,7 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Shows read-only info about the linked expense if it already exists.
   Widget _buildExpenseInfoSection() {
     if (widget.activity?.expenseInfo.hasExpense != true) {
       return const SizedBox();
@@ -627,47 +639,49 @@ class _ActivityFormWidgetState extends State<ActivityFormWidget> {
     );
   }
 
+  /// Returns English display names for [ActivityType] enums.
   String _getActivityTypeDisplayName(ActivityType type) {
     switch (type) {
       case ActivityType.flight:
-        return '✈️ Chuyến bay';
+        return '✈️ Flight';
       case ActivityType.activity:
-        return '🎯 Hoạt động';
+        return '🎯 Activity';
       case ActivityType.lodging:
-        return '🏨 Lưu trú';
+        return '🏨 Lodging';
       case ActivityType.carRental:
-        return '🚗 Thuê xe';
+        return '🚗 Car Rental';
       case ActivityType.concert:
-        return '🎵 Hòa nhạc';
+        return '🎵 Concert';
       case ActivityType.cruising:
-        return '🛳️ Du thuyền';
+        return '🛳️ Cruising';
       case ActivityType.direction:
-        return '🧭 Chỉ đường';
+        return '🧭 Direction';
       case ActivityType.ferry:
-        return '⛴️ Phà';
+        return '⛴️ Ferry';
       case ActivityType.groundTransportation:
-        return '🚌 Di chuyển mặt đất';
+        return '🚌 Ground Transportation';
       case ActivityType.map:
-        return '🗺️ Bản đồ';
+        return '🗺️ Map';
       case ActivityType.meeting:
-        return '🤝 Cuộc họp';
+        return '🤝 Meeting';
       case ActivityType.note:
-        return '📝 Ghi chú';
+        return '📝 Note';
       case ActivityType.parking:
-        return '🅿️ Đỗ xe';
+        return '🅿️ Parking';
       case ActivityType.rail:
-        return '🚂 Tàu hỏa';
+        return '🚂 Rail';
       case ActivityType.restaurant:
-        return '🍽️ Nhà hàng';
+        return '🍽️ Restaurant';
       case ActivityType.theater:
-        return '🎭 Rạp hát';
+        return '🎭 Theater';
       case ActivityType.tour:
-        return '🎫 Tour du lịch';
+        return '🎫 Tour';
       case ActivityType.transportation:
-        return '🚇 Di chuyển';
+        return '🚇 Transportation';
     }
   }
 
+  /// Collects all form data and invokes the [onSave] callback.
   void _saveActivity() {
     if (!_formKey.currentState!.validate()) return;
 

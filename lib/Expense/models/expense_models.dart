@@ -1,6 +1,6 @@
-// Định nghĩa các data models cho expense management
+// Data models for expense management
 
-/// Expense category enumeration matching backend
+/// Expense category enumeration matching backend ActivityType.
 enum ExpenseCategory {
   // Core categories matching backend ActivityType
   flight,
@@ -19,11 +19,12 @@ enum ExpenseCategory {
   // Additional expense categories
   shopping,
   miscellaneous,
-  emergency
+  emergency,
 }
 
-/// Extension for ExpenseCategory to handle string conversion
+/// Extension for [ExpenseCategory] to handle string conversion.
 extension ExpenseCategoryExtension on ExpenseCategory {
+  /// Returns the API value string for the category.
   String get value {
     switch (this) {
       case ExpenseCategory.flight:
@@ -61,6 +62,7 @@ extension ExpenseCategoryExtension on ExpenseCategory {
     }
   }
 
+  /// Returns a user-friendly display name for the category.
   String get displayName {
     switch (this) {
       case ExpenseCategory.flight:
@@ -98,6 +100,9 @@ extension ExpenseCategoryExtension on ExpenseCategory {
     }
   }
 
+  /// Converts a string value to an [ExpenseCategory].
+  ///
+  /// Defaults to [ExpenseCategory.miscellaneous] if no match is found.
   static ExpenseCategory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'flight':
@@ -138,7 +143,7 @@ extension ExpenseCategoryExtension on ExpenseCategory {
   }
 }
 
-/// Expense model matching backend structure
+/// Expense model matching backend structure.
 class Expense {
   final String id;
   final double amount;
@@ -160,7 +165,7 @@ class Expense {
     this.budgetWarning,
   });
 
-  /// Validate expense amount
+  /// Validates the expense amount (must be non-negative).
   bool get isValid => amount >= 0;
 
   factory Expense.fromJson(Map<String, dynamic> json) {
@@ -190,11 +195,11 @@ class Expense {
     };
   }
 
-  /// Get expense date for backward compatibility
+  /// Alias for date property for backward compatibility.
   DateTime get expenseDate => date;
 }
 
-/// Expense create request model matching backend
+/// Request model for creating a new expense.
 class ExpenseCreateRequest {
   final double amount;
   final ExpenseCategory category;
@@ -210,7 +215,7 @@ class ExpenseCreateRequest {
     this.tripId,
   });
 
-  /// Validate request data
+  /// Validates the request data (amount must be > 0).
   bool get isValid => amount > 0;
 
   Map<String, dynamic> toJson() {
@@ -224,7 +229,7 @@ class ExpenseCreateRequest {
   }
 }
 
-/// Budget model matching backend Budget class
+/// Budget model matching backend Budget structure.
 class Budget {
   final double totalBudget;
   final double? dailyLimit;
@@ -238,30 +243,34 @@ class Budget {
     this.categoryBudgets,
   });
 
-  /// Validate budget
+  /// Validates the budget (total budget must be > 0).
   bool get isValid => totalBudget > 0;
 
-  /// Get total allocated amount
+  /// Calculates the total allocated amount across all categories.
   double get totalAllocated {
     if (categoryAllocations != null) {
-      return categoryAllocations!.values.fold(0.0, (sum, amount) => sum + amount);
+      return categoryAllocations!.values.fold(
+        0.0,
+        (sum, amount) => sum + amount,
+      );
     }
     return 0.0;
   }
 
-  /// Get unallocated amount
+  /// Calculates the unallocated budget amount.
   double get unallocated => totalBudget - totalAllocated;
 
   factory Budget.fromJson(Map<String, dynamic> json) {
     return Budget(
       totalBudget: (json['total_budget'] as num).toDouble(),
-      dailyLimit: json['daily_limit'] != null 
-          ? (json['daily_limit'] as num).toDouble() 
+      dailyLimit: json['daily_limit'] != null
+          ? (json['daily_limit'] as num).toDouble()
           : null,
       categoryAllocations: json['category_allocations'] != null
           ? Map<String, double>.from(
               (json['category_allocations'] as Map).map(
-                (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
+                (key, value) =>
+                    MapEntry(key.toString(), (value as num).toDouble()),
               ),
             )
           : null,
@@ -272,12 +281,13 @@ class Budget {
     return {
       'total_budget': totalBudget,
       if (dailyLimit != null) 'daily_limit': dailyLimit,
-      if (categoryAllocations != null) 'category_allocations': categoryAllocations,
+      if (categoryAllocations != null)
+        'category_allocations': categoryAllocations,
     };
   }
 }
 
-/// Trip model
+/// Trip model (Expenses view).
 class Trip {
   final DateTime startDate;
   final DateTime endDate;
@@ -293,18 +303,19 @@ class Trip {
     this.durationDays,
   });
 
-  /// Check if trip is currently active
+  /// Checks if the trip is currently active (today is within date range).
   bool get isActive {
     final now = DateTime.now();
-    return now.isAfter(startDate) && now.isBefore(endDate.add(const Duration(days: 1)));
+    return now.isAfter(startDate) &&
+        now.isBefore(endDate.add(const Duration(days: 1)));
   }
 
-  /// Get total days in trip
+  /// Calculates the total duration of the trip in days.
   int get totalDays {
     return endDate.difference(startDate).inDays + 1;
   }
 
-  /// Get days remaining in trip
+  /// Calculates number of days remaining in the trip.
   int get daysRemaining {
     final now = DateTime.now();
     if (endDate.isAfter(now)) {
@@ -313,7 +324,7 @@ class Trip {
     return 0;
   }
 
-  /// Get days elapsed in trip
+  /// Calculates number of days elapsed since start.
   int get daysElapsed {
     final now = DateTime.now();
     if (now.isBefore(startDate)) {
@@ -345,26 +356,23 @@ class Trip {
   }
 }
 
-/// Category budget model matching backend CategoryBudget
+/// Category budget model matching backend CategoryBudget.
 class CategoryBudget {
   final double allocatedAmount;
   final double spentAmount;
 
-  const CategoryBudget({
-    required this.allocatedAmount,
-    this.spentAmount = 0.0,
-  });
+  const CategoryBudget({required this.allocatedAmount, this.spentAmount = 0.0});
 
-  /// Get remaining budget
+  /// Calculates remaining budget for this category.
   double get remaining => allocatedAmount - spentAmount;
 
-  /// Get percentage used
+  /// Calculates percentage of allocated budget used (0-100).
   double get percentageUsed {
     if (allocatedAmount <= 0) return 0.0;
     return (spentAmount / allocatedAmount * 100).clamp(0.0, 100.0);
   }
 
-  /// Check if over budget
+  /// Checks if spending exceeds allocation.
   bool get isOverBudget => spentAmount > allocatedAmount;
 
   factory CategoryBudget.fromJson(Map<String, dynamic> json) {
@@ -375,22 +383,14 @@ class CategoryBudget {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'allocated_amount': allocatedAmount,
-      'spent_amount': spentAmount,
-    };
+    return {'allocated_amount': allocatedAmount, 'spent_amount': spentAmount};
   }
 }
 
-/// Budget status response modelng backend
-enum BurnRateStatus {
-  completed,
-  highBurn,
-  moderateBurn,
-  onTrack,
-}
+/// Burn rate status enumeration matching backend.
+enum BurnRateStatus { completed, highBurn, moderateBurn, onTrack }
 
-/// Extension for BurnRateStatus
+/// Extension for [BurnRateStatus].
 extension BurnRateStatusExtension on BurnRateStatus {
   String get value {
     switch (this) {
@@ -421,7 +421,7 @@ extension BurnRateStatusExtension on BurnRateStatus {
   }
 }
 
-/// Budget status response model matching backend BudgetStatus
+/// Budget status response model matching backend BudgetStatus.
 class BudgetStatus {
   final double totalBudget;
   final double totalSpent;
@@ -463,9 +463,12 @@ class BudgetStatus {
       endDate: DateTime.parse(json['end_date'] as String),
       daysRemaining: json['days_remaining'] as int,
       daysTotal: json['days_total'] as int,
-      recommendedDailySpending: (json['recommended_daily_spending'] as num).toDouble(),
+      recommendedDailySpending: (json['recommended_daily_spending'] as num)
+          .toDouble(),
       averageDailySpending: (json['average_daily_spending'] as num).toDouble(),
-      burnRateStatus: BurnRateStatusExtension.fromString(json['burn_rate_status'] as String),
+      burnRateStatus: BurnRateStatusExtension.fromString(
+        json['burn_rate_status'] as String,
+      ),
       isOverBudget: json['is_over_budget'] as bool,
       categoryOverruns: (json['category_overruns'] as List)
           .map((cat) => ExpenseCategoryExtension.fromString(cat.toString()))
@@ -474,14 +477,10 @@ class BudgetStatus {
   }
 }
 
-/// Category status type enum matching backend
-enum CategoryStatusType {
-  overBudget,
-  warning,
-  ok,
-}
+/// Category status type enum matching backend.
+enum CategoryStatusType { overBudget, warning, ok }
 
-/// Extension for CategoryStatusType
+/// Extension for [CategoryStatusType].
 extension CategoryStatusTypeExtension on CategoryStatusType {
   String get value {
     switch (this) {
@@ -508,7 +507,7 @@ extension CategoryStatusTypeExtension on CategoryStatusType {
   }
 }
 
-/// Category status response model matching backend
+/// Category status response model matching backend.
 class CategoryStatus {
   final ExpenseCategory category;
   final double allocated;
@@ -541,7 +540,7 @@ class CategoryStatus {
   }
 }
 
-/// Expense summary model
+/// Expense summary model.
 class ExpenseSummary {
   final int totalExpenses;
   final double totalAmount;
@@ -573,15 +572,10 @@ class ExpenseSummary {
   }
 }
 
-/// Spending trend type enum matching backend
-enum SpendingTrendType {
-  increasing,
-  decreasing,
-  stable,
-  insufficientData,
-}
+/// Spending trend type enum matching backend.
+enum SpendingTrendType { increasing, decreasing, stable, insufficientData }
 
-/// Extension for SpendingTrendType
+/// Extension for [SpendingTrendType].
 extension SpendingTrendTypeExtension on SpendingTrendType {
   String get value {
     switch (this) {
@@ -612,7 +606,7 @@ extension SpendingTrendTypeExtension on SpendingTrendType {
   }
 }
 
-/// Spending trends model matching backend Analytics
+/// Spending trends model matching backend Analytics.
 class SpendingTrends {
   final SpendingTrendType trend;
   final double recentAverage;
@@ -646,32 +640,34 @@ class SpendingTrends {
     final categoryTrendsMap = json['category_trends'] as Map? ?? {};
     final categoryTrends = <ExpenseCategory, double>{};
     for (final entry in categoryTrendsMap.entries) {
-      final category = ExpenseCategoryExtension.fromString(entry.key.toString());
+      final category = ExpenseCategoryExtension.fromString(
+        entry.key.toString(),
+      );
       final amount = (entry.value as num).toDouble();
       categoryTrends[category] = amount;
     }
 
     return SpendingTrends(
-      trend: SpendingTrendTypeExtension.fromString(json['trend'] as String? ?? 'STABLE'),
+      trend: SpendingTrendTypeExtension.fromString(
+        json['trend'] as String? ?? 'STABLE',
+      ),
       recentAverage: (json['recent_average'] as num?)?.toDouble() ?? 0.0,
       overallAverage: (json['overall_average'] as num?)?.toDouble() ?? 0.0,
       dailyTotals: dailyTotals,
       categoryTrends: categoryTrends,
-      spendingPatterns: json['spending_patterns'] as Map<String, dynamic>? ?? {},
+      spendingPatterns:
+          json['spending_patterns'] as Map<String, dynamic>? ?? {},
       predictions: json['predictions'] as Map<String, dynamic>? ?? {},
     );
   }
 }
 
-/// Daily spending model
+/// Daily spending model.
 class DailySpending {
   final DateTime date;
   final double amount;
 
-  const DailySpending({
-    required this.date,
-    required this.amount,
-  });
+  const DailySpending({required this.date, required this.amount});
 
   factory DailySpending.fromJson(Map<String, dynamic> json) {
     return DailySpending(

@@ -3,12 +3,15 @@ from langchain.tools import tool
 class Calculator:
     """
     Simple calculator for basic arithmetic operations.
+
+    This tool is provided to the agent to perform deterministic mathematical calculations,
+    ensuring accuracy in budget and itinerary planning.
     """
     @staticmethod
     @tool
     def add(a: int, b: int) -> int:
         """
-        Add two integers.
+        Adds two integers.
 
         Args:
             a (int): The first integer.
@@ -23,7 +26,7 @@ class Calculator:
     @tool
     def multiply(a: int, b: int) -> int:
         """
-        Multiply two integers.
+        Multiplies two integers.
 
         Args:
             a (int): The first integer.
@@ -38,7 +41,7 @@ class Calculator:
     @tool
     def divide(a: int, b: int) -> float:
         """
-        Divide two integers.
+        Divides two integers.
 
         Args:
             a (int): The numerator.
@@ -46,6 +49,9 @@ class Calculator:
 
         Returns:
             float: The result of division.
+
+        Raises:
+            ValueError: If the denominator is zero.
         """
         if b == 0:
             raise ValueError("Denominator cannot be zero.")
@@ -55,13 +61,13 @@ class Calculator:
     @tool
     def subtract(a: int, b: int) -> int:
         """
-        Subtract two integers.
+        Subtracts two integers.
 
         Args:
             a (int): The first integer.
             b (int): The second integer.
 
         Returns:
-            int: The subtraction of a and b.
+            int: The subtraction of b from a.
         """
         return a - b

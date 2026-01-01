@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+/// A screen that allows users to search for geographic locations and categories.
+///
+/// It integrates with OpenStreetMap's Nominatim API to provide a simple
+/// "auto pick" mechanism for finding addresses or points of interest based on
+/// a search query (category + location).
 class SearchPlaceScreen extends StatefulWidget {
+  /// Initial location string to pre-fill the search field.
   final String? prefilledLocation;
+
+  /// Initial category string to pre-fill the search field.
   final String? prefilledCategory;
 
   const SearchPlaceScreen({
@@ -40,6 +48,9 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
     }
   }
 
+  /// Sends a request to the Nominatim API to search for places matching the query.
+  ///
+  /// Combines category and location into a single search query if both are provided.
   Future<void> _searchPlaces() async {
     final category = _categoryController.text.trim();
     final location = _locationController.text.trim();
@@ -69,7 +80,7 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
         });
       }
     } catch (e) {
-      //
+      // Ignored for now - ideally show an error snackbar
     }
   }
 
@@ -175,12 +186,9 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        const Text(
                           'Try searching for places in your destination',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
                           textAlign: TextAlign.center,
                         ),
                       ],

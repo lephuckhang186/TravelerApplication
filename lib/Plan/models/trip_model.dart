@@ -1,6 +1,8 @@
 import 'activity_models.dart';
 
-/// Trip model for managing travel plans
+/// Core Trip model for managing travel plans and itineraries.
+///
+/// Stores high-level trip metadata, timing, and a collection of [ActivityModel]s.
 class TripModel {
   final String? id;
   final String name;
@@ -8,14 +10,24 @@ class TripModel {
   final DateTime startDate;
   final DateTime endDate;
   final String? description;
+
+  /// List of activities planned for this trip.
   final List<ActivityModel> activities;
+
+  /// Global budget settings for the entire trip.
   final BudgetModel? budget;
+
+  /// List of user IDs of people collaborating on this trip.
   final List<String> collaborators;
   final String? coverImage;
   final String? createdBy;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// Whether the trip is active (not deleted or archived).
   final bool isActive;
+
+  /// Flexible storage for user-specific trip preferences.
   final Map<String, dynamic>? preferences;
 
   TripModel({
@@ -36,12 +48,12 @@ class TripModel {
     this.preferences,
   });
 
-  /// Get trip duration in days
+  /// Get trip duration in days (inclusive of start and end date).
   int get durationDays {
     return endDate.difference(startDate).inDays + 1;
   }
 
-  /// Get remaining days until trip starts
+  /// Get days remaining until the trip starts.
   int get daysUntilStart {
     final now = DateTime.now();
     if (startDate.isAfter(now)) {
@@ -50,18 +62,19 @@ class TripModel {
     return 0;
   }
 
-  /// Check if trip is currently active
+  /// Whether the current date falls within the trip's start and end dates.
   bool get isCurrentlyActive {
     final now = DateTime.now();
-    return now.isAfter(startDate) && now.isBefore(endDate.add(const Duration(days: 1)));
+    return now.isAfter(startDate) &&
+        now.isBefore(endDate.add(const Duration(days: 1)));
   }
 
-  /// Check if trip is completed
+  /// Whether the trip has already ended.
   bool get isCompleted {
     return DateTime.now().isAfter(endDate);
   }
 
-  /// Get total estimated budget
+  /// Aggregate of trip budget and all activity budgets.
   double get totalEstimatedBudget {
     double total = budget?.estimatedCost ?? 0;
     for (final activity in activities) {
@@ -70,7 +83,7 @@ class TripModel {
     return total;
   }
 
-  /// Get total actual spent
+  /// Aggregate of trip actual cost and all activity actual costs.
   double get totalActualSpent {
     double total = budget?.actualCost ?? 0;
     for (final activity in activities) {
@@ -79,19 +92,19 @@ class TripModel {
     return total;
   }
 
-  /// Get remaining budget
+  /// Difference between estimated budget and actual spending.
   double get remainingBudget => totalEstimatedBudget - totalActualSpent;
 
-  /// Get budget usage percentage
+  /// Percentage of the estimated budget that has been spent.
   double get budgetUsagePercentage {
     if (totalEstimatedBudget <= 0) return 0.0;
     return (totalActualSpent / totalEstimatedBudget * 100).clamp(0.0, 100.0);
   }
 
-  /// Check if over budget
+  /// Whether actual spending exceeds the total estimated budget.
   bool get isOverBudget => totalActualSpent > totalEstimatedBudget;
 
-  /// Get budget status
+  /// Provides a user-friendly budget status string.
   String get budgetStatus {
     if (totalEstimatedBudget <= 0) return 'No Budget Set';
     final percentage = budgetUsagePercentage;
@@ -102,7 +115,7 @@ class TripModel {
     return 'Under Budget';
   }
 
-  /// Get recommended daily spending
+  /// Recommended spending per day for the remaining duration.
   double get recommendedDailySpending {
     if (isCompleted) return 0.0;
     final daysRemaining = endDate.difference(DateTime.now()).inDays;
@@ -110,7 +123,7 @@ class TripModel {
     return remainingBudget / daysRemaining;
   }
 
-  /// Update trip with expense data
+  /// Creates a copy of the trip with updated expense/actual cost details.
   TripModel copyWithExpenseUpdate({
     double? newActualSpent,
     List<ActivityModel>? updatedActivities,
@@ -139,17 +152,19 @@ class TripModel {
     );
   }
 
-  /// Get activities by type
+  /// Filters activities by their [ActivityType].
   List<ActivityModel> getActivitiesByType(ActivityType type) {
-    return activities.where((activity) => activity.activityType == type).toList();
+    return activities
+        .where((activity) => activity.activityType == type)
+        .toList();
   }
 
-  /// Get activities by status
+  /// Filters activities by their [ActivityStatus].
   List<ActivityModel> getActivitiesByStatus(ActivityStatus status) {
     return activities.where((activity) => activity.status == status).toList();
   }
 
-  /// Get activities for a specific date
+  /// Retrieves all activities whose start date matches [date].
   List<ActivityModel> getActivitiesForDate(DateTime date) {
     return activities.where((activity) {
       if (activity.startDate == null) return false;
@@ -163,6 +178,7 @@ class TripModel {
     }).toList();
   }
 
+  /// Converts the trip model to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -183,28 +199,42 @@ class TripModel {
     };
   }
 
+  /// Creates a [TripModel] from a JSON map.
   factory TripModel.fromJson(Map<String, dynamic> json) {
     return TripModel(
       id: json['id'],
       name: json['name'] ?? '',
       destination: json['destination'] ?? '',
-      startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : DateTime.now(),
-      endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : DateTime.now(),
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'])
+          : DateTime.now(),
+      endDate: json['end_date'] != null
+          ? DateTime.parse(json['end_date'])
+          : DateTime.now(),
       description: json['description'],
-      activities: (json['activities'] as List<dynamic>?)
-          ?.map((a) => ActivityModel.fromJson(a as Map<String, dynamic>))
-          .toList() ?? [],
-      budget: json['budget'] != null ? BudgetModel.fromJson(json['budget']) : null,
+      activities:
+          (json['activities'] as List<dynamic>?)
+              ?.map((a) => ActivityModel.fromJson(a as Map<String, dynamic>))
+              .toList() ??
+          [],
+      budget: json['budget'] != null
+          ? BudgetModel.fromJson(json['budget'])
+          : null,
       collaborators: List<String>.from(json['collaborators'] ?? []),
       coverImage: json['cover_image'],
       createdBy: json['created_by'],
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
       isActive: json['is_active'] ?? true,
       preferences: json['preferences'] as Map<String, dynamic>?,
     );
   }
 
+  /// Creates a copy of the trip with modified fields.
   TripModel copyWith({
     String? id,
     String? name,

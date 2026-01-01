@@ -6,7 +6,32 @@ from typing import Optional
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    """Application settings"""
+    """
+    Application settings for TravelPro Backend API.
+
+    This class loads configuration from environment variables and defines defaults
+    for various application components including security, database, and external APIs.
+
+    Attributes:
+        APP_NAME (str): The name of the application.
+        APP_VERSION (str): The current version of the application.
+        DEBUG (bool): Enable or disable debug mode.
+        ALGORITHM (str): Encryption algorithm for tokens.
+        ACCESS_TOKEN_EXPIRE_MINUTES (int): access token validity duration.
+        REFRESH_TOKEN_EXPIRE_DAYS (int): refresh token validity duration.
+        FIREBASE_SERVICE_ACCOUNT_PATH (Optional[str]): Path to Firebase credentials file.
+        FIREBASE_PROJECT_ID (Optional[str]): Firebase Project ID.
+        GOOGLE_CLIENT_ID (Optional[str]): Google OAuth Client ID.
+        ALLOWED_HOSTS (list): List of allowed hosts.
+        CORS_ORIGINS (list): List of allowed CORS origins.
+        API_V1_STR (str): API version prefix.
+        MAX_FILE_SIZE (int): Maximum allowed file size for uploads.
+        ALLOWED_FILE_TYPES (list): List of allowed MIME types.
+        SMTP_HOST (Optional[str]): SMTP server host.
+        REDIS_URL (Optional[str]): Redis connection URL.
+        WEATHER_API_KEY (Optional[str]): API key for weather service.
+        ENABLE_DOCS (bool): Enable or disable API documentation.
+    """
     
     # App configuration
     APP_NAME: str = "TravelPro Backend API"

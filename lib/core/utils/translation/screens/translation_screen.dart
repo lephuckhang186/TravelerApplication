@@ -6,6 +6,10 @@ import '../models/translation_models.dart';
 import '../services/translation_service.dart';
 import '../services/ocr_service.dart';
 
+/// Multi-functional translation interface supporting text, voice, and OCR.
+///
+/// Integrates live translation services, camera-based character recognition,
+/// and offline-first common phrase management for travelers.
 class TranslationScreen extends StatefulWidget {
   const TranslationScreen({super.key});
 
@@ -712,7 +716,9 @@ class _TranslationScreenState extends State<TranslationScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     AppColors.skyBlue.withValues(alpha: 0.2),
-                                    AppColors.dodgerBlue.withValues(alpha: 0.15),
+                                    AppColors.dodgerBlue.withValues(
+                                      alpha: 0.15,
+                                    ),
                                   ],
                                 ),
                                 shape: BoxShape.circle,
@@ -956,9 +962,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.dodgerBlue,
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.dodgerBlue),
               ),
             ),
         ],
@@ -1018,7 +1022,7 @@ class _TranslationScreenState extends State<TranslationScreen>
   void _scheduleAutoTranslation() {
     // Cancel any existing timer
     _debounceTimer?.cancel();
-    
+
     // Start a new timer
     _debounceTimer = Timer(_debounceDuration, () {
       if (_sourceController.text.trim().isNotEmpty && mounted) {
@@ -1032,9 +1036,7 @@ class _TranslationScreenState extends State<TranslationScreen>
     if (_sourceLanguage.code == 'auto') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Cannot swap when in auto-detect mode',
-          ),
+          content: Text('Cannot swap when in auto-detect mode'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -1052,7 +1054,7 @@ class _TranslationScreenState extends State<TranslationScreen>
         _targetController.text = tempText;
       });
       _swapAnimationController.reset();
-      
+
       // Auto-translate after swapping
       if (_sourceController.text.trim().isNotEmpty) {
         _scheduleAutoTranslation();
@@ -1151,7 +1153,7 @@ class _TranslationScreenState extends State<TranslationScreen>
                                 }
                               });
                               Navigator.pop(context);
-                              
+
                               // Auto-translate after language change
                               if (_sourceController.text.trim().isNotEmpty) {
                                 _scheduleAutoTranslation();
@@ -1229,9 +1231,7 @@ class _TranslationScreenState extends State<TranslationScreen>
       _isListening = !_isListening;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Voice recognition feature will be added'),
-      ),
+      const SnackBar(content: Text('Voice recognition feature will be added')),
     );
   }
 

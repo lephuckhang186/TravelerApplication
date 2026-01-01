@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import '../models/collaboration_models.dart';
 import '../services/edit_request_service.dart';
 
-/// Button widget for viewers to request edit access
+/// Interactive button for [Viewer] collaborators to initiate a request for [Editor] access.
+///
+/// Automatically checks for existing pending requests and updates its UI to reflect
+/// the current status (Request Pending, or Send Request). Supports request cancellation.
 class EditRequestButton extends StatefulWidget {
+  /// The ID of the trip for which edit access is being requested.
   final String tripId;
+
+  /// Optional callback invoked when a request is successfully transmitted.
   final VoidCallback? onRequestSent;
 
   const EditRequestButton({
-    Key? key,
+    super.key,
     required this.tripId,
     this.onRequestSent,
-  }) : super(key: key);
+  });
 
   @override
   State<EditRequestButton> createState() => _EditRequestButtonState();
@@ -28,8 +34,11 @@ class _EditRequestButtonState extends State<EditRequestButton> {
     _checkPendingRequest();
   }
 
+  /// Queries the service to see if the current user already has a pending request.
   Future<void> _checkPendingRequest() async {
-    final request = await _editRequestService.checkPendingRequest(widget.tripId);
+    final request = await _editRequestService.checkPendingRequest(
+      widget.tripId,
+    );
     if (mounted) {
       setState(() {
         _pendingRequest = request;
@@ -37,6 +46,7 @@ class _EditRequestButtonState extends State<EditRequestButton> {
     }
   }
 
+  /// Displays the dialog for entering an optional message before sending the request.
   Future<void> _showRequestDialog() async {
     final messageController = TextEditingController();
 
@@ -88,6 +98,7 @@ class _EditRequestButtonState extends State<EditRequestButton> {
     }
   }
 
+  /// Persists the new [EditRequest] to the backend.
   Future<void> _sendRequest(String message) async {
     setState(() => _isLoading = true);
 
@@ -126,6 +137,7 @@ class _EditRequestButtonState extends State<EditRequestButton> {
     }
   }
 
+  /// Deletes the currently pending request to 'cancel' it.
   Future<void> _cancelRequest() async {
     if (_pendingRequest == null) return;
 
@@ -133,7 +145,9 @@ class _EditRequestButtonState extends State<EditRequestButton> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Request?'),
-        content: const Text('Are you sure you want to cancel your edit access request?'),
+        content: const Text(
+          'Are you sure you want to cancel your edit access request?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

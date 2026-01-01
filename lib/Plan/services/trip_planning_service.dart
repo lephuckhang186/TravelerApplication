@@ -4,9 +4,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/activity_models.dart';
 import '../models/trip_model.dart';
 
-/// Service for handling API calls related to trips and activities
+/// Service for handling API calls related to trips and activities.
+///
+/// This service acts as a bridge between the Flutter frontend and the Python backend.
+/// It handles:
+/// - Activity CRUD operations (Create, Read, Update, Delete)
+/// - Trip management (Create, Read, Update, Delete)
+/// - Scheduling and conflict checking
+/// - Budget setup and expense tracking integration
+/// - Statistics and export functionality
 class TripPlanningService {
-  // Dynamic base URL based on platform
+  /// Dynamic base URL based on platform.
+  ///
+  /// Currently hardcoded to the development machine's IP.
+  /// Should be configured via environment variables in production.
   static String get baseUrl {
     // Your computer's actual IP address (based on netstat output showing 172.20.10.4)
     return 'http://172.20.10.4:8000/api/v1';
@@ -16,7 +27,10 @@ class TripPlanningService {
     // iOS Simulator: 'http://localhost:8000/api/v1'
   }
 
-  // Headers for API calls with Firebase authentication
+  /// Headers for API calls with Firebase authentication.
+  ///
+  /// Retrieves the current user's ID token to authenticate requests.
+  /// Throws an exception if the user is not logged in.
   Future<Map<String, String>> get _headers async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -31,7 +45,9 @@ class TripPlanningService {
     }
   }
 
-  /// Get a specific trip by ID
+  /// Get a specific trip by ID.
+  ///
+  /// Currently filters the result of [getCurrentTrip] as a workaround.
   Future<TripModel?> getTrip(String tripId) async {
     try {
       // For now, use the current trip endpoint since we don't have individual trip endpoints
@@ -42,7 +58,10 @@ class TripPlanningService {
     }
   }
 
-  /// Get all activities for a trip
+  /// Get all activities for a trip.
+  ///
+  /// If [tripId] is provided, fetches activities for that specific trip.
+  /// Otherwise, fetches activities for all trips (or default context).
   Future<List<ActivityModel>> getActivities({String? tripId}) async {
     try {
       final uri = tripId != null
@@ -66,7 +85,7 @@ class TripPlanningService {
     }
   }
 
-  /// Get a specific activity by ID
+  /// Get a specific activity by ID.
   Future<ActivityModel?> getActivity(String activityId) async {
     try {
       final headers = await _headers;
@@ -88,7 +107,7 @@ class TripPlanningService {
     }
   }
 
-  /// Create a new activity
+  /// Create a new activity.
   Future<ActivityModel> createActivity(ActivityModel activity) async {
     try {
       final headers = await _headers;
@@ -111,7 +130,7 @@ class TripPlanningService {
     }
   }
 
-  /// Update an existing activity
+  /// Update an existing activity.
   Future<ActivityModel> updateActivity(
     String activityId,
     ActivityModel activity,
@@ -135,7 +154,7 @@ class TripPlanningService {
     }
   }
 
-  /// Delete an activity
+  /// Delete an activity.
   Future<void> deleteActivity(String activityId) async {
     try {
       final headers = await _headers;
@@ -152,7 +171,7 @@ class TripPlanningService {
     }
   }
 
-  /// Schedule an activity
+  /// Schedule an activity with start and end times.
   Future<ActivityModel> scheduleActivity(
     String activityId,
     DateTime startDate, {
@@ -184,7 +203,7 @@ class TripPlanningService {
     }
   }
 
-  /// Update activity cost
+  /// Update the actual cost of an activity.
   Future<ActivityModel> updateActivityCost(
     String activityId,
     double actualCost,
@@ -213,7 +232,7 @@ class TripPlanningService {
     }
   }
 
-  /// Check for schedule conflicts
+  /// Check for schedule conflicts for a potential activity time range.
   Future<List<ActivityModel>> checkScheduleConflicts(
     DateTime startDate,
     DateTime endDate, {
@@ -248,7 +267,9 @@ class TripPlanningService {
     }
   }
 
-  /// Get activity statistics for a trip
+  /// Get activity statistics for a trip.
+  ///
+  /// Includes counts by type, status, and priority.
   Future<Map<String, dynamic>> getActivityStatistics(String tripId) async {
     try {
       final headers = await _headers;
@@ -267,7 +288,7 @@ class TripPlanningService {
     }
   }
 
-  /// Export trip activities
+  /// Export trip activities in a structured format.
   Future<Map<String, dynamic>> exportTripActivities(String tripId) async {
     try {
       final headers = await _headers;
@@ -286,7 +307,9 @@ class TripPlanningService {
     }
   }
 
-  /// Setup trip budget for expense tracking
+  /// Setup trip budget for expense tracking.
+  ///
+  /// Initializes the budget with total amount, currency, and optional category allocations.
   Future<Map<String, dynamic>> setupTripBudget({
     String? tripId,
     required DateTime startDate,
@@ -323,7 +346,7 @@ class TripPlanningService {
     }
   }
 
-  /// Get expense summary with activity integration
+  /// Get expense summary with activity integration.
   Future<Map<String, dynamic>> getExpenseSummary({String? tripId}) async {
     try {
       final uri = tripId != null
@@ -345,7 +368,9 @@ class TripPlanningService {
     }
   }
 
-  /// Force sync all activities with expenses
+  /// Force sync all activities with expenses.
+  ///
+  /// Ensures that any activity with a cost has a corresponding expense record.
   Future<Map<String, dynamic>> syncActivitiesWithExpenses({
     String? tripId,
   }) async {
@@ -369,7 +394,7 @@ class TripPlanningService {
     }
   }
 
-  /// Get available activity types from backend
+  /// Get available activity types from backend.
   Future<List<Map<String, String>>> getActivityTypes() async {
     try {
       final headers = await _headers;
@@ -389,7 +414,7 @@ class TripPlanningService {
     }
   }
 
-  /// Get available activity statuses from backend
+  /// Get available activity statuses from backend.
   Future<List<Map<String, String>>> getActivityStatuses() async {
     try {
       final headers = await _headers;
@@ -411,7 +436,7 @@ class TripPlanningService {
     }
   }
 
-  /// Get available activity priorities from backend
+  /// Get available activity priorities from backend.
   Future<List<Map<String, String>>> getActivityPriorities() async {
     try {
       final headers = await _headers;
@@ -435,7 +460,7 @@ class TripPlanningService {
 
   // ===== TRIP MANAGEMENT METHODS =====
 
-  /// Test API connectivity and authentication
+  /// Test API connectivity and authentication.
   Future<bool> testConnection() async {
     try {
       final headers = await _headers;
@@ -449,7 +474,10 @@ class TripPlanningService {
     }
   }
 
-  /// Create a new trip with backend integration
+  /// Create a new trip with backend integration.
+  ///
+  /// Validates trip data (name, destination, dates).
+  /// Sends creation request to the backend.
   Future<TripModel> createTrip(TripModel trip) async {
     try {
       // Test connection first
@@ -547,7 +575,9 @@ class TripPlanningService {
     }
   }
 
-  /// Get current trip
+  /// Get the current active trip.
+  ///
+  /// Returns the first trip marked as active, or the most recent one if no active trip exists.
   Future<TripModel?> getCurrentTrip() async {
     try {
       final trips = await getTrips();
@@ -564,7 +594,7 @@ class TripPlanningService {
     }
   }
 
-  /// Get all trips
+  /// Get all trips.
   Future<List<TripModel>> getTrips() async {
     try {
       // Use real endpoint with authentication
@@ -627,7 +657,10 @@ class TripPlanningService {
     }
   }
 
-  /// Update trip
+  /// Update a trip.
+  ///
+  /// Currently simulates an update by refreshing the [updatedAt] timestamp
+  /// as the backend may not have a full update endpoint ready.
   Future<TripModel> updateTrip(String tripId, TripModel trip) async {
     try {
       // For now, since backend doesn't have full trip update endpoint,
@@ -638,7 +671,7 @@ class TripPlanningService {
     }
   }
 
-  /// Delete trip
+  /// Delete a trip.
   Future<bool> deleteTrip(String tripId) async {
     try {
       final headers = await _headers;
@@ -661,7 +694,9 @@ class TripPlanningService {
     }
   }
 
-  /// Create trip with budget setup
+  /// Create a trip with setup budget information.
+  ///
+  /// Combines [createTrip] and [setupTripBudget] into a single flow.
   Future<TripModel> createTripWithBudget({
     required TripModel trip,
     required double totalBudget,
@@ -695,7 +730,7 @@ class TripPlanningService {
     }
   }
 
-  /// Get trip statistics
+  /// Get statistics for a specific trip.
   Future<Map<String, dynamic>> getTripStatistics(String tripId) async {
     try {
       final headers = await _headers;

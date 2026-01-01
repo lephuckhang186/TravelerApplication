@@ -7,9 +7,18 @@ from typing import Dict, Any
 class TripSummary:
   """
   A tool to generate a final summary of a trip plan using an LLM.
+
+  This class aggregates various trip components (itinerary, budget, etc.) and uses a Language Model
+  to produce a concise, easy-to-read summary for the user.
   """
 
   def __init__(self):
+    """
+    Initializes the TripSummary tool.
+
+    Sets up the LLM and the system prompt which enforces strict formatting rules for the summary,
+    including specific emoji usage and section ordering.
+    """
     self.llm = get_llm()
     system_prompt = (
       "You are a travel expert. Generate a concise trip summary that's easy to scan.\\n\\n"
@@ -66,10 +75,13 @@ Generate the summary based on the trip plan and itinerary above."""
     Generates a summary of the trip plan using an LLM.
 
     Args:
-      trip_plan (dict): The complete trip plan information.
+      trip_plan (dict): The complete trip plan information, including itinerary, budget, etc.
 
     Returns:
-      dict: Dictionary with a summary string.
+      dict: A dictionary containing the generated 'summary' string, appended with the detailed itinerary.
+
+    Raises:
+      ValueError: If the provided trip_plan is empty or invalid.
     """
     if not trip_plan:
       raise ValueError("A complete trip plan must be provided to generate a summary.")

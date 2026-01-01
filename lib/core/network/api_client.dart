@@ -5,6 +5,10 @@ import '../config/api_config.dart';
 import 'exceptions.dart';
 
 /// Generic API client for making HTTP requests
+/// A centralized HTTP client for making RESTful API requests to the backend.
+///
+/// Handles authentication headers, URL construction, and standardized response
+/// processing including error handling and JSON decoding.
 class ApiClient {
   late final http.Client _client;
   String? _authToken;
@@ -65,7 +69,7 @@ class ApiClient {
         } else if (data is Map && data.containsKey('message')) {
           errorMessage = data['message'].toString();
         }
-        
+
         throw ApiException(
           errorMessage,
           statusCode: response.statusCode,
@@ -98,15 +102,14 @@ class ApiClient {
         url = uri.replace(queryParameters: queryParams).toString();
       }
 
-      final response = await _client.get(
-        Uri.parse(url),
-        headers: _getHeaders(additionalHeaders: headers),
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw NetworkException('Request timed out after 15 seconds');
-        },
-      );
+      final response = await _client
+          .get(Uri.parse(url), headers: _getHeaders(additionalHeaders: headers))
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw NetworkException('Request timed out after 15 seconds');
+            },
+          );
 
       return _handleResponse(response);
     } on SocketException catch (e) {
@@ -123,16 +126,18 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     try {
-      final response = await _client.post(
-        Uri.parse(_buildUrl(endpoint)),
-        headers: _getHeaders(additionalHeaders: headers),
-        body: body != null ? json.encode(body) : null,
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw NetworkException('Request timed out after 15 seconds');
-        },
-      );
+      final response = await _client
+          .post(
+            Uri.parse(_buildUrl(endpoint)),
+            headers: _getHeaders(additionalHeaders: headers),
+            body: body != null ? json.encode(body) : null,
+          )
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw NetworkException('Request timed out after 15 seconds');
+            },
+          );
 
       return _handleResponse(response);
     } on SocketException catch (e) {
@@ -149,16 +154,18 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     try {
-      final response = await _client.put(
-        Uri.parse(_buildUrl(endpoint)),
-        headers: _getHeaders(additionalHeaders: headers),
-        body: body != null ? json.encode(body) : null,
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw NetworkException('Request timed out after 15 seconds');
-        },
-      );
+      final response = await _client
+          .put(
+            Uri.parse(_buildUrl(endpoint)),
+            headers: _getHeaders(additionalHeaders: headers),
+            body: body != null ? json.encode(body) : null,
+          )
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw NetworkException('Request timed out after 15 seconds');
+            },
+          );
 
       return _handleResponse(response);
     } on SocketException catch (e) {
@@ -174,15 +181,17 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     try {
-      final response = await _client.delete(
-        Uri.parse(_buildUrl(endpoint)),
-        headers: _getHeaders(additionalHeaders: headers),
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw NetworkException('Request timed out after 15 seconds');
-        },
-      );
+      final response = await _client
+          .delete(
+            Uri.parse(_buildUrl(endpoint)),
+            headers: _getHeaders(additionalHeaders: headers),
+          )
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw NetworkException('Request timed out after 15 seconds');
+            },
+          );
 
       return _handleResponse(response);
     } on SocketException catch (e) {

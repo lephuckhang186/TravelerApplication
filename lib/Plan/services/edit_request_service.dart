@@ -4,11 +4,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../Core/config/api_config.dart';
 import '../models/collaboration_models.dart';
 
-/// Service for managing edit access requests
+/// Service for managing edit access requests.
+///
+/// This service allows users with 'viewer' permission to request 'editor' access
+/// for a shared trip. It handles creating, retrieving, and updating the status
+/// of these requests.
 class EditRequestService {
+  /// Base URL retrieved from central [ApiConfig].
   final String baseUrl = ApiConfig.baseUrl;
 
-  /// Get authorization headers
+  /// Get authorization headers with the current user's Firebase ID token.
   Future<Map<String, String>> _getHeaders() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -21,7 +26,7 @@ class EditRequestService {
     };
   }
 
-  /// Create a new edit access request
+  /// Create a new edit access request for a specific trip.
   Future<EditRequest> createEditRequest({
     required String tripId,
     String? message,
@@ -31,10 +36,7 @@ class EditRequestService {
       final response = await http.post(
         Uri.parse('$baseUrl/edit-requests/'),
         headers: headers,
-        body: jsonEncode({
-          'trip_id': tripId,
-          'message': message,
-        }),
+        body: jsonEncode({'trip_id': tripId, 'message': message}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -45,12 +47,11 @@ class EditRequestService {
         throw Exception(error['detail'] ?? 'Failed to create edit request');
       }
     } catch (e) {
-      // print('❌ CREATE_EDIT_REQUEST_ERROR: $e');
       rethrow;
     }
   }
 
-  /// Get all edit requests created by current user
+  /// Get all edit access requests created by the current user.
   Future<List<EditRequest>> getMyEditRequests({String? status}) async {
     try {
       final headers = await _getHeaders();
@@ -59,10 +60,7 @@ class EditRequestService {
         url += '?status_filter=$status';
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
+      final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -71,12 +69,11 @@ class EditRequestService {
         throw Exception('Failed to load edit requests');
       }
     } catch (e) {
-      // print('❌ GET_MY_EDIT_REQUESTS_ERROR: $e');
       return [];
     }
   }
 
-  /// Get pending edit requests for trips owned by current user
+  /// Get pending edit access requests for trips owned by the current user.
   Future<List<EditRequest>> getPendingApprovals() async {
     try {
       final headers = await _getHeaders();
@@ -92,12 +89,13 @@ class EditRequestService {
         throw Exception('Failed to load pending approvals');
       }
     } catch (e) {
-      // print('❌ GET_PENDING_APPROVALS_ERROR: $e');
       return [];
     }
   }
 
-  /// Get all edit requests for a specific trip (owner only)
+  /// Get all edit access requests for a specific trip.
+  ///
+  /// Typically called by the trip owner to manage access.
   Future<List<EditRequest>> getTripEditRequests({
     required String tripId,
     String? status,
@@ -109,10 +107,7 @@ class EditRequestService {
         url += '?status_filter=$status';
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
+      final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -121,12 +116,14 @@ class EditRequestService {
         throw Exception('Failed to load trip edit requests');
       }
     } catch (e) {
-      // print('❌ GET_TRIP_EDIT_REQUESTS_ERROR: $e');
       return [];
     }
   }
 
-  /// Approve or reject an edit request
+  /// Approve or reject an edit access request.
+  ///
+  /// If [promoteToEditor] is true, the requester's role in the shared trip
+  /// will be automatically updated to 'editor' upon approval.
   Future<EditRequest> updateEditRequest({
     required String requestId,
     required EditRequestStatus status,
@@ -151,12 +148,11 @@ class EditRequestService {
         throw Exception(error['detail'] ?? 'Failed to update edit request');
       }
     } catch (e) {
-      // print('❌ UPDATE_EDIT_REQUEST_ERROR: $e');
       rethrow;
     }
   }
 
-  /// Delete an edit request
+  /// Delete an edit access request by ID.
   Future<void> deleteEditRequest(String requestId) async {
     try {
       final headers = await _getHeaders();
@@ -169,12 +165,11 @@ class EditRequestService {
         throw Exception('Failed to delete edit request');
       }
     } catch (e) {
-      // print('❌ DELETE_EDIT_REQUEST_ERROR: $e');
       rethrow;
     }
   }
 
-  /// Check if user has a pending edit request for a trip
+  /// Check if the current user has a pending edit access request for a trip.
   Future<EditRequest?> checkPendingRequest(String tripId) async {
     try {
       final requests = await getMyEditRequests(status: 'pending');

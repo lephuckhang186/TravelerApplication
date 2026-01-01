@@ -7,22 +7,35 @@ from langchain.tools import tool
 class WeatherService:
     """
     A simplified weather service using OpenWeatherMap's 5-day/3-hour forecast.
+
+    This service fetches weather forecasts for a specific destination and processes
+    the raw data into a daily summary including min/max temperatures and general conditions.
     """
     API_URL = "http://api.openweathermap.org/data/2.5/forecast"
     GEO_URL = "http://api.openweathermap.org/geo/1.0/direct"
 
     @staticmethod
     @tool
-    def get_weather(destination: str, days: int) -> Dict[str, Any]:
+    def get_weather(destination: str, days: int = 5) -> Dict[str, Any]:
         """
         Fetches the weather forecast for a given destination.
 
+        Retrieves coordinates for the destination and then queries the OpenWeatherMap
+        API for a forecast, which is simplified into a daily summary.
+
         Args:
-            destination (str): The city or location to get the weather for.
-            days (int): Number of days to forecast (max 5).
+            destination (str): The city or location (e.g., "Paris, France") to get the weather for.
+            days (int, optional): Number of days to forecast (maximum 5 due to API limits). Defaults to 5.
 
         Returns:
-            Dict[str, Any]: Weather forecast summary and details for the destination.
+            Dict[str, Any]: A dictionary containing:
+                - 'destination': Name of the location.
+                - 'forecast': List of daily summaries (date, temp_min, temp_max, condition, description).
+                - 'summary': A readable string summary.
+
+        Raises:
+            ValueError: If the API key is missing, coordinates cannot be found, or no data is returned.
+            requests.exceptions.RequestException: If the API request fails.
         """
         api_key = os.getenv("OPENWEATHER_API_KEY")
         if not api_key:
@@ -43,6 +56,19 @@ class WeatherService:
 
     @staticmethod
     def _get_coordinates(destination: str, api_key: str) -> Dict[str, float] | None:
+        """
+        Retrieves the latitude and longitude for a given destination name.
+
+        Args:
+            destination (str): The name of the city or place.
+            api_key (str): OpenWeatherMap API key.
+
+        Returns:
+            Dict[str, float] | None: A dictionary with 'lat' and 'lon' keys, or None if not found.
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails.
+        """
         params = {"q": destination, "limit": 1, "appid": api_key}
         response = requests.get(WeatherService.GEO_URL, params=params, timeout=10)
         response.raise_for_status()
@@ -53,6 +79,21 @@ class WeatherService:
 
     @staticmethod
     def _process_weather_data(data: Dict[str, Any], destination: str) -> Dict[str, Any]:
+        """
+        Processes raw API response data into a daily forecast summary.
+
+        Aggregates 3-hour forecast segments into daily highs, lows, and dominant conditions.
+
+        Args:
+            data (Dict[str, Any]): Raw JSON response from OpenWeatherMap Forecast API.
+            destination (str): The name of the destination.
+
+        Returns:
+            Dict[str, Any]: Processed forecast data.
+
+        Raises:
+            ValueError: If the API response contains no weather list data.
+        """
         if not data.get("list"):
             raise ValueError("No weather data found in API response.")
         daily_forecasts: Dict[str, dict] = {}

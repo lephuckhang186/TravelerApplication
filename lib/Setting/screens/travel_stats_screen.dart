@@ -3,6 +3,7 @@ import '../../Login/services/firestore_statistics_service.dart';
 //import '../../Login/services/auth_service.dart';
 import 'dart:async';
 
+/// Visual analytics screen summarizing the user's travel history and spending patterns.
 class TravelStatsScreen extends StatefulWidget {
   const TravelStatsScreen({super.key});
 
@@ -13,14 +14,15 @@ class TravelStatsScreen extends StatefulWidget {
 class _TravelStatsScreenState extends State<TravelStatsScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  final FirestoreStatisticsService _statisticsService = FirestoreStatisticsService();
+  final FirestoreStatisticsService _statisticsService =
+      FirestoreStatisticsService();
   //final AuthService _authService = AuthService();
-  
+
   UserTravelStats _stats = UserTravelStats.empty();
   bool _isLoading = true;
   bool _hasData = false;
   StreamSubscription<UserTravelStats>? _statsSubscription;
-  
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +50,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         }
       },
     );
-    
+
     // Add timeout to prevent infinite loading
     Timer(Duration(seconds: 10), () {
       if (_isLoading && mounted) {
@@ -81,7 +83,8 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         ),
         title: Text(
           'Travel Stats',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -108,11 +111,13 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               labelColor: Colors.blue,
               unselectedLabelColor: Colors.grey[600],
               indicatorColor: Colors.blue,
-              labelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
+              labelStyle: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
-              unselectedLabelStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
+              unselectedLabelStyle: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
@@ -122,15 +127,12 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               ],
             ),
           ),
-          
+
           // Tab View Content
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildAllStatsTab(),
-                _buildYearStatsTab(),
-              ],
+              children: [_buildAllStatsTab(), _buildYearStatsTab()],
             ),
           ),
         ],
@@ -164,11 +166,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.analytics_outlined,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
             Text(
               'No travel data yet',
@@ -201,19 +199,19 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         children: [
           // Distance Traveled Section
           _buildDistanceTraveledSection(),
-          
+
           const SizedBox(height: 20),
-          
+
           // Stats Grid
           _buildStatsGrid(),
-          
+
           const SizedBox(height: 20),
-          
+
           // All Time Progress Chart
           _buildAllTimeProgressChart(),
-          
+
           const SizedBox(height: 20),
-          
+
           // Bottom Illustration
           _buildBottomIllustration(),
         ],
@@ -284,19 +282,19 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         children: [
           // Distance Traveled Section (for 2025, show proportional distance)
           _buildDistanceTraveledSection(isYear2025: true),
-          
+
           const SizedBox(height: 20),
-          
+
           // Stats List for 2025
           _buildStatsList(isYear2025: true),
-          
+
           const SizedBox(height: 20),
-          
+
           // 2025 Progress Chart
           _build2025ProgressChart(),
-          
+
           const SizedBox(height: 20),
-          
+
           // Bottom Illustration
           _buildBottomIllustration(),
         ],
@@ -306,10 +304,10 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
 
   Widget _buildDistanceTraveledSection({bool isYear2025 = false}) {
     // Calculate distance based on total days (estimated 100km per day)
-    final distance = isYear2025 
+    final distance = isYear2025
         ? (_stats.totalDays2025 * 100.0).toInt()
         : _stats.totalDistance.toInt();
-    
+
     return SizedBox(
       width: double.infinity,
       child: Column(
@@ -326,41 +324,37 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           ),
           const SizedBox(height: 8),
           Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    distance.toString(),
-                    style: TextStyle(
-                      fontFamily: 'Urbanist-Regular',
-                      fontSize: 48,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      'km',
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey[400],
-                    size: 24,
-                  ),
-                ],
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                distance.toString(),
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
+                  fontSize: 48,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
               ),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'km',
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
+            ],
+          ),
           const SizedBox(height: 16),
           Text(
-            isYear2025 
+            isYear2025
                 ? 'Distance is calculated from your 2025 trips. Continue planning and traveling!'
                 : 'Distance is calculated from your completed trips. Start traveling to see real data!',
             style: TextStyle(
@@ -378,99 +372,119 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
   Widget _buildStatsGrid({bool isYear2025 = false}) {
     final statsData = [
       {
-        'icon': Icons.card_travel, 
-        'title': 'Total Trips', 
-        'value': isYear2025 ? _stats.completedTrips2025.toString() : _stats.completedTrips.toString()
+        'icon': Icons.card_travel,
+        'title': 'Total Trips',
+        'value': isYear2025
+            ? _stats.completedTrips2025.toString()
+            : _stats.completedTrips.toString(),
       },
       {
-        'icon': Icons.location_on, 
-        'title': 'Locations Visited', 
-        'value': isYear2025 ? _stats.checkedInLocations2025.toString() : _stats.checkedInLocations.toString()
+        'icon': Icons.location_on,
+        'title': 'Locations Visited',
+        'value': isYear2025
+            ? _stats.checkedInLocations2025.toString()
+            : _stats.checkedInLocations.toString(),
       },
       {
-        'icon': Icons.event_note, 
-        'title': 'Total Plans', 
-        'value': isYear2025 ? _stats.totalPlans2025.toString() : _stats.totalPlans.toString()
+        'icon': Icons.event_note,
+        'title': 'Total Plans',
+        'value': isYear2025
+            ? _stats.totalPlans2025.toString()
+            : _stats.totalPlans.toString(),
       },
     ];
 
     return Column(
-      children: statsData.map((stat) => _buildStatItem(
-        stat['icon'] as IconData,
-        stat['title'] as String,
-        stat['value'] as String,
-      )).toList(),
+      children: statsData
+          .map(
+            (stat) => _buildStatItem(
+              stat['icon'] as IconData,
+              stat['title'] as String,
+              stat['value'] as String,
+            ),
+          )
+          .toList(),
     );
   }
 
   Widget _buildStatsList({bool isYear2025 = false}) {
     final statsData = [
       {
-        'icon': Icons.card_travel, 
-        'title': 'Total Trips', 
-        'value': isYear2025 ? _stats.completedTrips2025.toString() : _stats.completedTrips.toString()
+        'icon': Icons.card_travel,
+        'title': 'Total Trips',
+        'value': isYear2025
+            ? _stats.completedTrips2025.toString()
+            : _stats.completedTrips.toString(),
       },
       {
-        'icon': Icons.location_on, 
-        'title': 'Locations Visited', 
-        'value': isYear2025 ? _stats.checkedInLocations2025.toString() : _stats.checkedInLocations.toString()
+        'icon': Icons.location_on,
+        'title': 'Locations Visited',
+        'value': isYear2025
+            ? _stats.checkedInLocations2025.toString()
+            : _stats.checkedInLocations.toString(),
       },
       {
-        'icon': Icons.event_note, 
-        'title': 'Total Plans', 
-        'value': isYear2025 ? _stats.totalPlans2025.toString() : _stats.totalPlans.toString()
+        'icon': Icons.event_note,
+        'title': 'Total Plans',
+        'value': isYear2025
+            ? _stats.totalPlans2025.toString()
+            : _stats.totalPlans.toString(),
       },
     ];
 
     return Column(
-          children: statsData.map((stat) => Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
+      children: statsData
+          .map(
+            (stat) => Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      stat['icon'] as IconData,
+                      color: Colors.blue,
+                      size: 20,
+                    ),
                   ),
-                  child: Icon(
-                    stat['icon'] as IconData,
-                    color: Colors.blue,
-                    size: 20,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      stat['title'] as String,
+                      style: TextStyle(
+                        fontFamily: 'Urbanist-Regular',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    stat['title'] as String,
+                  Text(
+                    stat['value'] as String,
                     style: TextStyle(
                       fontFamily: 'Urbanist-Regular',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                       color: Colors.black87,
                     ),
                   ),
-                ),
-                Text(
-                  stat['value'] as String,
-                  style: TextStyle(
-                    fontFamily: 'Urbanist-Regular',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )).toList(),
-        );
+          )
+          .toList(),
+    );
   }
 
   Widget _buildStatItem(IconData icon, String title, String value) {
@@ -491,17 +505,14 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               color: Colors.blue[50],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: Colors.blue,
-              size: 20,
-            ),
+            child: Icon(icon, color: Colors.blue, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               title,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
@@ -510,18 +521,15 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           ),
           Text(
             value,
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: Colors.black87,
             ),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.chevron_right,
-            color: Colors.grey[400],
-            size: 18,
-          ),
+          Icon(Icons.chevron_right, color: Colors.grey[400], size: 18),
         ],
       ),
     );
@@ -536,10 +544,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.blue[50]!,
-            Colors.blue[100]!,
-          ],
+          colors: [Colors.blue[50]!, Colors.blue[100]!],
         ),
       ),
       child: Stack(
@@ -559,10 +564,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.blue[200]!,
-                    Colors.blue[300]!,
-                  ],
+                  colors: [Colors.blue[200]!, Colors.blue[300]!],
                 ),
               ),
               child: Row(
@@ -582,7 +584,11 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
           Positioned(
             top: 20,
             left: 30,
-            child: Icon(Icons.airplanemode_active, color: Colors.blue[300], size: 24),
+            child: Icon(
+              Icons.airplanemode_active,
+              color: Colors.blue[300],
+              size: 24,
+            ),
           ),
           Positioned(
             top: 40,
@@ -657,7 +663,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Chart - using real data, auto-scaling
             SizedBox(
               height: 200,
@@ -668,28 +674,40 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                   _buildChartColumn(
                     'Plans',
                     _stats.totalPlans,
-                    _getMaxValue([_stats.totalPlans, _stats.checkedInLocations, _stats.completedTrips]),
+                    _getMaxValue([
+                      _stats.totalPlans,
+                      _stats.checkedInLocations,
+                      _stats.completedTrips,
+                    ]),
                     Icons.event_note,
                     Colors.blue,
                   ),
                   _buildChartColumn(
                     'Locations',
                     _stats.checkedInLocations,
-                    _getMaxValue([_stats.totalPlans, _stats.checkedInLocations, _stats.completedTrips]),
+                    _getMaxValue([
+                      _stats.totalPlans,
+                      _stats.checkedInLocations,
+                      _stats.completedTrips,
+                    ]),
                     Icons.location_on,
                     Colors.orange,
                   ),
                   _buildChartColumn(
                     'Trips',
                     _stats.completedTrips,
-                    _getMaxValue([_stats.totalPlans, _stats.checkedInLocations, _stats.completedTrips]),
+                    _getMaxValue([
+                      _stats.totalPlans,
+                      _stats.checkedInLocations,
+                      _stats.completedTrips,
+                    ]),
                     Icons.flight,
                     Colors.purple,
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -749,7 +767,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Chart - using real 2025 data, auto-scaling
             SizedBox(
               height: 200,
@@ -760,28 +778,40 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                   _buildChartColumn(
                     'Plans',
                     _stats.totalPlans2025,
-                    _getMaxValue([_stats.totalPlans2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    _getMaxValue([
+                      _stats.totalPlans2025,
+                      _stats.checkedInLocations2025,
+                      _stats.completedTrips2025,
+                    ]),
                     Icons.event_note,
                     Colors.blue,
                   ),
                   _buildChartColumn(
                     'Locations',
                     _stats.checkedInLocations2025,
-                    _getMaxValue([_stats.totalPlans2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    _getMaxValue([
+                      _stats.totalPlans2025,
+                      _stats.checkedInLocations2025,
+                      _stats.completedTrips2025,
+                    ]),
                     Icons.location_on,
                     Colors.orange,
                   ),
                   _buildChartColumn(
                     'Trips',
                     _stats.completedTrips2025,
-                    _getMaxValue([_stats.totalPlans2025, _stats.checkedInLocations2025, _stats.completedTrips2025]),
+                    _getMaxValue([
+                      _stats.totalPlans2025,
+                      _stats.checkedInLocations2025,
+                      _stats.completedTrips2025,
+                    ]),
                     Icons.flight,
                     Colors.purple,
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -818,13 +848,21 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
     return maxValue > 0 ? maxValue : 10; // Minimum scale
   }
 
-  Widget _buildChartColumn(String label, int value, int maxValue, IconData icon, Color color) {
+  Widget _buildChartColumn(
+    String label,
+    int value,
+    int maxValue,
+    IconData icon,
+    Color color,
+  ) {
     // Calculate height percentage (minimum 10% for visibility, maximum 100%)
-    double heightPercentage = maxValue > 0 ? (value / maxValue).clamp(0.0, 1.0) : 0.0;
+    double heightPercentage = maxValue > 0
+        ? (value / maxValue).clamp(0.0, 1.0)
+        : 0.0;
     if (value > 0 && heightPercentage < 0.1) {
       heightPercentage = 0.1; // Minimum height for visibility
     }
-    
+
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -846,7 +884,7 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
               ),
             ),
             const SizedBox(height: 4),
-            
+
             // Chart bar
             Container(
               height: 140 * heightPercentage,
@@ -855,31 +893,32 @@ class _TravelStatsScreenState extends State<TravelStatsScreen>
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    color,
-                    color.withValues(alpha: 0.6),
-                  ],
+                  colors: [color, color.withValues(alpha: 0.6)],
                 ),
                 borderRadius: BorderRadius.circular(6),
-                boxShadow: value > 0 ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.3),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ] : null,
+                boxShadow: value > 0
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
-              child: value > 0 ? Center(
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: heightPercentage > 0.3 ? 20 : 16,
-                ),
-              ) : null,
+              child: value > 0
+                  ? Center(
+                      child: Icon(
+                        icon,
+                        color: Colors.white,
+                        size: heightPercentage > 0.3 ? 20 : 16,
+                      ),
+                    )
+                  : null,
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Label
             Text(
               label,

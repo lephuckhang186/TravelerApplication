@@ -4,20 +4,25 @@ import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import 'trip_planning_service.dart';
 
-/// Service for AI-powered trip planning with natural language processing
+/// Service for AI-powered trip planning with natural language processing.
+///
+/// Connects to a backend service (currently localhost) to generate comprehensive
+/// trip itineraries based on user prompts.
 class AITripPlannerService {
   final TripPlanningService _tripService = TripPlanningService();
 
-  // Dynamic base URL based on platform
+  /// Dynamic base URL based on platform.
   static String get baseUrl {
     // Use localhost for development
     return 'http://localhost:5000';
   }
 
-  /// Generate a complete trip plan based on natural language prompt
+  /// Generate a complete trip plan based on a natural language prompt.
+  ///
+  /// Sends the prompt to the AI service and converts the response into a [TripModel].
+  /// Returns a map containing success status, message, and the generated trip/plan data.
   Future<Map<String, dynamic>> generateTripPlan(String prompt) async {
     try {
-
       final response = await http.post(
         Uri.parse('$baseUrl/generate-trip-plan'),
         headers: {'Content-Type': 'application/json'},
@@ -59,7 +64,9 @@ class AITripPlannerService {
     }
   }
 
-  /// Convert AI-generated plan to TripModel with activities
+  /// Convert AI-generated plan JSON to [TripModel] with [ActivityModel]s.
+  ///
+  /// Parses dates, budget, daily plans, and activities from the AI response.
   Future<TripModel> _convertPlanToTrip(Map<String, dynamic> tripPlan) async {
     final tripInfo = tripPlan['trip_info'];
     final dailyPlans = tripPlan['daily_plans'] as List;
@@ -131,7 +138,8 @@ class AITripPlannerService {
 
         // Parse location data from AI response
         LocationModel? location;
-        if (activityData['location'] != null || activityData['address'] != null) {
+        if (activityData['location'] != null ||
+            activityData['address'] != null) {
           // Parse coordinates if provided
           double? latitude, longitude;
           if (activityData['coordinates'] != null) {
@@ -142,12 +150,15 @@ class AITripPlannerService {
                 longitude = double.tryParse(coords[1].trim());
               }
             } catch (e) {
-              //
+              // Ignore coordinate parsing errors
             }
           }
 
           location = LocationModel(
-            name: activityData['location'] ?? activityData['title'] ?? 'Unknown Location',
+            name:
+                activityData['location'] ??
+                activityData['title'] ??
+                'Unknown Location',
             address: activityData['address'],
             latitude: latitude,
             longitude: longitude,
@@ -174,7 +185,9 @@ class AITripPlannerService {
     return trip.copyWith(activities: activities);
   }
 
-  /// Parse activity type from string
+  /// Parse [ActivityType] from string.
+  ///
+  /// Defaults to [ActivityType.activity] if unknown.
   ActivityType _parseActivityType(String? typeString) {
     if (typeString == null) return ActivityType.activity;
 
@@ -193,7 +206,10 @@ class AITripPlannerService {
     }
   }
 
-  /// Save generated trip to backend
+  /// Save generated trip to backend.
+  ///
+  /// Uses [TripPlanningService] to persist the trip.
+  /// Activities are saved as part of the trip creation process or handled subsequently.
   Future<TripModel> saveGeneratedTrip(TripModel trip) async {
     try {
       // Create trip on backend (this will still use backend API for trips)
@@ -201,7 +217,7 @@ class AITripPlannerService {
 
       // Activities are already included in the trip, no need to create them separately
       // They will be saved to Firestore as part of the trip document
-      
+
       return createdTrip.copyWith(activities: trip.activities);
     } catch (e) {
       rethrow;

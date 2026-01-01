@@ -1,4 +1,6 @@
-/// Activity Type enum matching backend ActivityType
+/// Activity Type enum matching backend ActivityType.
+///
+/// Represents the category of an activity, such as flight, lodging, or restaurant.
 enum ActivityType {
   flight('flight'),
   activity('activity'),
@@ -20,8 +22,13 @@ enum ActivityType {
   transportation('transportation');
 
   const ActivityType(this.value);
+
+  /// String value used for serialization.
   final String value;
 
+  /// Converts a string to an [ActivityType].
+  ///
+  /// Defaults to [ActivityType.activity] if the string doesn't match.
   static ActivityType fromString(String value) {
     return ActivityType.values.firstWhere(
       (e) => e.value == value,
@@ -30,7 +37,9 @@ enum ActivityType {
   }
 }
 
-/// Activity Status enum matching backend ActivityStatus
+/// Activity Status enum matching backend ActivityStatus.
+///
+/// Represents the current lifecycle state of an activity.
 enum ActivityStatus {
   planned('planned'),
   confirmed('confirmed'),
@@ -39,8 +48,13 @@ enum ActivityStatus {
   cancelled('cancelled');
 
   const ActivityStatus(this.value);
+
+  /// String value used for serialization.
   final String value;
 
+  /// Converts a string to an [ActivityStatus].
+  ///
+  /// Defaults to [ActivityStatus.planned] if the string doesn't match.
   static ActivityStatus fromString(String value) {
     return ActivityStatus.values.firstWhere(
       (e) => e.value == value,
@@ -49,7 +63,9 @@ enum ActivityStatus {
   }
 }
 
-/// Priority enum matching backend Priority
+/// Priority enum matching backend Priority.
+///
+/// Represents the importance of an activity.
 enum Priority {
   low('low'),
   medium('medium'),
@@ -57,8 +73,13 @@ enum Priority {
   urgent('urgent');
 
   const Priority(this.value);
+
+  /// String value used for serialization.
   final String value;
 
+  /// Converts a string to a [Priority].
+  ///
+  /// Defaults to [Priority.medium] if the string doesn't match.
   static Priority fromString(String value) {
     return Priority.values.firstWhere(
       (e) => e.value == value,
@@ -67,7 +88,9 @@ enum Priority {
   }
 }
 
-/// Location model matching backend Location
+/// Location model matching backend Location schema.
+///
+/// Stores geographical and address information for an activity.
 class LocationModel {
   final String name;
   final String? address;
@@ -87,6 +110,7 @@ class LocationModel {
     this.postalCode,
   });
 
+  /// Converts the model to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -99,6 +123,7 @@ class LocationModel {
     };
   }
 
+  /// Creates a model from a JSON map.
   factory LocationModel.fromJson(Map<String, dynamic> json) {
     return LocationModel(
       name: json['name'] ?? '',
@@ -112,7 +137,9 @@ class LocationModel {
   }
 }
 
-/// Budget model matching backend Budget
+/// Budget model matching backend Budget schema.
+///
+/// Tracks estimated and actual costs for an activity or trip.
 class BudgetModel {
   final double estimatedCost;
   final double? actualCost;
@@ -126,19 +153,19 @@ class BudgetModel {
     this.category,
   });
 
-  /// Get remaining budget
+  /// Get remaining budget (estimated - actual).
   double get remainingBudget => estimatedCost - (actualCost ?? 0);
 
-  /// Get budget usage percentage
+  /// Get budget usage percentage (0-100).
   double get usagePercentage {
     if (estimatedCost <= 0) return 0.0;
     return ((actualCost ?? 0) / estimatedCost * 100).clamp(0.0, 100.0);
   }
 
-  /// Check if over budget
+  /// Check if the actual cost exceeds the estimated cost.
   bool get isOverBudget => (actualCost ?? 0) > estimatedCost;
 
-  /// Get budget status
+  /// Get descriptive budget status (e.g., 'Critical', 'On Track').
   String get budgetStatus {
     final percentage = usagePercentage;
     if (isOverBudget) return 'Over Budget';
@@ -148,7 +175,7 @@ class BudgetModel {
     return 'Under Budget';
   }
 
-  /// Update actual cost
+  /// Creates a copy of the budget with a new actual cost.
   BudgetModel copyWithActualCost(double newActualCost) {
     return BudgetModel(
       estimatedCost: estimatedCost,
@@ -158,6 +185,7 @@ class BudgetModel {
     );
   }
 
+  /// Converts the model to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'estimated_cost': estimatedCost,
@@ -167,6 +195,7 @@ class BudgetModel {
     };
   }
 
+  /// Creates a model from a JSON map.
   factory BudgetModel.fromJson(Map<String, dynamic> json) {
     return BudgetModel(
       estimatedCost: (json['estimated_cost'] ?? 0).toDouble(),
@@ -177,7 +206,9 @@ class BudgetModel {
   }
 }
 
-/// Contact model matching backend Contact
+/// Contact model matching backend Contact schema.
+///
+/// Stores contact information for a venue or service provider.
 class ContactModel {
   final String? name;
   final String? phone;
@@ -186,10 +217,12 @@ class ContactModel {
 
   ContactModel({this.name, this.phone, this.email, this.website});
 
+  /// Converts the model to a JSON map.
   Map<String, dynamic> toJson() {
     return {'name': name, 'phone': phone, 'email': email, 'website': website};
   }
 
+  /// Creates a model from a JSON map.
   factory ContactModel.fromJson(Map<String, dynamic> json) {
     return ContactModel(
       name: json['name'],
@@ -200,13 +233,22 @@ class ContactModel {
   }
 }
 
-/// Expense information for activity
+/// Expense integration information for an activity.
 class ExpenseInfo {
+  /// ID of the linked expense document.
   final String? expenseId;
+
+  /// Whether this activity has an associated expense.
   final bool hasExpense;
+
+  /// Category name used in the expense module.
   final String? expenseCategory;
+
+  /// Whether the expense was automatically created from the activity.
   final bool autoSynced;
-  final bool expenseSynced; // Track if expense was successfully synced
+
+  /// Whether the synchronization with the expense module was successful.
+  final bool expenseSynced;
 
   ExpenseInfo({
     this.expenseId,
@@ -216,6 +258,7 @@ class ExpenseInfo {
     this.expenseSynced = false,
   });
 
+  /// Converts the model to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'expense_id': expenseId,
@@ -226,6 +269,7 @@ class ExpenseInfo {
     };
   }
 
+  /// Creates a model from a JSON map.
   factory ExpenseInfo.fromJson(Map<String, dynamic> json) {
     return ExpenseInfo(
       expenseId: json['expense_id'],
@@ -236,6 +280,7 @@ class ExpenseInfo {
     );
   }
 
+  /// Creates a copy of the info with modified fields.
   ExpenseInfo copyWith({
     String? expenseId,
     bool? hasExpense,
@@ -253,7 +298,10 @@ class ExpenseInfo {
   }
 }
 
-/// Activity model matching backend Activity
+/// Core Activity model matching backend Activity schema.
+///
+/// Represents an individual item in a trip itinerary, with timing, location,
+/// budget, and status tracking.
 class ActivityModel {
   final String? id;
   final String title;
@@ -263,6 +311,8 @@ class ActivityModel {
   final Priority priority;
   final DateTime? startDate;
   final DateTime? endDate;
+
+  /// Estimated duration of the activity in minutes.
   final int? durationMinutes;
   final LocationModel? location;
   final BudgetModel? budget;
@@ -271,10 +321,14 @@ class ActivityModel {
   final List<String> tags;
   final List<String> attachments;
   final String? tripId;
+
+  /// Whether the user has checked in to this activity.
   final bool checkIn;
   final String? createdBy;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// Integration data for the Expense module.
   final ExpenseInfo expenseInfo;
 
   ActivityModel({
@@ -301,6 +355,7 @@ class ActivityModel {
     ExpenseInfo? expenseInfo,
   }) : expenseInfo = expenseInfo ?? ExpenseInfo();
 
+  /// Converts the model to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -327,6 +382,7 @@ class ActivityModel {
     };
   }
 
+  /// Creates a model from a JSON map.
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
     return ActivityModel(
       id: json['id'],
@@ -375,6 +431,7 @@ class ActivityModel {
     );
   }
 
+  /// Creates a copy of the activity with modified fields.
   ActivityModel copyWith({
     String? id,
     String? title,

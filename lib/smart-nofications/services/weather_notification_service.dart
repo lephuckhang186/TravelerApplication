@@ -4,6 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/notification_models.dart';
 import '../../Core/config/api_config.dart';
 
+/// Service for fetching and processing weather-related alerts from the backend.
+///
+/// Retrieves critical weather warnings for specific trip locations and
+/// provides real-time alerts to ensure traveler safety.
 class WeatherNotificationService {
   Future<List<WeatherAlert>> checkWeatherAlerts(String tripId) async {
     try {
@@ -25,20 +29,24 @@ class WeatherNotificationService {
       } catch (authError) {
         //
       }
-      
+
       final headers = {
         'Content-Type': 'application/json',
         if (authToken != null) 'Authorization': 'Bearer $authToken',
       };
-      
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/weather/alerts/$tripId'),
-        headers: headers,
-      ).timeout(const Duration(seconds: 10)); // Add timeout
+
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/weather/alerts/$tripId'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 10)); // Add timeout
 
       if (response.statusCode == 200) {
         final List<dynamic> alertsJson = jsonDecode(response.body);
-        final alerts = alertsJson.map((json) => WeatherAlert.fromJson(json)).toList();
+        final alerts = alertsJson
+            .map((json) => WeatherAlert.fromJson(json))
+            .toList();
         if (alerts.isNotEmpty) {
           //
         }
@@ -48,21 +56,18 @@ class WeatherNotificationService {
       } else if (response.statusCode >= 500) {
         throw Exception('Server error');
       }
-      
+
       return [];
     } catch (e) {
       return [];
     }
   }
 
-
   Future<WeatherAlert?> getCurrentWeatherAlert(String location) async {
     try {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/weather/current-alert'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -71,7 +76,7 @@ class WeatherNotificationService {
           return WeatherAlert.fromJson(data['alert']);
         }
       }
-      
+
       return null;
     } catch (e) {
       return null;

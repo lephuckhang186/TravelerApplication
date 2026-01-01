@@ -21,6 +21,10 @@ import '../../Login/services/firestore_statistics_service.dart';
 import '../../Plan/providers/collaboration_provider.dart';
 import 'package:provider/provider.dart';
 
+/// The central configuration hub for user preferences and account settings.
+///
+/// Provides navigation to profile management, password updates, feedback
+/// channels, and travel statistics.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -1248,7 +1252,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               final navigator = Navigator.of(context);
 
               // Clear collaboration data first
-              final collaborationProvider = context.read<CollaborationProvider>();
+              final collaborationProvider = context
+                  .read<CollaborationProvider>();
               collaborationProvider.clearAllData();
 
               // Logout user

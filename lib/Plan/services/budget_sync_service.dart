@@ -4,14 +4,22 @@ import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 import '../providers/trip_planning_provider.dart';
 
-/// Service to sync expense data with trip budget status
+/// Service to sync expense data with trip budget status.
+///
+/// This service acts as a bridge between the Plan and Expense modules,
+/// ensuring that financial data recorded in the Expense module is
+/// correctly reflected in the trip's budget and activities.
 class BudgetSyncService {
   final ExpenseService _expenseService;
 
+  /// Initializes the service with an [ExpenseService].
   BudgetSyncService({ExpenseService? expenseService})
     : _expenseService = expenseService ?? ExpenseService();
 
-  /// Create expense from activity and sync budget
+  /// Create an expense from an activity and synchronize the budget.
+  ///
+  /// Maps [ActivityType] to [ExpenseCategory] and updates the activity's
+  /// cost in the provided [TripModel] via [TripPlanningProvider].
   Future<void> createExpenseFromActivity({
     required ActivityModel activity,
     required TripModel trip,
@@ -46,13 +54,16 @@ class BudgetSyncService {
       if (tripProvider != null) {
         await tripProvider.updateActivityInTrip(trip.id!, updatedActivity);
       }
-
     } catch (e) {
       throw Exception('Failed to sync expense with trip budget: $e');
     }
   }
 
-  /// Sync all expenses for a trip and update budget status
+  /// Sync all expenses for a specific trip and update its budget status.
+  ///
+  /// Fetches expenses from the backend for the trip's date range and filters
+  /// them by trip ID. Updates the trip's total actual spent and each
+  /// activity's actual cost.
   Future<TripModel> syncTripBudgetStatus(TripModel trip) async {
     try {
       // Get expenses directly by trip ID if available
@@ -92,8 +103,6 @@ class BudgetSyncService {
         0.0,
         (sum, expense) => sum + expense.amount,
       );
-
-      // Update trip budget with actual spending (calculated in copyWithExpenseUpdate)
 
       // Update activities with their actual costs
       final updatedActivities = <ActivityModel>[];
@@ -136,7 +145,7 @@ class BudgetSyncService {
     }
   }
 
-  /// Check if an expense belongs to a specific trip
+  /// Check if an expense belongs to a specific trip using description or dates.
   bool _isExpenseFromTrip(Expense expense, TripModel trip) {
     // Priority 1: Check if expense description contains exact trip ID
     if (trip.id != null && expense.description.contains('[Trip: ${trip.id}]')) {
@@ -149,7 +158,6 @@ class BudgetSyncService {
     }
 
     // Priority 3 (Fallback): Check if expense date falls within trip dates
-    // Only use this if no trip ID matching is found
     if (trip.id == null || trip.id!.isEmpty) {
       final expenseDate = DateTime(
         expense.expenseDate.year,
@@ -173,11 +181,10 @@ class BudgetSyncService {
               expenseDate.isBefore(tripEndDate.add(const Duration(days: 1))));
     }
 
-    // Default: not from this trip if no criteria match
     return false;
   }
 
-  /// Map activity type to expense category
+  /// Map [ActivityType] to [ExpenseCategory].
   ExpenseCategory _mapActivityTypeToExpenseCategory(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.flight:
@@ -211,7 +218,9 @@ class BudgetSyncService {
     }
   }
 
-  /// Get budget status for a trip
+  /// Get comprehensive budget status for a trip.
+  ///
+  /// Returns a map with total budget, spent amount, remaining budget, usage percentage, etc.
   Future<Map<String, dynamic>> getTripBudgetStatus(TripModel trip) async {
     try {
       final syncedTrip = await syncTripBudgetStatus(trip);
@@ -240,7 +249,7 @@ class BudgetSyncService {
     }
   }
 
-  /// Dispose resources
+  /// Dispose resources.
   void dispose() {
     // Clean up resources if needed
   }

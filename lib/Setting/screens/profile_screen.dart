@@ -7,6 +7,10 @@ import '../../Login/services/firestore_user_service.dart';
 import '../../Login/services/auth_service.dart';
 import '../../Login/services/user_profile.dart';
 
+/// Comprehensive profile management screen for viewing and editing account details.
+///
+/// Allows users to update their personal information, contact details, and
+/// view their travel metrics.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -36,7 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
-
   void _loadUserData() async {
     try {
       setState(() => _isLoading = true);
@@ -59,9 +62,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Load data from Firestore
         _nameController.text = _userProfile!.fullName.isNotEmpty
             ? _userProfile!.fullName
-            : (currentUser.displayName?.isNotEmpty == true 
-                ? currentUser.displayName! 
-                : currentUser.email?.split('@').first ?? 'User');
+            : (currentUser.displayName?.isNotEmpty == true
+                  ? currentUser.displayName!
+                  : currentUser.email?.split('@').first ?? 'User');
         _emailController.text = _userProfile!.email;
         _phoneController.text = _userProfile!.phone ?? '';
         _addressController.text = _userProfile!.address ?? '';
@@ -81,7 +84,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _avatarPath = currentUser.photoURL;
 
         // Create initial profile in Firestore if user has basic info
-        if (currentUser.displayName?.isNotEmpty == true || currentUser.email?.isNotEmpty == true) {
+        if (currentUser.displayName?.isNotEmpty == true ||
+            currentUser.email?.isNotEmpty == true) {
           final displayName = currentUser.displayName?.isNotEmpty == true
               ? currentUser.displayName!
               : currentUser.email?.split('@').first ?? 'User';
@@ -180,7 +184,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: Text(
           'Personal Profile',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -219,7 +224,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.primary.withValues(alpha: 0.1), AppColors.surface],
+            colors: [
+              AppColors.primary.withValues(alpha: 0.1),
+              AppColors.surface,
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -240,24 +248,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: ClipOval(
                     child: _avatarPath != null
                         ? _avatarPath!.startsWith('http')
-                            ? Image.network(
-                                _avatarPath!,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return _buildDefaultAvatar();
-                                },
-                              )
-                            : Image.file(
-                                File(_avatarPath!),
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return _buildDefaultAvatar();
-                                },
-                              )
+                              ? Image.network(
+                                  _avatarPath!,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _buildDefaultAvatar();
+                                  },
+                                )
+                              : Image.file(
+                                  File(_avatarPath!),
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _buildDefaultAvatar();
+                                  },
+                                )
                         : _buildDefaultAvatar(),
                   ),
                 ),
@@ -287,10 +295,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _nameController.text.isNotEmpty
-                  ? _nameController.text
-                  : 'User',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              _nameController.text.isNotEmpty ? _nameController.text : 'User',
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
@@ -301,7 +308,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _emailController.text.isNotEmpty
                   ? _emailController.text
                   : 'Email not updated',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 14,
                 color: _emailController.text.isNotEmpty
                     ? Colors.grey[600]
@@ -325,7 +333,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 4),
                   Text(
                     'Account Verified',
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 12,
                       color: Colors.green[700],
                       fontWeight: FontWeight.w500,
@@ -353,7 +362,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _nameController.text.isNotEmpty
               ? _nameController.text[0].toUpperCase()
               : 'N',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 40,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -377,7 +387,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Personal Information',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -415,7 +426,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Contact Information',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -447,7 +459,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
   Widget _buildEditableField(
     String label,
     TextEditingController controller,
@@ -458,7 +469,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -471,7 +483,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 18, color: Colors.grey[500]),
             hintText: _getHintText(label),
-            hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', 
+            hintStyle: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 14,
               color: Colors.grey[400],
               fontStyle: FontStyle.italic,
@@ -509,7 +522,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           'Gender',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -531,7 +545,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Text(
                   _gender,
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 14,
                     color: _gender == 'Not specified'
                         ? Colors.grey[400]
@@ -558,7 +573,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           'Date of Birth',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -580,7 +596,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Text(
                   '${_birthDate.day}/${_birthDate.month}/${_birthDate.year}',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', fontSize: 14),
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    fontSize: 14,
+                  ),
                 ),
                 const Spacer(),
                 if (_isEditing)
@@ -592,7 +611,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
-
 
   void _toggleEditMode() {
     if (_isEditing) {
@@ -651,7 +669,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               'Change Profile Picture',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -692,25 +711,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               'Select Gender',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 20),
-            ...['Male', 'Female', 'Other', 'Not specified']
-                .map(
-                  (gender) => ListTile(
-                    title: Text(gender),
-                    trailing: _gender == gender
-                        ? const Icon(Icons.check, color: Colors.green)
-                        : null,
-                    onTap: () {
-                      setState(() => _gender = gender);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
+            ...['Male', 'Female', 'Other', 'Not specified'].map(
+              (gender) => ListTile(
+                title: Text(gender),
+                trailing: _gender == gender
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () {
+                  setState(() => _gender = gender);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
           ],
         ),
       ),

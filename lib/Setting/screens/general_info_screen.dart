@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../Core/theme/app_theme.dart';
 
+/// Displays general information about the TripWise application, versioning, and legal links.
 class GeneralInfoScreen extends StatelessWidget {
   const GeneralInfoScreen({super.key});
 
@@ -17,7 +18,8 @@ class GeneralInfoScreen extends StatelessWidget {
         ),
         title: Text(
           'General Information',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -68,7 +70,8 @@ class GeneralInfoScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Travel Planner',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
@@ -76,7 +79,8 @@ class GeneralInfoScreen extends StatelessWidget {
                       ),
                       Text(
                         'Smart Travel Planning App',
-                        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                        style: TextStyle(
+                          fontFamily: 'Urbanist-Regular',
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
@@ -89,7 +93,8 @@ class GeneralInfoScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Travel Planner is an app that helps you discover, plan and manage your travels easily and smartly. With AI support, we bring you the best travel experience possible.',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 14,
                 color: Colors.grey[700],
                 height: 1.6,
@@ -134,59 +139,61 @@ class GeneralInfoScreen extends StatelessWidget {
           children: [
             Text(
               'Main Features',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
             ),
             const SizedBox(height: 16),
-            ...features
-                .map(
-                  (feature) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            feature['icon'] as IconData,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                feature['title'] as String,
-                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              Text(
-                                feature['description'] as String,
-                                style: TextStyle(fontFamily: 'Urbanist-Regular', 
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+            ...features.map(
+              (feature) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        feature['icon'] as IconData,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            feature['title'] as String,
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            feature['description'] as String,
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            ),
           ],
         ),
       ),
@@ -207,7 +214,8 @@ class GeneralInfoScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Contact & Support',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -218,7 +226,11 @@ class GeneralInfoScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _buildContactItem(Icons.email, 'Email', 'teamtripwise@gmail.com'),
             _buildContactItem(Icons.phone, 'Hotline', '+84 898 999 033'),
-            _buildContactItem(Icons.location_on, 'Address', 'Ho Chi Minh City, Vietnam'),
+            _buildContactItem(
+              Icons.location_on,
+              'Address',
+              'Ho Chi Minh City, Vietnam',
+            ),
           ],
         ),
       ),
@@ -235,7 +247,8 @@ class GeneralInfoScreen extends StatelessWidget {
           children: [
             Text(
               'Version Information',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -260,7 +273,8 @@ class GeneralInfoScreen extends StatelessWidget {
                 ),
                 child: Text(
                   'Check for Updates',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
                     color: AppColors.primary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -283,17 +297,25 @@ class GeneralInfoScreen extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
           ),
-          Text(': ', style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[600])),
+          Text(
+            ': ',
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
+              color: Colors.grey[600],
+            ),
+          ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.black87,
                 fontWeight: FontWeight.w500,
@@ -316,17 +338,25 @@ class GeneralInfoScreen extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
             ),
           ),
-          Text(': ', style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[600])),
+          Text(
+            ': ',
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
+              color: Colors.grey[600],
+            ),
+          ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(fontFamily: 'Urbanist-Regular', 
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
                 fontSize: 12,
                 color: Colors.black87,
                 fontWeight: FontWeight.w500,

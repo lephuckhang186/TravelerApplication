@@ -3,29 +3,38 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/collaboration_models.dart';
 import '../models/trip_model.dart';
 
-/// Firebase service for collaboration trips - Separate collections from private trips
+/// Firebase service for collaboration trips - Separate collections from private trips.
+///
+/// Manages shared trips, real-time collaboration updates, and user invitations.
+/// Uses a separate 'shared_trips' collection in Firestore to manage permissions
+/// independent of the user's private sub-collection.
 class CollaborationTripService {
   // SEPARATE COLLECTIONS FOR COLLABORATION MODE
-  static const String _sharedTripsCollection = 'shared_trips'; // Main shared trips collection
-  static const String _userSharedTripsCollection = 'user_shared_trips'; // User's shared trips reference
-  static const String _invitationsCollection = 'trip_invitations'; // Trip invitations
+  static const String _sharedTripsCollection =
+      'shared_trips'; // Main shared trips collection
+  static const String _userSharedTripsCollection =
+      'user_shared_trips'; // User's shared trips reference
+  static const String _invitationsCollection =
+      'trip_invitations'; // Trip invitations
   static const String _usersCollection = 'users'; // Users collection
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// Get current user ID
+  /// Get current user ID.
   String? get _userId => _auth.currentUser?.uid;
   String? get _userEmail => _auth.currentUser?.email;
 
-  // Public getter for user ID
+  /// Public getter for user ID.
   String? get currentUserId => _userId;
 
-  /// Get shared trips collection reference
+  /// Get shared trips collection reference.
   CollectionReference<Map<String, dynamic>> get _sharedTripsRef =>
       _firestore.collection(_sharedTripsCollection);
 
-  /// Get user's shared trips reference
+  /// Get user's shared trips reference.
+  ///
+  /// Returns null if user is not authenticated.
   CollectionReference<Map<String, dynamic>>? get _userSharedTripsRef {
     if (_userId == null) return null;
     return _firestore
@@ -34,13 +43,16 @@ class CollaborationTripService {
         .collection(_userSharedTripsCollection);
   }
 
-  /// Get invitations collection reference
+  /// Get invitations collection reference.
   CollectionReference<Map<String, dynamic>> get _invitationsRef =>
       _firestore.collection(_invitationsCollection);
 
   // TRIP MANAGEMENT
 
-  /// Create a new shared trip
+  /// Create a new shared trip from an existing local/private trip.
+  ///
+  /// Creates the trip in the global 'shared_trips' collection and adds the
+  /// current user as the owner. Generates a unique shareable link.
   Future<SharedTripModel> createSharedTrip(TripModel trip) async {
     try {
       if (_userId == null || _userEmail == null) {
@@ -48,7 +60,8 @@ class CollaborationTripService {
       }
 
       final user = _auth.currentUser!;
-      final userName = user.displayName ?? user.email?.split('@').first ?? 'Unknown';
+      final userName =
+          user.displayName ?? user.email?.split('@').first ?? 'Unknown';
 
       // Create shared trip document
       final sharedTripRef = _sharedTripsRef.doc();
@@ -94,8 +107,7 @@ class CollaborationTripService {
       // Verify the trip was created by reading it back
       final verifyDoc = await _sharedTripsRef.doc(tripId).get();
       if (verifyDoc.exists) {
-      } else {
-      }
+      } else {}
 
       return sharedTrip.copyWith(
         createdAt: DateTime.now(),
@@ -106,7 +118,9 @@ class CollaborationTripService {
     }
   }
 
-  /// Update shared trip
+  /// Update an existing shared trip.
+  ///
+  /// Verifies user permissions before updating. Updates timestamp and last activity info.
   Future<SharedTripModel> updateSharedTrip(SharedTripModel trip) async {
     try {
       if (_userId == null) {
@@ -123,7 +137,8 @@ class CollaborationTripService {
       }
 
       final user = _auth.currentUser!;
-      final userName = user.displayName ?? user.email?.split('@').first ?? 'Unknown';
+      final userName =
+          user.displayName ?? user.email?.split('@').first ?? 'Unknown';
 
       final updatedTrip = trip.copyWith(
         updatedAt: DateTime.now(),
@@ -144,7 +159,9 @@ class CollaborationTripService {
     }
   }
 
-  /// Delete shared trip (only owner can delete)
+  /// Delete a shared trip.
+  ///
+  /// Only the owner can delete a trip. Removes references for all collaborators.
   Future<void> deleteSharedTrip(String tripId) async {
     try {
       if (_userId == null) {
@@ -190,7 +207,10 @@ class CollaborationTripService {
 
   // TRIP LOADING
 
-  /// Load all shared trips where user is owner or collaborator
+  /// Load all shared trips where user is participating (owner or collaborator).
+  ///
+  /// Fetches references from the user's sub-collection and then loads the full
+  /// trip documents from the main collection.
   Future<List<SharedTripModel>> loadUserSharedTrips() async {
     try {
       if (_userId == null) {
@@ -227,7 +247,7 @@ class CollaborationTripService {
     }
   }
 
-  /// Load trips owned by current user
+  /// Load shared trips owned by the current user.
   Future<List<SharedTripModel>> loadMySharedTrips() async {
     try {
       if (_userId == null) {
@@ -251,7 +271,7 @@ class CollaborationTripService {
     }
   }
 
-  /// Load trips where user is collaborator (not owner)
+  /// Load shared trips where the user is a collaborator (not owner).
   Future<List<SharedTripModel>> loadSharedWithMeTrips() async {
     try {
       if (_userId == null) {
@@ -286,7 +306,9 @@ class CollaborationTripService {
     }
   }
 
-  /// Get single shared trip
+  /// Get a single shared trip by ID.
+  ///
+  /// Verifies user access before returning the trip.
   Future<SharedTripModel?> getSharedTrip(String tripId) async {
     try {
       if (_userId == null) {
@@ -315,7 +337,9 @@ class CollaborationTripService {
 
   // REAL-TIME UPDATES
 
-  /// Watch shared trips for real-time updates
+  /// Watch user's shared trips for real-time updates.
+  ///
+  /// Returns a stream of [List<SharedTripModel>].
   Stream<List<SharedTripModel>> watchUserSharedTrips() {
     if (_userId == null) {
       return Stream.value([]);
@@ -325,36 +349,37 @@ class CollaborationTripService {
         .where('isActive', isEqualTo: true)
         .orderBy('addedAt', descending: true)
         .snapshots()
-        .handleError((error) {
-        })
+        .handleError((error) {})
         .asyncMap((userTripsSnapshot) async {
-      try {
-        if (userTripsSnapshot.docs.isEmpty) {
-          return <SharedTripModel>[];
-        }
+          try {
+            if (userTripsSnapshot.docs.isEmpty) {
+              return <SharedTripModel>[];
+            }
 
-        final trips = <SharedTripModel>[];
-        for (final doc in userTripsSnapshot.docs) {
-          final tripDoc = await _sharedTripsRef.doc(doc.id).get();
-          if (tripDoc.exists) {
-            final tripData = tripDoc.data()!;
-            tripData['id'] = doc.id;
-            final trip = SharedTripModel.fromJson(tripData);
-            trips.add(trip);
+            final trips = <SharedTripModel>[];
+            for (final doc in userTripsSnapshot.docs) {
+              final tripDoc = await _sharedTripsRef.doc(doc.id).get();
+              if (tripDoc.exists) {
+                final tripData = tripDoc.data()!;
+                tripData['id'] = doc.id;
+                final trip = SharedTripModel.fromJson(tripData);
+                trips.add(trip);
+              }
+            }
+
+            return trips;
+          } catch (e) {
+            return <SharedTripModel>[];
           }
-        }
-
-        return trips;
-      } catch (e) {
-        return <SharedTripModel>[];
-      }
-    })
+        })
         .handleError((error) {
           return <SharedTripModel>[];
         });
   }
 
-  /// Watch single trip for real-time updates
+  /// Watch a single shared trip for real-time updates.
+  ///
+  /// Returns a stream of [SharedTripModel?].
   Stream<SharedTripModel?> watchSharedTrip(String tripId) {
     if (_userId == null) {
       return Stream.value(null);
@@ -378,8 +403,10 @@ class CollaborationTripService {
 
   // COLLABORATION FEATURES
 
-  /// Send trip invitation with permission level
-  Future<TripInvitation> inviteCollaborator(String tripId, String inviteeEmail, {
+  /// Send a trip invitation to another user via email.
+  Future<TripInvitation> inviteCollaborator(
+    String tripId,
+    String inviteeEmail, {
     String? message,
     String permissionLevel = 'editor', // default to editor
   }) async {
@@ -399,7 +426,9 @@ class CollaborationTripService {
       }
 
       // Check if user is already a collaborator
-      if (trip.sharedCollaborators.any((c) => c.email.toLowerCase() == inviteeEmail.toLowerCase())) {
+      if (trip.sharedCollaborators.any(
+        (c) => c.email.toLowerCase() == inviteeEmail.toLowerCase(),
+      )) {
         throw Exception('User is already a collaborator on this trip');
       }
 
@@ -415,7 +444,8 @@ class CollaborationTripService {
       }
 
       final user = _auth.currentUser!;
-      final userName = user.displayName ?? user.email?.split('@').first ?? 'Unknown';
+      final userName =
+          user.displayName ?? user.email?.split('@').first ?? 'Unknown';
 
       // Create invitation
       final invitationRef = _invitationsRef.doc();
@@ -443,7 +473,7 @@ class CollaborationTripService {
     }
   }
 
-  /// Get pending invitations for current user
+  /// Get pending invitations for the current user.
   Future<List<TripInvitation>> getPendingInvitations() async {
     try {
       if (_userEmail == null) {
@@ -468,7 +498,9 @@ class CollaborationTripService {
     }
   }
 
-  /// Accept trip invitation
+  /// Accept a trip invitation.
+  ///
+  /// Adds the user as a collaborator to the trip and updates the invitation status.
   Future<void> acceptInvitation(String invitationId) async {
     try {
       if (_userId == null || _userEmail == null) {
@@ -481,7 +513,10 @@ class CollaborationTripService {
       }
 
       final invitationData = invitationDoc.data()!;
-      final invitation = TripInvitation.fromJson({...invitationData, 'id': invitationId});
+      final invitation = TripInvitation.fromJson({
+        ...invitationData,
+        'id': invitationId,
+      });
 
       if (invitation.inviteeEmail.toLowerCase() != _userEmail!.toLowerCase()) {
         throw Exception('This invitation is not for you');
@@ -492,7 +527,8 @@ class CollaborationTripService {
       }
 
       final user = _auth.currentUser!;
-      final userName = user.displayName ?? user.email?.split('@').first ?? 'Unknown';
+      final userName =
+          user.displayName ?? user.email?.split('@').first ?? 'Unknown';
 
       // Create collaborator with the specified permission level
       final collaborator = Collaborator(
@@ -500,7 +536,8 @@ class CollaborationTripService {
         userId: _userId!,
         email: _userEmail!,
         name: userName,
-        role: invitation.permissionLevel, // Use the permission level from invitation
+        role: invitation
+            .permissionLevel, // Use the permission level from invitation
         addedAt: DateTime.now(),
       );
 
@@ -522,15 +559,12 @@ class CollaborationTripService {
       });
 
       // Add trip reference to user's collection
-      batch.set(
-        _userSharedTripsRef!.doc(invitation.tripId),
-        {
-          'tripId': invitation.tripId,
-          'role': invitation.permissionLevel,
-          'addedAt': FieldValue.serverTimestamp(),
-          'isActive': true,
-        },
-      );
+      batch.set(_userSharedTripsRef!.doc(invitation.tripId), {
+        'tripId': invitation.tripId,
+        'role': invitation.permissionLevel,
+        'addedAt': FieldValue.serverTimestamp(),
+        'isActive': true,
+      });
 
       await batch.commit();
     } catch (e) {
@@ -538,7 +572,7 @@ class CollaborationTripService {
     }
   }
 
-  /// Decline trip invitation
+  /// Decline a trip invitation.
   Future<void> declineInvitation(String invitationId) async {
     try {
       if (_userEmail == null) {
@@ -551,7 +585,10 @@ class CollaborationTripService {
       }
 
       final invitationData = invitationDoc.data()!;
-      final invitation = TripInvitation.fromJson({...invitationData, 'id': invitationId});
+      final invitation = TripInvitation.fromJson({
+        ...invitationData,
+        'id': invitationId,
+      });
 
       if (invitation.inviteeEmail.toLowerCase() != _userEmail!.toLowerCase()) {
         throw Exception('This invitation is not for you');
@@ -567,8 +604,13 @@ class CollaborationTripService {
     }
   }
 
-  /// Remove collaborator from trip
-  Future<void> removeCollaborator(String tripId, String collaboratorUserId) async {
+  /// Remove a collaborator from a trip.
+  ///
+  /// Only the owner can remove collaborators.
+  Future<void> removeCollaborator(
+    String tripId,
+    String collaboratorUserId,
+  ) async {
     try {
       if (_userId == null) {
         throw Exception('User not authenticated');
@@ -588,7 +630,9 @@ class CollaborationTripService {
       }
 
       // Find collaborator to remove
-      final collaboratorToRemove = trip.getCollaboratorByUserId(collaboratorUserId);
+      final collaboratorToRemove = trip.getCollaboratorByUserId(
+        collaboratorUserId,
+      );
       if (collaboratorToRemove == null) {
         throw Exception('Collaborator not found');
       }
@@ -613,7 +657,7 @@ class CollaborationTripService {
             .doc(collaboratorUserId)
             .collection(_userSharedTripsCollection)
             .doc(tripId),
-        {'isActive': false}
+        {'isActive': false},
       );
 
       await batch.commit();
@@ -622,7 +666,7 @@ class CollaborationTripService {
     }
   }
 
-  /// Leave shared trip (collaborator leaves)
+  /// Leave a shared trip as a collaborator.
   Future<void> leaveSharedTrip(String tripId) async {
     try {
       if (_userId == null) {
@@ -635,7 +679,9 @@ class CollaborationTripService {
       }
 
       if (trip.isOwnerUser(_userId!)) {
-        throw Exception('Trip owner cannot leave. Transfer ownership or delete the trip instead.');
+        throw Exception(
+          'Trip owner cannot leave. Transfer ownership or delete the trip instead.',
+        );
       }
 
       final updatedCollaborators = trip.sharedCollaborators
@@ -660,8 +706,14 @@ class CollaborationTripService {
     }
   }
 
-  /// Update collaborator permission level
-  Future<void> updateCollaboratorPermission(String tripId, String collaboratorUserId, String newRole) async {
+  /// Update a collaborator's permission level.
+  ///
+  /// Only the owner can change permissions. Valid roles: 'editor', 'viewer'.
+  Future<void> updateCollaboratorPermission(
+    String tripId,
+    String collaboratorUserId,
+    String newRole,
+  ) async {
     try {
       if (_userId == null) {
         throw Exception('User not authenticated');
@@ -681,23 +733,30 @@ class CollaborationTripService {
       }
 
       if (newRole != 'editor' && newRole != 'viewer') {
-        throw Exception('Invalid permission level. Must be "editor" or "viewer"');
+        throw Exception(
+          'Invalid permission level. Must be "editor" or "viewer"',
+        );
       }
 
       // Find collaborator to update
-      final collaboratorIndex = trip.sharedCollaborators.indexWhere((c) => c.userId == collaboratorUserId);
+      final collaboratorIndex = trip.sharedCollaborators.indexWhere(
+        (c) => c.userId == collaboratorUserId,
+      );
       if (collaboratorIndex == -1) {
         throw Exception('Collaborator not found');
       }
 
       // Update the collaborator's role
-      final updatedCollaborators = List<Collaborator>.from(trip.sharedCollaborators);
-      updatedCollaborators[collaboratorIndex] = updatedCollaborators[collaboratorIndex].copyWith(
-        role: newRole,
+      final updatedCollaborators = List<Collaborator>.from(
+        trip.sharedCollaborators,
       );
+      updatedCollaborators[collaboratorIndex] =
+          updatedCollaborators[collaboratorIndex].copyWith(role: newRole);
 
       await _sharedTripsRef.doc(tripId).update({
-        'sharedCollaborators': updatedCollaborators.map((c) => c.toJson()).toList(),
+        'sharedCollaborators': updatedCollaborators
+            .map((c) => c.toJson())
+            .toList(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
@@ -707,20 +766,18 @@ class CollaborationTripService {
           .doc(collaboratorUserId)
           .collection(_userSharedTripsCollection)
           .doc(tripId)
-          .update({
-        'role': newRole,
-      });
+          .update({'role': newRole});
     } catch (e) {
       throw Exception('Failed to update collaborator permission: $e');
     }
   }
 
-  /// Generate shareable link for a trip
+  /// Generate shareable link for a trip.
   String generateShareableLink(String tripId) {
     return 'https://travelapp.com/trip/$tripId';
   }
 
-  /// Get trip by shareable link
+  /// Get trip by shareable link.
   Future<SharedTripModel?> getTripByShareableLink(String link) async {
     try {
       // Extract trip ID from link
@@ -739,7 +796,7 @@ class CollaborationTripService {
 
   // REAL-TIME WATCHERS
 
-  /// Watch pending invitations for real-time updates
+  /// Watch pending invitations for real-time updates.
   Stream<List<TripInvitation>> watchPendingInvitations() {
     if (_userEmail == null) {
       return Stream.value([]);
@@ -751,11 +808,11 @@ class CollaborationTripService {
         .orderBy('sentAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return TripInvitation.fromJson(data);
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return TripInvitation.fromJson(data);
+          }).toList();
+        });
   }
 }
