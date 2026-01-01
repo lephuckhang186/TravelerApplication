@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/weather_models.dart';
 
@@ -7,7 +8,7 @@ import '../models/weather_models.dart';
 /// Integrates with the OpenWeatherMap API and provides search capabilities for
 /// locations globally.
 class WeatherService {
-  static const String _apiKey = '824729decee2bb89c586721174755ae5';
+  static String get _apiKey => dotenv.env['OPENWEATHER_API_KEY'] ?? '';
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
   static const String _geoUrl = 'https://api.openweathermap.org/geo/1.0';
 
