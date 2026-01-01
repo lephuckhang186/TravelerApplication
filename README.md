@@ -202,7 +202,7 @@ File `.env` chứa các nhóm cấu hình sau:
 | `GOOGLE_VISION_API_KEY` | Google Vision OCR | https://console.cloud.google.com/apis/credentials |
 | `LANGCHAIN_API_KEY` | LangChain | https://smith.langchain.com/ |
 
-## 📊 Kiến Trúc Chi Tiết
+## Kiến Trúc Chi Tiết
 
 ### Flutter App Structure
 ```
@@ -282,6 +282,30 @@ notifications/           # Thông báo thông minh
 ```
 
 ## Testing
+
+### Frontend Tests (Flutter)
+#### Cách Chạy Frontend Tests
+```bash
+# Chạy tất cả tests (100% pass rate)
+flutter test
+
+# Chạy với coverage report
+flutter test --coverage
+
+# Chạy test cụ thể
+flutter test test/Plan/models/activity_models_test.dart
+
+# Chạy tests trong một directory
+flutter test test/Plan/models/
+
+# Chạy với reporter khác nhau
+flutter test --reporter=compact    # Output ngắn gọn
+flutter test --reporter=expanded   # Output chi tiết
+```
+
+**Xem chi tiết**: [test/README.md](test/README.md)
+
+
 ### Backend Tests (FastAPI)
 #### Cách Chạy Backend Tests
 ```bash
@@ -363,17 +387,6 @@ python -m pytest tests/ -v
 python -m pytest tests/ -vv --tb=long
 ```
 
-### Frontend Tests
-```bash
-# Đảm bảo tất cả các thư viện phụ thuộc đã được cài đặt
-npm install
-
-# Chạy các bài kiểm tra giao diện người dùng
-npm test
-
-# Xem phạm vi kiểm thử
-npm run coverage
-```
 
 ## Deployment
 
