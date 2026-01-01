@@ -4,6 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/currency_models.dart';
 
+/// Service for fetching real-time exchange rates and performing currency conversions.
+///
+/// Integrates with the Exchange Rate API and provides a mock fallback for
+/// demo purposes. Includes caching logic via SharedPreferences to optimize
+/// network usage.
 class CurrencyService {
   static const String _baseUrl = 'https://api.exchangerate-api.com/v4/latest';
   static const String _cacheKey = 'exchange_rates_cache';
@@ -25,7 +30,9 @@ class CurrencyService {
     'CAD_VND': 17500.0,
   };
 
-  Future<Map<String, ExchangeRate>> getExchangeRates({String baseCurrency = 'USD'}) async {
+  Future<Map<String, ExchangeRate>> getExchangeRates({
+    String baseCurrency = 'USD',
+  }) async {
     try {
       // Check cache first
       final cachedRates = await _getCachedRates(baseCurrency);
@@ -34,15 +41,17 @@ class CurrencyService {
       }
 
       // Try to fetch from API
-      final response = await http.get(
-        Uri.parse('$_baseUrl/$baseCurrency'),
-        headers: {'Accept': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/$baseCurrency'),
+            headers: {'Accept': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final rates = <String, ExchangeRate>{};
-        
+
         final ratesData = data['rates'] as Map<String, dynamic>;
         for (final entry in ratesData.entries) {
           rates['${baseCurrency}_${entry.key}'] = ExchangeRate(
@@ -72,7 +81,7 @@ class CurrencyService {
     try {
       final rates = await getExchangeRates(baseCurrency: fromCurrency);
       final key = '${fromCurrency}_$toCurrency';
-      
+
       if (rates.containsKey(key)) {
         return rates[key]!.rate;
       }
@@ -111,7 +120,7 @@ class CurrencyService {
   Map<String, ExchangeRate> _generateMockRates() {
     final rates = <String, ExchangeRate>{};
     final random = Random();
-    
+
     for (final entry in _mockRates.entries) {
       final parts = entry.key.split('_');
       final baseRate = entry.value;
@@ -146,40 +155,51 @@ class CurrencyService {
     if (_mockRates.containsKey(key)) {
       return _mockRates[key]!;
     }
-    
+
     final reverseKey = '${toCurrency}_$fromCurrency';
     if (_mockRates.containsKey(reverseKey)) {
       return 1.0 / _mockRates[reverseKey]!;
     }
-    
+
     // Default fallback rate
     return 1.0;
   }
 
-  Future<void> _cacheRates(String baseCurrency, Map<String, ExchangeRate> rates) async {
+  Future<void> _cacheRates(
+    String baseCurrency,
+    Map<String, ExchangeRate> rates,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ratesJson = rates.map((key, rate) => MapEntry(key, rate.toJson()));
-      await prefs.setString('${_cacheKey}_$baseCurrency', json.encode(ratesJson));
-      await prefs.setInt('${_cacheTimeKey}_$baseCurrency', DateTime.now().millisecondsSinceEpoch);
+      await prefs.setString(
+        '${_cacheKey}_$baseCurrency',
+        json.encode(ratesJson),
+      );
+      await prefs.setInt(
+        '${_cacheTimeKey}_$baseCurrency',
+        DateTime.now().millisecondsSinceEpoch,
+      );
     } catch (e) {
-      // 
+      //
     }
   }
 
-  Future<Map<String, ExchangeRate>?> _getCachedRates(String baseCurrency) async {
+  Future<Map<String, ExchangeRate>?> _getCachedRates(
+    String baseCurrency,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cacheTime = prefs.getInt('${_cacheTimeKey}_$baseCurrency');
-      
+
       if (cacheTime != null) {
         final cachedTime = DateTime.fromMillisecondsSinceEpoch(cacheTime);
         if (DateTime.now().difference(cachedTime) < _cacheValidDuration) {
           final cachedData = prefs.getString('${_cacheKey}_$baseCurrency');
           if (cachedData != null) {
             final ratesJson = json.decode(cachedData) as Map<String, dynamic>;
-            return ratesJson.map((key, value) => 
-              MapEntry(key, ExchangeRate.fromJson(value))
+            return ratesJson.map(
+              (key, value) => MapEntry(key, ExchangeRate.fromJson(value)),
             );
           }
         }
@@ -187,12 +207,14 @@ class CurrencyService {
     } catch (e) {
       //
     }
-    
+
     return null;
   }
 
   String formatCurrency(double amount, Currency currency) {
-    if (currency.code == 'VND' || currency.code == 'JPY' || currency.code == 'KRW') {
+    if (currency.code == 'VND' ||
+        currency.code == 'JPY' ||
+        currency.code == 'KRW') {
       // Currencies without decimal places
       return '${currency.symbol}${amount.toStringAsFixed(0)}';
     } else {

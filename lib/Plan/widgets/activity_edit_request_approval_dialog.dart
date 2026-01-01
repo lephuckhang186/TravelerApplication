@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import '../models/collaboration_models.dart';
 import '../services/activity_edit_request_service.dart';
+import '../services/collaboration_trip_service.dart';
 import '../../Core/theme/app_theme.dart';
 
-/// Dialog for owner to approve/reject activity edit requests
+/// Dialog for trip owners to review and approve or reject activity edit requests.
+///
+/// Displays a list of pending requests from collaborators, showing proposed
+/// changes to activity details such as title, time, budget, and location.
 class ActivityEditRequestApprovalDialog extends StatefulWidget {
+  /// The list of pending edit requests to display.
   final List<ActivityEditRequest> requests;
+
+  /// Optional callback invoked after a request is successfully processed.
   final VoidCallback? onRequestHandled;
 
   const ActivityEditRequestApprovalDialog({
-    Key? key,
+    super.key,
     required this.requests,
     this.onRequestHandled,
-  }) : super(key: key);
+  });
 
-  static void show(BuildContext context, {
+  /// Static helper to display the dialog as a modal bottom sheet.
+  static void show(
+    BuildContext context, {
     required List<ActivityEditRequest> requests,
     VoidCallback? onRequestHandled,
   }) {
@@ -30,13 +39,16 @@ class ActivityEditRequestApprovalDialog extends StatefulWidget {
   }
 
   @override
-  State<ActivityEditRequestApprovalDialog> createState() => _ActivityEditRequestApprovalDialogState();
+  State<ActivityEditRequestApprovalDialog> createState() =>
+      _ActivityEditRequestApprovalDialogState();
 }
 
-class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestApprovalDialog> {
+class _ActivityEditRequestApprovalDialogState
+    extends State<ActivityEditRequestApprovalDialog> {
   final ActivityEditRequestService _service = ActivityEditRequestService();
   final Set<String> _processing = {};
 
+  /// Processes a single request by approving or rejecting it.
   Future<void> _handleRequest(ActivityEditRequest request, bool approve) async {
     setState(() => _processing.add(request.id));
 
@@ -48,7 +60,9 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
         // Handle activity edit requests
         await _service.updateActivityEditRequest(
           requestId: request.id,
-          status: approve ? ActivityEditRequestStatus.approved : ActivityEditRequestStatus.rejected,
+          status: approve
+              ? ActivityEditRequestStatus.approved
+              : ActivityEditRequestStatus.rejected,
         );
       }
 
@@ -56,12 +70,12 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
         String message;
         if (request.requestType == 'permission_change') {
           message = approve
-            ? '${request.requesterName} is now an Editor'
-            : 'Permission request rejected';
+              ? '${request.requesterName} is now an Editor'
+              : 'Permission request rejected';
         } else {
           message = approve
-            ? 'Activity edit request approved'
-            : 'Activity edit request rejected';
+              ? 'Activity edit request approved'
+              : 'Activity edit request rejected';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,7 +85,6 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
           ),
         );
 
-        // Call callback after closing to avoid any interference
         widget.onRequestHandled?.call();
       }
     } catch (e) {
@@ -90,17 +103,33 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
     }
   }
 
-  Future<void> _handlePermissionChangeRequest(ActivityEditRequest request, bool approve) async {
+  /// Specialized handler for collaborator permission escalation requests.
+  Future<void> _handlePermissionChangeRequest(
+    ActivityEditRequest request,
+    bool approve,
+  ) async {
     // For permission change requests, we need to update the collaborator's role
-    // This would require calling the collaboration service to update permissions
-    // For now, we'll mark the request as approved/rejected
     await _service.updateActivityEditRequest(
       requestId: request.id,
-      status: approve ? ActivityEditRequestStatus.approved : ActivityEditRequestStatus.rejected,
+      status: approve
+          ? ActivityEditRequestStatus.approved
+          : ActivityEditRequestStatus.rejected,
     );
 
-    // TODO: If approved, update the user's role in the collaboration system
-    // This might require additional API calls to update the user's role
+    // If approved, update the user's role in the collaboration system
+    if (approve && request.tripId != null) {
+      try {
+        final collaborationService = CollaborationTripService();
+        await collaborationService.updateCollaboratorPermission(
+          request.tripId!,
+          request.requesterId,
+          'editor', // Permission change requests are for becoming editor
+        );
+      } catch (e) {
+        // Log error but don't fail the request approval
+        debugPrint('Failed to update collaborator permission: $e');
+      }
+    }
   }
 
   @override
@@ -116,11 +145,17 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.pending_actions, color: Colors.white, size: 28),
+                  const Icon(
+                    Icons.pending_actions,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -176,8 +211,8 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                                 backgroundColor: AppColors.primary,
                                 child: Text(
                                   request.requesterName.isNotEmpty
-                                    ? request.requesterName[0].toUpperCase()
-                                    : '?',
+                                      ? request.requesterName[0].toUpperCase()
+                                      : '?',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -207,27 +242,34 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                                   ],
                                 ),
                               ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF3CD), // amber.shade100
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.schedule, size: 14, color: Color(0xFFF57C00)), // amber.shade700
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Pending',
-                                        style: TextStyle(
-                                          color: const Color(0xFFF57C00), // amber.shade700
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3CD),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.schedule,
+                                      size: 14,
+                                      color: Color(0xFFF57C00),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'Pending',
+                                      style: TextStyle(
+                                        color: Color(0xFFF57C00),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
 
@@ -247,7 +289,11 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                                 if (request.tripTitle != null) ...[
                                   Row(
                                     children: [
-                                      const Icon(Icons.trip_origin, size: 16, color: AppColors.primary),
+                                      const Icon(
+                                        Icons.trip_origin,
+                                        size: 16,
+                                        color: AppColors.primary,
+                                      ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
@@ -286,7 +332,8 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                           ),
 
                           // Message if provided
-                          if (request.message != null && request.message!.isNotEmpty) ...[
+                          if (request.message != null &&
+                              request.message!.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.all(12),
@@ -298,15 +345,20 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.message, size: 16, color: Color(0xFF1976D2)),
+                                  const Icon(
+                                    Icons.message,
+                                    size: 16,
+                                    color: Color(0xFF1976D2),
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(
+                                        const Text(
                                           'Message',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.blue,
                                             fontWeight: FontWeight.bold,
@@ -328,7 +380,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                             ),
                           ],
 
-                          // Proposed changes preview (if available)
+                          // Proposed changes preview
                           if (request.proposedChanges != null) ...[
                             const SizedBox(height: 12),
                             Container(
@@ -336,27 +388,36 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                               decoration: BoxDecoration(
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.green.shade200),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.edit_note, size: 16, color: Color(0xFF388E3C)),
+                                  const Icon(
+                                    Icons.edit_note,
+                                    size: 16,
+                                    color: Color(0xFF388E3C),
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(
+                                        const Text(
                                           'Proposed Changes',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
                                             color: Color(0xFF388E3C),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        ..._buildProposedChangesList(request.proposedChanges!),
+                                        ..._buildProposedChangesList(
+                                          request.proposedChanges!,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -382,21 +443,25 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: isProcessing
-                                    ? null
-                                    : () => _handleRequest(request, false),
+                                      ? null
+                                      : () => _handleRequest(request, false),
                                   icon: isProcessing
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.close),
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.close),
                                   label: const Text('Reject'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red.shade50,
                                     foregroundColor: Colors.red.shade700,
                                     elevation: 0,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -404,21 +469,25 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: isProcessing
-                                    ? null
-                                    : () => _handleRequest(request, true),
+                                      ? null
+                                      : () => _handleRequest(request, true),
                                   icon: isProcessing
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.check),
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.check),
                                   label: const Text('Approve'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green.shade50,
                                     foregroundColor: Colors.green.shade700,
                                     elevation: 0,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -437,7 +506,9 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(4),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -455,6 +526,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
     );
   }
 
+  /// Maps internal request types to appropriate UI icons.
   IconData _getActivityTypeIcon(String requestType) {
     switch (requestType) {
       case 'edit_activity':
@@ -470,6 +542,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
     }
   }
 
+  /// Builds a vertical list of text widgets summarizing proposed data changes.
   List<Widget> _buildProposedChangesList(Map<String, dynamic> changes) {
     final widgets = <Widget>[];
 
@@ -482,10 +555,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
           padding: const EdgeInsets.only(bottom: 2),
           child: Text(
             '$displayKey: $displayValue',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 13, color: Colors.black87),
           ),
         ),
       );
@@ -494,6 +564,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
     return widgets;
   }
 
+  /// Internal formatter for human-readable property names.
   String _formatChangeKey(String key) {
     switch (key) {
       case 'title':
@@ -515,6 +586,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
     }
   }
 
+  /// Internal formatter for human-readable property values.
   String _formatChangeValue(String key, dynamic value) {
     if (value == null) return 'None';
 
@@ -549,6 +621,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
     }
   }
 
+  /// Formats the request timestamp as a relative 'time ago' string.
   String _formatTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -565,7 +638,7 @@ class _ActivityEditRequestApprovalDialogState extends State<ActivityEditRequestA
   }
 }
 
-/// Bottom sheet widget for activity edit requests (notification-style)
+/// Bottom sheet widget specifically styled for notification-style request list.
 class _ActivityEditRequestBottomSheet extends StatefulWidget {
   final List<ActivityEditRequest> requests;
   final VoidCallback? onRequestHandled;
@@ -576,10 +649,12 @@ class _ActivityEditRequestBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<_ActivityEditRequestBottomSheet> createState() => _ActivityEditRequestBottomSheetState();
+  State<_ActivityEditRequestBottomSheet> createState() =>
+      _ActivityEditRequestBottomSheetState();
 }
 
-class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBottomSheet> {
+class _ActivityEditRequestBottomSheetState
+    extends State<_ActivityEditRequestBottomSheet> {
   final ActivityEditRequestService _service = ActivityEditRequestService();
   final Set<String> _processing = {};
 
@@ -587,14 +662,14 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
     setState(() => _processing.add(request.id));
 
     try {
-      // Handle permission change requests differently
       if (request.requestType == 'permission_change') {
         await _handlePermissionChangeRequest(request, approve);
       } else {
-        // Handle activity edit requests
         await _service.updateActivityEditRequest(
           requestId: request.id,
-          status: approve ? ActivityEditRequestStatus.approved : ActivityEditRequestStatus.rejected,
+          status: approve
+              ? ActivityEditRequestStatus.approved
+              : ActivityEditRequestStatus.rejected,
         );
       }
 
@@ -602,12 +677,12 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
         String message;
         if (request.requestType == 'permission_change') {
           message = approve
-            ? '${request.requesterName} is now an Editor'
-            : 'Permission request rejected';
+              ? '${request.requesterName} is now an Editor'
+              : 'Permission request rejected';
         } else {
           message = approve
-            ? 'Activity edit request approved'
-            : 'Activity edit request rejected';
+              ? 'Activity edit request approved'
+              : 'Activity edit request rejected';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -617,10 +692,7 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
           ),
         );
 
-        // Close the bottom sheet immediately after handling the request
         Navigator.of(context).pop();
-
-        // Call callback after closing to avoid any interference
         widget.onRequestHandled?.call();
       }
     } catch (e) {
@@ -639,17 +711,31 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
     }
   }
 
-  Future<void> _handlePermissionChangeRequest(ActivityEditRequest request, bool approve) async {
-    // For permission change requests, we need to update the collaborator's role
-    // This would require calling the collaboration service to update permissions
-    // For now, we'll mark the request as approved/rejected
+  Future<void> _handlePermissionChangeRequest(
+    ActivityEditRequest request,
+    bool approve,
+  ) async {
     await _service.updateActivityEditRequest(
       requestId: request.id,
-      status: approve ? ActivityEditRequestStatus.approved : ActivityEditRequestStatus.rejected,
+      status: approve
+          ? ActivityEditRequestStatus.approved
+          : ActivityEditRequestStatus.rejected,
     );
 
-    // TODO: If approved, update the user's role in the collaboration system
-    // This might require additional API calls to update the user's role
+    // Mark approved permission changes in collaboration system
+    if (approve && request.tripId != null) {
+      try {
+        final collaborationService = CollaborationTripService();
+        await collaborationService.updateCollaboratorPermission(
+          request.tripId!,
+          request.requesterId,
+          'editor', // Permission change requests are for becoming editor
+        );
+      } catch (e) {
+        // Log error but don't fail the request approval
+        debugPrint('Failed to update collaborator permission: $e');
+      }
+    }
   }
 
   @override
@@ -682,7 +768,7 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'Activity Edit Requests',
                     style: TextStyle(
                       fontFamily: 'Urbanist-Regular',
@@ -693,7 +779,10 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
                   ),
                   if (widget.requests.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange,
                         borderRadius: BorderRadius.circular(12),
@@ -714,20 +803,20 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
             // Content
             Expanded(
               child: widget.requests.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: widget.requests.length,
-                    physics: const BouncingScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      final request = widget.requests[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: _buildRequestItem(request),
-                      );
-                    },
-                  ),
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: widget.requests.length,
+                      physics: const BouncingScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        final request = widget.requests[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: _buildRequestItem(request),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -782,10 +871,7 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
           color: Colors.red,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (direction) {
         _handleRequest(request, false); // Reject on dismiss
@@ -798,122 +884,26 @@ class _ActivityEditRequestBottomSheetState extends State<_ActivityEditRequestBot
           border: Border.all(color: Colors.grey[200]!),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          leading: CircleAvatar(
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            child: Icon(
-              _getActivityTypeIcon(request.requestType),
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                request.requesterName,
-                style: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                request.requestTypeDisplay,
-                style: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ],
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 6),
-              Text(
-                request.activityTitle ?? 'Activity',
-                style: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 13,
-                  color: Colors.grey[700],
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _formatTimeAgo(request.requestedAt),
-                style: TextStyle(
-                  fontFamily: 'Urbanist-Regular',
-                  fontSize: 11,
-                  color: Colors.grey[500],
-                ),
-              ),
-            ],
-          ),
+          // Simplified row items for bottom sheet view
+          title: Text(request.requesterName),
+          subtitle: Text(request.requestTypeDisplay),
           trailing: isProcessing
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.red),
-                    onPressed: () => _handleRequest(request, false),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.check, color: Colors.green),
-                    onPressed: () => _handleRequest(request, true),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
+              ? const CircularProgressIndicator()
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      onPressed: () => _handleRequest(request, false),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.check, color: Colors.green),
+                      onPressed: () => _handleRequest(request, true),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
-  }
-
-  IconData _getActivityTypeIcon(String requestType) {
-    switch (requestType) {
-      case 'edit_activity':
-        return Icons.edit;
-      case 'add_activity':
-        return Icons.add_circle;
-      case 'delete_activity':
-        return Icons.delete;
-      case 'permission_change':
-        return Icons.person_add;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays != 1 ? 's' : ''} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours != 1 ? 's' : ''} ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes != 1 ? 's' : ''} ago';
-    } else {
-      return 'Just now';
-    }
   }
 }

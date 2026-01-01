@@ -1,5 +1,5 @@
 """
-Edit Request API endpoints for role-based access control
+Edit Request API endpoints for role-based access control.
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
@@ -43,7 +43,22 @@ async def create_edit_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Create a new edit access request (Viewer requests to become Editor)
+    Create a new edit access request (Viewer requests to become Editor).
+
+    Allows a user with Viewer role to request Editor privileges from the Trip Owner.
+
+    Args:
+        request_data (EditRequestCreate): The data for creation (trip ID and message).
+        current_user (User): The current authenticated user making the request.
+
+    Returns:
+        EditRequestResponse: The created edit request details.
+
+    Raises:
+        HTTPException(404): If the trip is not found.
+        HTTPException(400): If the trip has no owner, user already has editor rights, or request is pending.
+        HTTPException(403): If the user is not a collaborator on the trip.
+        HTTPException(500): If the request creation fails.
     """
     try:
         trip_id = request_data.trip_id
@@ -136,7 +151,17 @@ async def get_my_edit_requests(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all edit requests created by current user
+    Get all edit requests created by current user.
+
+    Args:
+        status_filter (Optional[str]): Filter requests by status (pending, approved, rejected).
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[EditRequestResponse]: A list of edit requests.
+
+    Raises:
+        HTTPException(500): If retrieving requests fails.
     """
     try:
         requests = await firebase_service.get_user_edit_requests(
@@ -168,7 +193,16 @@ async def get_pending_approvals(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all pending edit requests for trips owned by current user
+    Get all pending edit requests for trips owned by current user.
+
+    Args:
+        current_user (User): The current authenticated user (acting as owner).
+
+    Returns:
+        List[EditRequestResponse]: A list of pending requests requiring approval.
+
+    Raises:
+        HTTPException(500): If retrieving approvals fails.
     """
     try:
         requests = await firebase_service.get_owner_edit_requests(
@@ -202,7 +236,20 @@ async def get_trip_edit_requests(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all edit requests for a specific trip (owner only)
+    Get all edit requests for a specific trip (owner only).
+
+    Args:
+        trip_id (str): The ID of the trip.
+        status_filter (Optional[str]): optional status filter.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[EditRequestResponse]: List of associated edit requests.
+
+    Raises:
+        HTTPException(404): If trip is not found.
+        HTTPException(403): If user is not the owner.
+        HTTPException(500): If retrieval fails.
     """
     try:
         # Verify user is trip owner
@@ -253,7 +300,23 @@ async def update_edit_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Approve or reject an edit request (owner only)
+    Approve or reject an edit request (owner only).
+
+    If approved and `promote_to_editor` is true, the user's role on the trip is updated to EDITOR.
+
+    Args:
+        request_id (str): The ID of the edit request.
+        update_data (EditRequestUpdate): The update payload (status, promote_to_editor).
+        current_user (User): The current authenticated user.
+
+    Returns:
+        EditRequestResponse: The updated edit request.
+
+    Raises:
+        HTTPException(404): Request or Trip not found.
+        HTTPException(403): User is not the owner.
+        HTTPException(400): Request is not pending.
+        HTTPException(500): Update operation fails.
     """
     try:
         # 1. Get the request
@@ -355,7 +418,19 @@ async def delete_edit_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Delete an edit request (requester or owner only)
+    Delete an edit request (requester or owner only).
+
+    Args:
+        request_id (str): The ID of the request to delete.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException(404): Request not found.
+        HTTPException(403): User is not requester or owner.
+        HTTPException(500): Delete fails.
     """
     try:
         # Get the request

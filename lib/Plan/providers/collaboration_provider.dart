@@ -1,31 +1,37 @@
- import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_application_1/Plan/models/activity_models.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import '../models/activity_models.dart';
 import '../models/collaboration_models.dart';
 import '../models/trip_model.dart';
 import '../services/collaboration_trip_service.dart';
 import '../services/firebase_trip_service.dart';
 import '../utils/activity_scheduling_validator.dart';
 
-/// Provider for collaboration mode - unified with private mode backend
+/// Provider for collaboration mode, managing real-time shared trip state.
+///
+/// This provider handles the complex state logic for multi-user trip editing,
+/// including owned trips, trips shared with the user, and pending invitations.
+/// It integrates with [CollaborationTripService] for backend logic and
+/// [FirebaseTripService] for local/cloud persistence.
 class CollaborationProvider extends ChangeNotifier {
-  final CollaborationTripService _collaborationService = CollaborationTripService();
+  final CollaborationTripService _collaborationService =
+      CollaborationTripService();
   final FirebaseTripService _firebaseService = FirebaseTripService();
 
-  // Getter to access service (for external access)
+  /// Getter to access service (for external access).
   CollaborationTripService get collaborationService => _collaborationService;
-  
+
   // SEPARATE STATE FOR COLLABORATION MODE
   List<SharedTripModel> _mySharedTrips = []; // Trips owned by user
   List<SharedTripModel> _sharedWithMeTrips = []; // Trips shared with user
   List<TripInvitation> _pendingInvitations = [];
   SharedTripModel? _selectedSharedTrip;
-  
+
   bool _isLoading = false;
   String? _error;
-  
+
   // Real-time subscriptions
   StreamSubscription<List<SharedTripModel>>? _myTripsSubscription;
   StreamSubscription<SharedTripModel?>? _selectedTripSubscription;
@@ -33,16 +39,41 @@ class CollaborationProvider extends ChangeNotifier {
   StreamSubscription<List<TripInvitation>>? _invitationsSubscription;
 
   // Getters
+
+  /// List of shared trips owned by the current user.
   List<SharedTripModel> get mySharedTrips => List.unmodifiable(_mySharedTrips);
-  List<SharedTripModel> get sharedWithMeTrips => List.unmodifiable(_sharedWithMeTrips);
-  List<SharedTripModel> get allSharedTrips => [..._mySharedTrips, ..._sharedWithMeTrips];
-  List<TripInvitation> get pendingInvitations => List.unmodifiable(_pendingInvitations);
+
+  /// List of trips where the current user is a collaborator but not the owner.
+  List<SharedTripModel> get sharedWithMeTrips =>
+      List.unmodifiable(_sharedWithMeTrips);
+
+  /// Combined list of all shared trips involving the current user.
+  List<SharedTripModel> get allSharedTrips => [
+    ..._mySharedTrips,
+    ..._sharedWithMeTrips,
+  ];
+
+  /// List of invitations to join other users' trips.
+  List<TripInvitation> get pendingInvitations =>
+      List.unmodifiable(_pendingInvitations);
+
+  /// The currently active shared trip in the UI.
   SharedTripModel? get selectedSharedTrip => _selectedSharedTrip;
+
+  /// Whether a network operation or background sync is in progress.
   bool get isLoading => _isLoading;
+
+  /// Most recent error message, if any.
   String? get error => _error;
-  
-  bool get hasSharedTrips => _mySharedTrips.isNotEmpty || _sharedWithMeTrips.isNotEmpty;
+
+  /// Whether the user has any shared trips.
+  bool get hasSharedTrips =>
+      _mySharedTrips.isNotEmpty || _sharedWithMeTrips.isNotEmpty;
+
+  /// Whether the user has any unresponded invitations.
   bool get hasPendingInvitations => _pendingInvitations.isNotEmpty;
+
+  /// Total count of all shared trips.
   int get totalSharedTrips => _mySharedTrips.length + _sharedWithMeTrips.length;
 
   @override
@@ -50,12 +81,13 @@ class CollaborationProvider extends ChangeNotifier {
     _myTripsSubscription?.cancel();
     _selectedTripSubscription?.cancel();
     _authStateSubscription?.cancel();
+    _invitationsSubscription?.cancel();
     super.dispose();
   }
 
   // LOADING METHODS
 
-  /// Initialize collaboration data (equivalent to private mode initialize)
+  /// Initialize collaboration data by loading initial state and starting listeners.
   Future<void> initialize() async {
     _setLoading(true);
     try {
@@ -80,7 +112,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Ensure provider is initialized (lazy initialization)
+  /// Ensure provider is initialized, using lazy initialization if necessary.
   Future<void> ensureInitialized() async {
     if (!hasSharedTrips && !_isLoading) {
       await initialize();
@@ -91,8 +123,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-
-  /// Initialize collaboration data (kept for backward compatibility)
+  /// Initialize collaboration data (kept for backward compatibility).
   Future<void> initializeCollaboration() async {
     await Future.wait([
       loadMySharedTrips(),
@@ -102,7 +133,7 @@ class CollaborationProvider extends ChangeNotifier {
     _startRealTimeListening();
   }
 
-  /// Load trips owned by current user
+  /// Load shared trips owned by the current user from the service.
   Future<void> loadMySharedTrips() async {
     try {
       final trips = await _collaborationService.loadMySharedTrips();
@@ -115,7 +146,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Load trips shared with current user
+  /// Load trips shared with the current user by others.
   Future<void> loadSharedWithMeTrips() async {
     try {
       final trips = await _collaborationService.loadSharedWithMeTrips();
@@ -128,7 +159,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Load pending invitations
+  /// Load pending invitations from the service.
   Future<void> loadPendingInvitations() async {
     try {
       final invitations = await _collaborationService.getPendingInvitations();
@@ -139,14 +170,14 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Refresh all collaboration data
+  /// Refresh all collaboration data by re-loading from sources.
   Future<void> refreshCollaborationData() async {
     await initializeCollaboration();
   }
 
   // TRIP MANAGEMENT
 
-  /// Create a new trip (equivalent to private mode createTrip)
+  /// Create a new shared trip and add it to the state.
   Future<SharedTripModel?> createTrip({
     required String name,
     required String destination,
@@ -180,7 +211,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Add trip to local state (for compatibility with private mode)
+  /// Add a trip to local state (for compatibility with private mode).
   void addTrip(dynamic trip) {
     if (trip is SharedTripModel) {
       _mySharedTrips.insert(0, trip);
@@ -188,7 +219,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Set current trip (for compatibility with private mode)
+  /// Set the currently selected shared trip.
   void setCurrentTrip(dynamic trip) {
     if (trip is SharedTripModel) {
       _selectedSharedTrip = trip;
@@ -196,7 +227,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Create new shared trip from regular trip (collaboration-only backend)
+  /// Create a new shared trip from a [TripModel], syncing both locally and in cloud.
   Future<SharedTripModel?> createSharedTrip(TripModel trip) async {
     try {
       _setLoading(true);
@@ -210,7 +241,9 @@ class CollaborationProvider extends ChangeNotifier {
       await _firebaseService.saveTrip(tripForFirebase);
 
       // Create shared trip in collaboration service
-      final sharedTrip = await _collaborationService.createSharedTrip(tripForFirebase);
+      final sharedTrip = await _collaborationService.createSharedTrip(
+        tripForFirebase,
+      );
 
       // Add to local state
       _mySharedTrips.insert(0, sharedTrip);
@@ -228,7 +261,7 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Update shared trip
+  /// Update an existing shared trip's metadata or activities.
   Future<bool> updateSharedTrip(SharedTripModel trip) async {
     try {
       _setLoading(true);
@@ -254,23 +287,23 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Delete shared trip (owner only)
+  /// Delete a shared trip (only permitted for the owner).
   Future<bool> deleteSharedTrip(String tripId) async {
     try {
       _setLoading(true);
       _clearError();
-      
+
       await _collaborationService.deleteSharedTrip(tripId);
-      
+
       // Remove from lists
       _mySharedTrips.removeWhere((trip) => trip.id == tripId);
       _sharedWithMeTrips.removeWhere((trip) => trip.id == tripId);
-      
+
       // Clear selected trip if it was deleted
       if (_selectedSharedTrip?.id == tripId) {
         _selectedSharedTrip = null;
       }
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -281,24 +314,24 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Select shared trip for detailed view
+  /// Select a shared trip for detailed view and start watching its updates.
   Future<void> selectSharedTrip(String tripId) async {
     try {
       _clearError();
-      
+
       final trip = await _collaborationService.getSharedTrip(tripId);
       _selectedSharedTrip = trip;
-      
+
       // Start listening to real-time updates for selected trip
       _startSelectedTripListening(tripId);
-      
+
       notifyListeners();
     } catch (e) {
       _setError('Failed to load trip details: $e');
     }
   }
 
-  /// Clear selected trip
+  /// Deselect the current shared trip and stop watching it.
   void clearSelectedTrip() {
     _selectedSharedTrip = null;
     _selectedTripSubscription?.cancel();
@@ -307,19 +340,24 @@ class CollaborationProvider extends ChangeNotifier {
 
   // COLLABORATION FEATURES
 
-  /// Invite collaborator to trip
-  Future<bool> inviteCollaborator(String tripId, String email, {String? message, String permissionLevel = 'editor'}) async {
+  /// Send an email invitation to another user to join a trip.
+  Future<bool> inviteCollaborator(
+    String tripId,
+    String email, {
+    String? message,
+    String permissionLevel = 'editor',
+  }) async {
     try {
       _setLoading(true);
       _clearError();
-      
+
       await _collaborationService.inviteCollaborator(
-        tripId, 
-        email, 
+        tripId,
+        email,
         message: message,
         permissionLevel: permissionLevel,
       );
-      
+
       return true;
     } catch (e) {
       _setError('Failed to send invitation: $e');
@@ -329,20 +367,20 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Accept invitation
+  /// Accept an incoming trip invitation.
   Future<bool> acceptInvitation(String invitationId) async {
     try {
       _setLoading(true);
       _clearError();
-      
+
       await _collaborationService.acceptInvitation(invitationId);
-      
+
       // Remove from pending invitations
       _pendingInvitations.removeWhere((inv) => inv.id == invitationId);
-      
+
       // Reload shared trips to include new trip
       await loadSharedWithMeTrips();
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -353,17 +391,17 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Decline invitation
+  /// Decline an incoming trip invitation.
   Future<bool> declineInvitation(String invitationId) async {
     try {
       _setLoading(true);
       _clearError();
-      
+
       await _collaborationService.declineInvitation(invitationId);
-      
+
       // Remove from pending invitations
       _pendingInvitations.removeWhere((inv) => inv.id == invitationId);
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -374,17 +412,23 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Remove collaborator from trip
-  Future<bool> removeCollaborator(String tripId, String collaboratorUserId) async {
+  /// Remove a collaborator from a trip (owner only).
+  Future<bool> removeCollaborator(
+    String tripId,
+    String collaboratorUserId,
+  ) async {
     try {
       _setLoading(true);
       _clearError();
-      
-      await _collaborationService.removeCollaborator(tripId, collaboratorUserId);
-      
+
+      await _collaborationService.removeCollaborator(
+        tripId,
+        collaboratorUserId,
+      );
+
       // Reload trip data to reflect changes
       await selectSharedTrip(tripId);
-      
+
       return true;
     } catch (e) {
       _setError('Failed to remove collaborator: $e');
@@ -394,22 +438,22 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Leave shared trip
+  /// Leave a shared trip the user was collaborating on.
   Future<bool> leaveSharedTrip(String tripId) async {
     try {
       _setLoading(true);
       _clearError();
-      
+
       await _collaborationService.leaveSharedTrip(tripId);
-      
+
       // Remove from shared with me trips
       _sharedWithMeTrips.removeWhere((trip) => trip.id == tripId);
-      
+
       // Clear selected trip if it was the one we left
       if (_selectedSharedTrip?.id == tripId) {
         _selectedSharedTrip = null;
       }
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -422,7 +466,7 @@ class CollaborationProvider extends ChangeNotifier {
 
   // REAL-TIME FEATURES
 
-  /// Start listening to real-time updates
+  /// Start watching the user's shared trips list for changes in Firestore.
   void _startRealTimeListening() {
     // Cancel existing subscription first
     _myTripsSubscription?.cancel();
@@ -430,25 +474,9 @@ class CollaborationProvider extends ChangeNotifier {
     // Listen to user's shared trips
     _myTripsSubscription = _collaborationService.watchUserSharedTrips().listen(
       (trips) {
-        // Separate owned trips from collaborated trips
-        final myTrips = <SharedTripModel>[];
-        final sharedTrips = <SharedTripModel>[];
-
         final userId = _collaborationService.currentUserId;
+        if (userId == null) return;
 
-        if (userId != null) {
-          for (final trip in trips) {
-            if (trip.isOwnerUser(userId)) {
-              myTrips.add(trip);
-            } else {
-              sharedTrips.add(trip);
-            }
-          }
-        }
-
-        // Update state - CORRECTLY SEPARATE OWNED VS SHARED
-
-        // Clear and rebuild lists from Firestore data
         final newMyTrips = <SharedTripModel>[];
         final newSharedTrips = <SharedTripModel>[];
 
@@ -456,10 +484,13 @@ class CollaborationProvider extends ChangeNotifier {
         for (final trip in trips) {
           // Sort activities chronologically for consistent display
           final sortedTrip = trip.copyWith(
-            activities: ActivitySchedulingValidator.sortActivitiesChronologically(trip.activities),
+            activities:
+                ActivitySchedulingValidator.sortActivitiesChronologically(
+                  trip.activities,
+                ),
           );
 
-          final isOwner = sortedTrip.isOwnerUser(userId!);
+          final isOwner = sortedTrip.isOwnerUser(userId);
 
           if (isOwner) {
             newMyTrips.add(sortedTrip);
@@ -472,7 +503,7 @@ class CollaborationProvider extends ChangeNotifier {
         _mySharedTrips = newMyTrips;
         _sharedWithMeTrips = newSharedTrips;
 
-        // CRITICAL: Force UI refresh with logging and timestamp
+        // Force UI refresh
         notifyListeners();
 
         // Check for new invitations
@@ -485,63 +516,63 @@ class CollaborationProvider extends ChangeNotifier {
     );
   }
 
-  /// Start listening to selected trip updates
+  /// Start watching a single selected trip for granular real-time updates.
   void _startSelectedTripListening(String tripId) {
     _selectedTripSubscription?.cancel();
-    _selectedTripSubscription = _collaborationService.watchSharedTrip(tripId).listen(
-      (trip) {
-        if (trip != null) {
-          // Sort activities chronologically for consistent display
-          final sortedTrip = trip.copyWith(
-            activities: ActivitySchedulingValidator.sortActivitiesChronologically(trip.activities),
-          );
-          _selectedSharedTrip = sortedTrip;
-          _updateTripInLists(sortedTrip); // Also update in main lists
-          notifyListeners();
-        } else {
-        }
-      },
-      onError: (error) {
-      },
-      cancelOnError: false,
-    );
+    _selectedTripSubscription = _collaborationService
+        .watchSharedTrip(tripId)
+        .listen(
+          (trip) {
+            if (trip != null) {
+              // Sort activities chronologically for consistent display
+              final sortedTrip = trip.copyWith(
+                activities:
+                    ActivitySchedulingValidator.sortActivitiesChronologically(
+                      trip.activities,
+                    ),
+              );
+              _selectedSharedTrip = sortedTrip;
+              _updateTripInLists(sortedTrip); // Also update in main lists
+              notifyListeners();
+            }
+          },
+          onError: (error) {},
+          cancelOnError: false,
+        );
   }
 
-  /// Start listening to Firebase auth state changes
+  /// Listen for authentication changes to clear/load data accordingly.
   void _startAuthStateListening() {
     _authStateSubscription?.cancel();
-    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen(
-      (User? user) {
-        if (user != null) {
-          // User is signed in, refresh collaboration data for this user
-          refreshCollaborationData();
-        } else {
-          // User is signed out, clear all data
-          clearAllData();
-        }
-      },
-      onError: (error) {
-      },
-    );
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      User? user,
+    ) {
+      if (user != null) {
+        // User is signed in, refresh collaboration data for this user
+        refreshCollaborationData();
+      } else {
+        // User is signed out, clear all data
+        clearAllData();
+      }
+    }, onError: (error) {});
   }
 
-  /// Start listening to invitation updates
+  /// Start watching for new invitations.
   void _startInvitationsListening() {
     _invitationsSubscription?.cancel();
-    _invitationsSubscription = _collaborationService.watchPendingInvitations().listen(
-      (invitations) {
-        _pendingInvitations = invitations;
-
-        // Force UI refresh
-        notifyListeners();
-      },
-      onError: (error) {
-      },
-      cancelOnError: false,
-    );
+    _invitationsSubscription = _collaborationService
+        .watchPendingInvitations()
+        .listen(
+          (invitations) {
+            _pendingInvitations = invitations;
+            notifyListeners();
+          },
+          onError: (error) {},
+          cancelOnError: false,
+        );
   }
 
-  /// Stop real-time listening
+  /// Cancel all active real-time subscriptions.
   void stopRealTimeListening() {
     _myTripsSubscription?.cancel();
     _selectedTripSubscription?.cancel();
@@ -551,18 +582,23 @@ class CollaborationProvider extends ChangeNotifier {
 
   // HELPER METHODS
 
+  /// Internal utility to update a trip in the local lists without a full reload.
   void _updateTripInLists(SharedTripModel updatedTrip) {
     final userId = _collaborationService.currentUserId;
     if (userId == null) return;
 
     // Update in owned trips
-    final myTripIndex = _mySharedTrips.indexWhere((trip) => trip.id == updatedTrip.id);
+    final myTripIndex = _mySharedTrips.indexWhere(
+      (trip) => trip.id == updatedTrip.id,
+    );
     if (myTripIndex != -1 && updatedTrip.isOwnerUser(userId)) {
       _mySharedTrips[myTripIndex] = updatedTrip;
     }
 
     // Update in shared trips
-    final sharedTripIndex = _sharedWithMeTrips.indexWhere((trip) => trip.id == updatedTrip.id);
+    final sharedTripIndex = _sharedWithMeTrips.indexWhere(
+      (trip) => trip.id == updatedTrip.id,
+    );
     if (sharedTripIndex != -1 && !updatedTrip.isOwnerUser(userId)) {
       _sharedWithMeTrips[sharedTripIndex] = updatedTrip;
     }
@@ -586,7 +622,7 @@ class CollaborationProvider extends ChangeNotifier {
 
   // UTILITY METHODS
 
-  /// Get trip by ID from all lists
+  /// Find a trip by [tripId] in any of the managed lists.
   SharedTripModel? getTripById(String tripId) {
     try {
       return allSharedTrips.firstWhere((trip) => trip.id == tripId);
@@ -595,17 +631,17 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Check if user owns a trip
+  /// Whether the user is the owner of the trip identified by [tripId].
   bool isUserOwnerOfTrip(String tripId) {
     return _mySharedTrips.any((trip) => trip.id == tripId);
   }
 
-  /// Check if user is collaborator on a trip
+  /// Whether the user is an active collaborator on the trip identified by [tripId].
   bool isUserCollaboratorOnTrip(String tripId) {
     return _sharedWithMeTrips.any((trip) => trip.id == tripId);
   }
 
-  /// Get invitation by ID
+  /// Find a pending invitation by its [invitationId].
   TripInvitation? getInvitationById(String invitationId) {
     try {
       return _pendingInvitations.firstWhere((inv) => inv.id == invitationId);
@@ -614,13 +650,12 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Check for new invitations when trips are updated
+  /// Automatically triggered check for new invitations.
   void _checkForNewInvitations() {
-    // Load pending invitations in background
     loadPendingInvitations();
   }
 
-  /// Clear all data (for logout)
+  /// Wipe all local data, typically used during logout.
   void clearAllData() {
     _mySharedTrips.clear();
     _sharedWithMeTrips.clear();
@@ -633,7 +668,7 @@ class CollaborationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Respond to invitation (accept or decline)
+  /// Process an invitation response.
   Future<void> respondToInvitation(String invitationId, bool accept) async {
     if (accept) {
       await acceptInvitation(invitationId);
@@ -642,13 +677,21 @@ class CollaborationProvider extends ChangeNotifier {
     }
   }
 
-  /// Update collaborator permission level
-  Future<bool> updateCollaboratorPermission(String tripId, String collaboratorUserId, String newRole) async {
+  /// Update the role of a collaborator on a specific trip.
+  Future<bool> updateCollaboratorPermission(
+    String tripId,
+    String collaboratorUserId,
+    String newRole,
+  ) async {
     try {
       _setLoading(true);
       _clearError();
 
-      await _collaborationService.updateCollaboratorPermission(tripId, collaboratorUserId, newRole);
+      await _collaborationService.updateCollaboratorPermission(
+        tripId,
+        collaboratorUserId,
+        newRole,
+      );
 
       // Reload trip data to reflect permission changes
       await selectSharedTrip(tripId);

@@ -14,7 +14,7 @@ import '../services/firebase_trip_service.dart';
 import '../../Expense/services/expense_service.dart';
 import '../../Expense/models/expense_models.dart';
 
-// Number formatter to add thousand separators
+/// Custom text input formatter to add thousand separators (dots) for currency input.
 class NumberTextInputFormatter extends TextInputFormatter {
   final NumberFormat _formatter = NumberFormat('#,###', 'en_US');
 
@@ -29,12 +29,12 @@ class NumberTextInputFormatter extends TextInputFormatter {
 
     // Remove all non-digit characters
     String digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
-    
+
     if (digits.isEmpty) {
       return const TextEditingValue();
     }
 
-    // Format with thousand separators using dots
+    // Format with thousand separators using dots for VND representation
     int value = int.parse(digits);
     String formatted = _formatter.format(value).replaceAll(',', '.');
 
@@ -45,10 +45,19 @@ class NumberTextInputFormatter extends TextInputFormatter {
   }
 }
 
+/// A comprehensive screen for creating a new travel trip.
+///
+/// Supports both private trips and collaborative (shared) trips depending on
+/// the context. It captures fundamental trip details including name, destination,
+/// start/end dates, total budget, and an optional description.
+/// It also integrates with the Expense module to initialize a trip budget there.
 class CreatePlannerScreen extends StatefulWidget {
+  /// Indicates if the trip to be created should be collaborative.
   final bool isCollaborative;
+
+  /// Optional existing trip model for edit scenarios (though currently focused on creation).
   final TripModel? existingTrip;
-  
+
   const CreatePlannerScreen({
     super.key,
     this.isCollaborative = false,
@@ -115,7 +124,9 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
                     Consumer<AppModeProvider>(
                       builder: (context, appMode, child) {
                         return Text(
-                          appMode.isPrivateMode ? 'Create Trip' : 'Create Shared Trip',
+                          appMode.isPrivateMode
+                              ? 'Create Trip'
+                              : 'Create Shared Trip',
                           style: const TextStyle(
                             fontFamily: 'Urbanist-Regular',
                             fontSize: 20,
@@ -226,6 +237,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     );
   }
 
+  /// Helper to build a styled input field with a label.
   Widget _buildInputField({
     required String label,
     required TextEditingController controller,
@@ -269,11 +281,15 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             fillColor: Colors.white.withValues(alpha: 0.15),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -290,6 +306,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     );
   }
 
+  /// Helper to build a date selection field with a calendar icon.
   Widget _buildDateField({
     required String label,
     required DateTime date,
@@ -343,6 +360,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     );
   }
 
+  /// Formats a [DateTime] into a friendly string (e.g., "Mon, 1 Jan 2024").
   String _formatDate(DateTime date) {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const months = [
@@ -368,12 +386,14 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     return '$dayName, $day $month $year';
   }
 
+  /// Validates that all required fields are filled.
   bool _canSave() {
     return _tripNameController.text.trim().isNotEmpty &&
         _destinationController.text.trim().isNotEmpty &&
         _budgetController.text.trim().isNotEmpty;
   }
 
+  /// Opens the standard Material Date Picker for the trip's start date.
   void _selectStartDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -397,7 +417,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     if (picked != null && picked != _startDate) {
       setState(() {
         _startDate = picked;
-        // If end date is before start date, set end date to start date
+        // Adjust end date if it's now before the new start date
         if (_endDate.isBefore(_startDate)) {
           _endDate = _startDate;
         }
@@ -405,6 +425,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     }
   }
 
+  /// Opens the standard Material Date Picker for the trip's end date.
   void _selectEndDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -432,6 +453,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     }
   }
 
+  /// Handles the save operation logic, including integration with providers and services.
   void _saveTrip() async {
     if (!_canSave() || _isSaving) return;
 
@@ -474,11 +496,11 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
 
         if (sharedTrip != null) {
           createdTrip = sharedTrip.toTripModel();
-          // Force refresh of collaboration data to ensure UI updates
+          // Force refresh of collaboration data
           await collaborationProvider.initialize();
         }
       } else {
-        // Create private trip (original logic)
+        // Create private trip
         TripPlanningProvider? provider;
         try {
           provider = context.read<TripPlanningProvider>();
@@ -495,7 +517,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
             description: _descriptionController.text.trim().isNotEmpty
                 ? _descriptionController.text.trim()
                 : null,
-            budget: budgetAmount, // Pass double, provider will convert to BudgetModel
+            budget: budgetAmount,
           );
         } else {
           createdTrip = await _createTripFallback(
@@ -509,7 +531,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
         }
       }
 
-      // Create expense budget if budget amount is provided
+      // Initialize an linked budget in the Expense module if an amount was provided
       if (budgetAmount != null && createdTrip != null) {
         await _createExpenseBudget(createdTrip.id!, budgetAmount);
       }
@@ -518,14 +540,13 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
 
       if (!mounted) return;
 
-      // Show success message
       final appModeForMessage = context.read<AppModeProvider>();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            appModeForMessage.isCollaborationMode 
+            appModeForMessage.isCollaborationMode
                 ? 'Shared trip created successfully!'
-                : 'Trip created successfully!'
+                : 'Trip created successfully!',
           ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
@@ -552,12 +573,12 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
     }
   }
 
-  /// Create expense budget for the trip
+  /// Automatically synchronizes the new trip with the standalone [ExpenseService].
   Future<void> _createExpenseBudget(String tripId, double budgetAmount) async {
     try {
       final expenseService = ExpenseService();
 
-      // Create trip for expense service
+      // Create trip record for expense tracking
       final trip = Trip(
         startDate: _startDate,
         endDate: _endDate,
@@ -566,19 +587,18 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       );
       await expenseService.createTrip(trip);
 
-      // Create budget for the trip
-      final dailyLimit =
-          budgetAmount / (_endDate.difference(_startDate).inDays + 1);
+      // Initialize daily budget limits
+      final days = _endDate.difference(_startDate).inDays + 1;
+      final dailyLimit = budgetAmount / (days > 0 ? days : 1);
 
       final budget = Budget(totalBudget: budgetAmount, dailyLimit: dailyLimit);
-
       await expenseService.createBudget(budget);
-
     } catch (e) {
-      // Don't throw error as this is supplementary functionality
+      // Silently fail as this is a convenience feature
     }
   }
 
+  /// Fallback mechanism for trip creation if primary provider fails.
   Future<TripModel> _createTripFallback({
     required String tripName,
     required String destination,
@@ -605,7 +625,7 @@ class _CreatePlannerScreenState extends State<CreatePlannerScreen> {
       await firebaseService.saveTrip(createdTrip);
       return createdTrip;
     } catch (e) {
-      // If API fails, create with Firebase directly
+      // Direct Firebase save as ultimate fallback
       final firebaseService = FirebaseTripService();
       final tripWithId = trip.copyWith(
         id: 'trip_${DateTime.now().millisecondsSinceEpoch}',

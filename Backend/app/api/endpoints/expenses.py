@@ -1,3 +1,6 @@
+"""
+Expense Management API endpoints.
+"""
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from typing import List, Optional
 from datetime import datetime, date
@@ -15,10 +18,23 @@ from app.services.activities_management import (
 from app.core.dependencies import get_current_user
 from app.models.user import User
 
+# Import Firebase service
+from app.services.firebase_service import firebase_service
+
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 
 # Pydantic Models for Request/Response
 class ExpenseCreateRequest(BaseModel):
+    """
+    Request model for creating an expense.
+
+    Attributes:
+        amount (float): Expense amount (must be positive).
+        category (ActivityType): Expense category.
+        description (str): Optional expense description.
+        expense_date (Optional[datetime]): Expense date (defaults to now).
+        planner_id (Optional[str]): Trip/Planner ID to associate expense with.
+    """
     amount: float = Field(..., gt=0, description="Expense amount (must be positive)")
     category: ActivityType  = Field(..., description="Expense category")
     description: str = Field("", max_length=500, description="Optional expense description")
@@ -26,14 +42,27 @@ class ExpenseCreateRequest(BaseModel):
     planner_id: Optional[str] = Field(None, description="Trip/Planner ID to associate expense with")
 
 class ExpenseResponse(BaseModel):
+    """
+    Response model for an expense.
+
+    Attributes:
+        id (str): Unique expense ID.
+        amount (float): Expense amount.
+        category (str): Expense category.
+        description (str): Expense description.
+        expense_date (datetime): Date of the expense.
+        currency (str): Currency code (default: "VND").
+        planner_id (Optional[str]): Associated trip/planner ID.
+        budget_warning (Optional[dict]): Warning info if budget is exceeded.
+    """
     id: str
     amount: float
     category: str
     description: str
     expense_date: datetime
     currency: str = "VND"
-    planner_id: Optional[str] = None  # Add planner_id field
-    budget_warning: Optional[dict] = None  # Add budget warning info
+    planner_id: Optional[str] = None
+    budget_warning: Optional[dict] = None
     
     class Config:
         from_attributes = True
@@ -42,12 +71,28 @@ class ExpenseResponse(BaseModel):
         }
 
 class BudgetCreateRequest(BaseModel):
+    """
+    Request model for creating a budget.
+
+    Attributes:
+        total_budget (float): Total budget amount.
+        daily_limit (Optional[float]): Daily spending limit.
+        category_allocations (Optional[dict]): Budget allocation per category.
+        trip_id (Optional[str]): Trip ID to associate budget with.
+    """
     total_budget: float = Field(..., gt=0)
     daily_limit: Optional[float] = Field(None, gt=0)
     category_allocations: Optional[dict] = None
     trip_id: Optional[str] = Field(None, description="Trip ID to associate budget with")
 
 class TripCreateRequest(BaseModel):
+    """
+    Request model for creating a trip (Deprecated).
+
+    Attributes:
+        start_date (date): Start date of the trip.
+        end_date (date): End date of the trip.
+    """
     start_date: date
     end_date: date
     
@@ -58,6 +103,17 @@ class TripCreateRequest(BaseModel):
         }
 
 class TripResponse(BaseModel):
+    """
+    Response model for a trip summary.
+
+    Attributes:
+        start_date (date): Start date of the trip.
+        end_date (date): End date of the trip.
+        total_days (int): Total duration in days.
+        days_remaining (int): Days remaining until end date.
+        days_elapsed (int): Days elapsed since start date.
+        is_active (bool): Whether the trip is currently active.
+    """
     start_date: date
     end_date: date
     total_days: int
@@ -72,6 +128,24 @@ class TripResponse(BaseModel):
         }
 
 class BudgetStatusResponse(BaseModel):
+    """
+    Response model for budget status.
+
+    Attributes:
+        total_budget (float): Total budget amount.
+        total_spent (float): Total amount spent.
+        percentage_used (float): Percentage of budget used.
+        remaining_budget (float): Remaining budget amount.
+        start_date (date): Trip start date.
+        end_date (date): Trip end date.
+        days_remaining (int): Days remaining in trip.
+        days_total (int): Total trip duration.
+        recommended_daily_spending (float): Recommended daily spend to stay on budget.
+        average_daily_spending (float): Actual average daily spend.
+        burn_rate_status (str): Status of spending rate ("ON_TRACK", "WARNING", "OVER_BUDGET").
+        is_over_budget (bool): True if total spent exceeds total budget.
+        category_overruns (List[str]): List of categories over budget.
+    """
     total_budget: float
     total_spent: float
     percentage_used: float
@@ -93,6 +167,18 @@ class BudgetStatusResponse(BaseModel):
         }
 
 class CategoryStatusResponse(BaseModel):
+    """
+    Response model for category-wise budget status.
+
+    Attributes:
+        category (str): The category name.
+        allocated (float): Allocated budget for this category.
+        spent (float): Amount spent in this category.
+        remaining (float): Remaining allocated amount.
+        percentage_used (float): Percentage of allocation used.
+        is_over_budget (bool): True if spent exceeds allocation.
+        status (str): Status string (e.g., "OVER_BUDGET", "WARNING").
+    """
     category: str
     allocated: float
     spent: float
@@ -101,15 +187,27 @@ class CategoryStatusResponse(BaseModel):
     is_over_budget: bool
     status: str
 
-# Import Firebase service
-from app.services.firebase_service import firebase_service
-
 # Trip Management Endpoints - Now use Firebase Firestore
+
 @router.get("/trip/current", response_model=TripResponse)
 async def get_current_trip(
     current_user: User = Depends(get_current_user)
 ):
-    """Get the current active trip for the user (Firebase Firestore)"""
+    """
+    Get the current active trip for the user (Firebase Firestore).
+
+    Retrieves the most recent active trip from Firestore for the authenticated user.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        TripResponse: A summary of the active trip.
+
+    Raises:
+        HTTPException(404): If no trips are found.
+        HTTPException(500): If retrieval fails.
+    """
     try:
         # Get user's trips from Firestore
         trips = await firebase_service.get_user_trips(current_user.id)
@@ -150,7 +248,18 @@ async def create_trip_endpoint(
     trip_request: TripCreateRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new trip for the user - DEPRECATED: Use /activities/trips instead"""
+    """
+    Create a new trip for the user - DEPRECATED.
+
+    This endpoint is deprecated. Use POST /api/v1/activities/trips instead.
+
+    Args:
+        trip_request (TripCreateRequest): The trip creation details.
+        current_user (User): The current authenticated user.
+
+    Raises:
+        HTTPException(410): Always raises 410 Gone to indicate deprecation.
+    """
     try:
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
@@ -170,7 +279,25 @@ async def create_budget(
     trip_id: Optional[str] = Query(None, description="Trip ID to associate budget with (query param)"),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a budget for a specific trip - accepts trip_id from query param or request body"""
+    """
+    Create a budget for a specific trip.
+
+    Accepts trip_id from either query parameter or request body. If not provided,
+    attempts to find the user's latest trip.
+
+    Args:
+        budget_request (BudgetCreateRequest): The budget details.
+        trip_id (Optional[str]): Trip ID (query param).
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Success message and budget details.
+
+    Raises:
+        HTTPException(400): If trip_id is missing or cannot be autodetected.
+        HTTPException(404): If the trip is not found or does not belong to the user.
+        HTTPException(500): If budget creation fails.
+    """
     try:
         # Accept trip_id from either query parameter or request body
         final_trip_id = trip_id or budget_request.trip_id
@@ -260,7 +387,22 @@ async def get_trip_budget_status(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get budget status for a specific trip (Firebase Firestore)"""
+    """
+    Get budget status for a specific trip (Firebase Firestore).
+
+    Calculates total spent, remaining budget, burn rate status, and other metrics.
+
+    Args:
+        trip_id (str): The ID of the trip.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        BudgetStatusResponse: Detailed budget status.
+
+    Raises:
+        HTTPException(404): Trip not found.
+        HTTPException(500): Retrieval failure.
+    """
     try:
         # Get trip and expenses from Firestore
         trip = await firebase_service.get_trip(trip_id, current_user.id)
@@ -340,7 +482,25 @@ async def create_expense(
     trip_id: Optional[str] = Query(None, description="Associate expense with trip"),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new expense with trip association (Firebase Firestore)"""
+    """
+    Create a new expense with trip association (Firebase Firestore).
+
+    Validates input, determines the associated trip, saves to Firestore, and checks if the expense
+    causes a budget overrun.
+
+    Args:
+        expense_request (ExpenseCreateRequest): The expense details.
+        trip_id (Optional[str]): Trip ID (query parameter fallback).
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ExpenseResponse: The created expense with optional budget warning.
+
+    Raises:
+        HTTPException(400): Invalid input or missing trip association.
+        HTTPException(404): Database error.
+        HTTPException(500): Server error.
+    """
     try:
         print(f"💰 EXPENSE_CREATE: User {current_user.id} creating expense")
         print(f"   Amount: {expense_request.amount}")
@@ -506,7 +666,24 @@ async def get_expenses(
     planner_id: Optional[str] = Query(None, description="Filter by trip/planner ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all expenses with optional filters (Firebase Firestore)"""
+    """
+    Get all expenses with optional filters.
+
+    Supports filtering by category, date range, and trip ID.
+
+    Args:
+        category (Optional[ActivityType]): Filter by expense category.
+        start_date (Optional[date]): Filter expenses on or after this date.
+        end_date (Optional[date]): Filter expenses on or before this date.
+        planner_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[ExpenseResponse]: List of matching expenses.
+
+    Raises:
+        HTTPException(500): If retrieval fails.
+    """
     try:
         print(f"📋 GET_EXPENSES: user={current_user.id}, planner_id={planner_id}, start_date={start_date}, end_date={end_date}")
         
@@ -565,7 +742,20 @@ async def delete_expense(
     expense_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete an expense by ID (SQLite database)"""
+    """
+    Delete an expense by ID.
+
+    Args:
+        expense_id (str): The ID of the expense to delete.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Success message.
+
+    Raises:
+        HTTPException(404): Expense not found.
+        HTTPException(500): Server error.
+    """
     try:
         success = await firebase_service.delete_expense(expense_id, current_user.id)
         
@@ -585,7 +775,21 @@ async def get_budget_status(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get current budget status - DEPRECATED: Use /budget/trip/{trip_id} instead"""
+    """
+    Get current budget status - DEPRECATED.
+
+    This endpoint is deprecated. Use /budget/trip/{trip_id} instead.
+
+    Args:
+        trip_id (Optional[str]): Trip ID.
+        current_user (User): Current user.
+
+    Returns:
+        BudgetStatusResponse: Budget status (redirects or returns default).
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         print(f"📊 BUDGET_STATUS_REQUEST: trip_id={trip_id}, user={current_user.id}")
         
@@ -625,7 +829,21 @@ async def get_category_status(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get spending status by category with proper budget checking"""
+    """
+    Get spending status by category.
+
+    Calculates checking against category allocations (simple equal distribution).
+
+    Args:
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[CategoryStatusResponse]: Status for each category.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         # Get expenses from Firestore
         if trip_id:
@@ -689,7 +907,21 @@ async def get_spending_trends(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get spending trends and patterns (SQLite database)"""
+    """
+    Get spending trends and patterns.
+
+    Analyzes daily spending to determine trends (stable, increasing, decreasing).
+
+    Args:
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Daily trends, category trends, and spending patterns.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         # Get expenses from Firestore
         if trip_id:
@@ -757,7 +989,21 @@ async def get_expense_summary(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get comprehensive expense summary (Firebase Firestore)"""
+    """
+    Get comprehensive expense summary.
+
+    Provides total expenses, total amount, and breakdowns by category and day.
+
+    Args:
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Summary statistics and breakdowns.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         # Get expenses from Firestore
         if trip_id:
@@ -804,7 +1050,21 @@ async def export_data(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Export expense data (SQLite database)"""
+    """
+    Export expense data.
+
+    Returns all expenses in a format suitable for export.
+
+    Args:
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Exported data wrapped with metadata.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         # Get expenses from Firestore
         if trip_id:
@@ -846,7 +1106,21 @@ async def get_daily_analytics(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get analytics for a specific date (SQLite database)"""
+    """
+    Get analytics for a specific date.
+
+    Args:
+        date_str (str): Date in "YYYY-MM-DD" format.
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Daily analytics including total amount and breakdowns.
+
+    Raises:
+        HTTPException(400): Invalid date format.
+        HTTPException(500): Server error.
+    """
     try:
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         
@@ -899,7 +1173,21 @@ async def get_monthly_analytics(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get analytics for a specific month (SQLite database)"""
+    """
+    Get analytics for a specific month.
+
+    Args:
+        year (int): Year (e.g., 2024).
+        month (int): Month (1-12).
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Monthly analytics including totals, daily/category breakdowns.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         # Get expenses from Firestore
         if trip_id:
@@ -952,7 +1240,20 @@ async def get_category_analytics(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get analytics for a specific category (SQLite database)"""
+    """
+    Get analytics for a specific category.
+
+    Args:
+        category (ActivityType): The category to analyze.
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Category statistics and recent expenses.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         # Get expenses from Firestore
         if trip_id:
@@ -1008,7 +1309,6 @@ async def get_category_analytics(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Duplicate endpoint removed - using the existing get_expenses endpoint above
 
 # Trip-specific expense endpoints
 @router.get("/trip/{trip_id}", response_model=List[ExpenseResponse])
@@ -1016,7 +1316,19 @@ async def get_trip_expenses(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all expenses for a specific trip (SQLite database)"""
+    """
+    Get all expenses for a specific trip.
+
+    Args:
+        trip_id (str): The trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[ExpenseResponse]: List of expenses.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         trip_expenses = await firebase_service.get_trip_expenses(trip_id, current_user.id)
         
@@ -1040,7 +1352,19 @@ async def delete_trip_expenses(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete all expenses associated with a trip (SQLite database)"""
+    """
+    Delete all expenses associated with a trip.
+
+    Args:
+        trip_id (str): The trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Success message and count of deleted expenses.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         deleted_count = await firebase_service.delete_trip_expenses(trip_id, current_user.id)
         
@@ -1058,7 +1382,20 @@ async def delete_trip_expenses(
 async def clear_all_expense_data(
     current_user: User = Depends(get_current_user)
 ):
-    """Clear all expense data for the current user (SQLite database)"""
+    """
+    Clear all expense data for the current user.
+
+    Deletes ALL expenses across ALL trips. Use with caution.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Success message and deletion count.
+
+    Raises:
+        HTTPException(500): Server error.
+    """
     try:
         # Delete all expenses for the user across all their trips
         # Delete all user expenses from Firestore
@@ -1081,7 +1418,12 @@ async def clear_all_expense_data(
 # Health check endpoint
 @router.get("/health")
 async def health_check():
-    """Health check for expenses service (Firebase Firestore)"""
+    """
+    Health check for expenses service.
+    
+    Returns:
+        dict: Status and timestamp.
+    """
     try:
         return {
             "status": "healthy",

@@ -4,17 +4,19 @@ import '../models/collaboration_models.dart';
 import '../services/activity_edit_request_service.dart';
 import 'activity_edit_request_approval_dialog.dart';
 
-/// Widget for displaying activity edit request count with badge
+/// Interactive badge widget that displays the count of pending activity edit requests.
+///
+/// Periodically polls the [ActivityEditRequestService] to update the badge
+/// and provides an entry point to the [ActivityEditRequestApprovalDialog].
 class ActivityEditRequestWidget extends StatefulWidget {
+  /// The ID of the trip to monitor for edit requests.
   final String tripId;
 
-  const ActivityEditRequestWidget({
-    Key? key,
-    required this.tripId,
-  }) : super(key: key);
+  const ActivityEditRequestWidget({super.key, required this.tripId});
 
   @override
-  State<ActivityEditRequestWidget> createState() => _ActivityEditRequestWidgetState();
+  State<ActivityEditRequestWidget> createState() =>
+      _ActivityEditRequestWidgetState();
 }
 
 class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
@@ -40,7 +42,6 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
 
   @override
   Widget build(BuildContext context) {
-
     return Stack(
       children: [
         IconButton(
@@ -62,12 +63,9 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
                 color: Colors.red,
                 shape: BoxShape.circle,
               ),
-              constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
               child: Text(
-                '${_pendingRequestCount}',
+                '$_pendingRequestCount',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10,
@@ -81,22 +79,27 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
     );
   }
 
+  /// Whether there are any pending requests for the current trip.
   bool get _hasPendingRequests => _pendingRequestCount > 0;
 
+  /// Retrieves the current count of pending requests for the specified trip.
   int get _pendingRequestCount {
     if (_cachedRequests == null) return 0;
     return _cachedRequests!.where((req) => req.tripId == widget.tripId).length;
   }
 
+  /// Starts a periodic timer to poll for new edit requests every 5 seconds.
   void _startRealTimeRefresh() {
-    // Refresh every 30 seconds to check for new requests
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       if (!mounted) return;
 
       try {
-        final allRequests = await ActivityEditRequestService().getPendingActivityEditApprovals();
+        final allRequests = await ActivityEditRequestService()
+            .getPendingActivityEditApprovals();
         final previousCount = _pendingRequestCount;
-        final newCount = allRequests.where((req) => req.tripId == widget.tripId).length;
+        final newCount = allRequests
+            .where((req) => req.tripId == widget.tripId)
+            .length;
 
         if (previousCount != newCount) {
           if (mounted) {
@@ -106,16 +109,18 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
           }
         }
       } catch (e) {
-        // Don't show error to user, just continue
+        // Silently handle errors for background polling
       }
     });
   }
 
+  /// Initial load of requests to populate the badge status.
   Future<void> _loadRequestsForBadge() async {
     if (_hasInitialized) return;
 
     try {
-      final allRequests = await ActivityEditRequestService().getPendingActivityEditApprovals();
+      final allRequests = await ActivityEditRequestService()
+          .getPendingActivityEditApprovals();
 
       if (mounted) {
         setState(() {
@@ -132,6 +137,7 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
     }
   }
 
+  /// Fetches the latest requests and displays the approval dialog.
   Future<void> _showActivityEditRequestsDialog() async {
     if (_isLoading) return;
 
@@ -140,9 +146,12 @@ class _ActivityEditRequestWidgetState extends State<ActivityEditRequestWidget> {
     });
 
     try {
-      final allRequests = await ActivityEditRequestService().getPendingActivityEditApprovals();
+      final allRequests = await ActivityEditRequestService()
+          .getPendingActivityEditApprovals();
 
-      final pendingRequests = allRequests.where((req) => req.tripId == widget.tripId).toList();
+      final pendingRequests = allRequests
+          .where((req) => req.tripId == widget.tripId)
+          .toList();
 
       // Cache the requests for badge display
       if (mounted) {

@@ -373,7 +373,23 @@ async def create_activity(
     activity_data: ActivityCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new activity with automatic expense tracking"""
+    """
+    Create a new activity with automatic expense tracking.
+
+    Creates an activity linked to a trip, with optional budget and location.
+    Automatically creates an associated expense record if costs are provided.
+
+    Args:
+        activity_data (ActivityCreate): The activity creation data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityResponse: The created activity with ID and timestamp.
+
+    Raises:
+        HTTPException(400): If title/type is missing, or creation fails.
+        HTTPException(422): If validation fails.
+    """
     try:
         # Validate required fields
         if not activity_data.title or activity_data.title.strip() == "":
@@ -500,7 +516,30 @@ async def get_activities(
     end_date: Optional[date] = Query(None, description="Filter by end date (to)"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get activities with expense tracking information"""
+    """
+    Get activities with expense tracking information.
+
+    Supports filtering by trip, type, status, priority, date range, and text search.
+    Results are paginated.
+
+    Args:
+        page (int): Page number (starts at 1).
+        limit (int): Number of items per page.
+        trip_id (Optional[str]): Filter by trip ID.
+        activity_type (Optional[ActivityType]): Filter by type.
+        status (Optional[ActivityStatus]): Filter by status.
+        priority (Optional[Priority]): Filter by priority.
+        search (Optional[str]): Search query for title/description/tags.
+        start_date (Optional[date]): Filter activities starting on or after this date.
+        end_date (Optional[date]): Filter activities ending on or before this date.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityListResponse: Paginated list of activities.
+
+    Raises:
+        HTTPException(500): If retrieval fails.
+    """
     try:
         print(f"📋 GET_ACTIVITIES: User {current_user.id} requesting activities")
         print(f"   Trip ID filter: {trip_id}")
@@ -575,7 +614,23 @@ async def create_trip(
     trip_data: TripCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new trip with real data storage"""
+    """
+    Create a new trip with real data storage.
+
+    Stores trip data in Firestore and optionally sets up an initial budget.
+
+    Args:
+        trip_data (TripCreate): The trip creation data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        TripResponse: The created trip.
+
+    Raises:
+        HTTPException(409): If a duplicate trip is detected within 5 seconds.
+        HTTPException(400): If validation fails or database error occurs.
+        HTTPException(500): If response formatting fails.
+    """
     try:
         from fastapi import Request
         import inspect
@@ -707,7 +762,20 @@ async def create_trip(
 async def get_trips(
     current_user: User = Depends(get_current_user)
 ):
-    """Get all trips for the current user"""
+    """
+    Get all trips for the current user.
+
+    Retrieves trips from Firestore.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[TripResponse]: List of user's trips.
+
+    Raises:
+        HTTPException(500): If retrieval fails.
+    """
     try:
         await _ensure_user_record(current_user)
 
@@ -738,7 +806,20 @@ async def get_trip(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific trip by ID"""
+    """
+    Get a specific trip by ID.
+
+    Args:
+        trip_id (str): The trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        TripResponse: The trip details.
+
+    Raises:
+        HTTPException(404): If trip not found.
+        HTTPException(500): If retrieval fails.
+    """
     try:
         await _ensure_user_record(current_user)
 
@@ -766,7 +847,22 @@ async def delete_trip(
     trip_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a trip with SQLite database cleanup (no more in-memory expense managers)"""
+    """
+    Delete a trip with cleanup.
+
+    Cascades delete to expenses and activities in Firestore and memory.
+
+    Args:
+        trip_id (str): The trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        None: 204 No Content on success.
+
+    Raises:
+        HTTPException(404): If trip not found.
+        HTTPException(500): If deletion fails.
+    """
     try:
         await _ensure_user_record(current_user)
 
@@ -814,7 +910,20 @@ async def get_activity(
     activity_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get activity by ID with expense information"""
+    """
+    Get activity by ID with expense information.
+
+    Args:
+        activity_id (str): The activity ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityResponse: The activity details.
+
+    Raises:
+        HTTPException(403): If user does not own the activity.
+        HTTPException(404): If activity not found.
+    """
     print(f"🔍 GET_ACTIVITY: User {current_user.id} requesting activity {activity_id}")
     
     travel_mgr = get_travel_manager()
@@ -879,7 +988,24 @@ async def update_activity(
     activity_data: ActivityUpdate,
     current_user: User = Depends(get_current_user)
 ):
-    """Update an existing activity with automatic expense sync on check-in"""
+    """
+    Update an existing activity with automatic expense sync on check-in.
+
+    Updates activity details and syncs expenses if check-in status changes or costs are updated.
+
+    Args:
+        activity_id (str): The activity ID.
+        activity_data (ActivityUpdate): The update data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityResponse: The updated activity.
+
+    Raises:
+        HTTPException(403): If user unauthorized.
+        HTTPException(404): If activity not found.
+        HTTPException(400): If update fails.
+    """
     travel_mgr = get_travel_manager()
     activity = travel_mgr.activity_manager.get_activity(activity_id)
     
@@ -1019,7 +1145,23 @@ async def delete_activity(
     activity_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete an activity with automatic expense removal"""
+    """
+    Delete an activity with automatic expense removal.
+
+    Removes activity from memory and Firestore, and deletes associated expenses.
+
+    Args:
+        activity_id (str): The activity ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        None: 204 No Content on success.
+
+    Raises:
+        HTTPException(403): If user unauthorized.
+        HTTPException(404): If activity not found.
+        HTTPException(500): If deletion fails.
+    """
     travel_mgr = get_travel_manager()
     activity = travel_mgr.activity_manager.get_activity(activity_id)
     
@@ -1059,7 +1201,22 @@ async def schedule_activity(
     schedule_data: ScheduleRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Schedule an activity with specific timing"""
+    """
+    Schedule an activity with specific timing.
+
+    Args:
+        activity_id (str): The activity ID.
+        schedule_data (ScheduleRequest): The scheduling details.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityResponse: The updated activity.
+
+    Raises:
+        HTTPException(403): If user unauthorized.
+        HTTPException(404): If activity not found.
+        HTTPException(400): If scheduling fails.
+    """
     activity = travel_manager.activity_manager.get_activity(activity_id)
     
     if not activity:
@@ -1104,7 +1261,22 @@ async def update_activity_cost(
     cost_data: ActivityCostUpdate,
     current_user: User = Depends(get_current_user)
 ):
-    """Update activity actual cost with automatic expense sync"""
+    """
+    Update activity actual cost with automatic expense sync.
+
+    Args:
+        activity_id (str): The activity ID.
+        cost_data (ActivityCostUpdate): The new cost data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityResponse: The updated activity.
+
+    Raises:
+        HTTPException(403): If user unauthorized.
+        HTTPException(404): If activity not found.
+        HTTPException(400): If update fails.
+    """
     activity = travel_manager.activity_manager.get_activity(activity_id)
     
     if not activity:
@@ -1150,7 +1322,19 @@ async def setup_trip_budget(
     budget_data: TripBudgetSetup,
     current_user: User = Depends(get_current_user)
 ):
-    """Setup trip budget for expense tracking"""
+    """
+    Setup trip budget for expense tracking.
+
+    Args:
+        budget_data (TripBudgetSetup): The budget setup data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Success message and budget details.
+
+    Raises:
+        HTTPException(400): If setup fails.
+    """
     try:
         # Convert category allocations if provided
         category_allocations = None
@@ -1192,7 +1376,19 @@ async def get_expense_summary(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get comprehensive activity-expense summary"""
+    """
+    Get comprehensive activity-expense summary.
+
+    Args:
+        trip_id (Optional[str]): Filter by trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ExpenseSummaryResponse: Detailed expense summary and status.
+
+    Raises:
+        HTTPException(500): If calculation fails.
+    """
     try:
         # Filter activities by user
         travel_mgr = get_travel_manager()
@@ -1243,7 +1439,21 @@ async def sync_activities_with_expenses(
     trip_id: Optional[str] = Query(None, description="Sync specific trip or all activities"),
     current_user: User = Depends(get_current_user)
 ):
-    """Force sync all activities with expenses"""
+    """
+    Force sync all activities with expenses.
+
+    Creates missing expense records for activities with costs.
+
+    Args:
+        trip_id (Optional[str]): Sync specific trip's activities.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Sync results count.
+
+    Raises:
+        HTTPException(500): If sync fails.
+    """
     try:
         # Get user's activities
         if trip_id:
@@ -1279,7 +1489,19 @@ async def check_schedule_conflicts(
     conflict_data: ConflictCheckRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Check for scheduling conflicts"""
+    """
+    Check for scheduling conflicts.
+
+    Args:
+        conflict_data (ConflictCheckRequest): The conflict check criteria.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[ActivityResponse]: List of conflicting activities.
+
+    Raises:
+        HTTPException(500): If check fails.
+    """
     try:
         conflicts = travel_manager.activity_manager.check_schedule_conflicts(
             conflict_data.start_date,
@@ -1308,7 +1530,19 @@ async def get_activity_statistics(
     trip_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get activity statistics with expense information"""
+    """
+    Get activity statistics with expense information.
+
+    Args:
+        trip_id (Optional[str]): The trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Statistics data enriched with expense info.
+
+    Raises:
+        HTTPException(500): If calculation fails.
+    """
     try:
         # Get user's activities for the trip
         if trip_id:
@@ -1365,7 +1599,19 @@ async def export_activities(
     trip_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Export activities with expense information to JSON format"""
+    """
+    Export activities with expense information to JSON format.
+
+    Args:
+        trip_id (Optional[str]): The trip ID.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Exported data.
+
+    Raises:
+        HTTPException(500): If export fails.
+    """
     try:
         # Get user's activities
         if trip_id:
@@ -1400,7 +1646,7 @@ async def export_activities(
 
 @router.get("/types/list")
 async def get_activity_types():
-    """Get list of available activity types"""
+    """Get list of available activity types."""
     return {
         "activity_types": [
             {"value": activity_type.value, "label": activity_type.value.replace("_", " ").title()}
@@ -1411,7 +1657,7 @@ async def get_activity_types():
 
 @router.get("/statuses/list")
 async def get_activity_statuses():
-    """Get list of available activity statuses"""
+    """Get list of available activity statuses."""
     return {
         "statuses": [
             {"value": status.value, "label": status.value.replace("_", " ").title()}
@@ -1422,7 +1668,7 @@ async def get_activity_statuses():
 
 @router.get("/priorities/list")
 async def get_activity_priorities():
-    """Get list of available activity priorities"""
+    """Get list of available activity priorities."""
     return {
         "priorities": [
             {"value": priority.value, "label": priority.value.replace("_", " ").title()}
@@ -1434,14 +1680,25 @@ async def get_activity_priorities():
 
 @router.get("/debug/user-status")
 async def get_user_debug_status(current_user: User = Depends(get_current_user)):
-    """DEPRECATED - Use Firebase only"""
+    """DEPRECATED - Use Firebase only."""
     return {"message": "This endpoint is deprecated. All data is now in Firebase Firestore."}
 
 @router.post("/debug/force-user-creation")
 async def force_user_creation(
     current_user: User = Depends(get_current_user)
 ):
-    """Force user creation in database for debugging"""
+    """
+    Force user creation in database for debugging.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: User creation status and details.
+
+    Raises:
+        HTTPException(500): If creation fails.
+    """
     try:
         print(f"🔧 FORCE_USER_CREATE: Creating user {current_user.id}")
         
@@ -1470,7 +1727,20 @@ async def force_user_creation(
 async def quick_trip_setup(
     current_user: User = Depends(get_current_user)
 ):
-    """Quick setup: Create user and default trip for immediate use"""
+    """
+    Quick setup: Create user and default trip for immediate use.
+
+    Creates a user record if missing and adds a default 7-day trip to Vietnam.
+
+    Args:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: Setup status and created trip details.
+
+    Raises:
+        HTTPException(500): If setup fails.
+    """
     try:
         print(f"🚀 QUICK_SETUP: Setting up user {current_user.id}")
         
@@ -1532,22 +1802,22 @@ async def quick_trip_setup(
 
 @router.post("/trips/test-creation")
 async def test_trip_creation(current_user: User = Depends(get_current_user)):
-    """DEPRECATED"""
+    """DEPRECATED - Use POST /activities/trips instead."""
     return {"message": "DEPRECATED - Use POST /activities/trips instead"}
 
 @router.post("/sync/cleanup-orphaned-data")
 async def cleanup_orphaned_data(current_user: User = Depends(get_current_user)):
-    """DEPRECATED"""
+    """DEPRECATED - Firestore handles data integrity automatically."""
     return {"message": "DEPRECATED - Firestore handles data integrity automatically"}
 
 @router.post("/sync/force-sync-storage")
 async def force_sync_storage_systems(current_user: User = Depends(get_current_user)):
-    """DEPRECATED"""
+    """DEPRECATED - Using Firebase Firestore only."""
     return {"message": "DEPRECATED - Using Firebase Firestore only"}
 
 @router.get("/debug/storage-status")
 async def get_storage_status(current_user: User = Depends(get_current_user)):
-    """Get Firebase storage status"""
+    """Get Firebase storage status."""
     trips = await firebase_service.get_user_trips(current_user.id)
     return {"storage": "Firebase Firestore", "trip_count": len(trips), "status": "active"}
 

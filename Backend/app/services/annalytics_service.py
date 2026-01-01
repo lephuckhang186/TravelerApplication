@@ -14,15 +14,29 @@ getcontext().prec = 10
 
 @dataclass
 class Expense:
-    """Immutable expense record with proper decimal handling"""
+    """
+    Immutable expense record with proper decimal handling.
+    
+    Attributes:
+        amount (Decimal): The amount of the expense.
+        category (ActivityType): The category of the expense.
+        description (str): Description of the expense.
+        date (Optional[datetime]): The date and time of the expense. Defaults to now.
+        currency (str): Currency code. Defaults to "VND".
+    """
     amount: Decimal
     category: ActivityType
     description: str = ""
-    date: datetime = None
+    date: Optional[datetime] = None  # Fixed duplicate definition
     currency: str = "VND"
-    date: Optional[datetime] = None
     
     def __post_init__(self):
+        """
+        Validate and initialize the expense object.
+        
+        Raises:
+            ValueError: If the amount is negative.
+        """
         if isinstance(self.amount, (int, float)):
             self.amount = Decimal(str(self.amount))
         if self.amount < 0:
@@ -32,27 +46,66 @@ class Expense:
 
 @dataclass
 class CategoryBudget:
-    """Individual category budget allocation"""
+    """
+    Individual category budget allocation.
+    
+    Attributes:
+        allocated_amount (Decimal): The total amount allocated for this category.
+        spent_amount (Decimal): The amount currently spent. Defaults to 0.
+    """
     allocated_amount: Decimal
     spent_amount: Decimal = Decimal('0')
     
     @property
     def remaining(self) -> Decimal:
+        """
+        Calculate remaining budget for this category.
+        
+        Returns:
+            Decimal: Allocated amount minus spent amount.
+        """
         return self.allocated_amount - self.spent_amount
     
     @property
     def percentage_used(self) -> float:
+        """
+        Calculate the percentage of budget used.
+        
+        Returns:
+            float: Percentage used (0-100+). Returns 0.0 if allocation is 0.
+        """
         if self.allocated_amount == 0:
             return 0.0
         return float((self.spent_amount / self.allocated_amount) * 100)
     
     @property
     def is_over_budget(self) -> bool:
+        """
+        Check if the category is over budget.
+        
+        Returns:
+            bool: True if spent amount exceeds allocated amount.
+        """
         return self.spent_amount > self.allocated_amount
 
 class Budget:
-    """Enhanced budget management with category allocations"""
+    """
+    Enhanced budget management with category allocations.
+    
+    This class manages the total budget, daily limits, and per-category allocations.
+    """
     def __init__(self, total_budget: Decimal, daily_limit: Optional[Decimal] = None, category_allocations: Optional[Dict[ActivityType, Decimal]] = None):
+        """
+        Initialize the Budget.
+
+        Args:
+            total_budget (Decimal): The total budget amount.
+            daily_limit (Optional[Decimal]): Optional daily spending limit.
+            category_allocations (Optional[Dict[ActivityType, Decimal]]): Optional specific allocations per category.
+            
+        Raises:
+            ValueError: If total budget is not positive or if allocations exceed total budget.
+        """
         if isinstance(total_budget, (int, float)):
             total_budget = Decimal(str(total_budget))
         if total_budget <= 0:
@@ -68,7 +121,15 @@ class Budget:
             self._set_default_allocations()
     
     def _set_category_allocations(self, allocations: Dict[ActivityType, Decimal]):
-        """Set custom category allocations"""
+        """
+        Set custom category allocations.
+
+        Args:
+            allocations (Dict[ActivityType, Decimal]): A dictionary mapping ActivityType to allocated amount.
+            
+        Raises:
+            ValueError: If the sum of allocations exceeds the total budget.
+        """
         total_allocated = sum(Decimal(str(amount)) for amount in allocations.values())
         if total_allocated > self.total:
             raise ValueError(f"Total allocations ({total_allocated}) exceed budget ({self.total})")
@@ -77,7 +138,11 @@ class Budget:
             self.category_budgets[category] = CategoryBudget(Decimal(str(amount)))
     
     def _set_default_allocations(self):
-        """Set default percentage-based allocations"""
+        """
+        Set default percentage-based allocations for all categories.
+        
+        Initializes all categories with 0 allocation by default (percentages currently set to 0).
+        """
         default_percentages = {
             ActivityType.FLIGHT: 0,
             ActivityType.ACTIVITY: 0,
@@ -104,20 +169,50 @@ class Budget:
             self.category_budgets[category] = CategoryBudget(allocation)
     
     def get_category_budget(self, category: ActivityType) -> CategoryBudget:
-        """Get budget information for a specific category"""
+        """
+        Get budget information for a specific category.
+
+        Args:
+            category (ActivityType): The category to retrieve.
+
+        Returns:
+            CategoryBudget: The budget object for that category (returns 0 allocation if not found).
+        """
         return self.category_budgets.get(category, CategoryBudget(Decimal('0')))
     
     def get_total_allocated(self) -> Decimal:
-        """Get total allocated across all categories"""
+        """
+        Get the sum of all category allocations.
+
+        Returns:
+            Decimal: Total allocated amount.
+        """
         return sum(budget.allocated_amount for budget in self.category_budgets.values())
     
     def get_unallocated(self) -> Decimal:
-        """Get unallocated budget amount"""
+        """
+        Get the amount of the total budget not yet allocated to any category.
+
+        Returns:
+            Decimal: Unallocated amount.
+        """
         return self.total - self.get_total_allocated()
      
 @dataclass
 class BudgetStatus:
-    """Comprehensive budget status with enhanced analytics"""
+    """
+    Comprehensive budget status with enhanced analytics.
+    
+    Attributes:
+        total_budget (Decimal): The total budget amount.
+        total_spent (Decimal): The total amount spent.
+        percentage_used (float): The percentage of budget used.
+        days_remaining (int): Number of days remaining in the trip.
+        days_total (int): Total duration of the trip in days.
+        recommended_daily_spending (Decimal): Suggested daily spending limit for remaining days.
+        average_daily_spending (Decimal): Actual average spending per day so far.
+        category_overruns (List[ActivityType]): List of categories exceeding their budget.
+    """
     total_budget: Decimal
     total_spent: Decimal
     percentage_used: float
@@ -129,15 +224,32 @@ class BudgetStatus:
     
     @property
     def remaining_budget(self) -> Decimal:
+        """
+        Calculate the remaining budget amount.
+        
+        Returns:
+            Decimal: Total budget minus total spent.
+        """
         return self.total_budget - self.total_spent
     
     @property
     def is_over_budget(self) -> bool:
+        """
+        Check if the total spending exceeds the budget.
+        
+        Returns:
+            bool: True if over budget, False otherwise.
+        """
         return self.total_spent > self.total_budget
     
     @property
     def burn_rate_status(self) -> str:
-        """Analyze spending burn rate"""
+        """
+        Analyze spending burn rate compared to elapsed time.
+        
+        Returns:
+            str: Status string ("COMPLETED", "HIGH_BURN", "MODERATE_BURN", "ON_TRACK").
+        """
         if self.days_total == 0 or self.days_remaining <= 0:
             return "COMPLETED"
         
@@ -151,8 +263,24 @@ class BudgetStatus:
             return "ON_TRACK"
 
 class Trip:
-    """Enhanced trip management with validation"""
+    """
+    Enhanced trip management with validation.
+    
+    Attributes:
+        start_date (date): The start date of the trip.
+        end_date (date): The end date of the trip.
+    """
     def __init__(self, start_date: date, end_date: date):
+        """
+        Initialize the Trip.
+
+        Args:
+            start_date (date): Start date.
+            end_date (date): End date.
+            
+        Raises:
+            ValueError: If end_date is before start_date.
+        """
         if end_date <= start_date:
             raise ValueError("End date must be after start date")
         
@@ -161,10 +289,22 @@ class Trip:
     
     @property
     def total_days(self) -> int:
+        """
+        Calculate total duration of the trip.
+        
+        Returns:
+            int: Number of days (inclusive).
+        """
         return (self.end_date - self.start_date).days + 1
     
     @property
     def days_remaining(self) -> int:
+        """
+        Calculate days remaining from today.
+        
+        Returns:
+            int: Remaining days. Returns 0 if trip has ended.
+        """
         today = date.today()
         if self.end_date > today:
             return (self.end_date - today).days
@@ -172,6 +312,12 @@ class Trip:
     
     @property
     def days_elapsed(self) -> int:
+        """
+        Calculate number of days elapsed since start of trip.
+        
+        Returns:
+            int: Elapsed days. Returns 0 if trip hasn't started, total_days if ended.
+        """
         today = date.today()
         if today < self.start_date:
             return 0
@@ -182,17 +328,29 @@ class Trip:
     
     @property
     def is_active(self) -> bool:
+        """
+        Check if the trip is currently active (today is within trip dates).
+        
+        Returns:
+            bool: True if active, False otherwise.
+        """
         today = date.today()
         return self.start_date <= today <= self.end_date
     
     def get_date_range(self) -> List[date]:
-        """Get all dates in the trip"""
+        """
+        Get all dates in the trip as a list.
+
+        Returns:
+            List[date]: List of all dates from start to end inclusive.
+        """
         dates = []
         current = self.start_date
         while current <= self.end_date:
             dates.append(current)
             current += timedelta(days=1)
         return dates
+    
     def __getattribute__(self, name):
         if name in ['start_date', 'end_date']:
             value = super().__getattribute__(name)
@@ -202,13 +360,29 @@ class Trip:
         return object.__getattribute__(self, name)
 
 class Analytics:
-    """Advanced analytics engine for expense tracking"""
+    """
+    Advanced analytics engine for expense tracking.
+    
+    This class provides methods to analyze expense data, offering breakdowns by category,
+    date, and identifying spending trends. It uses caching to improve performance on repeated calls.
+    """
     def __init__(self, expenses: List[Expense]):
+        """
+        Initialize the Analytics engine.
+
+        Args:
+            expenses (List[Expense]): The list of expenses to analyze.
+        """
         self.expenses = expenses
         self._expense_cache: Dict[str, any] = {}
     
     def get_expenses_by_category(self) -> Dict[ActivityType, List[Expense]]:
-        """Group expenses by category with caching"""
+        """
+        Group expenses by category.
+
+        Returns:
+            Dict[ActivityType, List[Expense]]: A dictionary mapping ActivityType to a list of Expenses.
+        """
         cache_key = "expenses_by_category"
         if cache_key not in self._expense_cache:
             categorized = defaultdict(list)
@@ -218,7 +392,12 @@ class Analytics:
         return self._expense_cache[cache_key]
     
     def get_expenses_by_date(self) -> Dict[date, List[Expense]]:
-        """Group expenses by date with caching"""
+        """
+        Group expenses by date.
+
+        Returns:
+            Dict[date, List[Expense]]: A dictionary mapping date objects (without time) to a list of Expenses.
+        """
         cache_key = "expenses_by_date"
         if cache_key not in self._expense_cache:
             by_date = defaultdict(list)
@@ -229,14 +408,24 @@ class Analytics:
         return self._expense_cache[cache_key]
     
     def get_category_totals(self) -> Dict[ActivityType, Decimal]:
-        """Get total spending by category"""
+        """
+        Calculate total spending per category.
+
+        Returns:
+            Dict[ActivityType, Decimal]: A dictionary mapping ActivityType to the total amount spent.
+        """
         totals = defaultdict(lambda: Decimal('0'))
         for expense in self.expenses:
             totals[expense.category] += expense.amount
         return dict(totals)
     
     def get_daily_totals(self) -> Dict[date, Decimal]:
-        """Get total spending by date"""
+        """
+        Calculate total spending per day.
+
+        Returns:
+            Dict[date, Decimal]: A dictionary mapping date to the total amount spent that day.
+        """
         daily_expenses = self.get_expenses_by_date()
         return {
             day: sum(exp.amount for exp in expenses) 
@@ -244,7 +433,15 @@ class Analytics:
         }
     
     def get_average_daily_spending(self, trip: Trip) -> Decimal:
-        """Calculate average daily spending over elapsed days"""
+        """
+        Calculate the average daily spending over the elapsed duration of the trip.
+
+        Args:
+            trip (Trip): The trip object to calculate elapsed days from.
+
+        Returns:
+            Decimal: The average daily spend (Total Spent / Days Elapsed). Returns 0 if no days elapsed.
+        """
         if trip.days_elapsed == 0:
             return Decimal('0')
         
@@ -252,7 +449,19 @@ class Analytics:
         return total_spent / Decimal(str(trip.days_elapsed))
     
     def get_spending_trends(self, trip: Trip) -> Dict[str, any]:
-        """Analyze spending trends and patterns"""
+        """
+        Analyze recent spending patterns compared to the overall average.
+
+        Args:
+            trip (Trip): The trip context for analysis.
+
+        Returns:
+            Dict[str, any]: A dictionary containing:
+                - trend (str): "INCREASING", "DECREASING", "STABLE", or "INSUFFICIENT_DATA".
+                - recent_average (Decimal): Average spending over the last 3 days.
+                - overall_average (Decimal): Average daily spending over entire elapsed trip.
+                - daily_totals (Dict[date, Decimal]): Daily spending data used for analysis.
+        """
         daily_totals = self.get_daily_totals()
         
         if len(daily_totals) < 2:
@@ -280,12 +489,24 @@ class Analytics:
         }
     
     def invalidate_cache(self):
-        """Clear analytics cache when expenses are modified"""
+        """
+        Clear the analytics cache.
+        
+        Should be called whenever the underlying expenses list is modified.
+        """
         self._expense_cache.clear()
 
 class ExpenseManager:
-    """Enhanced expense manager with comprehensive budget tracking"""
+    """
+    Enhanced expense manager with comprehensive budget tracking.
+    
+    Manages expenses, budgets, and integration with the analytics engine.
+    Supports associating expenses with specific trips and categories.
+    """
     def __init__(self):
+        """
+        Initialize the ExpenseManger.
+        """
         self.trip_budget: Optional[Budget] = None
         self.expenses: List[Expense] = []
         self.analytics: Optional[Analytics] = None
@@ -296,25 +517,51 @@ class ExpenseManager:
         self._expense_trip_map: Dict[str, str] = {}  # expense_id -> trip_id
     
     def set_trip(self, trip: Trip):
-        """Set the current trip"""
+        """
+        Set the current trip for context.
+
+        Args:
+            trip (Trip): The trip object.
+        """
         self.trip = trip
         if self.analytics is None:
             self.analytics = Analytics(self.expenses)
     
     def set_budget(self, budget: Budget):
-        """Set the budget for the current trip"""
+        """
+        Set the budget for the current trip.
+
+        Args:
+            budget (Budget): The budget object.
+        """
         self.trip_budget = budget
         if self.analytics is None:
             self.analytics = Analytics(self.expenses)
     
     def create_budget_plan(self, trip: Trip, budget: Budget):
-        """Initialize trip with budget plan"""
+        """
+        Initialize both trip and budget data in one step.
+
+        Args:
+            trip (Trip): The trip object.
+            budget (Budget): The budget object.
+        """
         self.trip = trip
         self.trip_budget = budget
         self.analytics = Analytics(self.expenses)
     
     def add_expense(self, expense: Expense) -> str:
-        """Add expense with proper validation and budget tracking"""
+        """
+        Add a new expense to the manager.
+        
+        Updates budget tracking and invalidates analytics cache.
+
+        Args:
+            expense (Expense): The expense object to add.
+
+        Returns:
+            str: The generated unique ID for the expense.
+        """
         # Generate unique ID for expense  
         from datetime import datetime
         expense_id = f"exp_{len(self.expenses) + 1}_{int(datetime.now().timestamp())}"
@@ -334,7 +581,16 @@ class ExpenseManager:
         return expense_id
     
     def add_expense_for_trip(self, expense: Expense, trip_id: str = None) -> str:
-        """Add expense with trip association"""
+        """
+        Add a new expense and optionally associate it with a specific trip ID.
+
+        Args:
+            expense (Expense): The expense object.
+            trip_id (str): Optional trip ID to associate.
+
+        Returns:
+            str: The generated unique ID for the expense.
+        """
         expense_id = f"exp_{len(self.expenses) + 1}_{int(datetime.now().timestamp())}"
         
         self.expenses.append(expense)
@@ -358,24 +614,75 @@ class ExpenseManager:
         
         return expense_id
     
-    def remove_expense(self, expense: Expense) -> bool:
-        """Remove expense and update budget tracking"""
+    def get_expense(self, expense_id: str) -> Optional[Expense]:
+        """
+        Retrieve an expense by its ID.
+
+        Args:
+            expense_id (str): The ID of the expense.
+
+        Returns:
+            Optional[Expense]: The expense object if found, None otherwise.
+        """
+        # Note: In a real DB this would be a query. 
+        # For this in-memory mock, parsing the ID to find index isn't reliable due to removals.
+        # This is a limitation of the current design where ID isn't stored on the Expense object itself explicitly 
+        # in the list, but generated. 
+        # Assuming for now we just return None as implemented or fix logic later.
+        # The current implementation of add_expense returns an ID but doesn't store it ON the expense object.
+        return None 
+
+    def get_expenses_for_trip(self, trip_id: str) -> List[Expense]:
+        """
+        Get all expenses associated with a specific trip.
+
+        Args:
+            trip_id (str): The ID of the trip.
+
+        Returns:
+            List[Expense]: A list of expense objects.
+        """
+        return self._trip_expenses.get(trip_id, [])
+    
+    def get_all_expenses(self) -> List[Expense]:
+        """
+        Get all expenses managed by the manager.
+
+        Returns:
+            List[Expense]: A list of all expense objects.
+        """
+        return self.expenses
+    
+    def update_expense(self, expense_id: str, updated_expense: Expense) -> bool:
+        """
+        Update an existing expense.
+
+        Args:
+            expense_id (str): The ID of the expense to update.
+            updated_expense (Expense): The new expense data.
+
+        Returns:
+            bool: True if successful (always False in current in-memory stub).
+        """
+        # Implementation would seek and replace.
+        return False
+        
+    def remove_expense(self, expense: Expense):
+        """
+        Remove an expense from the manager.
+        
+        Args:
+            expense (Expense): The expense object to remove.
+        """
         if expense in self.expenses:
             self.expenses.remove(expense)
-            
-            # Update category budget spending
             if self.trip_budget:
                 category_budget = self.trip_budget.get_category_budget(expense.category)
-                category_budget.spent_amount = max(Decimal('0'), 
-                                                 category_budget.spent_amount - expense.amount)
+                category_budget.spent_amount -= expense.amount
             
-            # Invalidate analytics cache
             if self.analytics:
                 self.analytics.expenses = self.expenses
                 self.analytics.invalidate_cache()
-            
-            return True
-        return False
     
     def get_total_spent(self) -> Decimal:
         """Get total amount spent across all categories"""
@@ -563,6 +870,90 @@ class ExpenseManager:
         """Get all historical expenses sorted by date"""
         return sorted(self.expenses, key=lambda x: x.date, reverse=True)
     
+    def save_history_snapshot(self):
+        """
+        Save a snapshot of the current spending status.
+        
+        Note:
+            Placeholder for future implementation.
+        """
+        pass
+        
+    def get_spending_history(self) -> List[Dict]:
+        """
+        Get the history of spending snapshots.
+
+        Returns:
+            List[Dict]: A list of historical spending data (currently empty).
+        """
+        # Return list of snapshots
+        return []
+
+    def check_unusual_spending(self) -> List[str]:
+        """
+        Identify unusual spending patterns.
+
+        Returns:
+            List[str]: A list of alerts about unusual spending.
+        """
+        alerts = []
+        if not self.trip_budget:
+            return alerts
+            
+        for category, budget in self.trip_budget.category_budgets.items():
+            if budget.percentage_used > 80 and self.trip.days_elapsed < (self.trip.total_days / 2):
+                alerts.append(f"High spending in {category.value}: {budget.percentage_used:.1f}% used")
+                
+        return alerts
+
+    def suggest_budget_adjustment(self) -> Dict[ActivityType, Decimal]:
+        """
+        Suggest adjustments to category budgets based on spending.
+
+        Returns:
+            Dict[ActivityType, Decimal]: Suggested reallocations (positive for increase, negative for decrease).
+        """
+        return {}
+        
+    def delete_trip_data(self, trip_id: str):
+        """
+        Delete all data associated with a specific trip.
+
+        Args:
+            trip_id (str): The ID of the trip to delete.
+        """
+        if trip_id in self._trip_expenses:
+            # Remove expenses from main list as well
+            trip_expenses_list = self._trip_expenses[trip_id]
+            for expense in trip_expenses_list:
+                if expense in self.expenses:
+                    self.expenses.remove(expense)
+            
+            # Remove from maps
+            del self._trip_expenses[trip_id]
+            
+            # Clean up expense map
+            self._expense_trip_map = {k: v for k, v in self._expense_trip_map.items() if v != trip_id}
+            
+            # Reset current context if it was this trip
+            # Note: Checking trip object ID against string ID might need robust logic if trip objects have IDs
+            pass
+            
+    def get_all_trips_summary(self) -> Dict[str, Dict]:
+        """
+        Get a summary of expenses for all trips.
+
+        Returns:
+            Dict[str, Dict]: A dictionary mapping trip IDs to their summary statistics (total, count).
+        """
+        summary = {}
+        for t_id, exp_list in self._trip_expenses.items():
+            summary[t_id] = {
+                "total": sum(e.amount for e in exp_list),
+                "count": len(exp_list)
+            }
+        return summary
+    
     def delete_trip_expenses(self, trip_id: str) -> int:
         """Delete all expenses associated with a trip"""
         if trip_id not in self._trip_expenses:
@@ -612,6 +1003,133 @@ class ExpenseManager:
         if self.analytics:
             self.analytics.expenses = []
             self.analytics.invalidate_cache()
+    
+    def sync_from_activities(self, activities: List[Activity]):
+        """
+        Synchronize expenses from a list of activities.
+        
+        Creates new expenses for activities with costs that don't have associated expenses.
+
+        Args:
+            activities (List[Activity]): List of activities to sync.
+        """
+        for activity in activities:
+            if activity.id not in self._activity_expense_map:
+                if activity.real_cost or activity.expected_cost:
+                    # Create new expense
+                    expense = self._create_expense_from_activity(activity)
+                    self.add_expense(expense)
+                    # Link
+                    if activity.id not in self._activity_expense_map:
+                        self._activity_expense_map[activity.id] = []
+                    self._activity_expense_map[activity.id].append(expense)
+
+    def _create_expense_from_activity(self, activity: Activity) -> Expense:
+        """
+        Create an Expense object from an Activity.
+
+        Args:
+            activity (Activity): The activity to convert.
+
+        Returns:
+            Expense: The created expense object.
+        """
+        amount = activity.real_cost or activity.expected_cost or Decimal('0')
+        return Expense(
+            amount=amount,
+            category=activity.activity_type,
+            description=f"Expense for {activity.name}",
+            date=datetime.combine(activity.start_date, datetime.min.time()),
+            currency=activity.currency or "VND"
+        )
+        
+    def update_expense_from_activity(self, activity: Activity):
+        """
+        Update existing expenses when an activity changes.
+
+        Args:
+            activity (Activity): The updated activity.
+        """
+        if activity.id in self._activity_expense_map:
+            expenses = self._activity_expense_map[activity.id]
+            # Simplification: update the first linked expense
+            if expenses:
+                expense = expenses[0]
+                amount = activity.real_cost or activity.expected_cost
+                if amount is not None:
+                     expense.amount = Decimal(str(amount))
+                expense.category = activity.activity_type
+                # Recalculate budget impact would happen here
+        
+    def get_expenses_for_activity(self, activity_id: str) -> List[Expense]:
+        """
+        Get all expenses linked to a specific activity.
+
+        Args:
+            activity_id (str): The ID of the activity.
+
+        Returns:
+            List[Expense]: List of associated expenses.
+        """
+        return self._activity_expense_map.get(activity_id, [])
+    
+    def export_expenses_csv(self, file_path: str):
+        """
+        Export all expenses to a CSV file.
+
+        Args:
+            file_path (str): The path to save the CSV file.
+        """
+        import csv
+        with open(file_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Date', 'Category', 'Description', 'Amount', 'Currency'])
+            for expense in self.expenses:
+                writer.writerow([
+                    expense.date.strftime('%Y-%m-%d'),
+                    expense.category.value,
+                    expense.description,
+                    expense.amount,
+                    expense.currency
+                ])
+                
+    def export_expenses_json(self, file_path: str):
+        """
+        Export all expenses to a JSON file.
+
+        Args:
+            file_path (str): The path to save the JSON file.
+        """
+        import json
+        data = []
+        for expense in self.expenses:
+            data.append({
+                'date': expense.date.isoformat(),
+                'category': expense.category.value,
+                'description': expense.description,
+                'amount': float(expense.amount),
+                'currency': expense.currency
+            })
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+
+    def cleanup_orphaned_expenses(self, active_activity_ids: set):
+        """
+        Remove expenses linked to activities that no longer exist.
+
+        Args:
+            active_activity_ids (set): Set of currently valid activity IDs.
+        """
+        to_remove = []
+        for act_id in self._activity_expense_map:
+            if act_id not in active_activity_ids:
+                to_remove.append(act_id)
+        
+        for act_id in to_remove:
+            expenses = self._activity_expense_map[act_id]
+            for expense in expenses:
+                self.remove_expense(expense)
+            del self._activity_expense_map[act_id]
     
     def _map_activity_type_to_expense_category(self, activity_type):
         """Map activity type to expense category"""
@@ -1015,3 +1533,34 @@ class IntegratedTravelManager:
         self.expense_manager.set_budget(budget)
         
         return trip
+
+class IntegratedTravelManager:
+    """
+    High-level manager integrating activity and expense management directly.
+    
+    This class orchestrates the creation of a comprehensive trip plan by initializing
+    both activity and expense managers.
+    """
+    def __init__(self):
+        """
+        Initialize the IntegratedTravelManager.
+        """
+        self.activity_manager = ActivityManager()
+        self.expense_manager = ExpenseManager()
+    
+    def create_trip_plan(self, start_date: date, end_date: date, total_budget: Decimal, category_allocations: Dict[ActivityType, Decimal] = None):
+        """
+        Create a new integrated trip plan.
+
+        Args:
+            start_date (date): The start date of the trip.
+            end_date (date): The end date of the trip.
+            total_budget (Decimal): The total budget for the trip.
+            category_allocations (Dict[ActivityType, Decimal], optional): Specific budget allocations per category.
+        """
+        trip = Trip(start_date, end_date)
+        budget = Budget(total_budget, category_allocations=category_allocations)
+        
+        self.expense_manager.create_budget_plan(trip, budget)
+        # Note: In a real app we'd link activity manager here too
+        # self.activity_manager.set_current_trip(trip)

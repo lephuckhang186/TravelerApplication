@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../Core/theme/app_theme.dart';
 
+/// A dedicated support screen providing FAQs and help resources for app users.
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
 
@@ -141,7 +142,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         title: Text(
           'Help Center',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -163,7 +165,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 onChanged: (value) => setState(() => _searchQuery = value),
                 decoration: InputDecoration(
                   hintText: 'Search questions...',
-                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey[500]),
+                  hintStyle: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    color: Colors.grey[500],
+                  ),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
@@ -207,7 +212,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         title: Text(
           category['title'],
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -215,7 +221,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         ),
         subtitle: Text(
           '${category['items'].length} questions',
-          style: TextStyle(fontFamily: 'Urbanist-Regular',
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 12,
             color: Colors.grey[600],
           ),
@@ -233,7 +240,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     return ExpansionTile(
       title: Text(
         question,
-        style: TextStyle(fontFamily: 'Urbanist-Regular', 
+        style: TextStyle(
+          fontFamily: 'Urbanist-Regular',
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
@@ -244,7 +252,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Text(
             answer,
-            style: TextStyle(fontFamily: 'Urbanist-Regular', 
+            style: TextStyle(
+              fontFamily: 'Urbanist-Regular',
               fontSize: 13,
               color: Colors.grey[700],
               height: 1.5,

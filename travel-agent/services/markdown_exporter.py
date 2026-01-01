@@ -2,18 +2,33 @@ import datetime
 from typing import Optional
 
 class MarkdownExporter:
+  """
+  Handles exporting generated travel content to Markdown files.
+  """
   def __init__(self, disclaimer: bool = True):
+    """
+    Initialize the exporter with configuration.
+
+    Args:
+       disclaimer (bool): Whether to include a disclaimer in the exported file. Defaults to True.
+    """
     self.include_disclaimer = disclaimer
 
   def export(self, response_text: str, filename: str = "ai_travel_plan.md") -> str:
     """
     Export travel plan to a well-formatted Markdown file.
-    Includes metadata, disclaimer, and timestamp.
+
+    Includes metadata such as timestamp and an optional disclaimer.
+
     Args:
-      response_text (str): The agent's output (reasoning and summary).
-      filename (str): The filename to save as.
+      response_text (str): The agent's output (reasoning and summary) to be saved.
+      filename (str, optional): The filename to save as. Defaults to "ai_travel_plan.md".
+
     Returns:
-      str: The path to the saved file.
+      str: The absolute or relative path to the saved file.
+
+    Raises:
+      IOError: If writing to the file fails.
     """
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     metadata = f"""# 🧳 AI Travel Itinerary\n\n**Generated:** {timestamp}\n"""

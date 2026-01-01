@@ -25,13 +25,13 @@ async def get_current_user(
     Get the current authenticated user from Firebase ID token.
     
     Args:
-        credentials: HTTP authorization credentials containing Firebase ID token
+        credentials (HTTPAuthorizationCredentials): HTTP authorization credentials containing Firebase ID token.
         
     Returns:
-        User: The authenticated user object
+        User: The authenticated user object.
         
     Raises:
-        HTTPException: If the token is invalid or user not found
+        HTTPException: If the token is invalid, expired, or the user is not found/active.
     """
     token = credentials.credentials
     
@@ -86,10 +86,10 @@ async def get_optional_user(
     Get the current user if authenticated, otherwise return None.
     
     Args:
-        credentials: Optional HTTP authorization credentials
+        credentials (Optional[HTTPAuthorizationCredentials]): Optional HTTP authorization credentials.
         
     Returns:
-        Optional[User]: The authenticated user or None
+        Optional[User]: The authenticated user or None if not authenticated.
     """
     if not credentials:
         return None
@@ -105,13 +105,13 @@ async def get_admin_user(current_user: User = Depends(get_current_user)) -> User
     Get the current user and verify they have admin privileges.
     
     Args:
-        current_user: The currently authenticated user
+        current_user (User): The currently authenticated user.
         
     Returns:
-        User: The admin user
+        User: The admin user.
         
     Raises:
-        HTTPException: If user is not an admin
+        HTTPException: If user is not an admin (403 Forbidden).
     """
     if not current_user.is_admin:
         raise HTTPException(
@@ -123,7 +123,16 @@ async def get_admin_user(current_user: User = Depends(get_current_user)) -> User
 # Dependency for active users
 async def get_active_user(current_user: User = Depends(get_current_user)) -> User:
     """
-    Dependency to require active user status
+    Dependency to require active user status.
+
+    Args:
+        current_user (User): The currently authenticated user.
+
+    Returns:
+        User: The active user.
+
+    Raises:
+        HTTPException: If user account is disabled (403 Forbidden).
     """
     if not current_user.is_active:
         raise HTTPException(
@@ -137,22 +146,38 @@ async def get_firebase_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """
-    Get Firebase authenticated user (alias for get_current_user)
+    Get Firebase authenticated user (alias for get_current_user).
+
+    Args:
+        credentials (HTTPAuthorizationCredentials): HTTP authorization credentials.
+
+    Returns:
+        User: The authenticated user.
     """
     return await get_current_user(credentials)
 
 
 def get_db() -> Session:
     """
-    Database dependency for SQLAlchemy sessions
+    Database dependency for SQLAlchemy sessions.
+    
     Note: This is a placeholder. In a real app, you'd create a proper SQLAlchemy session.
     For now, we'll return None as the database operations use Firebase and db_manager.
+
+    Returns:
+        Session: Always None in this implementation.
     """
     return None
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """
-    Get current active user (alias for get_active_user for compatibility)
+    Get current active user (alias for get_active_user for compatibility).
+
+    Args:
+        current_user (User): The authenticated user.
+
+    Returns:
+        User: The active user.
     """
     return await get_active_user(current_user)

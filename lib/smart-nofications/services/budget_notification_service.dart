@@ -2,14 +2,21 @@ import '../models/notification_models.dart';
 import '../../Plan/models/activity_models.dart';
 import '../../Plan/services/trip_planning_service.dart';
 
+/// Service for monitoring trip budgets and generating overage warnings.
+///
+/// Compares actual costs against estimated budgets for individual activities
+/// and entire trips, triggering alerts when spending exceeds defined thresholds.
 class BudgetNotificationService {
   final TripPlanningService _tripService = TripPlanningService();
 
-  Future<BudgetWarning?> checkBudgetOverage(String activityId, double actualCost, {String? tripId}) async {
+  Future<BudgetWarning?> checkBudgetOverage(
+    String activityId,
+    double actualCost, {
+    String? tripId,
+  }) async {
     try {
-      
       ActivityModel? activity;
-      
+
       // Try to get activity from trip if tripId provided
       if (tripId != null) {
         try {
@@ -24,7 +31,7 @@ class BudgetNotificationService {
           //
         }
       }
-      
+
       // Fallback: try to get activity directly (may fail if backend is down)
       if (activity == null) {
         try {
@@ -34,19 +41,18 @@ class BudgetNotificationService {
           return null;
         }
       }
-      
+
       if (activity?.budget?.estimatedCost == null) {
         return null;
       }
 
       final estimatedCost = activity!.budget!.estimatedCost;
       final overage = actualCost - estimatedCost;
-      
+
       // Only alert if overage is more than 10%
       if (overage > estimatedCost * 0.1) {
         final overagePercentage = (overage / estimatedCost) * 100;
-        
-        
+
         return BudgetWarning(
           activityTitle: activity.title,
           estimatedCost: estimatedCost,
@@ -56,7 +62,7 @@ class BudgetNotificationService {
           currency: activity.budget!.currency,
         );
       }
-      
+
       return null;
     } catch (e) {
       return null;
@@ -65,9 +71,8 @@ class BudgetNotificationService {
 
   Future<List<BudgetWarning>> checkTripBudgetStatus(String tripId) async {
     try {
-      
       List<ActivityModel> activities = [];
-      
+
       // Try to get activities from trip object first
       try {
         final trip = await _tripService.getTrip(tripId);
@@ -77,7 +82,7 @@ class BudgetNotificationService {
       } catch (e) {
         //
       }
-      
+
       // Fallback: try to get activities from backend (may fail)
       if (activities.isEmpty) {
         try {
@@ -90,17 +95,15 @@ class BudgetNotificationService {
       final warnings = <BudgetWarning>[];
 
       for (final activity in activities) {
-        if (activity.checkIn && 
-            activity.budget != null && 
+        if (activity.checkIn &&
+            activity.budget != null &&
             activity.budget!.actualCost != null) {
-          
-          
           final warning = await checkBudgetOverage(
-            activity.id!, 
+            activity.id!,
             activity.budget!.actualCost!,
-            tripId: tripId
+            tripId: tripId,
           );
-          
+
           if (warning != null) {
             warnings.add(warning);
           }
@@ -115,24 +118,25 @@ class BudgetNotificationService {
 
   double calculateTotalOverage(List<ActivityModel> activities) {
     double totalOverage = 0;
-    
+
     for (final activity in activities) {
-      if (activity.budget?.estimatedCost != null && 
+      if (activity.budget?.estimatedCost != null &&
           activity.budget?.actualCost != null) {
-        final overage = activity.budget!.actualCost! - activity.budget!.estimatedCost;
+        final overage =
+            activity.budget!.actualCost! - activity.budget!.estimatedCost;
         if (overage > 0) {
           totalOverage += overage;
         }
       }
     }
-    
+
     return totalOverage;
   }
 
   double calculateBudgetUtilization(List<ActivityModel> activities) {
     double totalEstimated = 0;
     double totalActual = 0;
-    
+
     for (final activity in activities) {
       if (activity.budget?.estimatedCost != null) {
         totalEstimated += activity.budget!.estimatedCost;
@@ -141,7 +145,7 @@ class BudgetNotificationService {
         totalActual += activity.budget!.actualCost!;
       }
     }
-    
+
     if (totalEstimated == 0) return 0;
     return (totalActual / totalEstimated) * 100;
   }

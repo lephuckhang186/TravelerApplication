@@ -1,4 +1,5 @@
 /// Custom exception for API errors
+/// Exception thrown when the backend API returns an error response (non-2xx).
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
@@ -11,9 +12,10 @@ class ApiException implements Exception {
 }
 
 /// Network connectivity exception
+/// Exception thrown when a network-level failure occurs (e.g., DNS, timeout).
 class NetworkException implements Exception {
   final String message;
-  
+
   const NetworkException(this.message);
 
   @override

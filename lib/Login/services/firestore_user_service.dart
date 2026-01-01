@@ -1,16 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../Login/services/user_profile.dart';
 
+/// Service for interacting with the 'users' collection in Firestore.
+///
+/// Handles CRUD operations for [UserProfile] data in Firebase Firestore.
 class FirestoreUserService {
   static final FirestoreUserService _instance =
       FirestoreUserService._internal();
+
+  /// Factory constructor for singleton instance.
   factory FirestoreUserService() => _instance;
+
   FirestoreUserService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'users';
 
-  // Tạo hoặc cập nhật thông tin người dùng
+  /// Creates or updates a user profile in Firestore.
+  ///
+  /// Merges data with existing documents to prevent overwriting unrelated fields.
+  /// Throws Exception on failure.
   Future<void> createOrUpdateUser(UserProfile userProfile) async {
     try {
       await _firestore
@@ -22,7 +31,9 @@ class FirestoreUserService {
     }
   }
 
-  // Lấy thông tin người dùng theo UID
+  /// Retrieves a user profile by UID.
+  ///
+  /// Returns [UserProfile] if found, otherwise null.
   Future<UserProfile?> getUserProfile(String uid) async {
     try {
       final doc = await _firestore.collection(_collection).doc(uid).get();
@@ -35,7 +46,7 @@ class FirestoreUserService {
     }
   }
 
-  // Kiểm tra người dùng đã có thông tin profile chưa
+  /// Checks if a user profile exists for the given UID.
   Future<bool> hasUserProfile(String uid) async {
     try {
       final doc = await _firestore.collection(_collection).doc(uid).get();
@@ -45,7 +56,9 @@ class FirestoreUserService {
     }
   }
 
-  // Tạo profile mới cho người dùng đăng ký email
+  /// Creates a new profile for a user registering via Email.
+  ///
+  /// Initializes [createdAt] and [updatedAt] to the current time.
   Future<void> createEmailUserProfile({
     required String uid,
     required String email,
@@ -65,7 +78,9 @@ class FirestoreUserService {
     await createOrUpdateUser(userProfile);
   }
 
-  // Tạo profile mới cho người dùng đăng ký Google
+  /// Creates a new profile for a user registering via Google.
+  ///
+  /// Functionally similar to [createEmailUserProfile] but separated for clarity.
   Future<void> createGoogleUserProfile({
     required String uid,
     required String email,
@@ -85,7 +100,10 @@ class FirestoreUserService {
     await createOrUpdateUser(userProfile);
   }
 
-  // Cập nhật thông tin người dùng
+  /// Updates specific fields of a user's profile.
+  ///
+  /// Automatically updates the [updatedAt] timestamp.
+  /// Only non-null arguments will be updated.
   Future<void> updateUserProfile({
     required String uid,
     String? fullName,
@@ -116,7 +134,9 @@ class FirestoreUserService {
     }
   }
 
-  // Cập nhật một trường cụ thể
+  /// Updates a single field in the user profile.
+  ///
+  /// Useful for quick updates like toggling settings.
   Future<void> updateUserField({
     required String uid,
     required String field,
@@ -134,7 +154,7 @@ class FirestoreUserService {
     }
   }
 
-  // Xóa thông tin người dùng
+  /// Deletes a user profile from Firestore.
   Future<void> deleteUserProfile(String uid) async {
     try {
       await _firestore.collection(_collection).doc(uid).delete();
@@ -143,7 +163,9 @@ class FirestoreUserService {
     }
   }
 
-  // Stream để theo dõi thay đổi thông tin người dùng
+  /// Returns a stream of user profile updates.
+  ///
+  /// Useful for real-time UI updates when profile data changes.
   Stream<UserProfile?> getUserProfileStream(String uid) {
     return _firestore.collection(_collection).doc(uid).snapshots().map((doc) {
       if (doc.exists) {

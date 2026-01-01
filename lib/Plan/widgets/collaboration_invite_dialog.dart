@@ -4,16 +4,20 @@ import '../../Core/theme/app_theme.dart';
 import '../providers/collaboration_provider.dart';
 import '../models/collaboration_models.dart';
 
+/// Dialog for inviting new collaborators to a trip via email.
+///
+/// Allows the owner to specify an email address, choose a permission level
+/// (Editor or Viewer), and include an optional personal message. It also
+/// displays a list of currently active collaborators for context.
 class CollaborationInviteDialog extends StatefulWidget {
+  /// The trip to which the new collaborator will be invited.
   final SharedTripModel trip;
 
-  const CollaborationInviteDialog({
-    Key? key,
-    required this.trip,
-  }) : super(key: key);
+  const CollaborationInviteDialog({super.key, required this.trip});
 
   @override
-  State<CollaborationInviteDialog> createState() => _CollaborationInviteDialogState();
+  State<CollaborationInviteDialog> createState() =>
+      _CollaborationInviteDialogState();
 }
 
 class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
@@ -88,30 +92,30 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
                 ),
                 const SizedBox(height: 16),
 
-            // Role selector
-            DropdownButtonFormField<String>(
-              value: _selectedRole,
-              decoration: const InputDecoration(
-                labelText: 'Permission Level',
-                prefixIcon: Icon(Icons.security),
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'editor',
-                  child: Text('✏️ Editor - Can edit activities'),
+                // Role selector
+                DropdownButtonFormField<String>(
+                  value: _selectedRole,
+                  decoration: const InputDecoration(
+                    labelText: 'Permission Level',
+                    prefixIcon: Icon(Icons.security),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'editor',
+                      child: Text('✏️ Editor - Can edit activities'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'viewer',
+                      child: Text('👀 Viewer - Read-only access'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRole = value!;
+                    });
+                  },
                 ),
-                DropdownMenuItem(
-                  value: 'viewer',
-                  child: Text('👀 Viewer - Read-only access'),
-                ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedRole = value!;
-                });
-              },
-            ),
 
                 const SizedBox(height: 16),
                 TextFormField(
@@ -138,54 +142,61 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
                   constraints: const BoxConstraints(maxHeight: 120),
                   child: SingleChildScrollView(
                     child: Column(
-                      children: widget.trip.sharedCollaborators.map((collaborator) =>
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 12,
-                                backgroundColor: collaborator.isOwner ? Colors.orange : Colors.blue,
-                                child: Text(
-                                  collaborator.name.isNotEmpty
-                                      ? collaborator.name[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '${collaborator.name} (${collaborator.email})',
-                                  style: const TextStyle(fontSize: 12),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (collaborator.isOwner)
-                                Container(
-                                  margin: const EdgeInsets.only(left: 8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    'Owner',
-                                    style: TextStyle(
-                                      fontSize: 8,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
+                      children: widget.trip.sharedCollaborators
+                          .map(
+                            (collaborator) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: collaborator.isOwner
+                                        ? Colors.orange
+                                        : Colors.blue,
+                                    child: Text(
+                                      collaborator.name.isNotEmpty
+                                          ? collaborator.name[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ).toList(),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      '${collaborator.name} (${collaborator.email})',
+                                      style: const TextStyle(fontSize: 12),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (collaborator.isOwner)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'Owner',
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ),
                 ),
@@ -197,7 +208,9 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: _isLoading ? null : () => Navigator.pop(context),
+                      onPressed: _isLoading
+                          ? null
+                          : () => Navigator.pop(context),
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 16),
@@ -213,7 +226,9 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text('Send Invitation'),
@@ -228,9 +243,7 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
     );
   }
 
-
-
-  /// Comprehensive email validation with fallback cases
+  /// Comprehensive email validation with checks for self-invitation and redundancy.
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter an email address';
@@ -239,7 +252,9 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
     final email = value.trim().toLowerCase();
 
     // Basic email format validation
-    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
+    if (!RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(email)) {
       return 'Please enter a valid email address';
     }
 
@@ -249,8 +264,9 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
     }
 
     // Check if email is already a collaborator
-    final isAlreadyCollaborator = widget.trip.sharedCollaborators
-        .any((c) => c.email.toLowerCase() == email);
+    final isAlreadyCollaborator = widget.trip.sharedCollaborators.any(
+      (c) => c.email.toLowerCase() == email,
+    );
     if (isAlreadyCollaborator) {
       return 'This person is already a collaborator on this trip';
     }
@@ -258,8 +274,11 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
     // Check for pending invitations (if available)
     try {
       final collabProvider = context.read<CollaborationProvider>();
-      final hasPendingInvitation = collabProvider.pendingInvitations
-          .any((inv) => inv.inviteeEmail.toLowerCase() == email && inv.tripId == widget.trip.id);
+      final hasPendingInvitation = collabProvider.pendingInvitations.any(
+        (inv) =>
+            inv.inviteeEmail.toLowerCase() == email &&
+            inv.tripId == widget.trip.id,
+      );
       if (hasPendingInvitation) {
         return 'An invitation has already been sent to this email';
       }
@@ -267,16 +286,10 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
       // If provider not available, skip this check
     }
 
-    // Check for common email domains (optional additional validation)
-    final commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
-    final domain = email.split('@').last;
-    if (!commonDomains.contains(domain) && !domain.contains('.')) {
-      // Allow custom domains but warn about unusual formats
-    }
-
     return null; // Valid email
   }
 
+  /// Initiates the invitation process through the [CollaborationProvider].
   Future<void> _sendInvitation() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -294,61 +307,66 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
       final collabProvider = context.read<CollaborationProvider>();
       await collabProvider.loadPendingInvitations();
 
-      final hasPendingInvitation = collabProvider.pendingInvitations
-          .any((inv) => inv.inviteeEmail.toLowerCase() == email && inv.tripId == widget.trip.id);
+      final hasPendingInvitation = collabProvider.pendingInvitations.any(
+        (inv) =>
+            inv.inviteeEmail.toLowerCase() == email &&
+            inv.tripId == widget.trip.id,
+      );
 
       if (hasPendingInvitation) {
-        _showError('An invitation has already been sent to this email. Please wait for a response or try again later.');
+        _showError(
+          'An invitation has already been sent to this email. Please wait for a response or try again later.',
+        );
         return;
       }
 
-      // Check network connectivity (basic check)
-      // Note: This is a simple check, you might want to use connectivity package for better detection
-      try {
-        final message = _messageController.text.trim().isNotEmpty
-            ? _messageController.text.trim()
-            : null;
+      final message = _messageController.text.trim().isNotEmpty
+          ? _messageController.text.trim()
+          : null;
 
-        final success = await collabProvider.inviteCollaborator(
-          widget.trip.id!,
-          email,
-          message: message,
-          permissionLevel: _selectedRole,
-        );
+      final success = await collabProvider.inviteCollaborator(
+        widget.trip.id!,
+        email,
+        message: message,
+        permissionLevel: _selectedRole,
+      );
 
-        if (success && mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Invitation sent successfully to ${_emailController.text.trim()}'),
-              backgroundColor: AppColors.primary,
-              duration: const Duration(seconds: 3),
+      if (success && mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Invitation sent successfully to ${_emailController.text.trim()}',
             ),
-          );
-        } else {
-          _showError('Failed to send invitation. Please check your connection and try again.');
-        }
-      } catch (networkError) {
-
-        // Provide specific error messages based on error type
-        String errorMessage = 'Failed to send invitation due to network issues. Please check your internet connection and try again.';
-
-        if (networkError.toString().contains('timeout')) {
-          errorMessage = 'Request timed out. Please check your connection and try again.';
-        } else if (networkError.toString().contains('403')) {
-          errorMessage = 'You do not have permission to invite collaborators to this trip.';
-        } else if (networkError.toString().contains('404')) {
-          errorMessage = 'Trip not found. It may have been deleted.';
-        } else if (networkError.toString().contains('409')) {
-          errorMessage = 'This email is already associated with this trip.';
-        } else if (networkError.toString().contains('422')) {
-          errorMessage = 'Invalid email format or invitation data.';
-        }
-
-        _showError(errorMessage);
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        _showError(
+          'Failed to send invitation. Please check your connection and try again.',
+        );
       }
-    } catch (e) {
-      _showError('An unexpected error occurred. Please try again later.');
+    } catch (networkError) {
+      // Provide specific error messages based on error type
+      String errorMessage =
+          'Failed to send invitation due to network issues. Please check your internet connection and try again.';
+
+      if (networkError.toString().contains('timeout')) {
+        errorMessage =
+            'Request timed out. Please check your connection and try again.';
+      } else if (networkError.toString().contains('403')) {
+        errorMessage =
+            'You do not have permission to invite collaborators to this trip.';
+      } else if (networkError.toString().contains('404')) {
+        errorMessage = 'Trip not found. It may have been deleted.';
+      } else if (networkError.toString().contains('409')) {
+        errorMessage = 'This email is already associated with this trip.';
+      } else if (networkError.toString().contains('422')) {
+        errorMessage = 'Invalid email format or invitation data.';
+      }
+
+      _showError(errorMessage);
     } finally {
       if (mounted) {
         setState(() {
@@ -358,6 +376,7 @@ class _CollaborationInviteDialogState extends State<CollaborationInviteDialog> {
     }
   }
 
+  /// Displays an error feedback message via Snackbar.
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -3,9 +3,16 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
 
+/// Service for handling authentication using Firebase and Google Sign-In.
+///
+/// This service provides methods for signing up, signing in, signing out,
+/// and syncing user data with the backend. It implements the Singleton pattern.
 class AuthService {
   static final AuthService _instance = AuthService._internal();
+
+  /// Factory constructor to return the singleton instance.
   factory AuthService() => _instance;
+
   AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -21,13 +28,21 @@ class AuthService {
       'http://localhost:8000/api/v1'; // travelpro-backend
   static const String _travelAgentUrl = 'http://localhost:8001'; // travel-agent
 
+  /// Returns the current authenticated user, or null if not signed in.
   User? get currentUser => _auth.currentUser;
+
+  /// Returns true if a user is currently logged in.
   bool get isLoggedIn => currentUser != null;
 
-  // Stream để theo dõi trạng thái đăng nhập
+  /// Stream to listen for authentication state changes.
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Đăng ký bằng email và password với validation chi tiết
+  /// Signs up a new user with email and password.
+  ///
+  /// Forces email trim before submission.
+  /// Automatically syncs the new user with the backend upon successful creation.
+  ///
+  /// Throws [FirebaseAuthException] if registration fails.
   Future<UserCredential?> signUpWithEmail(String email, String password) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -35,7 +50,7 @@ class AuthService {
         password: password,
       );
 
-      // Gửi thông tin user lên backend
+      // Sync user info with backend
       await _syncUserWithBackend(credential.user!);
 
       return credential;
@@ -44,33 +59,39 @@ class AuthService {
     }
   }
 
-  // Kiểm tra email có tồn tại không
+  /// Checks if an email address is already registered.
+  ///
+  /// Uses [sendPasswordResetEmail] as a workaround since `fetchSignInMethodsForEmail`
+  /// is deprecated or restricted.
+  ///
+  /// Returns a map with 'exists' (bool) and a message.
   Future<Map<String, dynamic>> checkEmailExists(String email) async {
     try {
-      // Thử đăng nhập để kiểm tra email có tồn tại không
-      // Sử dụng cách khác vì fetchSignInMethodsForEmail đã deprecated
+      // Try to send password reset email to check existence
       try {
         await _auth.sendPasswordResetEmail(email: email.trim());
         return {
           'exists': true,
-          'message': 'Email này đã được đăng ký',
+          'message':
+              'Email này đã được đăng ký', // Keeping original message for UI consistency
         };
       } on FirebaseAuthException catch (e) {
         if (e.code == 'user-not-found') {
           return {'exists': false, 'message': 'Email này chưa được đăng ký'};
         }
-        // Email tồn tại nhưng có lỗi khác
-        return {
-          'exists': true,
-          'message': 'Email này đã được đăng ký',
-        };
+        // Email exists but other error occurred
+        return {'exists': true, 'message': 'Email này đã được đăng ký'};
       }
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     }
   }
 
-  // Đăng nhập bằng email và password
+  /// Signs in a user with email and password.
+  ///
+  /// Syncs user data with the backend after successful login.
+  ///
+  /// Throws [FirebaseAuthException] if sign-in fails.
   Future<UserCredential?> signInWithEmail(String email, String password) async {
     try {
       final credential = await _auth.signInWithEmailAndPassword(
@@ -78,7 +99,7 @@ class AuthService {
         password: password,
       );
 
-      // Đồng bộ với backend
+      // Sync with backend
       await _syncUserWithBackend(credential.user!);
 
       return credential;
@@ -87,10 +108,15 @@ class AuthService {
     }
   }
 
-  // Đăng nhập bằng Google
+  /// Signs in a user using Google Sign-In.
+  ///
+  /// Signs out of Google first to ensure the account picker is shown.
+  /// Syncs user data with the backend after successful login.
+  ///
+  /// Returns [UserCredential] if successful, or null if cancelled.
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Đăng xuất trước để đảm bảo prompt chọn tài khoản
+      // Sign out first to ensure account selection prompt
       await _googleSignIn.signOut();
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -102,7 +128,7 @@ class AuthService {
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      // CHỈ CẦN accessToken là đủ, idToken có thể null trên web
+      // Only accessToken is strictly required, idToken might be null on web
       if (googleAuth.accessToken == null) {
         throw Exception('Không thể lấy token từ Google');
       }
@@ -114,12 +140,12 @@ class AuthService {
 
       final userCredential = await _auth.signInWithCredential(credential);
 
-      // Đồng bộ với backend
+      // Sync with backend
       await _syncUserWithBackend(userCredential.user!);
 
       return userCredential;
     } catch (e) {
-      // Chỉ throw lỗi nếu không phải popup_closed
+      // Only throw if not cancelled/popup closed
       if (!e.toString().contains('popup_closed')) {
         rethrow;
       }
@@ -127,7 +153,9 @@ class AuthService {
     }
   }
 
-  // Đăng xuất
+  /// Signs out the current user from both Firebase and Google.
+  ///
+  /// Also clears secure storage.
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
@@ -138,7 +166,7 @@ class AuthService {
     }
   }
 
-  // Gửi email reset password
+  /// Sends a password reset email to the specified address.
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
@@ -147,40 +175,47 @@ class AuthService {
     }
   }
 
-  // Đổi mật khẩu cho user hiện tại
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  /// Changes the password for the current user.
+  ///
+  /// Requires [currentPassword] for re-authentication before updating to [newPassword].
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     try {
       final user = currentUser;
       if (user == null || user.email == null) {
         throw Exception('Không tìm thấy thông tin người dùng');
       }
 
-      // Xác thực lại với mật khẩu hiện tại
+      // Re-authenticate with current password
       final credential = EmailAuthProvider.credential(
         email: user.email!,
         password: currentPassword,
       );
-      
+
       await user.reauthenticateWithCredential(credential);
-      
-      // Đổi mật khẩu mới
+
+      // Update to new password
       await user.updatePassword(newPassword);
-      
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     }
   }
 
-  // Đồng bộ user với backend
+  /// Syncs the user's data with the backend database.
+  ///
+  /// Stores the Firebase ID token in secure storage and sends user profile
+  /// data to the backend API.
   Future<void> _syncUserWithBackend(User user) async {
     try {
       final idToken = await user.getIdToken();
 
-      // Lưu token vào secure storage
+      // Save token to secure storage
       await _storage.write(key: 'firebase_token', value: idToken);
       await _storage.write(key: 'user_id', value: user.uid);
 
-      // Gửi thông tin user lên backend travelpro
+      // Send user info to backend
       await _dio.post(
         '$_baseUrl/auth/sync-user',
         data: {
@@ -197,11 +232,13 @@ class AuthService {
         ),
       );
     } catch (e) {
-      //
+      // Fail silently for sync issues to avoid blocking login flow
     }
   }
 
-  // Lấy token để gọi API
+  /// Retrieves the current user's Firebase ID token.
+  ///
+  /// Returns null if no user is logged in or an error occurs.
   Future<String?> getIdToken() async {
     try {
       final user = currentUser;
@@ -213,7 +250,10 @@ class AuthService {
     }
   }
 
-  // Gọi API travel agent
+  /// Calls the Travel Agent API.
+  ///
+  /// Sends user [input] and conversation [history] to the AI agent.
+  /// Requires authentication.
   Future<Map<String, dynamic>> callTravelAgent(
     String input,
     List<Map<String, String>> history,
@@ -238,7 +278,7 @@ class AuthService {
     }
   }
 
-  // Xử lý lỗi Firebase Auth
+  /// Handles Firebase Authentication exceptions and returns user-friendly error messages.
   String _handleFirebaseAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'weak-password':
@@ -260,7 +300,7 @@ class AuthService {
     }
   }
 
-  // Kiểm tra kết nối backend
+  /// Checks connectivity to the backend API.
   Future<bool> checkBackendConnection() async {
     try {
       final response = await _dio.get('$_baseUrl/health');
@@ -270,7 +310,7 @@ class AuthService {
     }
   }
 
-  // Kiểm tra kết nối travel agent
+  /// Checks connectivity to the Travel Agent API.
   Future<bool> checkTravelAgentConnection() async {
     try {
       final response = await _dio.get('$_travelAgentUrl/health');

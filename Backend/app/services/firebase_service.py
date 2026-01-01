@@ -22,15 +22,31 @@ from core.config import get_settings
 settings = get_settings()
 
 class FirebaseService:
-    """Firebase authentication and Firestore service"""
+    """
+    Firebase authentication and Firestore service.
+
+    Handles interactions with Firebase, including user authentication (verification,
+    creation, management) and Firestore database operations (trips, expenses, etc.).
+    """
     
     def __init__(self):
+        """Initialize the Firebase Service instance."""
         self.app = None
         self.db = None
         self._initialize_firebase()
     
     def _initialize_firebase(self):
-        """Initialize Firebase Admin SDK"""
+        """
+        Initialize Firebase Admin SDK using available credentials.
+
+        Tries multiple methods to find credentials:
+        1. Existing initialized app.
+        2. Service account path from settings.
+        3. Service account JSON string from settings.
+        4. Default Google Cloud environment credentials.
+        
+        Also initializes the Firestore client.
+        """
         try:
             # Check if Firebase app is already initialized
             try:
@@ -69,7 +85,13 @@ class FirebaseService:
     
     async def verify_id_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
-        Verify Firebase ID token from client
+        Verify Firebase ID token from client.
+
+        Args:
+            token (str): The Firebase ID token.
+
+        Returns:
+            Optional[Dict[str, Any]]: Decoded token data if valid, None otherwise.
         """
         try:
             # Ensure Firebase is properly initialized
@@ -85,7 +107,13 @@ class FirebaseService:
     
     async def verify_google_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
-        Verify Google OAuth token directly
+        Verify Google OAuth token directly.
+
+        Args:
+            token (str): The Google OAuth 2.0 token.
+
+        Returns:
+            Optional[Dict[str, Any]]: Token info if valid, None otherwise.
         """
         try:
             # Verify Google OAuth token
@@ -106,7 +134,16 @@ class FirebaseService:
     
     async def get_or_create_user(self, firebase_user_data: Dict[str, Any]) -> User:
         """
-        Get existing user or create new user from Firebase data
+        Get existing user or create new user from Firebase data.
+
+        Checks Firestore for a user with the given UID. If found, returns the User object.
+        If not found, creates a new user document in Firestore and returns the new User.
+
+        Args:
+            firebase_user_data (Dict[str, Any]): Data from the verified Firebase token.
+
+        Returns:
+            User: The retrieved or created User object.
         """
         uid = firebase_user_data['uid']
         email = firebase_user_data.get('email')
@@ -177,7 +214,12 @@ class FirebaseService:
             )
     
     async def update_user_login(self, user_id: str):
-        """Update user's last login timestamp"""
+        """
+        Update user's last login timestamp in Firestore.
+
+        Args:
+            user_id (str): The user's ID.
+        """
         try:
             if self.db:
                 self.db.collection('users').document(user_id).update({
@@ -188,7 +230,14 @@ class FirebaseService:
     
     async def create_custom_token(self, uid: str, additional_claims: Optional[Dict] = None) -> str:
         """
-        Create custom Firebase token for user
+        Create custom Firebase token for user.
+
+        Args:
+            uid (str): The user's UID.
+            additional_claims (Optional[Dict]): Additional claims to include in the token.
+
+        Returns:
+            str: The generated custom token string.
         """
         try:
             custom_token = auth.create_custom_token(uid, additional_claims)
@@ -198,7 +247,15 @@ class FirebaseService:
             return ""
     
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
-        """Get user by Firebase UID"""
+        """
+        Get user by Firebase UID.
+
+        Args:
+            user_id (str): The user's ID.
+
+        Returns:
+            Optional[User]: The user object if found, None otherwise.
+        """
         try:
             if self.db:
                 user_doc = self.db.collection('users').document(user_id).get()
@@ -211,7 +268,16 @@ class FirebaseService:
             return None
     
     async def update_user_profile(self, user_id: str, update_data: Dict[str, Any]) -> bool:
-        """Update user profile in Firestore"""
+        """
+        Update user profile in Firestore.
+
+        Args:
+            user_id (str): The user's ID.
+            update_data (Dict[str, Any]): Dictionary of fields to update.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
         try:
             if self.db:
                 update_data['updated_at'] = datetime.utcnow()
@@ -223,7 +289,15 @@ class FirebaseService:
             return False
     
     async def delete_user(self, user_id: str) -> bool:
-        """Delete user from Firebase Auth and Firestore"""
+        """
+        Delete user from Firebase Auth and Firestore.
+
+        Args:
+            user_id (str): The user's ID.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
         try:
             # Delete from Firebase Auth
             auth.delete_user(user_id)
@@ -240,7 +314,19 @@ class FirebaseService:
     # ============= TRIP MANAGEMENT =============
     
     async def create_trip(self, user_id: str, trip_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new trip in Firestore"""
+        """
+        Create a new trip in Firestore.
+
+        Args:
+            user_id (str): The ID of the user creating the trip.
+            trip_data (Dict[str, Any]): Dictionary containing trip details (name, destination, dates, etc.).
+
+        Returns:
+            Dict[str, Any]: The created trip document (including generated ID).
+
+        Raises:
+            Exception: If Firestore operation fails.
+        """
         try:
             trip_id = f"trip_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id[:8]}"
             
@@ -267,7 +353,19 @@ class FirebaseService:
             raise
     
     async def get_user_trips(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get all trips for a user - supports multiple storage patterns"""
+        """
+        Get all trips for a user.
+        
+        Supports multiple Firestore storage patterns:
+        1. `users/{userId}/trips/{tripId}` (Flutter app structure)
+        2. `trips/{tripId}` with `user_id` field (Backend structure)
+
+        Args:
+            user_id (str): The user's ID.
+
+        Returns:
+            List[Dict[str, Any]]: A list of unique trip documents, sorted by creation date (newest first).
+        """
         try:
             trips = []
             
@@ -314,7 +412,22 @@ class FirebaseService:
             return []
     
     async def get_trip(self, trip_id: str, user_id: str = None) -> Optional[Dict[str, Any]]:
-        """Get specific trip - supports multiple storage patterns"""
+        """
+        Get a specific trip by ID.
+        
+        Searches across multiple collections:
+        1. `users/{userId}/trips/{tripId}`
+        2. `trips/{tripId}`
+        3. `planners/{plannerId}`
+        4. `shared_trips/{tripId}`
+
+        Args:
+            trip_id (str): The ID of the trip to retrieve.
+            user_id (Optional[str]): The ID of the requesting user (for access control).
+
+        Returns:
+            Optional[Dict[str, Any]]: The trip document if found and accessible, None otherwise.
+        """
         try:
             print(f"🔍 FIRESTORE_GET_TRIP: Looking for trip {trip_id}, user={user_id}")
             
@@ -385,7 +498,19 @@ class FirebaseService:
             return None
     
     async def update_trip(self, trip_id: str, user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Update trip - supports multiple storage patterns"""
+        """
+        Update a trip's details.
+
+        Supports updates across multiple storage patterns.
+
+        Args:
+            trip_id (str): The ID of the trip to update.
+            user_id (str): The ID of the requesting user.
+            updates (Dict[str, Any]): Dictionary of fields to update.
+
+        Returns:
+            Optional[Dict[str, Any]]: The updated trip document, or None if update failed.
+        """
         try:
             updates['updated_at'] = datetime.utcnow().isoformat()
             updated = False
@@ -429,7 +554,16 @@ class FirebaseService:
             return None
     
     async def delete_trip(self, trip_id: str, user_id: str) -> bool:
-        """Delete trip and all related data - supports multiple storage patterns"""
+        """
+        Delete a trip and all its valid related data (expenses, activities).
+
+        Args:
+            trip_id (str): The ID of the trip to delete.
+            user_id (str): The ID of the requesting user.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
         try:
             trip_doc = await self.get_trip(trip_id, user_id)
             if not trip_doc:
@@ -507,7 +641,19 @@ class FirebaseService:
     # ============= PLANNER MANAGEMENT =============
     
     async def create_planner(self, user_id: str, planner_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new planner in Firestore"""
+        """
+        Create a new planner in Firestore.
+
+        Args:
+            user_id (str): The ID of the user.
+            planner_data (Dict[str, Any]): Dictionary containing planner details.
+
+        Returns:
+            Dict[str, Any]: The created planner document.
+            
+        Raises:
+            Exception: If Firestore write fails.
+        """
         try:
             planner_id = f"planner_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id[:8]}"
             
@@ -530,7 +676,15 @@ class FirebaseService:
             raise
     
     async def get_user_planners(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get all planners for a user"""
+        """
+        Get all planners for a specific user.
+
+        Args:
+            user_id (str): The user's ID.
+
+        Returns:
+            List[Dict[str, Any]]: List of planner documents, sorted by creation date (newest first).
+        """
         try:
             planners_ref = self.db.collection('planners').where('user_id', '==', user_id).stream()
             planners = [doc.to_dict() for doc in planners_ref]
@@ -540,7 +694,18 @@ class FirebaseService:
             return []
     
     async def get_planner(self, planner_id: str, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific planner"""
+        """
+        Get a specific planner by ID.
+        
+        Verifies that the planner belongs to the requesting user.
+
+        Args:
+            planner_id (str): The planner's ID.
+            user_id (str): The ID of the requesting user.
+
+        Returns:
+            Optional[Dict[str, Any]]: The planner document if found and owned by user, None otherwise.
+        """
         try:
             planner_doc = self.db.collection('planners').document(planner_id).get()
             if planner_doc.exists:
@@ -556,7 +721,19 @@ class FirebaseService:
     # ============= ACTIVITY MANAGEMENT =============
     
     async def create_activity(self, planner_id: str, activity_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new activity"""
+        """
+        Create a new activity within a planner.
+
+        Args:
+            planner_id (str): The ID of the parent planner/trip.
+            activity_data (Dict[str, Any]): Dictionary containing activity details.
+
+        Returns:
+            Dict[str, Any]: The created activity document.
+            
+        Raises:
+            Exception: If Firestore write fails.
+        """
         try:
             activity_id = f"activity_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{planner_id[:8]}"
             
@@ -581,7 +758,15 @@ class FirebaseService:
             raise
     
     async def get_planner_activities(self, planner_id: str) -> List[Dict[str, Any]]:
-        """Get all activities for a planner"""
+        """
+        Get all activities associated with a planner.
+
+        Args:
+            planner_id (str): The ID of the planner.
+
+        Returns:
+            List[Dict[str, Any]]: List of activity documents, sorted by start time.
+        """
         try:
             activities_ref = self.db.collection('activities').where('planner_id', '==', planner_id).stream()
             activities = [doc.to_dict() for doc in activities_ref]
@@ -591,7 +776,15 @@ class FirebaseService:
             return []
     
     async def get_activity(self, activity_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific activity"""
+        """
+        Get a specific activity by ID.
+
+        Args:
+            activity_id (str): The activity's ID.
+
+        Returns:
+            Optional[Dict[str, Any]]: The activity document if found, None otherwise.
+        """
         try:
             activity_doc = self.db.collection('activities').document(activity_id).get()
             if activity_doc.exists:
@@ -602,7 +795,16 @@ class FirebaseService:
             return None
     
     async def update_activity(self, activity_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Update activity"""
+        """
+        Update an activity's details.
+
+        Args:
+            activity_id (str): The ID of the activity to update.
+            updates (Dict[str, Any]): Dictionary of fields to update.
+
+        Returns:
+            Optional[Dict[str, Any]]: The updated activity document or None.
+        """
         try:
             activity_ref = self.db.collection('activities').document(activity_id)
             activity_doc = activity_ref.get()
@@ -619,7 +821,14 @@ class FirebaseService:
             return None
     
     async def get_all_activities(self) -> List[Dict[str, Any]]:
-        """Get all activities"""
+        """
+        Get all activities in the database.
+        
+        Note: This could be resource intensive for large databases.
+
+        Returns:
+            List[Dict[str, Any]]: List of all activity documents.
+        """
         try:
             activities_ref = self.db.collection('activities').stream()
             activities = [doc.to_dict() for doc in activities_ref]
@@ -631,7 +840,21 @@ class FirebaseService:
     # ============= EXPENSE MANAGEMENT =============
     
     async def create_expense(self, planner_id: str, expense_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new expense - supports multiple storage patterns"""
+        """
+        Create a new expense.
+        
+        Supports creation in the main `expenses` collection.
+
+        Args:
+            planner_id (str): The ID of the associated planner/trip.
+            expense_data (Dict[str, Any]): Dictionary containing expense details (amount, category, etc.).
+
+        Returns:
+            Dict[str, Any]: The created expense document.
+
+        Raises:
+            Exception: If Firestore write fails.
+        """
         try:
             expense_id = f"expense_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{planner_id[:8]}"
             
@@ -662,7 +885,18 @@ class FirebaseService:
             raise
     
     async def get_trip_expenses(self, trip_id: str, user_id: str = None) -> List[Dict[str, Any]]:
-        """Get all expenses for a trip - supports multiple storage patterns"""
+        """
+        Get all expenses for a specific trip.
+        
+        Supports fetching from both the main `expenses` collection and user-specific subcollections.
+
+        Args:
+            trip_id (str): The ID of the trip.
+            user_id (Optional[str]): The user's ID (for verification and alternative path check).
+
+        Returns:
+            List[Dict[str, Any]]: List of expense documents, sorted by date (newest first).
+        """
         try:
             print(f"📊 FIRESTORE_GET_EXPENSES: Loading expenses for trip {trip_id}, user={user_id}")
             
@@ -708,7 +942,18 @@ class FirebaseService:
             return []
     
     async def get_user_expenses(self, user_id: str, start_date: str = None, end_date: str = None, category: str = None) -> List[Dict[str, Any]]:
-        """Get all expenses for a user across all trips"""
+        """
+        Get all expenses for a user across all their trips, with optional filtering.
+
+        Args:
+            user_id (str): The user's ID.
+            start_date (Optional[str]): Filter by start date (YYYY-MM-DD).
+            end_date (Optional[str]): Filter by end date (YYYY-MM-DD).
+            category (Optional[str]): Filter by expense category.
+
+        Returns:
+            List[Dict[str, Any]]: List of filtered expense documents.
+        """
         try:
             # Get all user trips
             trips = await self.get_user_trips(user_id)
@@ -740,7 +985,15 @@ class FirebaseService:
             return []
     
     async def get_expense(self, expense_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific expense"""
+        """
+        Get a specific expense by ID.
+
+        Args:
+            expense_id (str): The expense's ID.
+
+        Returns:
+            Optional[Dict[str, Any]]: The expense document if found, None otherwise.
+        """
         try:
             expense_doc = self.db.collection('expenses').document(expense_id).get()
             if expense_doc.exists:
@@ -751,7 +1004,16 @@ class FirebaseService:
             return None
     
     async def delete_expense(self, expense_id: str, user_id: str) -> bool:
-        """Delete expense with user verification"""
+        """
+        Delete an expense with ownership verification.
+
+        Args:
+            expense_id (str): The ID of the expense to delete.
+            user_id (str): The ID of the requesting user.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
         try:
             expense = await self.get_expense(expense_id)
             if not expense:
@@ -770,7 +1032,16 @@ class FirebaseService:
             return False
     
     async def delete_trip_expenses(self, trip_id: str, user_id: str) -> int:
-        """Delete all expenses for a trip"""
+        """
+        Delete all expenses associated with a specific trip.
+
+        Args:
+            trip_id (str): The ID of the trip.
+            user_id (str): The ID of the requesting user.
+
+        Returns:
+            int: The count of deleted expenses.
+        """
         try:
             trip = await self.get_trip(trip_id, user_id)
             if not trip:
@@ -789,7 +1060,15 @@ class FirebaseService:
             return 0
     
     async def get_planner_expenses(self, planner_id: str) -> List[Dict[str, Any]]:
-        """Get all expenses for a planner"""
+        """
+        Get all expenses for a planner (alias for trip expenses).
+
+        Args:
+            planner_id (str): The planner ID.
+
+        Returns:
+            List[Dict[str, Any]]: List of expense documents.
+        """
         try:
             expenses_ref = self.db.collection('expenses').where('planner_id', '==', planner_id).stream()
             expenses = [doc.to_dict() for doc in expenses_ref]
@@ -801,7 +1080,20 @@ class FirebaseService:
     # ============= COLLABORATOR MANAGEMENT =============
     
     async def create_collaborator(self, planner_id: str, user_id: str, role: str = 'viewer') -> Dict[str, Any]:
-        """Create a new collaborator"""
+        """
+        Create a new collaborator for a planner.
+
+        Args:
+            planner_id (str): The ID of the planner.
+            user_id (str): The ID of the user being added.
+            role (str): The role to assign ('viewer', 'editor', 'owner'). Defaults to 'viewer'.
+
+        Returns:
+            Dict[str, Any]: The created collaborator document.
+
+        Raises:
+            Exception: If Firestore write fails.
+        """
         try:
             collab_id = f"collab_{planner_id}_{user_id}"
             
@@ -821,7 +1113,15 @@ class FirebaseService:
             raise
     
     async def get_planner_collaborators(self, planner_id: str) -> List[Dict[str, Any]]:
-        """Get all collaborators for a planner"""
+        """
+        Get all collaborators for a specific planner.
+
+        Args:
+            planner_id (str): The planner's ID.
+
+        Returns:
+            List[Dict[str, Any]]: List of collaborator documents.
+        """
         try:
             collabs_ref = self.db.collection('collaborators').where('planner_id', '==', planner_id).stream()
             return [doc.to_dict() for doc in collabs_ref]
@@ -830,7 +1130,16 @@ class FirebaseService:
             return []
     
     async def delete_collaborator(self, planner_id: str, user_id: str) -> bool:
-        """Delete a collaborator"""
+        """
+        Remove a collaborator from a planner.
+
+        Args:
+            planner_id (str): The planner's ID.
+            user_id (str): The ID of the user to remove.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
         try:
             collab_id = f"collab_{planner_id}_{user_id}"
             self.db.collection('collaborators').document(collab_id).delete()
@@ -841,7 +1150,17 @@ class FirebaseService:
             return False
     
     async def update_collaborator_role(self, planner_id: str, user_id: str, new_role: str) -> bool:
-        """Update a collaborator's role"""
+        """
+        Update a collaborator's role.
+
+        Args:
+            planner_id (str): The planner's ID.
+            user_id (str): The user's ID.
+            new_role (str): The new role to assign.
+
+        Returns:
+            bool: True if update was successful, False otherwise.
+        """
         try:
             collab_id = f"collab_{planner_id}_{user_id}"
             self.db.collection('collaborators').document(collab_id).update({
@@ -858,7 +1177,23 @@ class FirebaseService:
     
     async def create_edit_request(self, trip_id: str, requester_id: str, requester_name: str, 
                                   requester_email: str, owner_id: str, message: str = None) -> Dict[str, Any]:
-        """Create a new edit access request"""
+        """
+        Create a request for edit access to a trip.
+
+        Args:
+            trip_id (str): The ID of the trip.
+            requester_id (str): The ID of the user requesting access.
+            requester_name (str): The name of the requester.
+            requester_email (str): The email of the requester.
+            owner_id (str): The ID of the trip owner.
+            message (Optional[str]): Optional message to the owner.
+
+        Returns:
+            Dict[str, Any]: The created request document.
+
+        Raises:
+            Exception: If Firestore write fails.
+        """
         try:
             request_id = f"edit_req_{trip_id}_{requester_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             
@@ -884,7 +1219,16 @@ class FirebaseService:
             raise
     
     async def get_trip_edit_requests(self, trip_id: str, status: str = None) -> List[Dict[str, Any]]:
-        """Get all edit requests for a trip"""
+        """
+        Get all edit requests for a specific trip.
+
+        Args:
+            trip_id (str): The trip ID.
+            status (Optional[str]): Filter requests by status (e.g., 'pending').
+
+        Returns:
+            List[Dict[str, Any]]: List of request documents.
+        """
         try:
             query = self.db.collection('edit_requests').where('trip_id', '==', trip_id)
             if status:
@@ -898,7 +1242,16 @@ class FirebaseService:
             return []
     
     async def get_user_edit_requests(self, user_id: str, status: str = None) -> List[Dict[str, Any]]:
-        """Get all edit requests by a user"""
+        """
+        Get all edit requests made by a specific user.
+
+        Args:
+            user_id (str): The requester's User ID.
+            status (Optional[str]): Filter by status.
+
+        Returns:
+            List[Dict[str, Any]]: List of request documents.
+        """
         try:
             query = self.db.collection('edit_requests').where('requester_id', '==', user_id)
             if status:
@@ -912,7 +1265,16 @@ class FirebaseService:
             return []
     
     async def get_owner_edit_requests(self, owner_id: str, status: str = None) -> List[Dict[str, Any]]:
-        """Get all edit requests for trips owned by a user"""
+        """
+        Get all edit requests for trips owned by a specific user.
+
+        Args:
+            owner_id (str): The owner's User ID.
+            status (Optional[str]): Filter by status.
+
+        Returns:
+            List[Dict[str, Any]]: List of request documents.
+        """
         try:
             query = self.db.collection('edit_requests').where('owner_id', '==', owner_id)
             if status:
@@ -926,7 +1288,15 @@ class FirebaseService:
             return []
     
     async def get_edit_request(self, request_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific edit request"""
+        """
+        Get a specific edit request details.
+
+        Args:
+            request_id (str): The request ID.
+
+        Returns:
+            Optional[Dict[str, Any]]: The request document if found, None otherwise.
+        """
         try:
             request_doc = self.db.collection('edit_requests').document(request_id).get()
             if request_doc.exists:
@@ -937,7 +1307,17 @@ class FirebaseService:
             return None
     
     async def update_edit_request(self, request_id: str, status: str, responded_by: str) -> Optional[Dict[str, Any]]:
-        """Update edit request status"""
+        """
+        Update the status of an edit request.
+
+        Args:
+            request_id (str): The request ID.
+            status (str): New status (e.g., 'approved', 'rejected').
+            responded_by (str): ID of the user responding to the request.
+
+        Returns:
+            Optional[Dict[str, Any]]: The updated request document.
+        """
         try:
             request_ref = self.db.collection('edit_requests').document(request_id)
             request_doc = request_ref.get()
@@ -960,7 +1340,15 @@ class FirebaseService:
             return None
     
     async def delete_edit_request(self, request_id: str) -> bool:
-        """Delete an edit request"""
+        """
+        Delete an edit request.
+
+        Args:
+            request_id (str): The request ID to delete.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
         try:
             self.db.collection('edit_requests').document(request_id).delete()
             print(f"✅ FIRESTORE: Deleted edit request {request_id}")
@@ -970,7 +1358,16 @@ class FirebaseService:
             return False
     
     async def check_pending_edit_request(self, trip_id: str, requester_id: str) -> Optional[Dict[str, Any]]:
-        """Check if user has a pending edit request for this trip"""
+        """
+        Check if a user already has a pending edit request for a trip.
+
+        Args:
+            trip_id (str): The trip ID.
+            requester_id (str): The user ID.
+
+        Returns:
+            Optional[Dict[str, Any]]: The pending request document if one exists, None otherwise.
+        """
         try:
             requests_ref = (self.db.collection('edit_requests')
                           .where('trip_id', '==', trip_id)
@@ -991,7 +1388,27 @@ class FirebaseService:
                                           requester_name: str, requester_email: str, owner_id: str,
                                           activity_id: str = None, proposed_changes: dict = None,
                                           message: str = None, activity_title: str = None) -> Dict[str, Any]:
-        """Create a new activity edit request"""
+        """
+        Create a request to edit, add, or delete an activity.
+
+        Args:
+            trip_id (str): The trip ID.
+            request_type (str): Type of request (e.g., 'add_activity', 'edit', 'delete').
+            requester_id (str): The ID of the user request.
+            requester_name (str): requester's name.
+            requester_email (str): requester's email.
+            owner_id (str): Owner of the trip.
+            activity_id (Optional[str]): ID of the activity (for edits/deletes).
+            proposed_changes (Optional[dict]): The new activity data or changes.
+            message (Optional[str]): Message to the owner.
+            activity_title (Optional[str]): Title of the activity.
+
+        Returns:
+            Dict[str, Any]: The created request document.
+
+        Raises:
+            Exception: If Firestore write fails.
+        """
         try:
             request_id = f"activity_req_{trip_id}_{requester_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
@@ -1021,7 +1438,16 @@ class FirebaseService:
             raise
 
     async def get_trip_activity_edit_requests(self, trip_id: str, status: str = None) -> List[Dict[str, Any]]:
-        """Get all activity edit requests for a trip"""
+        """
+        Get all activity edit requests for a specific trip.
+
+        Args:
+            trip_id (str): The trip ID.
+            status (Optional[str]): Filter by status.
+
+        Returns:
+            List[Dict[str, Any]]: List of request documents.
+        """
         try:
             query = self.db.collection('activity_edit_requests').where('trip_id', '==', trip_id)
             if status:
@@ -1035,7 +1461,16 @@ class FirebaseService:
             return []
 
     async def get_user_activity_edit_requests(self, user_id: str, status: str = None) -> List[Dict[str, Any]]:
-        """Get all activity edit requests by a user"""
+        """
+        Get all activity edit requests made by a specific user.
+
+        Args:
+            user_id (str): The requester's User ID.
+            status (Optional[str]): Filter by status.
+
+        Returns:
+            List[Dict[str, Any]]: List of request documents.
+        """
         try:
             query = self.db.collection('activity_edit_requests').where('requester_id', '==', user_id)
             if status:
@@ -1049,7 +1484,16 @@ class FirebaseService:
             return []
 
     async def get_owner_activity_edit_requests(self, owner_id: str, status: str = None) -> List[Dict[str, Any]]:
-        """Get all activity edit requests for trips owned by a user"""
+        """
+        Get all activity edit requests for trips owned by a specific user.
+
+        Args:
+            owner_id (str): The trip owner's User ID.
+            status (Optional[str]): Filter by status.
+
+        Returns:
+            List[Dict[str, Any]]: List of request documents.
+        """
         try:
             query = self.db.collection('activity_edit_requests').where('owner_id', '==', owner_id)
             if status:
@@ -1063,7 +1507,15 @@ class FirebaseService:
             return []
 
     async def get_activity_edit_request(self, request_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific activity edit request"""
+        """
+        Get a specific activity edit request.
+
+        Args:
+            request_id (str): The request ID.
+
+        Returns:
+            Optional[Dict[str, Any]]: The request document.
+        """
         try:
             request_doc = self.db.collection('activity_edit_requests').document(request_id).get()
             if request_doc.exists:
@@ -1074,7 +1526,17 @@ class FirebaseService:
             return None
 
     async def update_activity_edit_request(self, request_id: str, status: str, responded_by: str) -> Optional[Dict[str, Any]]:
-        """Update activity edit request status"""
+        """
+        Update the status of an activity edit request.
+
+        Args:
+            request_id (str): The request ID.
+            status (str): New status.
+            responded_by (str): ID of the user responding.
+
+        Returns:
+            Optional[Dict[str, Any]]: The updated request document.
+        """
         try:
             request_ref = self.db.collection('activity_edit_requests').document(request_id)
             request_doc = request_ref.get()
@@ -1097,7 +1559,15 @@ class FirebaseService:
             return None
 
     async def delete_activity_edit_request(self, request_id: str) -> bool:
-        """Delete an activity edit request"""
+        """
+        Delete an activity edit request.
+
+        Args:
+            request_id (str): The request ID.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
         try:
             self.db.collection('activity_edit_requests').document(request_id).delete()
             print(f"✅ FIRESTORE: Deleted activity edit request {request_id}")
@@ -1107,7 +1577,17 @@ class FirebaseService:
             return False
 
     async def update_trip_activities(self, trip_id: str, activities: List[Dict[str, Any]]) -> bool:
-        """Update activities for a trip"""
+        """
+        Update the activities list for a trip.
+        Supports updates in both `trips` and `shared_trips` collections.
+
+        Args:
+            trip_id (str): The trip ID.
+            activities (List[Dict[str, Any]]): The new list of activities.
+
+        Returns:
+            bool: True if update was successful in at least one collection, False otherwise.
+        """
         try:
             # Try different storage patterns
             updated = False

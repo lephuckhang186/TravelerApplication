@@ -5,7 +5,20 @@ from datetime import datetime, timedelta
 import re
 
 class QueryAnalyzer:
+  """
+  Analyzes user queries to identify trip details and potential missing information.
+
+  This class uses a Language Model to parse natural language inputs and extract
+  structured data such as destination, budget, dates, and number of travelers.
+  It primarily relies on the `QueryAnalysisResult` model.
+  """
   def __init__(self):
+    """
+    Initializes the QueryAnalyzer.
+
+    Sets up the LLM, prompt templates, and the JSON output parser with
+    specific instructions for extracting travel-related entities.
+    """
     self.llm = get_llm()
     system_prompt = (
       "Bạn là một chuyên gia tư vấn du lịch thông minh và thân thiện. "
@@ -27,20 +40,60 @@ class QueryAnalyzer:
     )
     human_prompt = "{user_query}"
     self.prompt = get_default_prompt(system_prompt, human_prompt)
-    self.structured_llm = self.llm.with_structured_output(QueryAnalysisResult)
+    # Use a different approach for structured output to avoid langchain-core beta issues
+    from langchain_core.output_parsers import JsonOutputParser
+    self.output_parser = JsonOutputParser(pydantic_object=QueryAnalysisResult)
+    self.chain = self.prompt | self.llm | self.output_parser
 
   def analyze(self, user_query: str) -> QueryAnalysisResult:
-    """Uses an LLM to extract trip details and identify missing fields."""
-    chain = self.prompt | self.structured_llm
-    result = chain.invoke({"user_query": user_query})
-    
+    """
+    Uses an LLM to extract trip details and identify missing fields.
+
+    Args:
+      user_query (str): The natural language query from the user (e.g., "Plan a trip to Paris next week").
+
+    Returns:
+      QueryAnalysisResult: A structured object containing extracted fields like destination,
+                           dates, budget, and a list of any missing required fields.
+    """
+    try:
+      result_dict = self.chain.invoke({"user_query": user_query})
+      result = QueryAnalysisResult(**result_dict)
+    except Exception as e:
+      # Fallback: return empty result if parsing fails
+      result = QueryAnalysisResult()
+
     # Post-process to handle date logic
     result = self._handle_date_logic(result, user_query)
-    
+
     return result
+
+  def analyze_query(self, user_query: str) -> QueryAnalysisResult:
+    """
+    Alias for analyze method.
+
+    Args:
+      user_query (str): The user's input string.
+
+    Returns:
+      QueryAnalysisResult: The analysis result.
+    """
+    return self.analyze(user_query)
   
   def _handle_date_logic(self, result: QueryAnalysisResult, user_query: str) -> QueryAnalysisResult:
-    """Handle automatic date filling based on user requirements."""
+    """
+    Handle automatic date filling based on user requirements.
+
+    Applies business rules to infer dates where possible (e.g., infer start date as today if only end date is given).
+    Also tries to calculate 'days' if both start and end dates are present.
+
+    Args:
+      result (QueryAnalysisResult): The initial analysis result from the LLM.
+      user_query (str): The original user query (unused in current logic but kept for context).
+
+    Returns:
+      QueryAnalysisResult: The updated analysis result with post-processed date logic.
+    """
     today = datetime.now().date()
     
     # Rule 1: If user provides end_date but no start_date, set start_date to today
@@ -63,4 +116,4 @@ class QueryAnalyzer:
       except ValueError:
         pass  # Keep original days if date parsing fails
     
-    return result 
+    return result

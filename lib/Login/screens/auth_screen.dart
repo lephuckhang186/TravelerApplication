@@ -4,6 +4,10 @@ import '../services/firestore_user_service.dart';
 import '../services/auth_validation_service.dart';
 import 'google_signup_completion_screen.dart';
 
+/// The main authentication entry point controller.
+///
+/// Manages navigation between the [WelcomeScreen] (skipped), [LoginScreen], and [SignUpScreen].
+/// Maintains the current screen state.
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -12,7 +16,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  String _currentScreen = 'login'; // Bỏ welcome, chuyển thẳng đến login
+  // Directly start with logic since Welcome screen is currently bypassed in logic
+  String _currentScreen = 'login';
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +30,16 @@ class _AuthScreenState extends State<AuthScreen> {
       case 'login':
       default:
         return LoginScreen(
-          onBack: () => Navigator.pop(context), // Quay lại màn hình trước đó
+          onBack: () => Navigator.pop(context), // Go back to previous screen
           onSignUp: () => setState(() => _currentScreen = 'signup'),
         );
     }
   }
 }
 
-// Màn hình chào mừng
+/// A welcome screen displaying the app logo and entry options.
+///
+/// Currently not active in the main flow but preserved for potential use.
 class WelcomeScreen extends StatelessWidget {
   final VoidCallback onSignUp;
   final VoidCallback onLogin;
@@ -106,18 +113,9 @@ class WelcomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // const Text(
-                //   'Không chỉ là du lịch, là hành trình của chúng ta',
-                //   style: TextStyle(
-                //     color: Color(0xFF2E8B8B), // Darker turquoise for subtitle
-                //     fontSize: 18,
-                //     fontWeight: FontWeight.w400,
-                //   ),
-                //   textAlign: TextAlign.center,
-                // ),
                 const Spacer(flex: 3),
 
-                // Nút Đăng ký miễn phí
+                // Sign Up Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -129,7 +127,9 @@ class WelcomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(25),
                       ),
                       elevation: 3,
-                      shadowColor: const Color(0xFF40E0D0).withValues(alpha: 0.3),
+                      shadowColor: const Color(
+                        0xFF40E0D0,
+                      ).withValues(alpha: 0.3),
                     ),
                     child: const Text(
                       'Begin the journey',
@@ -144,7 +144,7 @@ class WelcomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Nút Đăng nhập
+                // Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -181,6 +181,13 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
+/// The screen for new user registration.
+///
+/// Handles email/password sign-up with validation for:
+/// - Username (non-empty)
+/// - Email format
+/// - Password strength
+/// - Password confirmation
 class SignUpScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onLogin;
@@ -210,16 +217,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void initState() {
     super.initState();
-    // Lắng nghe thay đổi mật khẩu để tính độ mạnh
+    // Listen to password changes to calculate strength
     _passwordController.addListener(_updatePasswordStrength);
-    // Tạm thời tắt email checking để debug
+    // Email checking is currently disabled for debug purposes
     // _emailController.addListener(_checkEmailAvailability);
   }
 
   @override
   void dispose() {
     _passwordController.removeListener(_updatePasswordStrength);
-    // _emailController.removeListener(_checkEmailAvailability); // Đã tắt
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -235,6 +241,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
   }
 
+  /// Handles the email sign-up process.
+  ///
+  /// Validates input, creates Auth user, creates Firestore profile, and navigates home.
   Future<void> _handleEmailSignUp() async {
     final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
@@ -243,7 +252,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // Kiểm tra username không được để trống
+      // Validate username
       if (username.isEmpty) {
         _showErrorMessage('Please enter your username');
         return;
@@ -258,23 +267,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
         checkEmailExists: true,
       );
 
-      // Kiểm tra có lỗi validation không
+      // Check for validation errors
       final firstError = _validationService.getFirstError(validationResults);
       if (firstError != null) {
         _showErrorMessage(firstError);
         return;
       }
 
-      // Đăng ký với Firebase Auth
+      // Sign up with Firebase Auth
       final userCredential = await _authService.signUpWithEmail(
         email,
         password,
       );
 
-      // Lưu thông tin vào Firestore
+      // Save user profile to Firestore
       if (userCredential?.user != null) {
-       // Debug log
-
         try {
           await _firestoreService.createEmailUserProfile(
             uid: userCredential!.user!.uid,
@@ -283,7 +290,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             dateOfBirth: DateTime(2000, 1, 1), // Default date
           );
         } catch (firestoreError) {
-          // Vẫn cho user vào app nếu Firebase Auth thành công
+          // Allow use of app even if profile sync fails, notify user
           _showErrorMessage(
             'Account created but profile sync failed. You can update it later.',
           );
@@ -339,7 +346,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               children: [
                 const Spacer(flex: 3),
 
-                // Tiêu đề
+                // Title
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -769,6 +776,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 }
 
+/// The screen for existing user login.
+///
+/// Supports email/password login and social login (Google).
+/// Includes Forgot Password functionality.
 class LoginScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onSignUp;
@@ -790,6 +801,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _hasEmailError = false;
   bool _obscurePassword = true;
 
+  /// Handles social login methods.
+  ///
+  /// Currently supports Google.
+  /// Checks if the user needs to complete profile registration.
   Future<void> _handleSocialAuth(String provider) async {
     setState(() => _isLoading = true);
 
@@ -798,14 +813,14 @@ class _LoginScreenState extends State<LoginScreen> {
         case 'Google':
           final userCredential = await _authService.signInWithGoogle();
           if (userCredential?.user != null) {
-            // Kiểm tra xem người dùng đã có profile trong Firestore chưa
+            // Check if user has a profile in Firestore
             final hasProfile = await _firestoreService.hasUserProfile(
               userCredential!.user!.uid,
             );
 
             if (mounted) {
               if (!hasProfile) {
-                // Người dùng mới - chuyển đến màn hình bổ sung
+                // New user - redirect to completion screen
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
                     builder: (context) => GoogleSignupCompletionScreen(
@@ -814,16 +829,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 );
               } else {
-                // Người dùng cũ - chuyển trực tiếp đến home
+                // Existing user - redirect to home
                 Navigator.of(context).pushReplacementNamed('/home');
               }
             }
           }
-          // User cancelled - không làm gì cả
+          // User cancelled - do nothing
           break;
       }
     } catch (e) {
-      // Chỉ hiển thị lỗi nếu không phải popup_closed
+      // Only show error if not popup_closed (user cancelled)
       if (!e.toString().contains('popup_closed')) {
         _showErrorMessage(e.toString());
       }
@@ -855,6 +870,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Handles email/password login.
+  ///
+  /// Validates inputs and interacts with Firebase Auth.
+  /// Handles various auth errors (user not found, wrong password, etc.).
   Future<void> _handleEmailLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -880,7 +899,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (userCredential?.user != null && mounted) {
-        // Không hiện thông báo thành công, chỉ chuyển trang
+        // No success message needed, just navigate
         Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
@@ -902,7 +921,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _hasEmailError = true;
         });
       } else {
-        // Các lỗi khác vẫn dùng SnackBar
+        // Other errors use SnackBar
         _showErrorMessage(errorMessage);
       }
     } finally {
@@ -912,6 +931,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Shows the Forgot Password dialog.
+  ///
+  /// Allows submitting an email to receive a password reset link.
   void _handleForgotPassword() {
     showDialog(
       context: context,
@@ -1085,7 +1107,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const Spacer(flex: 2),
 
-                // Tiêu đề
+                // Title
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(

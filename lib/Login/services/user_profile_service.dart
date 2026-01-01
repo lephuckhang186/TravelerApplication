@@ -4,9 +4,20 @@ import 'firestore_user_service.dart';
 import 'profile_api_service.dart';
 import 'auth_service.dart';
 
+/// Service for managing user profiles with multi-source synchronization.
+///
+/// Orchestrates data retrieval and updates between:
+/// 1. Firestore (Primary, real-time)
+/// 2. Backend API (Secondary, relational data)
+/// 3. Firebase Auth (Fallback for basic info)
+///
+/// Implements a read-through cache strategy.
 class UserProfileService {
   static final UserProfileService _instance = UserProfileService._internal();
+
+  /// Factory constructor for singleton instance.
   factory UserProfileService() => _instance;
+
   UserProfileService._internal();
 
   final FirestoreUserService _firestoreService = FirestoreUserService();
@@ -15,7 +26,14 @@ class UserProfileService {
 
   UserProfile? _cachedProfile;
 
-  // Get user profile with fallback strategy
+  /// Retrieves the current user's profile using a fallback strategy.
+  ///
+  /// Order of precedence:
+  /// 1. Firestore
+  /// 2. Backend API
+  /// 3. Firebase Auth metadata (creats new profile if needed)
+  ///
+  /// Caches the result for subsequent calls.
   Future<UserProfile?> getUserProfile() async {
     try {
       final currentUser = _authService.currentUser;
@@ -39,7 +57,10 @@ class UserProfileService {
     }
   }
 
-  // Update user profile with dual sync (Firestore + Backend)
+  /// Updates the user profile across both Firestore and the Backend API.
+  ///
+  /// Returns `true` if update succeeded in at least one system.
+  /// Clears local cache on success.
   Future<bool> updateUserProfile({
     String? fullName,
     String? phone,
@@ -95,7 +116,9 @@ class UserProfileService {
     }
   }
 
-  // Update a specific field
+  /// Updates a specific field in the user profile.
+  ///
+  /// Primarily updates Firestore, with a best-effort attempt to update the API.
   Future<bool> updateField(String field, dynamic value) async {
     try {
       final currentUser = _authService.currentUser;
@@ -117,7 +140,7 @@ class UserProfileService {
       try {
         await _apiService.updateField(field, value);
       } catch (e) {
-        //
+        // Fail silently for API, as long as Firestore works
       }
 
       // Clear cache
@@ -131,7 +154,9 @@ class UserProfileService {
     }
   }
 
-  // Sync user data after login
+  /// Syncs user data from Firebase Auth to backend systems after login.
+  ///
+  /// Creates a Firestore profile if one doesn't exist.
   Future<void> syncAfterLogin() async {
     try {
       final currentUser = _authService.currentUser;
@@ -151,11 +176,11 @@ class UserProfileService {
         await _createProfileFromAuthData(currentUser);
       }
     } catch (e) {
-      //
+      // Fail silently
     }
   }
 
-  // Create profile from Firebase Auth data
+  /// Creates a new [UserProfile] based on [User] data from Firebase Auth.
   Future<UserProfile?> _createProfileFromAuthData(User user) async {
     try {
       final now = DateTime.now();
@@ -178,7 +203,7 @@ class UserProfileService {
     }
   }
 
-  // Get real-time profile stream
+  /// Returns a real-time stream of the user's profile from Firestore.
   Stream<UserProfile?> getUserProfileStream() {
     final currentUser = _authService.currentUser;
     if (currentUser == null) {
@@ -188,7 +213,7 @@ class UserProfileService {
     return _firestoreService.getUserProfileStream(currentUser.uid);
   }
 
-  // Clear cached profile
+  /// Manually clears the local profile cache.
   void clearCache() {
     _cachedProfile = null;
   }

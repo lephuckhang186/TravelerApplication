@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../Login/services/auth_service.dart';
 
+/// Interface for users to securely update their account password.
+///
+/// Includes validation for current password and new password strength.
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
 
@@ -13,7 +16,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isCurrentPasswordVisible = false;
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -45,7 +48,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(
             content: Text(
               'Password changed successfully!',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+              style: TextStyle(fontFamily: 'Urbanist-Regular'),
             ),
             backgroundColor: Colors.green,
           ),
@@ -58,7 +61,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(
             content: Text(
               e.toString(),
-              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+              style: TextStyle(fontFamily: 'Urbanist-Regular'),
             ),
             backgroundColor: Colors.red,
           ),
@@ -78,7 +81,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         SnackBar(
           content: Text(
             'User`s email not found',
-            style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+            style: TextStyle(fontFamily: 'Urbanist-Regular'),
           ),
           backgroundColor: Colors.red,
         ),
@@ -92,14 +95,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             title: Text(
               'The password reset email has been sent.',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontFamily: 'Urbanist-Regular',
+                fontWeight: FontWeight.w600,
+              ),
             ),
             content: Text(
               'We have sent a password reset link to your email address ${user.email}. Please check your inbox.',
-              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+              style: TextStyle(fontFamily: 'Urbanist-Regular'),
             ),
             actions: [
               ElevatedButton(
@@ -115,7 +123,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 child: Text(
                   'OK',
-                  style: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.white),
+                  style: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -128,7 +139,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(
             content: Text(
               e.toString(),
-              style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+              style: TextStyle(fontFamily: 'Urbanist-Regular'),
             ),
             backgroundColor: Colors.red,
           ),
@@ -180,7 +191,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
         title: Text(
           'Change Password',
-          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+          style: TextStyle(
+            fontFamily: 'Urbanist-Regular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -196,11 +208,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              
+
               // Mật khẩu hiện tại
               Text(
                 'Current Password',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -211,11 +224,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 controller: _currentPasswordController,
                 obscureText: !_isCurrentPasswordVisible,
                 validator: _validateCurrentPassword,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+                style: TextStyle(fontFamily: 'Urbanist-Regular'),
                 decoration: InputDecoration(
                   hintText: 'Enter current password',
-                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
-                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                  hintStyle: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey,
+                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isCurrentPasswordVisible
@@ -249,13 +268,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Mật khẩu mới
               Text(
                 'New Password',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -266,11 +286,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 controller: _newPasswordController,
                 obscureText: !_isNewPasswordVisible,
                 validator: _validateNewPassword,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+                style: TextStyle(fontFamily: 'Urbanist-Regular'),
                 decoration: InputDecoration(
                   hintText: 'Enter new password',
-                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
-                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                  hintStyle: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey,
+                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isNewPasswordVisible
@@ -304,13 +330,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Xác nhận mật khẩu mới
               Text(
                 'Confirm New Password',
-                style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                style: TextStyle(
+                  fontFamily: 'Urbanist-Regular',
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -321,11 +348,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 controller: _confirmPasswordController,
                 obscureText: !_isConfirmPasswordVisible,
                 validator: _validateConfirmPassword,
-                style: TextStyle(fontFamily: 'Urbanist-Regular', ),
+                style: TextStyle(fontFamily: 'Urbanist-Regular'),
                 decoration: InputDecoration(
                   hintText: 'Confirm new password',
-                  hintStyle: TextStyle(fontFamily: 'Urbanist-Regular', color: Colors.grey),
-                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                  hintStyle: TextStyle(
+                    fontFamily: 'Urbanist-Regular',
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey,
+                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isConfirmPasswordVisible
@@ -359,20 +392,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Nút quên mật khẩu
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: _forgotPassword,
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                   ),
                   child: Text(
                     'Forgot password?',
-                    style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                    style: TextStyle(
+                      fontFamily: 'Urbanist-Regular',
                       fontSize: 14,
                       color: Colors.blue,
                       fontWeight: FontWeight.w500,
@@ -380,9 +417,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Nút đổi mật khẩu
               SizedBox(
                 width: double.infinity,
@@ -407,7 +444,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         )
                       : Text(
                           'Change Password',
-                          style: TextStyle(fontFamily: 'Urbanist-Regular', 
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,

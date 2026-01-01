@@ -1,5 +1,5 @@
 """
-API endpoints for collaborators
+API endpoints for collaborators.
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
@@ -21,6 +21,18 @@ def add_collaborator(
 ) -> collaborator_model.Collaborator:
     """
     Add a collaborator to a planner.
+
+    Args:
+        db (Session): The database session.
+        collaborator_in (collaborator_model.CollaboratorCreate): The collaborator creation data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        collaborator_model.Collaborator: The created collaborator object.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user is not the owner of the planner.
     """
     # Check if the current user is the owner of the planner
     from app.services.planner_service import planner as planner_service
@@ -45,6 +57,18 @@ def read_collaborators(
 ) -> List[collaborator_model.Collaborator]:
     """
     Get collaborators for a planner.
+
+    Args:
+        db (Session): The database session.
+        planner_id (int): The ID of the planner.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[collaborator_model.Collaborator]: A list of collaborators for the planner.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user is not the owner or a collaborator.
     """
     # Check if the current user is the owner or a collaborator on the planner
     from app.services.planner_service import planner as planner_service
@@ -76,6 +100,18 @@ def remove_collaborator(
 ) -> None:
     """
     Remove a collaborator from a planner.
+
+    Args:
+        db (Session): The database session.
+        collaborator_in (collaborator_model.CollaboratorCreate): The collaborator to remove (identifies user and planner).
+        current_user (User): The current authenticated user.
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException(404): If the planner or collaborator is not found.
+        HTTPException(403): If the user is not the owner of the planner.
     """
     # Check if the current user is the owner of the planner
     from app.services.planner_service import planner as planner_service

@@ -1,5 +1,5 @@
 """
-API endpoints for shared planners - collaboration mode
+API endpoints for shared planners - collaboration mode.
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
@@ -22,6 +22,16 @@ def create_shared_planner(
 ) -> planner_model.Planner:
     """
     Create new shared planner (collaboration mode).
+
+    The creator automatically becomes the owner of the planner.
+
+    Args:
+        db (Session): The database session.
+        planner_in (planner_model.PlannerCreate): The planner creation data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The created planner object.
     """
     # Create planner with current user as owner
     planner = planner_service.create_with_owner(
@@ -39,6 +49,15 @@ def read_my_shared_planners(
 ) -> List[planner_model.Planner]:
     """
     Retrieve shared planners owned by current user.
+
+    Args:
+        db (Session): The database session.
+        skip (int): Number of planners to skip. Defaults to 0.
+        limit (int): Maximum number of planners to return. Defaults to 100.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[planner_model.Planner]: A list of planners owned by the user.
     """
     planners = planner_service.get_multi_by_owner(
         db=db, user_id=current_user.id, skip=skip, limit=limit
@@ -55,6 +74,15 @@ def read_shared_planners(
 ) -> List[planner_model.Planner]:
     """
     Retrieve planners shared with current user (as collaborator).
+
+    Args:
+        db (Session): The database session.
+        skip (int): Number of planners to skip. Defaults to 0.
+        limit (int): Maximum number of planners to return. Defaults to 100.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[planner_model.Planner]: A list of planners shared with the user.
     """
     # Get all planners where user is a collaborator
     collaborations = collaborator_service.get_multi_by_user(
@@ -80,6 +108,18 @@ def read_all_accessible_planners(
 ) -> List[planner_model.Planner]:
     """
     Retrieve all planners accessible to current user (owned + shared).
+
+    Combines both owned planners and planners where the user is a collaborator,
+    sorted by creation date (newest first).
+
+    Args:
+        db (Session): The database session.
+        skip (int): Number of planners to skip. Defaults to 0.
+        limit (int): Maximum number of planners to return. Defaults to 100.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[planner_model.Planner]: A sorted list of all accessible planners.
     """
     # Get owned planners
     owned_planners = planner_service.get_multi_by_owner(
@@ -114,6 +154,20 @@ def read_shared_planner(
 ) -> planner_model.Planner:
     """
     Get shared planner by ID (if user has access).
+
+    Access is granted if the user is either the owner or a collaborator.
+
+    Args:
+        db (Session): The database session.
+        id (int): The ID of the planner.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The planner object.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user does not have access.
     """
     planner = planner_service.get(db=db, id=id)
     if not planner:
@@ -141,6 +195,19 @@ def update_shared_planner(
 ) -> planner_model.Planner:
     """
     Update a shared planner (owner or collaborator can update).
+
+    Args:
+        db (Session): The database session.
+        id (int): The ID of the planner to update.
+        planner_in (planner_model.PlannerUpdate): The planner update data.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The updated planner object.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user does not have access.
     """
     planner = planner_service.get(db=db, id=id)
     if not planner:
@@ -168,6 +235,20 @@ def delete_shared_planner(
 ) -> planner_model.Planner:
     """
     Delete a shared planner (only owner can delete).
+
+    Removes all collaborators first, then deletes the planner.
+
+    Args:
+        db (Session): The database session.
+        id (int): The ID of the planner to delete.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        planner_model.Planner: The deleted planner object.
+
+    Raises:
+        HTTPException(404): If the planner is not found.
+        HTTPException(403): If the user is not the owner.
     """
     planner = planner_service.get(db=db, id=id)
     if not planner:
@@ -194,6 +275,20 @@ def leave_shared_planner(
 ) -> dict:
     """
     Leave a shared planner (collaborator leaves).
+
+    The owner cannot leave their own planner; they must delete it or transfer ownership.
+
+    Args:
+        db (Session): The database session.
+        id (int): The ID of the planner to leave.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A success message.
+
+    Raises:
+        HTTPException(404): If the planner or collaboration is not found.
+        HTTPException(400): If the owner attempts to leave.
     """
     planner = planner_service.get(db=db, id=id)
     if not planner:

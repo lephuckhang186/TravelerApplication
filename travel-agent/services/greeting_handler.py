@@ -8,7 +8,16 @@ import re
 
 
 class GreetingHandler:
+    """
+    Handles greeting messages and generates friendy responses for the Travel Agent.
+
+    This class provides functionality to detect if a user message is a greeting or a thank-you note
+    and returns an appropriate, randomized response to maintain a conversational tone.
+    """
     def __init__(self):
+        """
+        Initializes the GreetingHandler with lists of keywords and response templates.
+        """
         self.greeting_keywords = [
             'hello', 'hi', 'chào', 'xin chào', 'hey', 'hì', 'halo',
             'good morning', 'good afternoon', 'good evening',
@@ -69,7 +78,13 @@ Hãy chia sẻ với tôi: Bạn muốn khám phá vùng đất nào của Việ
     
     def is_greeting_message(self, message: str) -> bool:
         """
-        Check if the message is a greeting
+        Checks if the provided message is a greeting.
+
+        Args:
+            message (str): The user's message string.
+
+        Returns:
+            bool: True if the message contains a greeting keyword, False otherwise.
         """
         if not message or not isinstance(message, str):
             return False
@@ -85,7 +100,13 @@ Hãy chia sẻ với tôi: Bạn muốn khám phá vùng đất nào của Việ
     
     def generate_greeting_response(self, user_message: str = "") -> str:
         """
-        Generate a friendly greeting response
+        Generates a friendly greeting response.
+
+        Args:
+            user_message (str, optional): The user's message (unused currently but kept for potential context).
+
+        Returns:
+            str: A randomized greeting response string.
         """
         # Choose a random response to make it feel more natural
         response = random.choice(self.greeting_responses)
@@ -94,7 +115,13 @@ Hãy chia sẻ với tôi: Bạn muốn khám phá vùng đất nào của Việ
     
     def is_simple_thanks(self, message: str) -> bool:
         """
-        Check if message is a simple thank you
+        Checks if the message is a simple thank you note.
+
+        Args:
+            message (str): The user's message string.
+
+        Returns:
+            bool: True if the message contains gratitude keywords, False otherwise.
         """
         thanks_keywords = [
             'cảm ơn', 'thank you', 'thanks', 'cám ơn', 
@@ -108,7 +135,10 @@ Hãy chia sẻ với tôi: Bạn muốn khám phá vùng đất nào của Việ
     
     def generate_thanks_response(self) -> str:
         """
-        Generate response for thank you messages
+        Generates a polite response to a user's thank you.
+
+        Returns:
+            str: A randomized 'you're welcome' response string.
         """
         thanks_responses = [
             "Không có gì! 😊 Tôi luôn sẵn sàng giúp bạn lên kế hoạch du lịch tuyệt vời. Còn gì khác tôi có thể hỗ trợ không?",

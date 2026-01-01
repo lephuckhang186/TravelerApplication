@@ -1,6 +1,5 @@
 """
-API endpoints for Firestore-based statistics
-Cung cấp các API để lấy thống kê thời gian thực từ Firestore
+API endpoints for Firestore-based statistics.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,16 +21,29 @@ async def get_user_statistics(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Lấy thống kê tổng hợp của user từ Firestore
-    
+    Get aggregated statistics for a specific user from Firestore.
+
+    Args:
+        current_user (dict): The current authenticated user object (from Firebase Auth).
+
     Returns:
-        Dict chứa các thống kê:
-        - total_plans: Tổng số plan được tạo ra
-        - total_days: Tổng số ngày trong các plan (completed + ongoing)
-        - locations_visited: Số địa điểm đã check-in thực tế
-        - total_trips: Số chuyến đi đã hoàn thành
-        - total_expenses: Tổng chi tiêu thực tế
-        - Cùng các thống kê cho năm 2025
+        Dict: A dictionary containing various statistics:
+            - total_plans (int): Total number of plans created.
+            - total_days (int): Total number of days across all plans.
+            - locations_visited (int): Number of actual location check-ins.
+            - total_trips (int): Number of completed trips.
+            - total_expenses (float): Total actual expenses.
+            - total_plans_2025 (int): Plans in 2025.
+            - total_days_2025 (int): Days traveled in 2025.
+            - locations_visited_2025 (int): Locations visited in 2025.
+            - total_trips_2025 (int): Trips completed in 2025.
+            - total_activities (int): Legacy mapping for total_plans.
+            - completed_trips (int): Legacy mapping for completed trips.
+            - checked_in_locations (int): Legacy mapping for locations visited.
+        
+    Raises:
+        HTTPException(401): If the User ID is not found in the token.
+        HTTPException(500): If there is an error retrieving statistics.
     """
     try:
         user_id = current_user.get('uid')
@@ -80,10 +92,17 @@ async def get_trip_details(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Lấy chi tiết về các trips của user
-    
+    Get detailed information about a user's trips.
+
+    Args:
+        current_user (dict): The current authenticated user object.
+
     Returns:
-        Dict với thông tin chi tiết về trips
+        Dict: A dictionary containing trip details (total, completed, ongoing, upcoming).
+
+    Raises:
+        HTTPException(401): If the User ID is not found.
+        HTTPException(500): If there is an error retrieving trip details.
     """
     try:
         user_id = current_user.get('uid')
@@ -112,13 +131,18 @@ async def get_monthly_expenses(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Lấy chi tiêu theo tháng
-    
+    Get monthly expense totals for a user.
+
     Args:
-        limit: Số tháng muốn lấy (default: 12)
-        
+        limit (int): Maximum number of months to return. Defaults to 12.
+        current_user (dict): The current authenticated user.
+
     Returns:
-        List các dict chứa month và amount
+        List[Dict]: A list of dictionaries, each containing 'month' (YYYY-MM) and 'amount'.
+
+    Raises:
+        HTTPException(401): If the User ID is not found.
+        HTTPException(500): If there is an error retrieving monthly expenses.
     """
     try:
         user_id = current_user.get('uid')
@@ -146,10 +170,23 @@ async def get_dashboard_data(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Lấy tất cả dữ liệu cần thiết cho dashboard
-    
+    Get all data required for the user dashboard.
+
+    Aggregates statistics, trip details, and monthly expenses into a single response.
+
+    Args:
+        current_user (dict): The current authenticated user.
+
     Returns:
-        Dict chứa statistics, trip_details, và monthly_expenses
+        Dict: A dictionary containing:
+            - statistics: User statistics (plans, days, locations, etc.).
+            - trip_details: Counts of trips by status.
+            - monthly_expenses: List of monthly expense totals.
+            - summary: Calculated estimates for total distance, total days, and average expense.
+
+    Raises:
+        HTTPException(401): If the User ID is not found.
+        HTTPException(500): If there is an error retrieving dashboard data.
     """
     try:
         user_id = current_user.get('uid')
@@ -161,7 +198,7 @@ async def get_dashboard_data(
         
         logger.info(f"Getting dashboard data for user: {user_id}")
         
-        # Lấy tất cả dữ liệu cùng lúc
+        # Get all data concurrently (sequentially here for simplicity)
         stats = firestore_stats_service.get_user_statistics(user_id)
         trip_details = firestore_stats_service.get_trip_details(user_id)
         monthly_expenses = firestore_stats_service.get_monthly_expenses(user_id)

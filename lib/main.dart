@@ -40,6 +40,9 @@ void main() async {
   );
 }
 
+/// The root widget of the TripWise application.
+///
+/// Configures high-level app state, including theme, routes, and global providers.
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -59,7 +62,6 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _startRealTimeListeners() async {
     try {
-
       // Access providers to start listeners
       final context = this.context;
       if (context.mounted) {
@@ -85,7 +87,9 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (context) => TripPlanningProvider()),
         ChangeNotifierProvider(create: (context) => CollaborationProvider()),
         ChangeNotifierProvider(create: (context) => ExpenseProvider()),
-        ChangeNotifierProvider(create: (context) => SmartNotificationProvider()),
+        ChangeNotifierProvider(
+          create: (context) => SmartNotificationProvider(),
+        ),
         ChangeNotifierProvider(create: (context) => AppModeProvider()),
       ],
       child: MaterialApp(

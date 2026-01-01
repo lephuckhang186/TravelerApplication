@@ -1,6 +1,8 @@
 """
-Firestore Statistics Service for real-time user travel statistics
-Kết nối với Firebase Firestore để lấy thống kê thời gian thực
+Firestore Statistics Service for real-time user travel statistics.
+
+This service connects to Firebase Firestore to retrieve real-time statistics
+about user trips, plans, and expenses.
 """
 
 import firebase_admin
@@ -12,24 +14,34 @@ import logging
 logger = logging.getLogger(__name__)
 
 class FirestoreStatisticsService:
+    """
+    Service to retrieve and aggregate user statistics from Firestore.
+    """
     def __init__(self):
+        """
+        Initialize the Firestore client.
+        """
         self.db = firestore.client()
     
     def get_user_statistics(self, user_id: str) -> Dict:
         """
-        Lấy thống kê tổng hợp của user từ Firestore
+        Get aggregated statistics for a specific user from Firestore.
         
         Args:
-            user_id: Firebase UID của user
+            user_id (str): The Firebase UID of the user.
             
         Returns:
-            Dict chứa các thống kê:
-            - total_plans: Tổng số plan được tạo ra
-            - total_days: Tổng số ngày trong các plan (completed + ongoing)
-            - locations_visited: Số địa điểm đã check-in thực tế
-            - total_trips: Số chuyến đi đã hoàn thành
-            - total_expenses: Tổng chi tiêu thực tế
-            - Cùng các thống kê cho năm 2025
+            Dict: A dictionary containing various statistics:
+                - total_plans (int): Total number of plans created.
+                - total_days (int): Total number of days across all plans (completed + ongoing).
+                - locations_visited (int): Number of actual location check-ins.
+                - total_trips (int): Number of completed trips.
+                - total_expenses (float): Total actual expenses.
+                - total_plans_2025 (int): Plans in 2025.
+                - total_days_2025 (int): Days traveled in 2025.
+                - locations_visited_2025 (int): Locations visited in 2025.
+                - total_trips_2025 (int): Trips completed in 2025.
+                - error (str): Error message if an exception occurs.
         """
         try:
             stats = {
@@ -45,7 +57,7 @@ class FirestoreStatisticsService:
                 'total_trips_2025': 0
             }
             
-            # Lấy trips của user
+            # Get user trips
             trips_ref = self.db.collection('users').document(user_id).collection('trips')
             trips = trips_ref.stream()
             
@@ -148,9 +160,15 @@ class FirestoreStatisticsService:
                 'error': str(e)
             }
     
-    def _parse_date_helper(self, date_value):
+    def _parse_date_helper(self, date_value) -> Optional[datetime]:
         """
-        Helper method to parse different date formats
+        Helper method to parse different date formats (Firestore Timestamp, ISO string, etc.).
+
+        Args:
+            date_value: The date value to parse.
+
+        Returns:
+            Optional[datetime]: The parsed datetime object, or None if parsing fails.
         """
         if date_value is None:
             return None
@@ -172,7 +190,13 @@ class FirestoreStatisticsService:
     
     def _is_location_based_activity(self, activity_type: str) -> bool:
         """
-        Check if activity type represents a location that can be visited
+        Check if an activity type represents a physical location that can be visited.
+
+        Args:
+            activity_type (str): The type of the activity.
+
+        Returns:
+            bool: True if the activity is location-based, False otherwise.
         """
         location_based_types = {
             'activity',
@@ -188,10 +212,18 @@ class FirestoreStatisticsService:
     
     def get_trip_details(self, user_id: str) -> Dict:
         """
-        Lấy chi tiết về các trips của user
+        Get detailed information about a user's trips (total, completed, ongoing, upcoming).
         
+        Args:
+            user_id (str): The Firebase UID of the user.
+
         Returns:
-            Dict với thông tin chi tiết về trips
+            Dict: A dictionary containing trip counts:
+                - total (int)
+                - completed (int)
+                - ongoing (int)
+                - upcoming (int)
+                - error (str): Error message if applicable.
         """
         try:
             details = {
@@ -245,10 +277,16 @@ class FirestoreStatisticsService:
     
     def get_monthly_expenses(self, user_id: str, limit: int = 12) -> List[Dict]:
         """
-        Lấy chi tiêu theo tháng
+        Get monthly expense totals for a user.
         
+        Args:
+            user_id (str): The Firebase UID of the user.
+            limit (int): Maximum number of months to return. Defaults to 12.
+
         Returns:
-            List các dict chứa month và amount
+            List[Dict]: A list of dictionaries, each containing:
+                - month (str): The month key (YYYY-MM).
+                - amount (float): Total expense amount for that month.
         """
         try:
             monthly_expenses = {}

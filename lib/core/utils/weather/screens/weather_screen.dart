@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/weather_provider.dart';
 import '../models/weather_models.dart';
 
+/// A comprehensive weather dashboard providing real-time conditions and forecasts.
+///
+/// Features searchable locations, detailed atmospheric data, and a dynamic
+/// interface that adapts to current weather states.
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
 
@@ -60,7 +64,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
               children: [
                 // Search Bar
                 _buildSearchBar(provider),
-                
+
                 // Search Results or Weather Display
                 Expanded(
                   child: provider.searchResults.isNotEmpty
@@ -156,7 +160,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
               _searchController.clear();
               provider.clearSearchResults();
               provider.loadWeatherByCoordinates(
-                location.latitude, 
+                location.latitude,
                 location.longitude,
               );
             },
@@ -242,10 +246,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF2196F3),
-                  const Color(0xFF1976D2),
-                ],
+                colors: [const Color(0xFF2196F3), const Color(0xFF1976D2)],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
@@ -282,9 +283,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Temperature and Description
                 Column(
                   children: [
@@ -312,9 +313,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Weather Details
           Container(
             width: double.infinity,
@@ -343,7 +344,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 Row(
                   children: [
                     Expanded(
@@ -364,9 +365,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 Row(
                   children: [
                     Expanded(
@@ -395,7 +396,12 @@ class _WeatherScreenState extends State<WeatherScreen> {
     );
   }
 
-  Widget _buildDetailItem(IconData icon, String label, String value, Color color) {
+  Widget _buildDetailItem(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(horizontal: 4),

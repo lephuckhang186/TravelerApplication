@@ -4,6 +4,10 @@ import '../providers/world_clock_provider.dart';
 import '../models/world_clock_models.dart';
 import '../services/world_clock_service.dart';
 
+/// Global clock interface for monitoring time across different time zones.
+///
+/// Displays a searchable list of cities with their current local time,
+/// UTC offsets, and visual indicators for day/night cycles.
 class WorldClockScreen extends StatefulWidget {
   const WorldClockScreen({super.key});
 
@@ -117,10 +121,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildFavoritesTab(),
-                  _buildAllCitiesTab(),
-                ],
+                children: [_buildFavoritesTab(), _buildAllCitiesTab()],
               ),
             ),
           ],
@@ -232,10 +233,15 @@ class _WorldClockScreenState extends State<WorldClockScreen>
     );
   }
 
-  Widget _buildClockCard(WorldClockData clockData, WorldClockProvider provider,
-      {bool isFavorite = false}) {
+  Widget _buildClockCard(
+    WorldClockData clockData,
+    WorldClockProvider provider, {
+    bool isFavorite = false,
+  }) {
     final isDark = !clockData.isDayTime;
-    final timeDiff = WorldClockService.getTimeDifferenceFromVietnam(clockData.timeZone);
+    final timeDiff = WorldClockService.getTimeDifferenceFromVietnam(
+      clockData.timeZone,
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -249,14 +255,8 @@ class _WorldClockScreenState extends State<WorldClockScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDark
-                  ? [
-                      const Color(0xFF1A1A2E),
-                      const Color(0xFF16213E),
-                    ]
-                  : [
-                      const Color(0xFF6DD5FA),
-                      const Color(0xFF2980B9),
-                    ],
+                  ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                  : [const Color(0xFF6DD5FA), const Color(0xFF2980B9)],
             ),
           ),
           child: Padding(
@@ -326,7 +326,7 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                     ],
                   ),
                 ),
-                
+
                 // Time and date
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -355,7 +355,9 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          clockData.isDayTime ? Icons.wb_sunny : Icons.nights_stay,
+                          clockData.isDayTime
+                              ? Icons.wb_sunny
+                              : Icons.nights_stay,
                           color: Colors.white.withValues(alpha: 0.9),
                           size: 16,
                         ),
@@ -372,9 +374,9 @@ class _WorldClockScreenState extends State<WorldClockScreen>
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // Favorite button
                 IconButton(
                   onPressed: () {

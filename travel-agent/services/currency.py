@@ -5,7 +5,31 @@ from langchain.tools import tool
 class CurrencyConverter:
   """
   A tool to convert currencies using public APIs with fallback.
+
+  This class provides methods to convert currency amounts from one denomination to another,
+  utilizing multiple public API endpoints to ensure reliability.
   """
+
+  def convert_currency(self, amount: float, from_currency: str, to_currency: str) -> Dict[str, Any]:
+    """
+    Instance method for currency conversion.
+
+    Delegates the actual conversion logic to the static `convert` method.
+
+    Args:
+      amount (float): The amount of money to convert.
+      from_currency (str): The 3-letter currency code to convert from (e.g., 'USD').
+      to_currency (str): The 3-letter currency code to convert to (e.g., 'EUR').
+
+    Returns:
+      Dict[str, Any]: A dictionary containing result details such as:
+                      - 'converted_amount': The calculated amount.
+                      - 'rate': The exchange rate used.
+                      - 'from': Source currency code.
+                      - 'to': Target currency code.
+                      - 'amount': Original amount.
+    """
+    return CurrencyConverter.convert(amount, from_currency, to_currency)
 
   @staticmethod
   @tool

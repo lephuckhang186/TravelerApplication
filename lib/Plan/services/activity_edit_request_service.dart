@@ -1,18 +1,26 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../Core/config/api_config.dart';
 import '../models/collaboration_models.dart';
 import '../models/activity_models.dart';
 
-/// Service for managing activity edit requests
+/// Service for managing activity edit requests.
+///
+/// This service handles the lifecycle of requests to add, edit, or delete activities
+/// in a shared trip. It communicates with the backend to persist these requests
+/// and manage their approval/rejection status.
 class ActivityEditRequestService {
+  /// Base URL retrieved from central [ApiConfig].
   final String baseUrl = ApiConfig.baseUrl;
 
-  /// Flag to enable/disable mock responses when backend is not available
+  /// Flag to enable/disable mock responses when backend is not available.
   static const bool useMockData = false;
 
-  /// Get authorization headers
+  /// Get authorization headers with the current user's Firebase ID token.
+  ///
+  /// Throws an exception if the user is not authenticated.
   Future<Map<String, String>> _getHeaders() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -25,10 +33,13 @@ class ActivityEditRequestService {
     };
   }
 
-  /// Create a new activity edit request
+  /// Create a new activity edit request.
+  ///
+  /// [requestType] can be 'edit_activity', 'add_activity', or 'delete_activity'.
+  /// [proposedChanges] contains the modified fields for the activity.
   Future<ActivityEditRequest> createActivityEditRequest({
     required String tripId,
-    required String requestType, // 'edit_activity', 'add_activity', 'delete_activity'
+    required String requestType,
     String? activityId,
     Map<String, dynamic>? proposedChanges,
     String? message,
@@ -55,12 +66,18 @@ class ActivityEditRequestService {
         return ActivityEditRequest.fromJson(data);
       } else {
         final errorBody = response.body;
-        print('❌ API Error - Status: ${response.statusCode}, Body: $errorBody');
+        debugPrint(
+          '❌ API Error - Status: ${response.statusCode}, Body: $errorBody',
+        );
         try {
           final error = jsonDecode(errorBody);
-          throw Exception(error['detail'] ?? 'Failed to create activity edit request');
+          throw Exception(
+            error['detail'] ?? 'Failed to create activity edit request',
+          );
         } catch (jsonError) {
-          throw Exception('Failed to create activity edit request: HTTP ${response.statusCode} - $errorBody');
+          throw Exception(
+            'Failed to create activity edit request: HTTP ${response.statusCode} - $errorBody',
+          );
         }
       }
     } catch (e) {
@@ -69,7 +86,7 @@ class ActivityEditRequestService {
       if (!errorString.contains('failed to fetch') &&
           !errorString.contains('clientexception') &&
           !errorString.contains('connection')) {
-        print('❌ CREATE_ACTIVITY_EDIT_REQUEST_ERROR: $e');
+        debugPrint('❌ CREATE_ACTIVITY_EDIT_REQUEST_ERROR: $e');
       }
 
       // Return mock response if backend is not available
@@ -87,7 +104,7 @@ class ActivityEditRequestService {
     }
   }
 
-  /// Create mock activity edit request when backend is not available
+  /// Create mock activity edit request when backend is not available.
   ActivityEditRequest _createMockActivityEditRequest({
     required String tripId,
     required String requestType,
@@ -105,7 +122,7 @@ class ActivityEditRequestService {
       requesterId: user?.uid ?? 'mock_user',
       requesterName: user?.displayName ?? user?.email ?? 'Mock User',
       requesterEmail: user?.email ?? 'mock@example.com',
-      ownerId: 'mock_owner', // Mock owner ID - in real scenario would be actual owner
+      ownerId: 'mock_owner',
       requestType: requestType,
       activityId: activityId,
       proposedChanges: proposedChanges,
@@ -116,8 +133,12 @@ class ActivityEditRequestService {
     );
   }
 
-  /// Get all activity edit requests created by current user
-  Future<List<ActivityEditRequest>> getMyActivityEditRequests({String? status}) async {
+  /// Get all activity edit requests created by the current user.
+  ///
+  /// Optionally filters by [status].
+  Future<List<ActivityEditRequest>> getMyActivityEditRequests({
+    String? status,
+  }) async {
     try {
       final headers = await _getHeaders();
       var url = '$baseUrl/activity-edit-requests/my-requests';
@@ -125,10 +146,7 @@ class ActivityEditRequestService {
         url += '?status_filter=$status';
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
+      final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -137,12 +155,12 @@ class ActivityEditRequestService {
         throw Exception('Failed to load activity edit requests');
       }
     } catch (e) {
-      print('❌ GET_MY_ACTIVITY_EDIT_REQUESTS_ERROR: $e');
+      debugPrint('❌ GET_MY_ACTIVITY_EDIT_REQUESTS_ERROR: $e');
       return [];
     }
   }
 
-  /// Get pending activity edit requests for trips owned by current user
+  /// Get pending activity edit requests for trips owned by the current user.
   Future<List<ActivityEditRequest>> getPendingActivityEditApprovals() async {
     try {
       final headers = await _getHeaders();
@@ -158,7 +176,7 @@ class ActivityEditRequestService {
         throw Exception('Failed to load pending activity edit approvals');
       }
     } catch (e) {
-      print('❌ GET_PENDING_ACTIVITY_EDIT_APPROVALS_ERROR: $e');
+      debugPrint('❌ GET_PENDING_ACTIVITY_EDIT_APPROVALS_ERROR: $e');
       // Return mock data if backend is not available
       if (useMockData) {
         return _getMockPendingApprovals();
@@ -167,10 +185,7 @@ class ActivityEditRequestService {
     }
   }
 
-  /// Create mock pending approvals when backend is not available
-  /// Note: This will be called from getPendingActivityEditApprovals
-  /// but we need to know the current tripId. For now, we'll return mock data
-  /// that would be filtered by the widget
+  /// Create mock pending approvals when backend is not available.
   List<ActivityEditRequest> _getMockPendingApprovals() {
     final user = FirebaseAuth.instance.currentUser;
     final now = DateTime.now();
@@ -178,13 +193,16 @@ class ActivityEditRequestService {
     return [
       ActivityEditRequest(
         id: 'mock_approval_1',
-        tripId: 'pNSLXzxkwTOJxoKEQF8Y', // Use the current trip ID from logs
+        tripId: 'pNSLXzxkwTOJxoKEQF8Y',
         requesterId: 'mock_editor_1',
         requesterName: 'John Editor',
         requesterEmail: 'john@example.com',
         ownerId: user?.uid ?? 'mock_owner',
         requestType: 'add_activity',
-        proposedChanges: {'title': 'Visit Eiffel Tower', 'description': 'Iconic landmark'},
+        proposedChanges: {
+          'title': 'Visit Eiffel Tower',
+          'description': 'Iconic landmark',
+        },
         status: ActivityEditRequestStatus.pending,
         requestedAt: now.subtract(const Duration(hours: 2)),
         message: 'Request to add a new activity to the Paris trip',
@@ -193,7 +211,7 @@ class ActivityEditRequestService {
       ),
       ActivityEditRequest(
         id: 'mock_approval_2',
-        tripId: 'pNSLXzxkwTOJxoKEQF8Y', // Use the current trip ID
+        tripId: 'pNSLXzxkwTOJxoKEQF8Y',
         requesterId: 'mock_editor_2',
         requesterName: 'Jane Contributor',
         requesterEmail: 'jane@example.com',
@@ -207,7 +225,9 @@ class ActivityEditRequestService {
     ];
   }
 
-  /// Get all activity edit requests for a specific trip (owner only)
+  /// Get all activity edit requests for a specific trip.
+  ///
+  /// Typically called by the trip owner.
   Future<List<ActivityEditRequest>> getTripActivityEditRequests({
     required String tripId,
     String? status,
@@ -219,10 +239,7 @@ class ActivityEditRequestService {
         url += '?status_filter=$status';
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
+      final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -231,12 +248,12 @@ class ActivityEditRequestService {
         throw Exception('Failed to load trip activity edit requests');
       }
     } catch (e) {
-      print('❌ GET_TRIP_ACTIVITY_EDIT_REQUESTS_ERROR: $e');
+      debugPrint('❌ GET_TRIP_ACTIVITY_EDIT_REQUESTS_ERROR: $e');
       return [];
     }
   }
 
-  /// Approve or reject an activity edit request
+  /// Approve or reject an activity edit request.
   Future<ActivityEditRequest> updateActivityEditRequest({
     required String requestId,
     required ActivityEditRequestStatus status,
@@ -247,10 +264,7 @@ class ActivityEditRequestService {
       final response = await http.put(
         Uri.parse('$baseUrl/activity-edit-requests/$requestId'),
         headers: headers,
-        body: jsonEncode({
-          'status': status.toJson(),
-          'message': message,
-        }),
+        body: jsonEncode({'status': status.toJson(), 'message': message}),
       );
 
       if (response.statusCode == 200) {
@@ -258,10 +272,12 @@ class ActivityEditRequestService {
         return ActivityEditRequest.fromJson(data);
       } else {
         final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to update activity edit request');
+        throw Exception(
+          error['detail'] ?? 'Failed to update activity edit request',
+        );
       }
     } catch (e) {
-      print('❌ UPDATE_ACTIVITY_EDIT_REQUEST_ERROR: $e');
+      debugPrint('❌ UPDATE_ACTIVITY_EDIT_REQUEST_ERROR: $e');
       // Return mock updated request if backend is not available
       if (useMockData) {
         return _createMockUpdatedRequest(requestId, status, message);
@@ -270,7 +286,7 @@ class ActivityEditRequestService {
     }
   }
 
-  /// Create mock updated request when backend is not available
+  /// Create mock updated request when backend is not available.
   ActivityEditRequest _createMockUpdatedRequest(
     String requestId,
     ActivityEditRequestStatus status,
@@ -306,7 +322,7 @@ class ActivityEditRequestService {
     );
   }
 
-  /// Delete an activity edit request
+  /// Delete an activity edit request by ID.
   Future<void> deleteActivityEditRequest(String requestId) async {
     try {
       final headers = await _getHeaders();
@@ -319,17 +335,23 @@ class ActivityEditRequestService {
         throw Exception('Failed to delete activity edit request');
       }
     } catch (e) {
-      print('❌ DELETE_ACTIVITY_EDIT_REQUEST_ERROR: $e');
+      debugPrint('❌ DELETE_ACTIVITY_EDIT_REQUEST_ERROR: $e');
       rethrow;
     }
   }
 
-  /// Check if user has a pending activity edit request for a specific activity
-  Future<ActivityEditRequest?> checkPendingActivityEditRequest(String tripId, String activityId) async {
+  /// Check if the user has a pending activity edit request for a specific activity.
+  Future<ActivityEditRequest?> checkPendingActivityEditRequest(
+    String tripId,
+    String activityId,
+  ) async {
     try {
       final requests = await getMyActivityEditRequests(status: 'pending');
       return requests.firstWhere(
-        (req) => req.tripId == tripId && req.activityId == activityId && req.isPending,
+        (req) =>
+            req.tripId == tripId &&
+            req.activityId == activityId &&
+            req.isPending,
         orElse: () => throw Exception('Not found'),
       );
     } catch (e) {
@@ -337,7 +359,7 @@ class ActivityEditRequestService {
     }
   }
 
-  /// Helper method to create edit request for editing an activity
+  /// Helper method to create an edit request for an existing activity.
   Future<ActivityEditRequest> createEditActivityRequest({
     required String tripId,
     required ActivityModel activity,
@@ -354,7 +376,7 @@ class ActivityEditRequestService {
     );
   }
 
-  /// Helper method to create request for adding an activity
+  /// Helper method to create a request for adding a new activity.
   Future<ActivityEditRequest> createAddActivityRequest({
     required String tripId,
     required Map<String, dynamic> proposedActivityData,
@@ -369,7 +391,7 @@ class ActivityEditRequestService {
     );
   }
 
-  /// Helper method to create request for deleting an activity
+  /// Helper method to create a request for deleting an activity.
   Future<ActivityEditRequest> createDeleteActivityRequest({
     required String tripId,
     required ActivityModel activity,

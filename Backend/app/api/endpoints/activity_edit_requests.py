@@ -1,5 +1,5 @@
 """
-Activity Edit Request API endpoints for activity modification requests
+Activity Edit Request API endpoints for activity modification requests.
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
@@ -41,7 +41,22 @@ async def create_activity_edit_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Create a new activity edit request (Editor requests to modify activities)
+    Create a new activity edit request (Editor requests to modify activities).
+
+    Allows a user with Editor role (or Owner) to propose changes to activities (add, edit, delete).
+
+    Args:
+        request_data (ActivityEditRequestCreate): The payload containing change details.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityEditRequestResponse: The created request details.
+
+    Raises:
+        HTTPException(404): Trip not found.
+        HTTPException(400): Trip has no owner.
+        HTTPException(403): User is not an editor or owner.
+        HTTPException(500): Creation failure.
     """
     try:
         trip_id = request_data.trip_id
@@ -119,7 +134,14 @@ async def get_my_activity_edit_requests(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all activity edit requests created by current user
+    Get all activity edit requests created by current user.
+
+    Args:
+        status_filter (Optional[str]): filter by status (pending, approved, rejected).
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[ActivityEditRequestResponse]: List of user's requests.
     """
     try:
         requests = await firebase_service.get_user_activity_edit_requests(
@@ -151,7 +173,13 @@ async def get_pending_activity_approvals(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all pending activity edit requests for trips owned by current user
+    Get all pending activity edit requests for trips owned by current user.
+
+    Args:
+        current_user (User): The current authenticated user (acting as Owner).
+
+    Returns:
+        List[ActivityEditRequestResponse]: List of pending requests.
     """
     try:
         requests = await firebase_service.get_owner_activity_edit_requests(
@@ -185,7 +213,19 @@ async def get_trip_activity_edit_requests(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all activity edit requests for a specific trip (owner only)
+    Get all activity edit requests for a specific trip (owner only).
+
+    Args:
+        trip_id (str): The ID of the trip.
+        status_filter (Optional[str]): Optional status filter.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[ActivityEditRequestResponse]: List of requests for the trip.
+
+    Raises:
+        HTTPException(404): Trip not found.
+        HTTPException(403): User is not the owner.
     """
     try:
         # Verify user is trip owner
@@ -235,7 +275,23 @@ async def update_activity_edit_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Approve or reject an activity edit request (owner only)
+    Approve or reject an activity edit request (owner only).
+
+    If approved, the changes are automatically applied to the trip's activities.
+
+    Args:
+        request_id (str): The ID of the request to update.
+        update_data (ActivityEditRequestUpdate): The update payload (status).
+        current_user (User): The current authenticated user.
+
+    Returns:
+        ActivityEditRequestResponse: The updated request.
+
+    Raises:
+        HTTPException(404): Request or trip not found.
+        HTTPException(403): User is not the owner.
+        HTTPException(400): Request is not pending.
+        HTTPException(500): Update or Application of changes failed.
     """
     try:
         # 1. Get the request
@@ -299,7 +355,16 @@ async def update_activity_edit_request(
 
 async def _apply_activity_changes(activity_request: dict, trip: dict):
     """
-    Apply approved activity changes to the trip
+    Apply approved activity changes to the trip.
+
+    Handles 'add_activity', 'edit_activity', and 'delete_activity' request types.
+
+    Args:
+        activity_request (dict): The confirmed activity edit request.
+        trip (dict): The trip data to modify.
+    
+    Raises:
+        HTTPException(500): If applying changes fails.
     """
     try:
         trip_id = activity_request['trip_id']
@@ -384,7 +449,19 @@ async def delete_activity_edit_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Delete an activity edit request (requester or owner only)
+    Delete an activity edit request (requester or owner only).
+
+    Args:
+        request_id (str): The ID of the request to delete.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException(404): Request not found.
+        HTTPException(403): User is not requester or owner.
+        HTTPException(500): Delete fails.
     """
     try:
         # Get the request

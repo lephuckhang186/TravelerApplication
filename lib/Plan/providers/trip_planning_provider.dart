@@ -5,7 +5,11 @@ import '../services/trip_planning_service.dart';
 import '../services/firebase_trip_service.dart';
 import '../services/budget_sync_service.dart';
 
-/// Provider for managing trip planning state (Firestore-only version)
+/// Provider for managing trip planning state in a cloud-synced environment.
+///
+/// This provider handles the lifecycle of trips, including creation, update,
+/// and deletion, primarily interacting with Firebase Firestore for persistence.
+/// It also manages budget synchronization with the Expense module.
 class TripPlanningProvider extends ChangeNotifier {
   final TripPlanningService _apiService = TripPlanningService();
   final FirebaseTripService _firebaseService = FirebaseTripService();
@@ -17,13 +21,23 @@ class TripPlanningProvider extends ChangeNotifier {
   String? _error;
 
   // Getters
+
+  /// Sorted list of all trips loaded for the current user.
   List<TripModel> get trips => _trips;
+
+  /// The trip currently being viewed or edited in the UI.
   TripModel? get currentTrip => _currentTrip;
+
+  /// Whether a data operation is currently in progress.
   bool get isLoading => _isLoading;
+
+  /// Most recent error encountered during trip operations.
   String? get error => _error;
+
+  /// Whether any trips have been loaded.
   bool get hasTrips => _trips.isNotEmpty;
 
-  /// Initialize the provider - Load directly from Firestore
+  /// Initialize the provider by loading all trips from Firestore.
   Future<void> initialize() async {
     _setLoading(true);
     try {
@@ -35,7 +49,9 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Create a new trip
+  /// Create a new trip with the given details, syncing across API and Firestore.
+  ///
+  /// Falls back to local/temporary IDs if the server API is unavailable.
   Future<TripModel?> createTrip({
     required String name,
     required String destination,
@@ -70,7 +86,7 @@ class TripPlanningProvider extends ChangeNotifier {
         );
       }
 
-      // Add to local list and save to Firestore only
+      // Add to local list and save to Firestore
       _trips.add(createdTrip);
       await _firebaseService.saveTrip(createdTrip);
 
@@ -85,16 +101,13 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Add an existing trip to the provider
+  /// Add an existing trip to the provider or update it if the ID already exists.
   Future<void> addTrip(TripModel trip) async {
     try {
-      // Check if trip already exists
       final existingIndex = _trips.indexWhere((t) => t.id == trip.id);
       if (existingIndex >= 0) {
-        // Update existing trip
         _trips[existingIndex] = trip;
       } else {
-        // Add new trip
         _trips.add(trip);
       }
 
@@ -108,46 +121,40 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Delete a trip
+  /// Delete a trip by ID from both the server (if applicable) and Firestore.
   Future<bool> deleteTrip(String tripId) async {
     _setLoading(true);
     try {
-      // Check if trip exists locally first
       final tripExists = _trips.any((trip) => trip.id == tripId);
       if (!tripExists) {
         _setError('Trip not found');
         return false;
       }
 
-      // For local trips, always proceed with deletion
       if (tripId.startsWith('local_')) {
+        // Local trips don't need server deletion
       } else {
-        // Try to delete from server for non-local trips
         try {
           await _apiService.deleteTrip(tripId);
         } catch (e) {
-          // For network errors or 404, we'll still proceed with local deletion
+          // Handle specific non-blocking errors
           if (e.toString().contains('404') ||
               e.toString().contains('Failed to fetch') ||
               e.toString().contains('ClientException')) {
+            // Proceed anyway
           } else {
-            // For other server errors, fail the deletion
-            _setError(
-              'Failed to delete trip from server. Please check your connection and try again.',
-            );
+            _setError('Failed to delete trip from server.');
             return false;
           }
         }
       }
 
-      // Proceed with deletion - Remove from Firestore only
+      // Remove from local list and Firestore
       _trips.removeWhere((trip) => trip.id == tripId);
-
-      // Delete from Firebase
       try {
         await _firebaseService.deleteTrip(tripId);
       } catch (e) {
-        //
+        // Log or handle error if needed
       }
 
       if (_currentTrip?.id == tripId) {
@@ -165,13 +172,13 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Set current trip
+  /// Set the [trip] as the current active trip in the UI.
   void setCurrentTrip(TripModel trip) {
     _currentTrip = trip;
     notifyListeners();
   }
 
-  /// Get trip by ID
+  /// Locate a trip in the local state by its unique [tripId].
   TripModel? getTripById(String tripId) {
     try {
       return _trips.firstWhere((trip) => trip.id == tripId);
@@ -180,7 +187,7 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Update an activity in a specific trip
+  /// Update an individual activity within a trip and sync with Firestore.
   Future<bool> updateActivityInTrip(
     String tripId,
     ActivityModel updatedActivity,
@@ -205,14 +212,12 @@ class TripPlanningProvider extends ChangeNotifier {
       final updatedActivities = List<ActivityModel>.from(trip.activities);
       updatedActivities[activityIndex] = updatedActivity;
 
-      // Create updated trip with new activities
       final updatedTrip = trip.copyWith(activities: updatedActivities);
       _trips[tripIndex] = updatedTrip;
 
       // Save to Firestore
       await _firebaseService.saveTrip(updatedTrip);
 
-      // Update current trip if it's the same
       if (_currentTrip?.id == tripId) {
         _currentTrip = updatedTrip;
       }
@@ -225,7 +230,7 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Sync trip budget status with expense data
+  /// Integrate the trip's budget with external expense data via [BudgetSyncService].
   Future<TripModel?> syncTripBudgetStatus(String tripId) async {
     try {
       final trip = getTripById(tripId);
@@ -234,16 +239,13 @@ class TripPlanningProvider extends ChangeNotifier {
         return null;
       }
 
-      // Use budget sync service to update trip budget
       final syncedTrip = await _budgetSyncService.syncTripBudgetStatus(trip);
 
-      // Update the trip in the list
       final tripIndex = _trips.indexWhere((t) => t.id == tripId);
       if (tripIndex != -1) {
         _trips[tripIndex] = syncedTrip;
         await _firebaseService.saveTrip(syncedTrip);
 
-        // Update current trip if it's the same
         if (_currentTrip?.id == tripId) {
           _currentTrip = syncedTrip;
         }
@@ -258,7 +260,7 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Create expense from activity and sync budget
+  /// Create a tracked expense linked to a specific activity and update budget status.
   Future<bool> createExpenseFromActivity({
     required ActivityModel activity,
     required TripModel trip,
@@ -274,9 +276,7 @@ class TripPlanningProvider extends ChangeNotifier {
         tripProvider: this,
       );
 
-      // Sync the trip budget status after creating expense
       await syncTripBudgetStatus(trip.id!);
-
       return true;
     } catch (e) {
       _setError('Failed to create expense from activity: $e');
@@ -284,7 +284,7 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Get budget status for a trip
+  /// Fetch the current budget utilization and status for a trip.
   Future<Map<String, dynamic>?> getTripBudgetStatus(String tripId) async {
     try {
       final trip = getTripById(tripId);
@@ -299,7 +299,7 @@ class TripPlanningProvider extends ChangeNotifier {
     }
   }
 
-  /// Search trips
+  /// Filter the loaded trips by name, destination, or description.
   List<TripModel> searchTrips(String query) {
     if (query.isEmpty) return _trips;
 

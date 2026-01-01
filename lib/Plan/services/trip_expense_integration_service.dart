@@ -4,7 +4,11 @@ import '../models/activity_models.dart';
 import '../../Expense/providers/expense_provider.dart';
 import '../../Expense/models/expense_models.dart';
 
-/// Service to integrate trip planning with expense management
+/// Service to integrate trip planning with expense management.
+///
+/// bridges the [TripModel] and [ExpenseProvider] to offer unified financial
+/// tracking for trips. It handles creating expenses from activities and
+/// calculating shared budget statistics.
 class TripExpenseIntegrationService {
   static final TripExpenseIntegrationService _instance =
       TripExpenseIntegrationService._internal();
@@ -15,7 +19,7 @@ class TripExpenseIntegrationService {
   final Map<String, List<String>> _tripExpenseMap = {};
   final Map<String, List<String>> _activityExpenseMap = {};
 
-  /// Set the expense provider reference
+  /// Set the expense provider reference for loose coupling.
   void setExpenseProvider(ExpenseProvider provider) {
     _expenseProvider = provider;
 
@@ -23,21 +27,24 @@ class TripExpenseIntegrationService {
     _ensureExpenseProviderAuth();
   }
 
-  /// Ensure expense provider has proper authentication
+  /// Ensure expense provider has proper authentication.
   void _ensureExpenseProviderAuth() {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null && _expenseProvider != null) {
         // The expense service should auto-initialize auth, but let's make sure
       } else {
-        // 
+        //
       }
     } catch (e) {
       //
     }
   }
 
-  /// Create expense from activity cost
+  /// Create a tracked expense from activity cost information.
+  ///
+  /// Uses the budget's actual cost if available, otherwise estimated cost.
+  /// Returns true if the expense was successfully created.
   Future<bool> syncActivityExpense(ActivityModel activity) async {
     if (_expenseProvider == null || activity.budget == null) {
       return false;
@@ -51,7 +58,6 @@ class TripExpenseIntegrationService {
     }
 
     try {
-
       final expense = await _expenseProvider!.createExpenseFromActivity(
         amount: amount,
         category: activity.activityType.value,
@@ -61,7 +67,6 @@ class TripExpenseIntegrationService {
         activityId: activity.id ?? '',
         tripId: activity.tripId ?? '',
       );
-
 
       if (expense != null && activity.id != null) {
         // Track activity-expense mapping
@@ -93,7 +98,9 @@ class TripExpenseIntegrationService {
     }
   }
 
-  /// Get total expenses for a trip
+  /// Get total expenses for a specific trip.
+  ///
+  /// Filters the global expense list for items related to [tripId].
   Future<double> getTripTotalExpenses(String tripId) async {
     if (_expenseProvider == null) return 0.0;
 
@@ -109,7 +116,7 @@ class TripExpenseIntegrationService {
     return total;
   }
 
-  /// Get expense breakdown by category for a trip
+  /// Get expense breakdown by category for a trip.
   Future<Map<ExpenseCategory, double>> getTripExpensesByCategory(
     String tripId,
   ) async {
@@ -128,7 +135,9 @@ class TripExpenseIntegrationService {
     return breakdown;
   }
 
-  /// Calculate budget vs actual spending for trip
+  /// Calculate budget vs actual spending summary for a trip.
+  ///
+  /// Combines trip budget info with calculated expense totals.
   Future<TripBudgetSummary> getTripBudgetSummary(TripModel trip) async {
     final String tripId = trip.id ?? '';
     final totalExpenses = await getTripTotalExpenses(tripId);
@@ -151,7 +160,7 @@ class TripExpenseIntegrationService {
     );
   }
 
-  /// Get activities with their expense status for calendar
+  /// Get flattened list of activities with expense status for calendar display.
   List<CalendarActivityInfo> getActivitiesForCalendar(List<TripModel> trips) {
     final List<CalendarActivityInfo> activities = [];
 
@@ -184,7 +193,9 @@ class TripExpenseIntegrationService {
     return activities;
   }
 
-  /// Get statistics data for analytics screen
+  /// Get aggregate statistics data for analytics screen.
+  ///
+  /// Analyzes all provided [trips] to generate a summary report.
   Future<TripStatistics> getTripStatistics(List<TripModel> trips) async {
     double totalBudget = 0.0;
     double totalSpent = 0.0;
@@ -240,14 +251,14 @@ class TripExpenseIntegrationService {
     return trip.startDate.isBefore(now) && trip.endDate.isAfter(now);
   }
 
-  /// Clear cached data
+  /// Clear cached data.
   void clearCache() {
     _tripExpenseMap.clear();
     _activityExpenseMap.clear();
   }
 }
 
-/// Model for trip budget summary
+/// Model for trip budget summary data.
 class TripBudgetSummary {
   final String tripId;
   final String tripName;
@@ -274,7 +285,7 @@ class TripBudgetSummary {
   });
 }
 
-/// Model for calendar activity info
+/// Model for calendar activity info display.
 class CalendarActivityInfo {
   final String id;
   final String title;
@@ -303,7 +314,7 @@ class CalendarActivityInfo {
   });
 }
 
-/// Model for trip statistics
+/// Model for aggregate trip statistics.
 class TripStatistics {
   final int totalTrips;
   final int activeTrips;

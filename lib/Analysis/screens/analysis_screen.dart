@@ -29,6 +29,12 @@ class StatusColors {
   });
 }
 
+/// Comprehensive dashboard for visualizing and analyzing trip expenses and activity timelines.
+///
+/// Provides multiple views:
+/// - Activity View: A calendar-based itinerary showing scheduled events and statuses.
+/// - Statistic View: Visual breakdown of spending by category, subcategory, and trends.
+/// Supports filtering by specific trips (private or shared) and time periods.
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
 
@@ -66,6 +72,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Get ALL trips from both private and collaboration providers for analysis
   /// This ensures tags show the correct source for each activity regardless of current mode
+  /// Aggregates trips from all sources (private, owned collaboration, and shared-with-me).
+  ///
+  /// This ensures that the analysis features can show a complete picture of the
+  /// user's travel history and spending, regardless of the active application mode.
   List<TripModel> _getTripsForCurrentMode() {
     try {
       final allTrips = <TripModel>[];
@@ -117,7 +127,9 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
       // Check if selected trip still exists, if not clear selection and cleanup
       if (_selectedTripId != null) {
-        final selectedTripExists = allTrips.any((trip) => trip.id == _selectedTripId);
+        final selectedTripExists = allTrips.any(
+          (trip) => trip.id == _selectedTripId,
+        );
         if (!selectedTripExists) {
           // Clear selection and notify listeners
           _selectedTripId = null;
@@ -152,8 +164,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       final collaborationProvider = context.read<CollaborationProvider>();
 
       return tripProvider.trips.isNotEmpty ||
-             collaborationProvider.mySharedTrips.isNotEmpty ||
-             collaborationProvider.sharedWithMeTrips.isNotEmpty;
+          collaborationProvider.mySharedTrips.isNotEmpty ||
+          collaborationProvider.sharedWithMeTrips.isNotEmpty;
     } catch (e) {
       return false;
     }
@@ -220,8 +232,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           );
           // Keep _selectedTripId as null to show "All Trip" by default
           if (tripProvider.trips.isEmpty) {
-          } else {
-          }
+          } else {}
         }
 
         // IMPORTANT: Only load data AFTER trip selection is done
@@ -251,12 +262,16 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       if (!mounted) return;
 
       // Always initialize both providers for analysis to show all trips
-      final appModeProvider = Provider.of<AppModeProvider>(context, listen: false);
+      final appModeProvider = Provider.of<AppModeProvider>(
+        context,
+        listen: false,
+      );
 
       if (appModeProvider.isCollaborationMode) {
         // In collaboration mode, initialize collaboration provider first
         final collaborationProvider = context.read<CollaborationProvider>();
-        if (!collaborationProvider.hasSharedTrips && !collaborationProvider.isLoading) {
+        if (!collaborationProvider.hasSharedTrips &&
+            !collaborationProvider.isLoading) {
           await collaborationProvider.initialize();
         }
       } else {
@@ -289,7 +304,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     final startDate = DateTime(currentDate.year, currentDate.month, 1);
     final endDate = DateTime(currentDate.year, currentDate.month + 1, 0);
 
-
     // Fetch data with trip-specific filtering where applicable
     await Future.wait([
       expenseProvider.fetchExpenses(
@@ -309,7 +323,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     try {
       if (!mounted) return;
 
-      final appModeProvider = Provider.of<AppModeProvider>(context, listen: false);
+      final appModeProvider = Provider.of<AppModeProvider>(
+        context,
+        listen: false,
+      );
 
       if (appModeProvider.isCollaborationMode) {
         // In collaboration mode, refresh collaboration provider
@@ -325,7 +342,6 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               throw Exception('Collaboration loading timed out');
             },
           );
-
         } catch (timeoutError) {
           // Show a subtle error message
           if (mounted) {
@@ -376,18 +392,18 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           if (tripProvider.trips.isNotEmpty) {
             // Don't auto-select - let user choose
           } else {
-          // Show a subtle error message
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Unable to load collaboration trips. Showing all expenses.',
+            // Show a subtle error message
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Unable to load collaboration trips. Showing all expenses.',
+                  ),
+                  backgroundColor: Colors.orange[700],
+                  duration: const Duration(seconds: 2),
                 ),
-                backgroundColor: Colors.orange[700],
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
+              );
+            }
           }
         }
       }
@@ -397,6 +413,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
   }
 
   /// Enhanced cleanup for expenses associated with deleted trips
+  /// Identifies and cleans up expenses that no longer have a valid parent trip.
+  ///
+  /// This occurs when a trip is deleted but its expense records remain in the system.
+  /// It manually checks both the trip reference ID and the description metadata.
   Future<void> _cleanupOrphanedExpenses(List<TripModel> validTrips) async {
     if (_expenseProvider == null || !mounted) return;
 
@@ -513,7 +533,10 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     if (_expenseProvider == null || !mounted) return;
 
     try {
-      final appModeProvider = Provider.of<AppModeProvider>(context, listen: false);
+      final appModeProvider = Provider.of<AppModeProvider>(
+        context,
+        listen: false,
+      );
 
       if (appModeProvider.isCollaborationMode) {
         // In collaboration mode, refresh collaboration provider
@@ -575,9 +598,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
           return Scaffold(
             backgroundColor: AppColors.background,
             body: const SafeArea(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: Center(child: CircularProgressIndicator()),
             ),
           );
         }
@@ -867,10 +888,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                   Expanded(
                     flex: 2,
                     child: Transform.translate(
-                      offset: const Offset(
-                        0,
-                        -50,
-                      ), // Move pie chart up 20px
+                      offset: const Offset(0, -50), // Move pie chart up 20px
                       child: _buildPieChart(),
                     ),
                   ),
@@ -901,44 +919,48 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Month selector with arrows and trip filter
   Widget _buildMonthSelector() {
-    return Consumer4<TripPlanningProvider, ExpenseProvider, AppModeProvider, CollaborationProvider>(
-      builder: (context, tripProvider, expenseProvider, appModeProvider, collaborationProvider, child) {
-        // Ensure collaboration provider is initialized in collaboration mode
-        if (appModeProvider.isCollaborationMode && !collaborationProvider.hasSharedTrips && !collaborationProvider.isLoading) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            collaborationProvider.ensureInitialized();
-          });
-          // Return loading state while initializing
-          return Container(
-            padding: const EdgeInsets.all(16),
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
+    return Consumer4<
+      TripPlanningProvider,
+      ExpenseProvider,
+      AppModeProvider,
+      CollaborationProvider
+    >(
+      builder:
+          (
+            context,
+            tripProvider,
+            expenseProvider,
+            appModeProvider,
+            collaborationProvider,
+            child,
+          ) {
+            // Ensure collaboration provider is initialized in collaboration mode
+            if (appModeProvider.isCollaborationMode &&
+                !collaborationProvider.hasSharedTrips &&
+                !collaborationProvider.isLoading) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                collaborationProvider.ensureInitialized();
+              });
+              // Return loading state while initializing
+              return Container(
+                padding: const EdgeInsets.all(16),
+                child: const Center(child: CircularProgressIndicator()),
+              );
+            }
 
-        // Get trips based on current mode
-        final trips = _getTripsForCurrentMode();
-        final modeLabel = appModeProvider.isCollaborationMode ? ' (Collab)' : '';
-        
-        return Column(
-          children: [
-            // Trip Filter Row - DropdownButtonFormField2
-            DropdownButtonHideUnderline(
-              child: DropdownButton2<String?>(
-                isExpanded: true,
-                hint: Text(
-                  'All Trips$modeLabel',
-                  style: TextStyle(
-                    fontFamily: 'Urbanist-Regular',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                items: [
-                  // "All Trips" option
-                  DropdownItem<String?>(
-                    value: null,
-                    child: Text(
+            // Get trips based on current mode
+            final trips = _getTripsForCurrentMode();
+            final modeLabel = appModeProvider.isCollaborationMode
+                ? ' (Collab)'
+                : '';
+
+            return Column(
+              children: [
+                // Trip Filter Row - DropdownButtonFormField2
+                DropdownButtonHideUnderline(
+                  child: DropdownButton2<String?>(
+                    isExpanded: true,
+                    hint: Text(
                       'All Trips$modeLabel',
                       style: TextStyle(
                         fontFamily: 'Urbanist-Regular',
@@ -947,686 +969,755 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                         color: Colors.grey[800],
                       ),
                     ),
-                  ),
-                  // Individual trips from current mode
-                  ...trips.map((trip) {
-                    // Determine trip tag (P for Private, C for Collaboration, S for Shared)
-                    String tag;
-                    final collaborationProvider = context.read<CollaborationProvider>();
-
-                    // Check if this trip is in the shared trips list (someone shared with me)
-                    final isSharedTrip = collaborationProvider.sharedWithMeTrips.any(
-                      (sharedTrip) => sharedTrip.id == trip.id,
-                    );
-
-                    if (isSharedTrip) {
-                      tag = '(S)'; // Shared trip
-                    } else {
-                      // Check if this trip is in my owned trips list
-                      final isOwnedCollabTrip = collaborationProvider.mySharedTrips.any(
-                        (ownedTrip) => ownedTrip.id == trip.id,
-                      );
-
-                      if (isOwnedCollabTrip) {
-                        tag = '(C)'; // Owned collaboration trip
-                      } else {
-                        tag = '(P)'; // Private trip
-                      }
-                    }
-
-                    return DropdownItem<String?>(
-                      value: trip.id,
-                      child: Text(
-                        '${trip.name} $tag',
-                        style: TextStyle(
-                          fontFamily: 'Urbanist-Regular',
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                    items: [
+                      // "All Trips" option
+                      DropdownItem<String?>(
+                        value: null,
+                        child: Text(
+                          'All Trips$modeLabel',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    );
-                  }),
-                ],
-                valueListenable: _selectedTripNotifier,
-                onChanged: (String? newValue) async {
-                  if (newValue != _selectedTripId) {
-                    setState(() {
-                      _isTripSelectionLoading = true;
-                      _selectedTripId = newValue;
-                      _selectedTripNotifier.value = newValue;
-                    });
+                      // Individual trips from current mode
+                      ...trips.map((trip) {
+                        // Determine trip tag (P for Private, C for Collaboration, S for Shared)
+                        String tag;
+                        final collaborationProvider = context
+                            .read<CollaborationProvider>();
 
-                    try {
-                      // Ensure collaboration provider is initialized first
-                      final collaborationProvider = context.read<CollaborationProvider>();
-                      if (!collaborationProvider.hasSharedTrips) {
-                        await collaborationProvider.ensureInitialized();
-                      }
+                        // Check if this trip is in the shared trips list (someone shared with me)
+                        final isSharedTrip = collaborationProvider
+                            .sharedWithMeTrips
+                            .any((sharedTrip) => sharedTrip.id == trip.id);
 
-                      // Small delay to ensure UI updates before heavy data loading
-                      await Future.delayed(const Duration(milliseconds: 100));
+                        if (isSharedTrip) {
+                          tag = '(S)'; // Shared trip
+                        } else {
+                          // Check if this trip is in my owned trips list
+                          final isOwnedCollabTrip = collaborationProvider
+                              .mySharedTrips
+                              .any((ownedTrip) => ownedTrip.id == trip.id);
 
-                      await _forceRefreshAllData();
+                          if (isOwnedCollabTrip) {
+                            tag = '(C)'; // Owned collaboration trip
+                          } else {
+                            tag = '(P)'; // Private trip
+                          }
+                        }
 
-                      // Additional delay to ensure data is properly loaded
-                      await Future.delayed(const Duration(milliseconds: 200));
-
-                    } catch (e) {
-                      // Show error but don't crash
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error loading trip data: $e'),
-                            backgroundColor: Colors.red,
-                            duration: const Duration(seconds: 2),
+                        return DropdownItem<String?>(
+                          value: trip.id,
+                          child: Text(
+                            '${trip.name} $tag',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         );
-                      }
-                    } finally {
-                      if (mounted) {
+                      }),
+                    ],
+                    valueListenable: _selectedTripNotifier,
+                    onChanged: (String? newValue) async {
+                      if (newValue != _selectedTripId) {
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
                         setState(() {
-                          _isTripSelectionLoading = false;
+                          _isTripSelectionLoading = true;
+                          _selectedTripId = newValue;
+                          _selectedTripNotifier.value = newValue;
                         });
+
+                        try {
+                          // Ensure collaboration provider is initialized first
+                          final collaborationProvider = context
+                              .read<CollaborationProvider>();
+                          if (!collaborationProvider.hasSharedTrips) {
+                            await collaborationProvider.ensureInitialized();
+                          }
+
+                          // Small delay to ensure UI updates before heavy data loading
+                          await Future.delayed(
+                            const Duration(milliseconds: 100),
+                          );
+
+                          await _forceRefreshAllData();
+
+                          // Additional delay to ensure data is properly loaded
+                          await Future.delayed(
+                            const Duration(milliseconds: 200),
+                          );
+                        } catch (e) {
+                          // Show error but don't crash
+                          if (mounted) {
+                            scaffoldMessenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Error loading trip data: $e'),
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isTripSelectionLoading = false;
+                            });
+                          }
+                        }
                       }
-                    }
-                  }
-                },
-                selectedItemBuilder: (context) {
-                  return [
-                    Text(
-                      'All Trips$modeLabel',
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    ...trips.map((trip) {
-                      return Text(
-                        trip.name,
-                        style: TextStyle(
-                          fontFamily: 'Urbanist-Regular',
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                    },
+                    selectedItemBuilder: (context) {
+                      return [
+                        Text(
+                          'All Trips$modeLabel',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      );
-                    }),
-                  ];
-                },
-                buttonStyleData: ButtonStyleData(
-                  height: 50,
-                  padding: const EdgeInsets.only(left: 16, right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                ),
-                iconStyleData: IconStyleData(
-                  icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
-                  iconSize: 24,
-                ),
-                dropdownStyleData: DropdownStyleData(
-                  maxHeight: 150, // 3 items * ~50px per item = 150px
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 15,
-                        offset: const Offset(0, 6),
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  scrollbarTheme: ScrollbarThemeData(
-                    thickness: WidgetStateProperty.all(0),
-                    thumbVisibility: WidgetStateProperty.all(false),
-                  ),
-                ),
-                menuItemStyleData: const MenuItemStyleData(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Month Selector Row
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _changeMonth(-1),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(Icons.chevron_left, color: Colors.grey[700]),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showYearPicker(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                        ...trips.map((trip) {
+                          return Text(
+                            trip.name,
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        }),
+                      ];
+                    },
+                    buttonStyleData: ButtonStyleData(
+                      height: 50,
+                      padding: const EdgeInsets.only(left: 16, right: 8),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border: Border.all(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                             spreadRadius: 1,
                           ),
                         ],
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: Colors.grey[700],
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${_months[_currentMonthIndex]}/$_currentYear',
-                            style: TextStyle(
-                              fontFamily: 'Urbanist-Regular',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    ),
+                    iconStyleData: IconStyleData(
+                      icon: Icon(
+                        Icons.arrow_drop_down,
+                        color: Colors.grey[600],
+                      ),
+                      iconSize: 24,
+                    ),
+                    dropdownStyleData: DropdownStyleData(
+                      maxHeight: 150, // 3 items * ~50px per item = 150px
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
+                      scrollbarTheme: ScrollbarThemeData(
+                        thickness: WidgetStateProperty.all(0),
+                        thumbVisibility: WidgetStateProperty.all(false),
+                      ),
+                    ),
+                    menuItemStyleData: const MenuItemStyleData(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
 
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _changeMonth(1),
-                  child: AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(Icons.chevron_right, color: Colors.grey[700]),
+                // Month Selector Row
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _changeMonth(-1),
+                      child: AnimatedScale(
+                        scale: 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.chevron_left,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _showYearPicker(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 16,
+                                color: Colors.grey[700],
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${_months[_currentMonthIndex]}/$_currentYear',
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _changeMonth(1),
+                      child: AnimatedScale(
+                        scale: 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.chevron_right,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-        );
-      },
+            );
+          },
     );
   }
 
   /// Calendar view with trip status colors (for scrollable version)
   Widget _buildCalendarViewScrollable() {
-    return Consumer4<TripPlanningProvider, CollaborationProvider, AppModeProvider, ExpenseProvider>(
-      builder: (context, tripProvider, collaborationProvider, appModeProvider, expenseProvider, child) {
-        // Use the same trip source as the rest of the analysis screen
-        final trips = _getTripsForCurrentMode();
+    return Consumer4<
+      TripPlanningProvider,
+      CollaborationProvider,
+      AppModeProvider,
+      ExpenseProvider
+    >(
+      builder:
+          (
+            context,
+            tripProvider,
+            collaborationProvider,
+            appModeProvider,
+            expenseProvider,
+            child,
+          ) {
+            // Use the same trip source as the rest of the analysis screen
+            final trips = _getTripsForCurrentMode();
 
-        // Calculate the first day of the current month
-        final currentMonthDate = DateTime(
-          _currentYear,
-          _currentMonthIndex + 1,
-          1,
-        );
-        final firstDayOfMonth =
-            currentMonthDate.weekday % 7; // Adjust for Sunday start
-        final daysInMonth = DateTime(
-          _currentYear,
-          _currentMonthIndex + 2,
-          0,
-        ).day;
+            // Calculate the first day of the current month
+            final currentMonthDate = DateTime(
+              _currentYear,
+              _currentMonthIndex + 1,
+              1,
+            );
+            final firstDayOfMonth =
+                currentMonthDate.weekday % 7; // Adjust for Sunday start
+            final daysInMonth = DateTime(
+              _currentYear,
+              _currentMonthIndex + 2,
+              0,
+            ).day;
 
-        return Column(
-          children: [
-            // Weekday headers
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-                ),
-              ),
-              child: Row(
-                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-                    .map(
-                      (day) => Expanded(
-                        child: Center(
-                          child: Text(
-                            day,
-                            style: TextStyle(
-                              fontFamily: 'Urbanist-Regular',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-
-            // Calendar grid - takes remaining space in SizedBox
-            Expanded(
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  childAspectRatio: 1,
-                ),
-                itemCount: 42, // 6 weeks to ensure full month display
-                itemBuilder: (context, index) {
-                  final dayOffset = index - firstDayOfMonth + 1;
-
-                  // Skip days outside current month
-                  if (dayOffset < 1 || dayOffset > daysInMonth) {
-                    return Container();
-                  }
-
-                  final currentDate = DateTime(
-                    _currentYear,
-                    _currentMonthIndex + 1,
-                    dayOffset,
-                  );
-                  final isSelected = expenseProvider.selectedDay == dayOffset;
-
-                  // Get trip status for this date using the correct trips
-                  final tripStatus = _getTripStatusForDate(
-                    trips,
-                    currentDate,
-                  );
-                  final statusColors = _getStatusColors(tripStatus);
-
-                  return GestureDetector(
-                    onTap: () => _onDayTap(dayOffset),
-                    child: Container(
-                      margin: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.orange[100]
-                            : statusColors.backgroundColor,
-                        borderRadius: BorderRadius.circular(8),
-                        border: statusColors.borderColor != null
-                            ? Border.all(
-                                color: statusColors.borderColor!,
-                                width: 2,
-                              )
-                            : null,
-                      ),
-                      child: Stack(
-                        children: [
-                          Center(
-                            child: Text(
-                              '$dayOffset',
-                              style: TextStyle(
-                                fontFamily: 'Urbanist-Regular',
-                                fontSize: 14,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                color: isSelected
-                                    ? Colors.orange[800]
-                                    : statusColors.textColor,
-                              ),
-                            ),
-                          ),
-                          // Status indicator dot
-                          if (tripStatus != TripDateStatus.none)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: statusColors.indicatorColor,
-                                  shape: BoxShape.circle,
+            return Column(
+              children: [
+                // Weekday headers
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+                    ),
+                  ),
+                  child: Row(
+                    children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                        .map(
+                          (day) => Expanded(
+                            child: Center(
+                              child: Text(
+                                day,
+                                style: TextStyle(
+                                  fontFamily: 'Urbanist-Regular',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+
+                // Calendar grid - takes remaining space in SizedBox
+                Expanded(
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          childAspectRatio: 1,
+                        ),
+                    itemCount: 42, // 6 weeks to ensure full month display
+                    itemBuilder: (context, index) {
+                      final dayOffset = index - firstDayOfMonth + 1;
+
+                      // Skip days outside current month
+                      if (dayOffset < 1 || dayOffset > daysInMonth) {
+                        return Container();
+                      }
+
+                      final currentDate = DateTime(
+                        _currentYear,
+                        _currentMonthIndex + 1,
+                        dayOffset,
+                      );
+                      final isSelected =
+                          expenseProvider.selectedDay == dayOffset;
+
+                      // Get trip status for this date using the correct trips
+                      final tripStatus = _getTripStatusForDate(
+                        trips,
+                        currentDate,
+                      );
+                      final statusColors = _getStatusColors(tripStatus);
+
+                      return GestureDetector(
+                        onTap: () => _onDayTap(dayOffset),
+                        child: Container(
+                          margin: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.orange[100]
+                                : statusColors.backgroundColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: statusColors.borderColor != null
+                                ? Border.all(
+                                    color: statusColors.borderColor!,
+                                    width: 2,
+                                  )
+                                : null,
+                          ),
+                          child: Stack(
+                            children: [
+                              Center(
+                                child: Text(
+                                  '$dayOffset',
+                                  style: TextStyle(
+                                    fontFamily: 'Urbanist-Regular',
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? Colors.orange[800]
+                                        : statusColors.textColor,
+                                  ),
+                                ),
+                              ),
+                              // Status indicator dot
+                              if (tripStatus != TripDateStatus.none)
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: statusColors.indicatorColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
     );
   }
 
   /// Expense list for activities grouped by trip - Enhanced with proper deletion handling
   Widget _buildExpenseList() {
-    return Consumer4<TripPlanningProvider, CollaborationProvider, ExpenseProvider, AppModeProvider>(
-      builder: (context, tripProvider, collaborationProvider, expenseProvider, appModeProvider, child) {
-        if (_expenseProvider == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // In collaboration mode, ensure trips are loaded before displaying
-        if (appModeProvider.isCollaborationMode) {
-          if (!collaborationProvider.hasSharedTrips && !collaborationProvider.isLoading) {
-            // Force initialize collaboration provider
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              collaborationProvider.ensureInitialized();
-            });
-            return const Center(child: CircularProgressIndicator());
-          }
-          // If provider is loading, show loading indicator
-          if (collaborationProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-        }
-
-        return AnimatedBuilder(
-          animation: expenseProvider,
-          builder: (context, child) {
-            if (expenseProvider.isLoading || _isTripSelectionLoading) {
+    return Consumer4<
+      TripPlanningProvider,
+      CollaborationProvider,
+      ExpenseProvider,
+      AppModeProvider
+    >(
+      builder:
+          (
+            context,
+            tripProvider,
+            collaborationProvider,
+            expenseProvider,
+            appModeProvider,
+            child,
+          ) {
+            if (_expenseProvider == null) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (expenseProvider.error != null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Data loading error',
-                      style: TextStyle(
-                        fontFamily: 'Urbanist-Regular',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _loadData,
-                      child: const Text('Try again'),
-                    ),
-                  ],
-                ),
-              );
+            // In collaboration mode, ensure trips are loaded before displaying
+            if (appModeProvider.isCollaborationMode) {
+              if (!collaborationProvider.hasSharedTrips &&
+                  !collaborationProvider.isLoading) {
+                // Force initialize collaboration provider
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  collaborationProvider.ensureInitialized();
+                });
+                return const Center(child: CircularProgressIndicator());
+              }
+              // If provider is loading, show loading indicator
+              if (collaborationProvider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
             }
 
-            final expenses = expenseProvider.expenses;
+            return AnimatedBuilder(
+              animation: expenseProvider,
+              builder: (context, child) {
+                if (expenseProvider.isLoading || _isTripSelectionLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            if (expenses.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 60),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.receipt_long,
-                        size: 48,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No transactions yet',
-                        style: TextStyle(
-                          fontFamily: 'Urbanist-Regular',
-                          fontSize: 16,
-                          color: Colors.grey[600],
+                if (expenseProvider.error != null) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.grey[400],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            // Use the same trip list as the dropdown for consistency
-            final availableTrips = _getTripsForCurrentMode();
-
-            // Group expenses by trip with enhanced filtering - PASS THE CORRECT TRIPS
-            final groupedExpenses = _groupExpensesByTripWithCleanup(
-              expenses,
-              availableTrips, // Use the correct trip list based on mode
-            );
-
-            if (groupedExpenses.isEmpty) {
-              return Center(
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.orange[200]!),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.filter_alt_off,
-                        size: 48,
-                        color: Colors.orange[600],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No matching transactions',
-                        style: TextStyle(
-                          fontFamily: 'Urbanist-Regular',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.orange[800],
+                        const SizedBox(height: 16),
+                        Text(
+                          'Data loading error',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist-Regular',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedTripId != null
-                            ? 'Selected trip has no transactions'
-                            : 'Try changing filters or adding new transactions',
-                        style: TextStyle(
-                          fontFamily: 'Urbanist-Regular',
-                          fontSize: 14,
-                          color: Colors.orange[600],
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: _loadData,
+                          child: const Text('Try again'),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
+                      ],
+                    ),
+                  );
+                }
 
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: groupedExpenses.keys.length,
-              itemBuilder: (context, groupIndex) {
-                final tripName = groupedExpenses.keys.elementAt(groupIndex);
-                final tripExpenses = groupedExpenses[tripName]!;
+                final expenses = expenseProvider.expenses;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Expenses for this trip
-                    ...tripExpenses.map((expense) {
-                      return GestureDetector(
-                        onTap: () => _onExpenseTap(
-                          expense.description.isNotEmpty == true
-                              ? expense.description
-                              : expense.category.displayName,
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: tripName == 'Other Expenses'
-                                ? Colors.grey[50]
-                                : Colors.blue[25],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: tripName == 'Other Expenses'
-                                  ? Colors.grey[200]!
-                                  : Colors.blue[100]!,
+                if (expenses.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.receipt_long,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No transactions yet',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 16,
+                              color: Colors.grey[600],
                             ),
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: _getCategoryColor(
-                                    expense.category,
-                                  ).withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  _getCategoryIcon(expense.category),
-                                  size: 20,
-                                  color: _getCategoryColor(expense.category),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Use the same trip list as the dropdown for consistency
+                final availableTrips = _getTripsForCurrentMode();
+
+                // Group expenses by trip with enhanced filtering - PASS THE CORRECT TRIPS
+                final groupedExpenses = _groupExpensesByTripWithCleanup(
+                  expenses,
+                  availableTrips, // Use the correct trip list based on mode
+                );
+
+                if (groupedExpenses.isEmpty) {
+                  return Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.filter_alt_off,
+                            size: 48,
+                            color: Colors.orange[600],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No matching transactions',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange[800],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _selectedTripId != null
+                                ? 'Selected trip has no transactions'
+                                : 'Try changing filters or adding new transactions',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist-Regular',
+                              fontSize: 14,
+                              color: Colors.orange[600],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: groupedExpenses.keys.length,
+                  itemBuilder: (context, groupIndex) {
+                    final tripName = groupedExpenses.keys.elementAt(groupIndex);
+                    final tripExpenses = groupedExpenses[tripName]!;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Expenses for this trip
+                        ...tripExpenses.map((expense) {
+                          return GestureDetector(
+                            onTap: () => _onExpenseTap(
+                              expense.description.isNotEmpty == true
+                                  ? expense.description
+                                  : expense.category.displayName,
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: tripName == 'Other Expenses'
+                                    ? Colors.grey[50]
+                                    : Colors.blue[25],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: tripName == 'Other Expenses'
+                                      ? Colors.grey[200]!
+                                      : Colors.blue[100]!,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            expense.description.isNotEmpty == true
-                                                ? _extractActivityTitle(
-                                                    expense.description,
-                                                  )
-                                                : expense.category.displayName,
-                                            style: TextStyle(
-                                              fontFamily: 'Urbanist-Regular',
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: _getCategoryColor(
+                                        expense.category,
+                                      ).withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Row(
+                                    child: Icon(
+                                      _getCategoryIcon(expense.category),
+                                      size: 20,
+                                      color: _getCategoryColor(
+                                        expense.category,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Icon(
-                                          Icons.access_time,
-                                          size: 12,
-                                          color: Colors.grey[500],
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                expense
+                                                            .description
+                                                            .isNotEmpty ==
+                                                        true
+                                                    ? _extractActivityTitle(
+                                                        expense.description,
+                                                      )
+                                                    : expense
+                                                          .category
+                                                          .displayName,
+                                                style: TextStyle(
+                                                  fontFamily:
+                                                      'Urbanist-Regular',
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          _formatExpenseDate(
-                                            expense.expenseDate,
-                                          ),
-                                          style: TextStyle(
-                                            fontFamily: 'Urbanist-Regular',
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                        if (_extractTripFromDescription(
-                                              expense.description,
-                                            ) !=
-                                            null) ...[
-                                          const SizedBox(width: 12),
-                                          Icon(
-                                            Icons.location_on,
-                                            size: 12,
-                                            color: Colors.blue[500],
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              _extractTripFromDescription(
-                                                expense.description,
-                                              )!,
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 12,
+                                              color: Colors.grey[500],
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _formatExpenseDate(
+                                                expense.expenseDate,
+                                              ),
                                               style: TextStyle(
                                                 fontFamily: 'Urbanist-Regular',
                                                 fontSize: 12,
-                                                color: Colors.blue[600],
+                                                color: Colors.grey[600],
                                               ),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
                                             ),
-                                          ),
-                                        ],
+                                            if (_extractTripFromDescription(
+                                                  expense.description,
+                                                ) !=
+                                                null) ...[
+                                              const SizedBox(width: 12),
+                                              Icon(
+                                                Icons.location_on,
+                                                size: 12,
+                                                color: Colors.blue[500],
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  _extractTripFromDescription(
+                                                    expense.description,
+                                                  )!,
+                                                  style: TextStyle(
+                                                    fontFamily:
+                                                        'Urbanist-Regular',
+                                                    fontSize: 12,
+                                                    color: Colors.blue[600],
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '-${_formatMoney(expense.amount)}₫',
-                                    style: TextStyle(
-                                      fontFamily: 'Urbanist-Regular',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.red[700],
-                                    ),
                                   ),
-                                  // Trip source badge below price (only show in All Trips mode)
-                                  if (tripName != 'Other Expenses' && _selectedTripId == null) ...[
-                                    const SizedBox(height: 4),
-                                    _buildTripSourceBadge(tripName),
-                                  ],
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '-${_formatMoney(expense.amount)}₫',
+                                        style: TextStyle(
+                                          fontFamily: 'Urbanist-Regular',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.red[700],
+                                        ),
+                                      ),
+                                      // Trip source badge below price (only show in All Trips mode)
+                                      if (tripName != 'Other Expenses' &&
+                                          _selectedTripId == null) ...[
+                                        const SizedBox(height: 4),
+                                        _buildTripSourceBadge(tripName),
+                                      ],
+                                    ],
+                                  ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
+                            ),
+                          );
+                        }),
 
-                    const SizedBox(height: 16),
-                  ],
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  },
                 );
               },
             );
           },
-        );
-      },
     );
   }
 
@@ -1699,8 +1790,8 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       if (expense.tripId != null && validTripIds.contains(expense.tripId)) {
         final matchingTrip = availableTrips.firstWhere(
           (trip) => trip.id == expense.tripId,
-          orElse: () =>
-              availableTrips.first, // This should not happen due to filtering above
+          orElse: () => availableTrips
+              .first, // This should not happen due to filtering above
         );
 
         // Add tag to identify trip source (P for Private, C for Collaboration, S for Shared)
@@ -1770,11 +1861,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
               }
             }
 
-            tripName = '${matchingTrip.name} (${matchingTrip.destination}) [$tag]';
+            tripName =
+                '${matchingTrip.name} (${matchingTrip.destination}) [$tag]';
             associatedTripId = matchingTrip.id;
           } else {
-            tripName =
-                tripIdFromDesc; // Keep trip ID as name if no trip found
+            tripName = tripIdFromDesc; // Keep trip ID as name if no trip found
           }
         }
       }
@@ -2923,98 +3014,121 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
   /// Build compact budget status for calendar view
   Widget _buildBudgetStatus() {
-    return Consumer4<TripPlanningProvider, CollaborationProvider, ExpenseProvider, AppModeProvider>(
-      builder: (context, tripProvider, collaborationProvider, expenseProvider, appModeProvider, child) {
-        if (_selectedTripId == null) return Container();
+    return Consumer4<
+      TripPlanningProvider,
+      CollaborationProvider,
+      ExpenseProvider,
+      AppModeProvider
+    >(
+      builder:
+          (
+            context,
+            tripProvider,
+            collaborationProvider,
+            expenseProvider,
+            appModeProvider,
+            child,
+          ) {
+            if (_selectedTripId == null) return Container();
 
-        // Get the correct trip based on mode
-        final availableTrips = _getTripsForCurrentMode();
-        final selectedTrip = availableTrips.firstWhere(
-          (trip) => trip.id == _selectedTripId,
-          orElse: () => availableTrips.isNotEmpty ? availableTrips.first : TripModel(
-            id: 'dummy',
-            name: 'Unknown Trip',
-            destination: 'Unknown',
-            startDate: DateTime.now(),
-            endDate: DateTime.now(),
-          ),
-        );
+            // Get the correct trip based on mode
+            final availableTrips = _getTripsForCurrentMode();
+            final selectedTrip = availableTrips.firstWhere(
+              (trip) => trip.id == _selectedTripId,
+              orElse: () => availableTrips.isNotEmpty
+                  ? availableTrips.first
+                  : TripModel(
+                      id: 'dummy',
+                      name: 'Unknown Trip',
+                      destination: 'Unknown',
+                      startDate: DateTime.now(),
+                      endDate: DateTime.now(),
+                    ),
+            );
 
-        // Calculate actual spent from current expenses for this specific trip AND current month
-        double actualSpent = expenseProvider.expenses
-            .where((expense) {
-              // Filter by trip ID
-              if (expense.tripId != _selectedTripId) return false;
+            // Calculate actual spent from current expenses for this specific trip AND current month
+            double actualSpent = expenseProvider.expenses
+                .where((expense) {
+                  // Filter by trip ID
+                  if (expense.tripId != _selectedTripId) return false;
 
-              // Filter by current month and year
-              final expenseMonth = expense.expenseDate.month;
-              final expenseYear = expense.expenseDate.year;
-              final isCurrentMonth =
-                  expenseMonth == (_currentMonthIndex + 1) &&
-                  expenseYear == _currentYear;
+                  // Filter by current month and year
+                  final expenseMonth = expense.expenseDate.month;
+                  final expenseYear = expense.expenseDate.year;
+                  final isCurrentMonth =
+                      expenseMonth == (_currentMonthIndex + 1) &&
+                      expenseYear == _currentYear;
 
-              return isCurrentMonth;
-            })
-            .fold(0.0, (sum, expense) => sum + expense.amount);
+                  return isCurrentMonth;
+                })
+                .fold(0.0, (sum, expense) => sum + expense.amount);
 
-        final totalBudget = selectedTrip.budget?.estimatedCost ?? 0.0;
-        final remaining = totalBudget - actualSpent;
+            final totalBudget = selectedTrip.budget?.estimatedCost ?? 0.0;
+            final remaining = totalBudget - actualSpent;
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.skyBlue.withValues(alpha: 0.9),
-                AppColors.steelBlue.withValues(alpha: 0.8),
-                AppColors.dodgerBlue.withValues(alpha: 0.7),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Budget metrics row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildCompactBudgetMetric('Total', totalBudget, Colors.white),
-                  Container(
-                    width: 1,
-                    height: 20,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  _buildCompactBudgetMetric('Spent', actualSpent, Colors.white),
-                  Container(
-                    width: 1,
-                    height: 20,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  _buildCompactBudgetMetric(
-                    'Remaining',
-                    remaining,
-                    Colors.white,
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.skyBlue.withValues(alpha: 0.9),
+                    AppColors.steelBlue.withValues(alpha: 0.8),
+                    AppColors.dodgerBlue.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
+              child: Column(
+                children: [
+                  // Budget metrics row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildCompactBudgetMetric(
+                        'Total',
+                        totalBudget,
+                        Colors.white,
+                      ),
+                      Container(
+                        width: 1,
+                        height: 20,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                      _buildCompactBudgetMetric(
+                        'Spent',
+                        actualSpent,
+                        Colors.white,
+                      ),
+                      Container(
+                        width: 1,
+                        height: 20,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                      _buildCompactBudgetMetric(
+                        'Remaining',
+                        remaining,
+                        Colors.white,
+                      ),
+                    ],
+                  ),
 
-              const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-              // Budget usage progress bar
-              _buildBudgetUsageBar(totalBudget, actualSpent),
-            ],
-          ),
-        );
-      },
+                  // Budget usage progress bar
+                  _buildBudgetUsageBar(totalBudget, actualSpent),
+                ],
+              ),
+            );
+          },
     );
   }
 
@@ -3023,7 +3137,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     // Determine if amount is negative for special formatting
     final isNegative = amount < 0;
     final displayAmount = isNegative ? amount.abs() : amount;
-    
+
     return Column(
       children: [
         Text(
@@ -3054,7 +3168,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
     final percentage = totalBudget > 0
         ? (actualSpent / totalBudget * 100)
         : 0.0;
-    
+
     // Determine if over budget
     final isOverBudget = percentage > 100;
     final displayPercentage = percentage.clamp(0, 100);
@@ -3205,10 +3319,7 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Text(
         tag,
@@ -3475,7 +3586,10 @@ class _BudgetCreationDialogState extends State<_BudgetCreationDialog> {
           : null;
 
       // Get expense provider
-      final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+      final expenseProvider = Provider.of<ExpenseProvider>(
+        context,
+        listen: false,
+      );
 
       // Create budget through expense provider
       final success = await expenseProvider.createBudget(

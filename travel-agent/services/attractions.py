@@ -6,6 +6,9 @@ from langchain.tools import tool
 class AttractionFinder:
     """
     Finds attractions and activities using the Geoapify Places API.
+
+    This service searches for tourist attractions based on a destination and user preferences like 'culture',
+    'adventure', etc. It also estimates attraction costs.
     """
     API_URL = "https://api.geoapify.com/v2/places"
     GEOCODE_URL = "https://api.geoapify.com/v1/geocode/search"
@@ -21,7 +24,11 @@ class AttractionFinder:
             activity_preferences (List[str]): List of activity types (e.g., 'culture', 'art').
 
         Returns:
-            List[Dict[str, Any]]: A list of attractions, each as a dictionary with name, address, and category.
+            List[Dict[str, Any]]: A list of attractions, each as a dictionary with 'name', 'address', and 'category'.
+
+        Raises:
+            ValueError: If the API key is missing or coordinates cannot be found.
+            requests.exceptions.RequestException: If the API request fails.
         """
         api_key = os.getenv("GEOAPIFY_API_KEY")
         if not api_key:
@@ -42,7 +49,19 @@ class AttractionFinder:
 
     @staticmethod
     def _get_coordinates(destination: str, api_key: str) -> Dict[str, float] | None:
-        """Helper to get the coordinates for a destination."""
+        """
+        Retrieves the coordinates for a destination using Geoapify Geocoding API.
+
+        Args:
+            destination (str): The place name to geocode.
+            api_key (str): Geoapify API Key.
+
+        Returns:
+            Dict[str, float] | None: Dictionary with 'lat' and 'lon', or None if not found.
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails.
+        """
         params = {"text": destination, "apiKey": api_key, "limit": 1}
         response = requests.get(AttractionFinder.GEOCODE_URL, params=params, timeout=10)
         response.raise_for_status()
@@ -54,7 +73,15 @@ class AttractionFinder:
 
     @staticmethod
     def _map_preferences_to_categories(preferences: List[str]) -> List[str]:
-        """Maps user's high-level preferences to specific Geoapify categories."""
+        """
+        Maps user's high-level preferences to specific Geoapify categories.
+
+        Args:
+            preferences (List[str]): User preferences like 'culture', 'nature'.
+
+        Returns:
+            List[str]: A list of Geoapify category strings (e.g., 'entertainment.culture.theatre').
+        """
         category_map = {
             "culture": ["entertainment.culture.theatre", "entertainment.culture.arts_centre", "entertainment.culture.gallery"],
             "adventure": ["natural.forest", "natural.mountain.peak", "entertainment.theme_park"],
@@ -75,7 +102,15 @@ class AttractionFinder:
 
     @staticmethod
     def _process_attractions(data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Processes the raw API response into a clean list of attractions."""
+        """
+        Processes the raw API response into a clean list of attractions.
+
+        Args:
+            data (Dict[str, Any]): Raw JSON response from Places API.
+
+        Returns:
+            List[Dict[str, Any]]: List of simplified attraction objects.
+        """
         attractions = []
         for feature in data.get("features", []):
             props = feature.get("properties", {})
@@ -92,6 +127,8 @@ class AttractionFinder:
         """
         Estimate average attractions cost using Tavily search.
 
+        Attempts to find ticket prices via web search and estimates total cost.
+
         Args:
           destination (str): City or country.
           group_size (int): Number of people.
@@ -99,6 +136,9 @@ class AttractionFinder:
 
         Returns:
           float: Estimated total attractions cost.
+
+        Raises:
+            ValueError: If Tavily API Key is missing or search fails.
         """
         try:
             from tavily import TavilyClient  # type: ignore

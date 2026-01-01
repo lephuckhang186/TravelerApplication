@@ -334,7 +334,7 @@ class TestCompleteTrip(unittest.TestCase):
 
 class TestDataFlow(unittest.TestCase):
     """Test data flow between services"""
-    
+
     def test_query_to_state_data_flow(self):
         """Test data flow from query analysis to workflow state"""
         # QueryAnalyzer output
@@ -344,18 +344,18 @@ class TestDataFlow(unittest.TestCase):
             days="5",
             missing_fields=[]
         )
-        
+
         # Convert to WorkflowState
         state = WorkflowState(
             destination=query_output.destination,
             budget=query_output.budget,
             days=query_output.days
         )
-        
+
         # Verify data preservation
         self.assertEqual(state.destination, query_output.destination)
         self.assertEqual(state.budget, query_output.budget)
-    
+
     def test_hotel_data_flow(self):
         """Test hotel data flow"""
         # Hotel info objects
@@ -365,15 +365,160 @@ class TestDataFlow(unittest.TestCase):
             "review_count": 500,
             "rating": 4.8
         }
-        
+
         hotel = HotelInfo(**hotel_data)
-        
+
         # Add to workflow state
         state = WorkflowState(hotels=[hotel.dict()])
-        
+
         # Retrieve and verify
         self.assertEqual(state.hotels[0]["name"], "Grand Hotel")
         self.assertEqual(state.hotels[0]["price_per_night"], 150.0)
+
+
+class TestCompleteWorkflowIntegration(unittest.TestCase):
+    """Test complete end-to-end workflows that actually exercise the system"""
+
+    def test_full_trip_planning_workflow_with_realistic_data(self):
+        """Test complete workflow with realistic, challenging data"""
+        # Phase 1: Complex query analysis
+        query_result = QueryAnalysisResult(
+            destination="Paris, France",
+            budget="2500.75",  # Decimal budget
+            days="7",  # Week-long trip
+            group_size="3",  # Small family
+            activity_preferences="culture,museums,food,wine,walking",
+            accommodation_type="boutique hotel",
+            dietary_restrictions="vegetarian,no shellfish",
+            transportation_preferences="metro,walking,taxi",
+            missing_fields=[]
+        )
+
+        # Phase 2: Create comprehensive workflow state
+        state = WorkflowState(
+            destination=query_result.destination,
+            budget=query_result.budget,
+            days=query_result.days,
+            group_size=query_result.group_size,
+            activity_preferences=query_result.activity_preferences,
+            accommodation_type=query_result.accommodation_type,
+            dietary_restrictions=query_result.dietary_restrictions,
+            transportation_preferences=query_result.transportation_preferences
+        )
+
+        # Phase 3: Add realistic hotel options with varying prices
+        hotels = [
+            HotelInfo(name="Budget Hotel", price_per_night=85.0, review_count=120, rating=3.8),
+            HotelInfo(name="Mid-Range Hotel", price_per_night=145.0, review_count=350, rating=4.2),
+            HotelInfo(name="Luxury Boutique", price_per_night=280.0, review_count=180, rating=4.7),
+            HotelInfo(name="Hostel Option", price_per_night=45.0, review_count=450, rating=4.0)
+        ]
+        state.hotels = [h.dict() for h in hotels]
+
+        # Phase 4: Calculate budget breakdown with realistic constraints
+        try:
+            budget = float(query_result.budget)
+            days = int(query_result.days)
+            group_size = int(query_result.group_size)
+
+            # Allocate budget: 40% accommodation, 30% food, 20% activities, 10% transport
+            accommodation_budget = budget * 0.40
+            food_budget = budget * 0.30
+            activities_budget = budget * 0.20
+            transport_budget = budget * 0.10
+
+            # Calculate per person per day costs
+            daily_accommodation = accommodation_budget / days / group_size
+            daily_food = food_budget / days / group_size
+            daily_activities = activities_budget / days / group_size
+            daily_transport = transport_budget / days / group_size
+
+            # Verify budget allocation adds up
+            total_allocated = accommodation_budget + food_budget + activities_budget + transport_budget
+            self.assertAlmostEqual(total_allocated, budget, places=2)
+
+            # Phase 5: Select appropriate hotel based on budget
+            affordable_hotels = [h for h in hotels if h.price_per_night <= daily_accommodation * 1.5]
+            self.assertGreater(len(affordable_hotels), 0)
+
+            # Phase 6: Create detailed itinerary
+            itinerary = {}
+            for day in range(1, days + 1):
+                itinerary[f"day{day}"] = {
+                    "morning": "Breakfast at hotel",
+                    "midday": f"Visit museums and cultural sites (Budget: €{daily_activities:.2f})",
+                    "afternoon": f"Walking tour and local exploration",
+                    "evening": f"Dinner at vegetarian restaurant (Budget: €{daily_food:.2f})"
+                }
+            state.itinerary = itinerary
+
+            # Phase 7: Add conversation history
+            state.messages = [
+                {"role": "user", "content": "Plan a 7-day trip to Paris for 3 people with €2500 budget"},
+                {"role": "assistant", "content": "I'll create a comprehensive plan for your Paris trip."},
+                {"role": "user", "content": "Make sure to include vegetarian options"},
+                {"role": "assistant", "content": "I've included vegetarian-friendly dining options."}
+            ]
+
+            # Phase 8: Final verification - ensure data consistency
+            self.assertEqual(state.destination, "Paris, France")
+            self.assertEqual(len(state.hotels), 4)
+            self.assertEqual(len(state.itinerary), 7)
+            self.assertEqual(len(state.messages), 4)
+            self.assertIsNotNone(state.activity_preferences)
+            self.assertIsNotNone(state.dietary_restrictions)
+
+        except ValueError as e:
+            self.fail(f"Budget calculation failed: {e}")
+
+    def test_large_scale_trip_planning(self):
+        """Test planning for large groups with complex requirements"""
+        # Test with large group and complex preferences
+        query_result = QueryAnalysisResult(
+            destination="Tokyo",
+            budget="50000",  # Large budget
+            days="14",       # Two weeks
+            group_size="12", # Large group
+            activity_preferences="culture,technology,food,shopping,nightlife,adventure,outdoor",
+            accommodation_type="hotel chain",
+            missing_fields=[]
+        )
+
+        state = WorkflowState(**query_result.dict())
+
+        # Calculate group budget allocation
+        budget = float(query_result.budget)
+        days = int(query_result.days)
+        group_size = int(query_result.group_size)
+
+        # Per person per day budget
+        per_person_daily = budget / days / group_size
+        self.assertGreater(per_person_daily, 200)  # Should be substantial
+
+        # Add many hotel options
+        hotels = []
+        for i in range(50):  # Many hotel options
+            hotel = HotelInfo(
+                name=f"Tokyo Hotel Chain {i}",
+                price_per_night=150.0 + (i * 5),  # Varying prices
+                review_count=200 + i,
+                rating=3.5 + (i % 20) * 0.1  # Varying ratings
+            )
+            hotels.append(hotel)
+
+        state.hotels = [h.dict() for h in hotels]
+
+        # Filter hotels by budget and rating
+        affordable_hotels = [h for h in hotels if h.price_per_night <= per_person_daily]
+        high_rated_hotels = [h for h in hotels if h.rating >= 4.0]
+
+        self.assertGreater(len(affordable_hotels), 10)
+        self.assertGreater(len(high_rated_hotels), 10)
+
+        # Verify large-scale data handling
+        self.assertEqual(len(state.hotels), 50)
+        self.assertEqual(state.group_size, "12")
+        self.assertGreater(len(state.activity_preferences.split(",")), 5)
 
 
 if __name__ == '__main__':

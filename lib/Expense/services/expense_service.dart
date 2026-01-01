@@ -5,16 +5,24 @@ import '../../Core/network/exceptions.dart';
 import '../../Core/config/api_config.dart';
 import '../models/expense_models.dart';
 
-/// Service class for managing expense-related API calls
+/// Service class for managing expense-related API calls.
+///
+/// Handles CRUD operations for expenses, trips, budgets, and statistics
+/// by communicating with the backend API.
+/// Includes automatic token management and error handling.
 class ExpenseService {
   final ApiClient _apiClient;
 
+  /// Creates an [ExpenseService] instance.
+  ///
+  /// Optionally accepts an [ApiClient] for testing.
+  /// Initializes authentication upon creation.
   ExpenseService({ApiClient? apiClient})
     : _apiClient = apiClient ?? ApiClient() {
     _initializeAuth();
   }
 
-  /// Initialize authentication
+  /// Initializes authentication token from the current Firebase user.
   Future<void> _initializeAuth() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -22,16 +30,17 @@ class ExpenseService {
         final token = await user.getIdToken();
         if (token != null) {
           _apiClient.setAuthToken(token);
-        } else {
-        }
-      } else {
-      }
+        } else {}
+      } else {}
     } catch (e) {
       //
     }
   }
 
-  /// Ensure authentication before making API calls
+  /// Ensures a valid authentication token is present before making API calls.
+  ///
+  /// Forces a token refresh to ensure the token is not expired.
+  /// Throws [Exception] if user is not logged in or token cannot be retrieved.
   Future<void> _ensureAuthentication() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -50,7 +59,10 @@ class ExpenseService {
     }
   }
 
-  /// Get current trip
+  /// Retrieves the user's currently active trip.
+  ///
+  /// Returns [Trip] if found, or `null` if no active trip exists (404/No active trip).
+  /// Throws [ExpenseServiceException] for other errors.
   Future<Trip?> getCurrentTrip() async {
     try {
       await _ensureAuthentication();
@@ -69,7 +81,9 @@ class ExpenseService {
     }
   }
 
-  /// Create a new trip
+  /// Creates a new trip.
+  ///
+  /// Returns a map containing the created trip data.
   Future<Map<String, dynamic>> createTrip(Trip trip) async {
     try {
       await _ensureAuthentication();
@@ -83,7 +97,7 @@ class ExpenseService {
     }
   }
 
-  /// Create a budget
+  /// Creates a budget for a trip.
   Future<Map<String, dynamic>> createBudget(Budget budget) async {
     try {
       await _ensureAuthentication();
@@ -97,7 +111,9 @@ class ExpenseService {
     }
   }
 
-  /// Create a new expense
+  /// Creates a new expense record.
+  ///
+  /// Requires a valid [ExpenseCreateRequest].
   Future<Expense> createExpense(ExpenseCreateRequest request) async {
     try {
       // Ensure we have a fresh auth token before making the request
@@ -114,7 +130,11 @@ class ExpenseService {
     }
   }
 
-  /// Convenient method to create expense with basic parameters
+  /// Convenience method to create an expense directly from activity details.
+  ///
+  /// [amount] must be positive.
+  /// [category] should match an [ExpenseCategory] value (defaults to 'activity').
+  /// Description is enhanced with Activity/Trip IDs if provided.
   Future<Expense> createExpenseFromActivity({
     required double amount,
     required String category,
@@ -143,11 +163,13 @@ class ExpenseService {
     );
 
     final createdExpense = await createExpense(request);
-    
+
     return createdExpense;
   }
 
-  /// Get all expenses with optional filters
+  /// Retrieves a list of expenses, optionally filtered.
+  ///
+  /// Filters include [category], date range ([startDate], [endDate]), and [tripId].
   Future<List<Expense>> getExpenses({
     ExpenseCategory? category,
     DateTime? startDate,
@@ -155,7 +177,6 @@ class ExpenseService {
     String? tripId,
   }) async {
     try {
-      
       final queryParams = <String, String>{};
 
       if (category != null) {
@@ -169,8 +190,7 @@ class ExpenseService {
       }
       if (tripId != null) {
         queryParams['planner_id'] = tripId;
-      } else {
-      }
+      } else {}
 
       final response = await _apiClient.get(
         ApiConfig.expensesEndpoint,
@@ -189,7 +209,7 @@ class ExpenseService {
     }
   }
 
-  /// Delete an expense
+  /// Deletes an expense by its ID.
   Future<void> deleteExpense(String expenseId) async {
     try {
       await _ensureAuthentication();
@@ -199,7 +219,9 @@ class ExpenseService {
     }
   }
 
-  /// Get budget status for a specific trip or current trip
+  /// Retrieves the budget status for a specific trip or the current one.
+  ///
+  /// Returns a default "zero" [BudgetStatus] if no budget is found.
   Future<BudgetStatus> getBudgetStatus({String? tripId}) async {
     try {
       await _ensureAuthentication();
@@ -232,7 +254,7 @@ class ExpenseService {
     }
   }
 
-  /// Get category status
+  /// Retrieves status for all expense categories.
   Future<List<CategoryStatus>> getCategoryStatus() async {
     try {
       await _ensureAuthentication();
@@ -251,7 +273,7 @@ class ExpenseService {
     }
   }
 
-  /// Get spending trends
+  /// Retrieves overall spending trends analysis.
   Future<SpendingTrends> getSpendingTrends() async {
     try {
       await _ensureAuthentication();
@@ -262,7 +284,7 @@ class ExpenseService {
     }
   }
 
-  /// Get expense summary
+  /// Retrieves a summary of expenses, optionally for a specific trip.
   Future<ExpenseSummary> getExpenseSummary({String? tripId}) async {
     try {
       await _ensureAuthentication();
@@ -277,7 +299,7 @@ class ExpenseService {
     }
   }
 
-  /// Export expense data
+  /// Exports expense data (e.g., as CSV/PDF URL or raw data).
   Future<Map<String, dynamic>> exportExpenseData() async {
     try {
       await _ensureAuthentication();
@@ -288,17 +310,17 @@ class ExpenseService {
     }
   }
 
-  /// Set authentication token
+  /// Manually sets the authentication token.
   void setAuthToken(String token) {
     _apiClient.setAuthToken(token);
   }
 
-  /// Clear authentication token
+  /// Clears the authentication token.
   void clearAuthToken() {
     _apiClient.clearAuthToken();
   }
 
-  /// Handle and transform exceptions
+  /// Wraps API errors into [ExpenseServiceException].
   Exception _handleException(dynamic exception, String context) {
     if (exception is ApiException) {
       return ExpenseServiceException('$context: ${exception.message}');
@@ -311,13 +333,13 @@ class ExpenseService {
     }
   }
 
-  /// Dispose resources
+  /// Disposes resources (e.g., API client).
   void dispose() {
     _apiClient.dispose();
   }
 }
 
-/// Custom exception for expense service
+/// Custom exception for errors within the Expense Service.
 class ExpenseServiceException implements Exception {
   final String message;
 

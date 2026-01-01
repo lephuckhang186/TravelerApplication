@@ -5,6 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Service for managing local user profile data and session state.
+///
+/// Handles storage of user details (name, email, avatar) using [SharedPreferences]
+/// and local JSON files. Manages login sessions and local authentication.
 class UserService {
   static const String _keyUsername = 'username';
   // static const String _keyPassword = 'password'; // Removed unused field
@@ -12,54 +16,65 @@ class UserService {
   static const String _keyAvatarPath = 'avatarPath';
   static const String _keyEmail = 'email';
   static const String _keyFullName = 'fullName';
-  
+
   // Singleton pattern
   static final UserService _instance = UserService._internal();
+
+  /// Factory constructor for singleton instance.
   factory UserService() => _instance;
+
   UserService._internal();
-  
+
   String? _currentUsername;
   String? _currentAvatarPath;
   String? _currentEmail;
   String? _currentFullName;
   String? _currentPhone;
   String? _currentAddress;
-  
-  // Get current username
+
+  /// Returns the current username, defaulting to 'User' if null.
   String get currentUsername => _currentUsername ?? 'User';
-  
-  // Get user profile information
+
+  /// Retrieves the user's full name from local storage.
   Future<String?> getFullName() async {
     if (_currentFullName != null) return _currentFullName;
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('${_keyFullName}_${_currentUsername ?? 'default'}');
   }
-  
+
+  /// Retrieves the user's email from local storage.
   Future<String?> getEmail() async {
     if (_currentEmail != null) return _currentEmail;
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('${_keyEmail}_${_currentUsername ?? 'default'}');
   }
-  
+
+  /// Retrieves the user's phone number from local storage.
   Future<String?> getPhone() async {
     if (_currentPhone != null) return _currentPhone;
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('phone_${_currentUsername ?? 'default'}');
   }
-  
+
+  /// Retrieves the user's address from local storage.
   Future<String?> getAddress() async {
     if (_currentAddress != null) return _currentAddress;
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('address_${_currentUsername ?? 'default'}');
   }
-  
+
+  /// Retrieves the path to the user's avatar image.
   Future<String?> getAvatarPath() async {
     if (_currentAvatarPath != null) return _currentAvatarPath;
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('${_keyAvatarPath}_${_currentUsername ?? 'default'}');
+    return prefs.getString(
+      '${_keyAvatarPath}_${_currentUsername ?? 'default'}',
+    );
   }
-  
-  // Save user profile information
+
+  /// Saves user profile information to local storage.
+  ///
+  /// Updates only the fields that are provided (non-null).
   Future<void> saveProfile({
     String? fullName,
     String? email,
@@ -69,7 +84,7 @@ class UserService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final userKey = _currentUsername ?? 'default';
-    
+
     if (fullName != null) {
       _currentFullName = fullName;
       await prefs.setString('${_keyFullName}_$userKey', fullName);
@@ -91,46 +106,54 @@ class UserService {
       await prefs.setString('${_keyAvatarPath}_$userKey', avatarPath);
     }
   }
-  
-  // Initialize service
+
+  /// Initializes the service by loading user data from SharedPreferences.
+  ///
+  /// If no user is found in SharedPreferences, attempts to load from the local JSON file.
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _currentUsername = prefs.getString(_keyUsername);
     if (_currentUsername != null) {
-      _currentAvatarPath = prefs.getString('${_keyAvatarPath}_$_currentUsername');
+      _currentAvatarPath = prefs.getString(
+        '${_keyAvatarPath}_$_currentUsername',
+      );
       _currentEmail = prefs.getString('${_keyEmail}_$_currentUsername');
       _currentFullName = prefs.getString('${_keyFullName}_$_currentUsername');
     }
-    
+
     // Also try to load user from JSON if SharedPreferences is empty
     if (_currentUsername == null) {
       await _loadUserFromJson();
     }
   }
-  
-  // Load user from JSON file
+
+  /// Loads user data from the local JSON file.
+  ///
+  /// This is used as a fallback if SharedPreferences data is missing.
+  /// It attempts to restore the last active user session.
   Future<void> _loadUserFromJson() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/users.json');
-      
+
       if (await file.exists()) {
         final jsonString = await file.readAsString();
         if (jsonString.isNotEmpty) {
           final List<dynamic> jsonList = jsonDecode(jsonString);
-          final List<Map<String, dynamic>> users = jsonList.cast<Map<String, dynamic>>();
-          
+          final List<Map<String, dynamic>> users = jsonList
+              .cast<Map<String, dynamic>>();
+
           // If there's at least one user, we can auto-load the last one
           // (In a real app, you'd implement proper session management)
           if (users.isNotEmpty) {
             final lastUser = users.last;
             final username = lastUser['username'] as String;
-            
+
             // Set as current user in SharedPreferences for next login
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(_keyUsername, username);
             _currentUsername = username;
-            
+
             // Load profile data if exists
             _currentAvatarPath = prefs.getString('${_keyAvatarPath}_$username');
             _currentEmail = prefs.getString('${_keyEmail}_$username');
@@ -142,18 +165,20 @@ class UserService {
       // Handle error silently
     }
   }
-  
-  // Register user
+
+  /// Registers a new user locally.
+  ///
+  /// Returns true if registration is successful, false if username already exists.
   Future<bool> register(String username, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Check if username already exists
       final existingPassword = prefs.getString('user_$username');
       if (existingPassword != null) {
         return false; // Username already exists
       }
-      
+
       // Save user credentials
       await prefs.setString('user_$username', password);
       return true;
@@ -161,15 +186,19 @@ class UserService {
       return false;
     }
   }
-  
-  // Login user
+
+  /// Logs in a user using local credentials.
+  ///
+  /// Verifies password hash using [BCrypt].
+  /// On success, loads user profile and performs anonymous Firebase authentication.
   Future<bool> login(String username, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
       // Check credentials
       final savedHashedPassword = prefs.getString('user_$username');
-      if (savedHashedPassword != null && BCrypt.checkpw(password, savedHashedPassword)) {
+      if (savedHashedPassword != null &&
+          BCrypt.checkpw(password, savedHashedPassword)) {
         // Save login state
         await prefs.setString(_keyUsername, username);
         await prefs.setBool(_keyIsLoggedIn, true);
@@ -190,52 +219,47 @@ class UserService {
       return false;
     }
   }
-  
-  // Login user with detailed information about success/failure reason
-  Future<Map<String, dynamic>> loginWithDetails(String username, String password) async {
+
+  /// Logs in a user and returns detailed status information.
+  ///
+  /// Returns a map containing success status and whether the user exists.
+  Future<Map<String, dynamic>> loginWithDetails(
+    String username,
+    String password,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Check if user exists
       final savedHashedPassword = prefs.getString('user_$username');
       if (savedHashedPassword == null) {
-        return {
-          'success': false,
-          'userExists': false,
-        };
+        return {'success': false, 'userExists': false};
       }
-      
+
       // Check password
       if (BCrypt.checkpw(password, savedHashedPassword)) {
         // Save login state
         await prefs.setString(_keyUsername, username);
         await prefs.setBool(_keyIsLoggedIn, true);
         _currentUsername = username;
-        
+
         // Load user profile data
         _currentAvatarPath = prefs.getString('${_keyAvatarPath}_$username');
         _currentEmail = prefs.getString('${_keyEmail}_$username');
         _currentFullName = prefs.getString('${_keyFullName}_$username');
-        
-        return {
-          'success': true,
-          'userExists': true,
-        };
+
+        return {'success': true, 'userExists': true};
       } else {
-        return {
-          'success': false,
-          'userExists': true,
-        };
+        return {'success': false, 'userExists': true};
       }
     } catch (e) {
-      return {
-        'success': false,
-        'userExists': false,
-      };
+      return {'success': false, 'userExists': false};
     }
   }
-  
-  // Logout user
+
+  /// Logs out the current user.
+  ///
+  /// Clears session data from SharedPreferences.
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -249,8 +273,8 @@ class UserService {
       // Handle error silently
     }
   }
-  
-  // Check if user is logged in
+
+  /// Checks if a user is currently logged in.
   Future<bool> isLoggedIn() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -259,34 +283,40 @@ class UserService {
       return false;
     }
   }
-  
-  // Get username for display (fallback to 'User' if not logged in)
+
+  /// Returns the display name for the user.
+  ///
+  /// Returns the username if logged in, or attempts to retrieve it from storage.
+  /// Defaults to 'User'.
   Future<String> getDisplayName() async {
     if (_currentUsername != null) {
       return _currentUsername!;
     }
-    
+
     final prefs = await SharedPreferences.getInstance();
     final username = prefs.getString(_keyUsername);
     if (username != null) {
       _currentUsername = username;
       return username;
     }
-    
+
     return 'User';
   }
-  
-  // Reset password (simplified version - in real app would send email)
+
+  /// Resets the user's password locally.
+  ///
+  /// In a real application, this would involve email verification.
+  /// Here it updates the stored password directly.
   Future<bool> resetPassword(String username, String newPassword) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Check if username exists
       final savedPassword = prefs.getString('user_$username');
       if (savedPassword == null) {
         return false; // Username doesn't exist
       }
-      
+
       // Update password
       await prefs.setString('user_$username', newPassword);
       return true;
@@ -294,8 +324,8 @@ class UserService {
       return false;
     }
   }
-  
-  // Update profile
+
+  /// Updates specific profile fields for the current user.
   Future<bool> updateProfile({
     String? fullName,
     String? email,
@@ -303,51 +333,58 @@ class UserService {
   }) async {
     try {
       if (_currentUsername == null) return false;
-      
+
       final prefs = await SharedPreferences.getInstance();
-      
+
       if (fullName != null) {
         await prefs.setString('${_keyFullName}_$_currentUsername', fullName);
         _currentFullName = fullName;
       }
-      
+
       if (email != null) {
         await prefs.setString('${_keyEmail}_$_currentUsername', email);
         _currentEmail = email;
       }
-      
+
       if (avatarPath != null) {
-        await prefs.setString('${_keyAvatarPath}_$_currentUsername', avatarPath);
+        await prefs.setString(
+          '${_keyAvatarPath}_$_currentUsername',
+          avatarPath,
+        );
         _currentAvatarPath = avatarPath;
       }
-      
+
       return true;
     } catch (e) {
       return false;
     }
   }
-  
-  // Save avatar image to app directory
+
+  /// Saves the user's avatar image to the application documents directory.
+  ///
+  /// Returns the path to the saved image file.
   Future<String?> saveAvatarImage(dynamic imageFile) async {
     try {
       if (_currentUsername == null) return null;
-      
+
       final directory = await getApplicationDocumentsDirectory();
       final avatarDir = Directory('${directory.path}/avatars');
       if (!await avatarDir.exists()) {
         await avatarDir.create(recursive: true);
       }
-      
+
       final fileName = '${_currentUsername}_avatar.jpg';
-      final savedImage = await (imageFile as File).copy('${avatarDir.path}/$fileName');
-      
+      final savedImage = await (imageFile as File).copy(
+        '${avatarDir.path}/$fileName',
+      );
+
       return savedImage.path;
     } catch (e) {
       return null;
     }
   }
-  
-  // Get user profile data
+
+  /// Returns a map of the current user's profile data.
   Map<String, String?> getUserProfile() {
     return {
       'username': _currentUsername,
@@ -356,28 +393,32 @@ class UserService {
       'avatarPath': _currentAvatarPath,
     };
   }
-  
-  // Get avatar path
+
+  /// Returns the current avatar path.
   String? get avatarPath => _currentAvatarPath;
-  
-  // Get email
+
+  /// Returns the current email.
   String? get email => _currentEmail;
-  
-  // Get full name
+
+  /// Returns the current full name.
   String? get fullName => _currentFullName;
-  
-  // Change password
-  Future<bool> changePassword(String currentPassword, String newPassword) async {
+
+  /// Changes the user's password after verifying the current password.
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     try {
       if (_currentUsername == null) return false;
-      
+
       final prefs = await SharedPreferences.getInstance();
       final savedHashedPassword = prefs.getString('user_$_currentUsername');
-      
-      if (savedHashedPassword == null || !BCrypt.checkpw(currentPassword, savedHashedPassword)) {
+
+      if (savedHashedPassword == null ||
+          !BCrypt.checkpw(currentPassword, savedHashedPassword)) {
         return false; // Current password is incorrect
       }
-      
+
       // Hash new password before saving
       final newHashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
       await prefs.setString('user_$_currentUsername', newHashedPassword);
@@ -386,15 +427,19 @@ class UserService {
       return false;
     }
   }
-  
-  // Save user to JSON file
-  Future<bool> saveUserToJson(String username, String passwordHash, String email) async {
+
+  /// Saves or updates user in the local JSON file.
+  Future<bool> saveUserToJson(
+    String username,
+    String passwordHash,
+    String email,
+  ) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/users.json');
-      
+
       List<Map<String, dynamic>> users = [];
-      
+
       // Read existing users if file exists
       if (await file.exists()) {
         final jsonString = await file.readAsString();
@@ -403,33 +448,35 @@ class UserService {
           users = jsonList.cast<Map<String, dynamic>>();
         }
       }
-      
+
       // Check if user already exists and update, otherwise add new
-      final existingUserIndex = users.indexWhere((user) => user['username'] == username);
+      final existingUserIndex = users.indexWhere(
+        (user) => user['username'] == username,
+      );
       final userData = {
         'username': username,
         'passwordHash': passwordHash,
         'email': email,
         'createdAt': DateTime.now().toIso8601String(),
       };
-      
+
       if (existingUserIndex >= 0) {
         users[existingUserIndex] = userData;
       } else {
         users.add(userData);
       }
-      
+
       // Write back to file
       final jsonString = jsonEncode(users);
       await file.writeAsString(jsonString);
-      
+
       return true;
     } catch (e) {
       return false;
     }
   }
-  
-  // Update email in JSON file
+
+  /// Updates the user's email in the local JSON file.
   Future<bool> updateEmailInJson(String username, String email) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
@@ -445,10 +492,13 @@ class UserService {
       }
 
       final List<dynamic> jsonList = jsonDecode(jsonString);
-      final List<Map<String, dynamic>> users = jsonList.cast<Map<String, dynamic>>();
+      final List<Map<String, dynamic>> users = jsonList
+          .cast<Map<String, dynamic>>();
 
       // Find and update user
-      final userIndex = users.indexWhere((user) => user['username'] == username);
+      final userIndex = users.indexWhere(
+        (user) => user['username'] == username,
+      );
       if (userIndex >= 0) {
         users[userIndex]['email'] = email;
         users[userIndex]['updatedAt'] = DateTime.now().toIso8601String();
@@ -466,7 +516,9 @@ class UserService {
     }
   }
 
-  // Authenticate with Firebase anonymously for Firestore access
+  /// Authenticates with Firebase anonymously to allow limited Firestore access.
+  ///
+  /// This is called after local login to ensure the app can read necessary data.
   Future<void> _authenticateWithFirebase() async {
     try {
       // Check if already authenticated
@@ -476,7 +528,6 @@ class UserService {
 
       // Sign in anonymously to get Firebase Auth context
       await FirebaseAuth.instance.signInAnonymously();
-
     } catch (e) {
       // Don't throw error - collaboration features will be limited but app still works
     }

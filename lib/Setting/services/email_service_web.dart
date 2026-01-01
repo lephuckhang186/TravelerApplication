@@ -3,9 +3,13 @@ import 'package:flutter/foundation.dart';
 // ignore: deprecated_member_use
 import 'dart:html' as html;
 
+/// Service for handling user feedback via email, supporting both mobile and web.
+///
+/// Provides platform-specific mechanisms (mailto links for web/mobile) to
+/// facilitate user communication with the TripWise team.
 class EmailService {
   static const String _teamEmail = 'teamtripwise@gmail.com';
-  
+
   /// Gửi feedback qua email - Web compatible version
   static Future<bool> sendFeedbackEmail({
     required int rating,
@@ -25,20 +29,22 @@ class EmailService {
       return false;
     }
   }
-  
+
   /// Mở email trên web platform
   static Future<bool> _openEmailForWeb(
-    int rating, 
-    String category, 
-    String feedback, 
+    int rating,
+    String category,
+    String feedback,
     String? userEmail,
   ) async {
     try {
       final subject = Uri.encodeComponent('📝 Góp ý từ TripWise - $category');
-      final body = Uri.encodeComponent(_buildPlainTextContent(rating, category, feedback, userEmail));
-      
+      final body = Uri.encodeComponent(
+        _buildPlainTextContent(rating, category, feedback, userEmail),
+      );
+
       final mailtoUrl = 'mailto:$_teamEmail?subject=$subject&body=$body';
-      
+
       // Sử dụng window.location.href cho web để tránh popup blocker
       html.window.location.href = mailtoUrl;
       return true;
@@ -47,20 +53,22 @@ class EmailService {
       return await _copyToClipboard(rating, category, feedback, userEmail);
     }
   }
-  
-  /// Mở email trên mobile/desktop platform 
+
+  /// Mở email trên mobile/desktop platform
   static Future<bool> _openEmailForMobile(
-    int rating, 
-    String category, 
-    String feedback, 
+    int rating,
+    String category,
+    String feedback,
     String? userEmail,
   ) async {
     try {
       final subject = Uri.encodeComponent('📝 Góp ý từ TripWise - $category');
-      final body = Uri.encodeComponent(_buildPlainTextContent(rating, category, feedback, userEmail));
-      
+      final body = Uri.encodeComponent(
+        _buildPlainTextContent(rating, category, feedback, userEmail),
+      );
+
       final mailtoUrl = 'mailto:$_teamEmail?subject=$subject&body=$body';
-      
+
       // Trên mobile/desktop sử dụng window.open
       html.window.open(mailtoUrl, '_self');
       return true;
@@ -68,40 +76,41 @@ class EmailService {
       return false;
     }
   }
-  
+
   /// Copy feedback content to clipboard as fallback
   static Future<bool> _copyToClipboard(
-    int rating, 
-    String category, 
-    String feedback, 
+    int rating,
+    String category,
+    String feedback,
     String? userEmail,
   ) async {
     try {
-      final content = '''
+      final content =
+          '''
 Gửi email thủ công đến: $_teamEmail
 
 Subject: 📝 Góp ý từ TripWise - $category
 
 ${_buildPlainTextContent(rating, category, feedback, userEmail)}
       ''';
-      
+
       await html.window.navigator.clipboard?.writeText(content);
       return true;
     } catch (e) {
       return false;
     }
   }
-  
+
   /// Xây dựng nội dung email dạng text thuần
   static String _buildPlainTextContent(
-    int rating, 
-    String category, 
-    String feedback, 
+    int rating,
+    String category,
+    String feedback,
     String? userEmail,
   ) {
     final timestamp = DateTime.now().toLocal().toString().split('.')[0];
     final ratingStars = '⭐' * rating + '☆' * (5 - rating);
-    
+
     return '''🎯 GÓP Ý MỚI TỪ TRIPWISE
 
 📅 Thời gian: $timestamp
@@ -119,7 +128,7 @@ $feedback
 📱 Email này được gửi từ ứng dụng TripWise
 Vui lòng xem xét và phản hồi nếu cần thiết''';
   }
-  
+
   /// Kiểm tra xem có thể gửi email không
   static Future<bool> canSendEmail() async {
     try {
@@ -129,12 +138,12 @@ Vui lòng xem xét và phản hồi nếu cần thiết''';
       return false;
     }
   }
-  
+
   /// Hiển thị thông tin email cho user copy thủ công
   static String getManualEmailInfo(
-    int rating, 
-    String category, 
-    String feedback, 
+    int rating,
+    String category,
+    String feedback,
     String? userEmail,
   ) {
     return '''

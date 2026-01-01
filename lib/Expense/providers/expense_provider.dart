@@ -133,12 +133,13 @@ class ExpenseProvider with ChangeNotifier {
     _setLoading(true);
     try {
       // Create a trip with meaningful default name and destination
-      final tripName = 'Budget Trip ${startDate.day}/${startDate.month}/${startDate.year}';
+      final tripName =
+          'Budget Trip ${startDate.day}/${startDate.month}/${startDate.year}';
       final trip = Trip(
-        startDate: startDate, 
+        startDate: startDate,
         endDate: endDate,
         name: tripName,
-        destination: 'Budget Destination'
+        destination: 'Budget Destination',
       );
       await _expenseService.createTrip(trip);
       _clearError();
@@ -234,10 +235,18 @@ class ExpenseProvider with ChangeNotifier {
         expenseCategory = ExpenseCategory.miscellaneous;
     }
 
+    String enhancedDescription = description;
+    if (activityId != null) {
+      enhancedDescription += ' [Activity: $activityId]';
+    }
+    if (tripId != null) {
+      enhancedDescription += ' [Trip: $tripId]';
+    }
+
     return await createExpense(
       amount,
       expenseCategory,
-      description: description,
+      description: enhancedDescription,
       tripId: tripId,
     );
   }
@@ -266,8 +275,10 @@ class ExpenseProvider with ChangeNotifier {
 
       // Refresh related data
       await Future.wait([
-        fetchBudgetStatus(tripId: tripId), 
-        fetchExpenseSummary(tripId: tripId)
+        fetchBudgetStatus(tripId: tripId),
+        fetchExpenseSummary(tripId: tripId),
+        fetchCategoryStatus(),
+        fetchSpendingTrends(),
       ]);
 
       return newExpense; // Return the expense with budget warning
@@ -292,19 +303,22 @@ class ExpenseProvider with ChangeNotifier {
       _startDate = startDate;
       _endDate = endDate;
 
-      
-      _expenses = await _expenseService.getExpenses(
-        category: category,
-        startDate: startDate,
-        endDate: endDate,
-        tripId: tripId,
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw Exception('Request timed out. Please check your connection.');
-        },
-      );
-      
+      _expenses = await _expenseService
+          .getExpenses(
+            category: category,
+            startDate: startDate,
+            endDate: endDate,
+            tripId: tripId,
+          )
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw Exception(
+                'Request timed out. Please check your connection.',
+              );
+            },
+          );
+
       _clearError();
     } catch (e) {
       _setError(e.toString());
@@ -422,7 +436,6 @@ class ExpenseProvider with ChangeNotifier {
     _setLoading(true);
 
     try {
-      
       // Note: Trip model from expense service doesn't have ID
       // tripId must be passed from calling code
       if (tripId == null) {
@@ -437,7 +450,6 @@ class ExpenseProvider with ChangeNotifier {
         _selectedMonth = _currentTrip!.startDate;
       }
 
-
       // Load all expense data with tripId
       await Future.wait([
         fetchExpenses(
@@ -451,7 +463,6 @@ class ExpenseProvider with ChangeNotifier {
         fetchExpenseSummary(tripId: tripId),
         fetchSpendingTrends(),
       ]);
-      
     } catch (e) {
       _setError('Failed to load data: ${e.toString()}');
     } finally {

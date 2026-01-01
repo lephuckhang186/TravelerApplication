@@ -1,11 +1,12 @@
+/// Configuration class holding all backend API endpoint paths and header logic.
 class ApiConfig {
   // Base URL for the backend API
   static const String baseUrl = 'http://localhost:8000/api/v1';
-  
+
   // Trip planning endpoints
   static const String activitiesEndpoint = '/activities';
   static const String tripBudgetSetupEndpoint = '/activities/trip/budget/setup';
-  
+
   // Expense endpoints
   static const String expensesEndpoint = '/expenses';
   static const String currentTripEndpoint = '/expenses/trip/current';
@@ -17,13 +18,13 @@ class ApiConfig {
   static const String expenseSummaryEndpoint = '/expenses/analytics/summary';
   static const String exportDataEndpoint = '/expenses/export';
   static const String exportExpenseEndpoint = '/expenses/export';
-  
+
   // Request headers
   static Map<String, String> get defaultHeaders => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
-  
+
   // Get headers with authorization token
   static Map<String, String> getAuthHeaders(String? token) => {
     ...defaultHeaders,

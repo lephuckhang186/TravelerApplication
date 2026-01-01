@@ -2,9 +2,13 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// Service for handling geographic routing and navigation logic.
+///
+/// Integrates with free routing providers like OpenRouteService and OSRM to
+/// calculate driving, cycling, and walking directions between coordinates.
+/// Includes a mathematical fallback for curved route generation if APIs are unavailable.
 class MapService {
   // Free Routing APIs:
   // 1. OpenRouteService - Free API key at: https://openrouteservice.org/dev/#/signup (2,000 requests/month)
@@ -116,15 +120,12 @@ class MapService {
                 .toList();
           }
         }
-
       } else if (response.statusCode == 400) {
         // Handle specific error cases
         final errorData = json.decode(response.body);
         if (errorData['error'] != null &&
-            errorData['error']['message'] != null) {
-        }
-      } else {
-      }
+            errorData['error']['message'] != null) {}
+      } else {}
     } catch (e) {
       //
     }
@@ -166,8 +167,7 @@ class MapService {
             return coordinates
                 .map((coord) => LatLng(coord[1], coord[0]))
                 .toList();
-          } else {
-          }
+          } else {}
         }
       } catch (e) {
         continue; // Try next server

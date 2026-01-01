@@ -4,9 +4,18 @@ from typing import Any
 
 class ItineraryBuilder:
     """
-    Builds a day-by-day itinerary for a trip using an LLM, using the full workflow state.
+    Builds a detailed day-by-day itinerary for a trip using an LLM.
+
+    This class leverages a Language Model to generate a structured timeline of activities,
+    transportation details, and descriptions based on the collected trip state.
     """
     def __init__(self):
+        """
+        Initializes the ItineraryBuilder with an LLM and specific prompt templates.
+        
+        Sets up the system prompt to enforce strict formatting rules for the itinerary generation,
+        including requirements for specific times, locations, and Vietnamese descriptions.
+        """
         self.llm = get_llm()
         system_prompt = (
             "You are a travel assistant. Generate a detailed day-by-day itinerary with SPECIFIC TIMES, LOCATIONS and DESCRIPTIONS.\\n\\n"
@@ -62,10 +71,11 @@ Generate the itinerary in the timeline format specified above.
         Generates a detailed, day-by-day itinerary using an LLM, given the full workflow state.
 
         Args:
-            state: The full workflow state (should be serializable as a dict).
+            state (Any): The full workflow state object or dictionary containing trip details
+                         like destination, dates, and preferences.
 
         Returns:
-            dict: Dictionary with the generated itinerary.
+            dict: A dictionary containing the generated itinerary string under the key 'itinerary'.
         """
         chain = self.prompt | self.llm
         result = chain.invoke({"state": state})

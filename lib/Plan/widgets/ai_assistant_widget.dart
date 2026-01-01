@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+/// A panel widget that provides a floating AI travel assistant.
+///
+/// This widget is typically used in a panel or overlay to allow users to ask
+/// travel-related questions or get suggestions from an AI.
 class AiAssistantPanel extends StatefulWidget {
+  /// Callback triggered when the panel is closed.
   final VoidCallback onClose;
 
   const AiAssistantPanel({super.key, required this.onClose});
@@ -54,6 +59,12 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
     // Don't navigate away, just show the suggestion text
   }
 
+  /// Process and send the user's message to the AI.
+  ///
+  /// Logic:
+  /// 1. Updates UI with user message and loading state.
+  /// 2. Calls the Travel Agent API.
+  /// 3. Updates UI with assistant response or error message.
   Future<void> _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
@@ -92,6 +103,9 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
     }
   }
 
+  /// Checks the status of the AI backend server.
+  ///
+  /// Sets [_isBackendOnline] to true if the server responds with 200 OK.
   Future<void> _checkBackendStatus() async {
     try {
       const String healthUrl = 'http://localhost:5000/health';
@@ -111,6 +125,10 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
     }
   }
 
+  /// Invokes the Travel Agent API with user input and conversation history.
+  ///
+  /// The [userInput] is the latest message, and [history] includes past messages
+  /// to provide context for the AI.
   Future<String> _callTravelAgentAPI(String userInput) async {
     const String apiUrl = 'http://localhost:5000/invoke';
 
@@ -450,11 +468,15 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
     );
   }
 
+  /// Builds the main content area of the panel.
+  ///
+  /// Displays the welcome view and suggestions.
   Widget _buildMainContent() {
     // Always show welcome view with messages below if any
     return _buildWelcomeView();
   }
 
+  /// Builds the top header of the panel with status indicator and controls.
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -549,6 +571,8 @@ class _AiAssistantPanelState extends State<AiAssistantPanel>
     );
   }
 
+  /// Builds the welcome view containing the assistant's introduction and
+  /// a grid of quick suggestion cards to help the user get started.
   Widget _buildWelcomeView() {
     final suggestions = [
       {

@@ -5,13 +5,17 @@ import '../models/notification_models.dart';
 /// Smart Notification Service - Firebase Only
 /// All notifications are stored in Firebase Firestore
 /// No local storage or JSON files are used
+/// Primary service for managing persistent user notifications via Firebase Firestore.
+///
+/// Handles fetching, saving, and updating the read status of notifications.
+/// Includes an automatic cleanup mechanism to maintain a maximum of 100
+/// notifications per trip to optimize performance.
 class SmartNotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<List<SmartNotification>> getNotifications(String tripId) async {
     try {
-      
       final user = _auth.currentUser;
       if (user == null) {
         return [];
@@ -30,16 +34,18 @@ class SmartNotificationService {
       final notifications = querySnapshot.docs
           .map((doc) => SmartNotification.fromFirestore(doc.data(), doc.id))
           .toList();
-          
+
       return notifications;
     } catch (e) {
       return [];
     }
   }
 
-  Future<void> saveNotification(SmartNotification notification, String tripId) async {
+  Future<void> saveNotification(
+    SmartNotification notification,
+    String tripId,
+  ) async {
     try {
-      
       final user = _auth.currentUser;
       if (user == null) {
         return;
@@ -48,7 +54,7 @@ class SmartNotificationService {
       final notificationData = notification.toFirestore();
       notificationData['tripId'] = tripId;
       notificationData['userId'] = user.uid;
-      
+
       await _firestore
           .collection('users')
           .doc(user.uid)
@@ -57,8 +63,7 @@ class SmartNotificationService {
           .collection('notifications')
           .doc(notification.id)
           .set(notificationData);
-          
-      
+
       // Clean up old notifications (keep only last 100)
       await _cleanupOldNotifications(tripId, user.uid);
     } catch (e) {
@@ -79,7 +84,6 @@ class SmartNotificationService {
           .collection('notifications')
           .doc(notificationId)
           .update({'isRead': true});
-          
     } catch (e) {
       //
     }
@@ -103,7 +107,7 @@ class SmartNotificationService {
       for (final doc in querySnapshot.docs) {
         batch.update(doc.reference, {'isRead': true});
       }
-      
+
       await batch.commit();
     } catch (e) {
       //
@@ -123,7 +127,6 @@ class SmartNotificationService {
           .collection('notifications')
           .doc(notificationId)
           .delete();
-          
     } catch (e) {
       //
     }
@@ -147,7 +150,7 @@ class SmartNotificationService {
       for (final doc in querySnapshot.docs) {
         batch.delete(doc.reference);
       }
-      
+
       await batch.commit();
     } catch (e) {
       //
@@ -168,11 +171,11 @@ class SmartNotificationService {
       if (querySnapshot.docs.length > 100) {
         final batch = _firestore.batch();
         final docsToDelete = querySnapshot.docs.skip(100);
-        
+
         for (final doc in docsToDelete) {
           batch.delete(doc.reference);
         }
-        
+
         await batch.commit();
       }
     } catch (e) {

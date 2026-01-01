@@ -1,13 +1,17 @@
 import 'trip_model.dart';
 import 'activity_models.dart';
 
-/// Collaborator model for shared trips
+/// Collaborator model representing a user participating in a shared trip.
+///
+/// Stores user identification, contact info, and their assigned permission role.
 class Collaborator {
   final String id;
   final String userId;
   final String email;
   final String name;
-  final String role; // 'owner', 'editor', or 'viewer'
+
+  /// Assigned role: 'owner', 'editor', or 'viewer'.
+  final String role;
   final DateTime addedAt;
   final bool isActive;
 
@@ -21,9 +25,10 @@ class Collaborator {
     this.isActive = true,
   });
 
+  /// Creates a [Collaborator] from a JSON map, handling Firestore data types.
   factory Collaborator.fromJson(Map<String, dynamic> json) {
     // Helper function to convert Firestore Timestamp/DateTime
-    DateTime _parseDateTime(dynamic value) {
+    DateTime parseDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
       if (value is String) return DateTime.parse(value);
@@ -40,11 +45,12 @@ class Collaborator {
       email: json['email'] ?? '',
       name: json['name'] ?? '',
       role: json['role'] ?? 'viewer',
-      addedAt: _parseDateTime(json['addedAt']),
+      addedAt: parseDateTime(json['addedAt']),
       isActive: json['isActive'] ?? true,
     );
   }
 
+  /// Converts the collaborator to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -57,6 +63,7 @@ class Collaborator {
     };
   }
 
+  /// Creates a copy of the collaborator with modified fields.
   Collaborator copyWith({
     String? id,
     String? userId,
@@ -77,28 +84,46 @@ class Collaborator {
     );
   }
 
+  /// Whether the user is the trip owner.
   bool get isOwner => role == 'owner';
+
+  /// Whether the user has editor permissions.
   bool get isEditor => role == 'editor';
+
+  /// Whether the user has viewer permissions.
   bool get isViewer => role == 'viewer';
 
-  /// Check if user can edit the trip
+  /// Check if user can edit the trip (owner or editor).
   bool get canEdit => isOwner || isEditor;
 
-  /// Check if user can only view the trip
+  /// Check if user can only view the trip.
   bool get canOnlyView => isViewer;
 }
 
-/// Shared trip model that extends regular trip with collaboration features
+/// Shared trip model that extends [TripModel] with collaboration features.
+///
+/// Includes owner information, a list of [Collaborator]s, and real-time syncing status.
 class SharedTripModel extends TripModel {
-  final List<Collaborator> sharedCollaborators; // Renamed to avoid conflict
+  /// List of additional users participating in the trip.
+  final List<Collaborator> sharedCollaborators;
   final String ownerId;
   final String ownerName;
   final String ownerEmail;
+
+  /// Whether the trip supports real-time multi-user updates.
   final bool isRealTimeEnabled;
+
+  /// Timestamp of the most recent activity on this trip.
   final DateTime? lastActivity;
+
+  /// Name or ID of the user who performed the last activity.
   final String? lastActivityBy;
-  final String? shareableLink; // Add shareable link
-  final Map<String, dynamic>? permissions; // userId -> permission level
+
+  /// Public URL for sharing the trip access.
+  final String? shareableLink;
+
+  /// Mapping of userId to permission level for quick lookup.
+  final Map<String, dynamic>? permissions;
 
   SharedTripModel({
     required super.id,
@@ -127,6 +152,7 @@ class SharedTripModel extends TripModel {
     this.permissions,
   });
 
+  /// Upgrades a regular [TripModel] to a [SharedTripModel].
   factory SharedTripModel.fromTripModel(
     TripModel trip, {
     required String ownerId,
@@ -161,13 +187,16 @@ class SharedTripModel extends TripModel {
     );
   }
 
+  /// Creates a [SharedTripModel] from a JSON map.
   factory SharedTripModel.fromJson(Map<String, dynamic> json) {
-    final collaboratorsList = (json['sharedCollaborators'] as List?)
-        ?.map((c) => Collaborator.fromJson(c))
-        .toList() ?? [];
+    final collaboratorsList =
+        (json['sharedCollaborators'] as List?)
+            ?.map((c) => Collaborator.fromJson(c))
+            .toList() ??
+        [];
 
     // Helper function to convert Firestore Timestamp/DateTime
-    DateTime? _parseDateTime(dynamic value) {
+    DateTime? parseDateTime(dynamic value) {
       if (value == null) return null;
       if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
       if (value is String) return DateTime.parse(value);
@@ -182,18 +211,22 @@ class SharedTripModel extends TripModel {
       id: json['id'],
       name: json['name'] ?? '',
       destination: json['destination'] ?? '',
-      startDate: _parseDateTime(json['startDate']) ?? DateTime.now(),
-      endDate: _parseDateTime(json['endDate']) ?? DateTime.now(),
-      activities: (json['activities'] as List?)
-          ?.map((a) => ActivityModel.fromJson(a))
-          .toList() ?? [],
+      startDate: parseDateTime(json['startDate']) ?? DateTime.now(),
+      endDate: parseDateTime(json['endDate']) ?? DateTime.now(),
+      activities:
+          (json['activities'] as List?)
+              ?.map((a) => ActivityModel.fromJson(a))
+              .toList() ??
+          [],
       description: json['description'],
-      budget: json['budget'] != null ? BudgetModel.fromJson(json['budget']) : null,
+      budget: json['budget'] != null
+          ? BudgetModel.fromJson(json['budget'])
+          : null,
       collaborators: List<String>.from(json['collaborators'] ?? []),
       coverImage: json['coverImage'],
       createdBy: json['createdBy'],
-      createdAt: _parseDateTime(json['createdAt']) ?? DateTime.now(),
-      updatedAt: _parseDateTime(json['updatedAt']) ?? DateTime.now(),
+      createdAt: parseDateTime(json['createdAt']) ?? DateTime.now(),
+      updatedAt: parseDateTime(json['updatedAt']) ?? DateTime.now(),
       isActive: json['isActive'] ?? true,
       preferences: json['preferences'] as Map<String, dynamic>?,
       sharedCollaborators: collaboratorsList,
@@ -201,13 +234,14 @@ class SharedTripModel extends TripModel {
       ownerName: json['ownerName'] ?? '',
       ownerEmail: json['ownerEmail'] ?? '',
       isRealTimeEnabled: json['isRealTimeEnabled'] ?? true,
-      lastActivity: _parseDateTime(json['lastActivity']),
+      lastActivity: parseDateTime(json['lastActivity']),
       lastActivityBy: json['lastActivityBy'],
       shareableLink: json['shareableLink'],
       permissions: json['permissions'] as Map<String, dynamic>?,
     );
   }
 
+  /// Converts the shared trip to a JSON map.
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -226,7 +260,9 @@ class SharedTripModel extends TripModel {
       'updatedAt': updatedAt?.millisecondsSinceEpoch,
       'isActive': isActive,
       'preferences': preferences,
-      'sharedCollaborators': sharedCollaborators.map((c) => c.toJson()).toList(),
+      'sharedCollaborators': sharedCollaborators
+          .map((c) => c.toJson())
+          .toList(),
       'ownerId': ownerId,
       'ownerName': ownerName,
       'ownerEmail': ownerEmail,
@@ -238,6 +274,7 @@ class SharedTripModel extends TripModel {
     };
   }
 
+  /// Creates a copy of the shared trip with modified fields.
   @override
   SharedTripModel copyWith({
     String? id,
@@ -293,20 +330,20 @@ class SharedTripModel extends TripModel {
     );
   }
 
-  /// Check if current user is owner
+  /// Check if the specified [userId] is the trip owner.
   bool isOwnerUser(String userId) => ownerId == userId;
 
-  /// Check if user is collaborator
+  /// Check if the specified [userId] is an active collaborator.
   bool isUserCollaborator(String userId) {
     return sharedCollaborators.any((c) => c.userId == userId && c.isActive);
   }
 
-  /// Check if user has access to this trip
+  /// Check if the specified [userId] has access to this trip.
   bool hasUserAccess(String userId) {
     return isOwnerUser(userId) || isUserCollaborator(userId);
   }
 
-  /// Get collaborator by user ID
+  /// Retrieve collaborator details by user ID.
   Collaborator? getCollaboratorByUserId(String userId) {
     try {
       return sharedCollaborators.firstWhere(
@@ -317,27 +354,28 @@ class SharedTripModel extends TripModel {
     }
   }
 
-  /// Check if user can edit this trip
+  /// Check if the specified [userId] can edit this trip.
   bool canUserEdit(String userId) {
     if (isOwnerUser(userId)) return true;
     final collaborator = getCollaboratorByUserId(userId);
     return collaborator?.canEdit ?? false;
   }
 
-  /// Check if user can only view this trip
+  /// Check if the specified [userId] has view-only access.
   bool canUserOnlyView(String userId) {
     if (isOwnerUser(userId)) return false;
     final collaborator = getCollaboratorByUserId(userId);
     return collaborator?.canOnlyView ?? true;
   }
 
-  /// Get all active collaborators (convenience getter)
-  List<Collaborator> get activeCollaborators => sharedCollaborators.where((c) => c.isActive).toList();
+  /// List of all currently active collaborators.
+  List<Collaborator> get activeCollaborators =>
+      sharedCollaborators.where((c) => c.isActive).toList();
 
-  /// Get all collaborators including inactive ones (convenience getter)
+  /// List of all collaborators, including inactive ones.
   List<Collaborator> get allCollaborators => sharedCollaborators;
 
-  /// Convert to regular TripModel
+  /// Downgrades this shared trip to a regular [TripModel].
   TripModel toTripModel() {
     return TripModel(
       id: id,
@@ -359,21 +397,31 @@ class SharedTripModel extends TripModel {
   }
 }
 
-/// Model for invitation
+/// Model for a trip invitation sent to another user via email.
 class TripInvitation {
   final String id;
   final String tripId;
   final String tripName;
+
+  /// User ID of the person who sent the invitation.
   final String inviterUserId;
   final String inviterName;
   final String inviterEmail;
   final String inviteeEmail;
-  final String? inviteeUserId; // null if user doesn't exist yet
-  final String status; // 'pending', 'accepted', 'declined'
+
+  /// User ID of the recipient (null if the recipient doesn't have an account yet).
+  final String? inviteeUserId;
+
+  /// Status: 'pending', 'accepted', 'declined'.
+  final String status;
   final DateTime sentAt;
   final DateTime? respondedAt;
+
+  /// Personal message included in the invitation.
   final String? message;
-  final String permissionLevel; // 'editor' or 'viewer'
+
+  /// Level of permission offered: 'editor' or 'viewer'.
+  final String permissionLevel;
 
   const TripInvitation({
     required this.id,
@@ -388,12 +436,13 @@ class TripInvitation {
     required this.sentAt,
     this.respondedAt,
     this.message,
-    this.permissionLevel = 'editor', // default to editor
+    this.permissionLevel = 'editor',
   });
 
+  /// Creates a [TripInvitation] from a JSON map.
   factory TripInvitation.fromJson(Map<String, dynamic> json) {
     // Helper function to convert Firestore Timestamp/DateTime
-    DateTime? _parseDateTime(dynamic value) {
+    DateTime? parseDateTime(dynamic value) {
       if (value == null) return null;
       if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
       if (value is String) return DateTime.parse(value);
@@ -414,13 +463,14 @@ class TripInvitation {
       inviteeEmail: json['inviteeEmail'] ?? '',
       inviteeUserId: json['inviteeUserId'],
       status: json['status'] ?? 'pending',
-      sentAt: _parseDateTime(json['sentAt']) ?? DateTime.now(),
-      respondedAt: _parseDateTime(json['respondedAt']),
+      sentAt: parseDateTime(json['sentAt']) ?? DateTime.now(),
+      respondedAt: parseDateTime(json['respondedAt']),
       message: json['message'],
       permissionLevel: json['permissionLevel'] ?? 'editor',
     );
   }
 
+  /// Converts the invitation to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -439,6 +489,7 @@ class TripInvitation {
     };
   }
 
+  /// Creates a copy of the invitation with modified fields.
   TripInvitation copyWith({
     String? id,
     String? tripId,
@@ -478,7 +529,7 @@ class TripInvitation {
   bool get isViewer => permissionLevel == 'viewer';
 }
 
-/// Edit Request model for requesting edit access
+/// Edit Request model for requesting editor access to a shared trip.
 class EditRequest {
   final String id;
   final String tripId;
@@ -508,8 +559,9 @@ class EditRequest {
     this.tripTitle,
   });
 
+  /// Creates an [EditRequest] from a JSON map.
   factory EditRequest.fromJson(Map<String, dynamic> json) {
-    DateTime _parseDateTime(dynamic value) {
+    DateTime parseDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
       if (value is String) return DateTime.parse(value);
@@ -527,9 +579,9 @@ class EditRequest {
       requesterEmail: json['requester_email'] ?? json['requesterEmail'] ?? '',
       ownerId: json['owner_id'] ?? json['ownerId'] ?? '',
       status: EditRequestStatus.fromJson(json['status'] ?? 'pending'),
-      requestedAt: _parseDateTime(json['requested_at'] ?? json['requestedAt']),
+      requestedAt: parseDateTime(json['requested_at'] ?? json['requestedAt']),
       respondedAt: json['responded_at'] != null || json['respondedAt'] != null
-          ? _parseDateTime(json['responded_at'] ?? json['respondedAt'])
+          ? parseDateTime(json['responded_at'] ?? json['respondedAt'])
           : null,
       respondedBy: json['responded_by'] ?? json['respondedBy'],
       message: json['message'],
@@ -537,6 +589,7 @@ class EditRequest {
     );
   }
 
+  /// Converts the edit request to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -554,6 +607,7 @@ class EditRequest {
     };
   }
 
+  /// Creates a copy of the edit request with modified fields.
   EditRequest copyWith({
     String? id,
     String? tripId,
@@ -589,7 +643,7 @@ class EditRequest {
   bool get isRejected => status == EditRequestStatus.rejected;
 }
 
-/// Activity Edit Request model for requesting permission to edit specific activities
+/// Model for requesting permission to perform specific changes (add/edit/delete) on an activity.
 class ActivityEditRequest {
   final String id;
   final String tripId;
@@ -597,16 +651,24 @@ class ActivityEditRequest {
   final String requesterName;
   final String requesterEmail;
   final String ownerId;
-  final String requestType; // 'edit_activity', 'add_activity', 'delete_activity'
-  final String? activityId; // ID of the activity being edited/deleted, null for add
-  final Map<String, dynamic>? proposedChanges; // The proposed changes
+
+  /// Type of change: 'edit_activity', 'add_activity', 'delete_activity'.
+  final String requestType;
+
+  /// ID of the activity involved (null for 'add_activity').
+  final String? activityId;
+
+  /// Map containing the modified activity data.
+  final Map<String, dynamic>? proposedChanges;
   final ActivityEditRequestStatus status;
   final DateTime requestedAt;
   final DateTime? respondedAt;
   final String? respondedBy;
   final String? message;
   final String? tripTitle;
-  final String? activityTitle; // Title of the activity for display
+
+  /// Display name of the associated activity.
+  final String? activityTitle;
 
   const ActivityEditRequest({
     required this.id,
@@ -627,8 +689,9 @@ class ActivityEditRequest {
     this.activityTitle,
   });
 
+  /// Creates an [ActivityEditRequest] from a JSON map.
   factory ActivityEditRequest.fromJson(Map<String, dynamic> json) {
-    DateTime _parseDateTime(dynamic value) {
+    DateTime parseDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
       if (value is String) return DateTime.parse(value);
@@ -645,13 +708,16 @@ class ActivityEditRequest {
       requesterName: json['requester_name'] ?? json['requesterName'] ?? '',
       requesterEmail: json['requester_email'] ?? json['requesterEmail'] ?? '',
       ownerId: json['owner_id'] ?? json['ownerId'] ?? '',
-      requestType: json['request_type'] ?? json['requestType'] ?? 'edit_activity',
+      requestType:
+          json['request_type'] ?? json['requestType'] ?? 'edit_activity',
       activityId: json['activity_id'] ?? json['activityId'],
-      proposedChanges: json['proposed_changes'] ?? json['proposedChanges'] as Map<String, dynamic>?,
+      proposedChanges:
+          json['proposed_changes'] ??
+          json['proposedChanges'] as Map<String, dynamic>?,
       status: ActivityEditRequestStatus.fromJson(json['status'] ?? 'pending'),
-      requestedAt: _parseDateTime(json['requested_at'] ?? json['requestedAt']),
+      requestedAt: parseDateTime(json['requested_at'] ?? json['requestedAt']),
       respondedAt: json['responded_at'] != null || json['respondedAt'] != null
-          ? _parseDateTime(json['responded_at'] ?? json['respondedAt'])
+          ? parseDateTime(json['responded_at'] ?? json['respondedAt'])
           : null,
       respondedBy: json['responded_by'] ?? json['respondedBy'],
       message: json['message'],
@@ -660,6 +726,7 @@ class ActivityEditRequest {
     );
   }
 
+  /// Converts the activity edit request to a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -681,6 +748,7 @@ class ActivityEditRequest {
     };
   }
 
+  /// Creates a copy of the activity edit request with modified fields.
   ActivityEditRequest copyWith({
     String? id,
     String? tripId,
@@ -723,6 +791,7 @@ class ActivityEditRequest {
   bool get isApproved => status == ActivityEditRequestStatus.approved;
   bool get isRejected => status == ActivityEditRequestStatus.rejected;
 
+  /// User-friendly name for the request type.
   String get requestTypeDisplay {
     switch (requestType) {
       case 'edit_activity':
@@ -737,14 +806,16 @@ class ActivityEditRequest {
   }
 }
 
-// Activity edit request status enum
+/// Enumeration for activity edit request status.
 enum ActivityEditRequestStatus {
   pending,
   approved,
   rejected;
 
+  /// Used for JSON serialization.
   String toJson() => name;
 
+  /// Converts string to [ActivityEditRequestStatus].
   static ActivityEditRequestStatus fromJson(String json) {
     return ActivityEditRequestStatus.values.firstWhere(
       (e) => e.name == json,
@@ -775,14 +846,16 @@ enum ActivityEditRequestStatus {
   }
 }
 
-// Edit request status enum
+/// Enumeration for edit access request status.
 enum EditRequestStatus {
   pending,
   approved,
   rejected;
 
+  /// Used for JSON serialization.
   String toJson() => name;
 
+  /// Converts string to [EditRequestStatus].
   static EditRequestStatus fromJson(String json) {
     return EditRequestStatus.values.firstWhere(
       (e) => e.name == json,

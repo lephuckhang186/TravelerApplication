@@ -2,9 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/translation_models.dart';
 
+/// Service for translating text between multiple languages and detecting source language.
+///
+/// Uses the MyMemory API for live translations and includes a local rule-based
+/// fallback for language detection and basic common travel phrases.
 class TranslationService {
   static const String _baseUrl = 'https://api.mymemory.translated.net';
-  
+
   // Mock translation for demo - you can integrate with real APIs like Google Translate
   Future<TranslationResult> translateText({
     required String text,
@@ -17,18 +21,20 @@ class TranslationService {
 
     try {
       // Using MyMemory API as a free alternative
-      final response = await http.get(
-        Uri.parse(
-          '$_baseUrl/get?q=${Uri.encodeComponent(text)}&langpair=${sourceLanguage.code}|${targetLanguage.code}'
-        ),
-        headers: {'Accept': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(
+              '$_baseUrl/get?q=${Uri.encodeComponent(text)}&langpair=${sourceLanguage.code}|${targetLanguage.code}',
+            ),
+            headers: {'Accept': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final translatedText = data['responseData']['translatedText'] ?? text;
         final confidence = (data['responseData']['match'] ?? 0.0).toDouble();
-        
+
         return TranslationResult(
           originalText: text,
           translatedText: translatedText,
@@ -68,7 +74,7 @@ class TranslationService {
       } else if (_containsThai(text)) {
         return Language.getByCode('th') ?? Language.supportedLanguages.first;
       }
-      
+
       // Default to English for Latin scripts
       return Language.getByCode('en') ?? Language.supportedLanguages.first;
     } catch (e) {
@@ -95,7 +101,8 @@ class TranslationService {
 
     String translatedText = text;
     if (mockTranslations.containsKey(sourceLanguage.code)) {
-      translatedText = mockTranslations[sourceLanguage.code]![targetLanguage.code] ?? text;
+      translatedText =
+          mockTranslations[sourceLanguage.code]![targetLanguage.code] ?? text;
     }
 
     return TranslationResult(
@@ -121,7 +128,7 @@ class TranslationService {
       'bãi biển': 'beach',
       'núi': 'mountain',
     };
-    
+
     String result = text.toLowerCase();
     translations.forEach((vi, en) {
       result = result.replaceAll(vi, en);
@@ -142,7 +149,7 @@ class TranslationService {
       'beach': 'bãi biển',
       'mountain': 'núi',
     };
-    
+
     String result = text.toLowerCase();
     translations.forEach((en, vi) {
       result = result.replaceAll(en, vi);
@@ -158,7 +165,7 @@ class TranslationService {
       'du lịch': '旅游',
       'khách sạn': '酒店',
     };
-    
+
     String result = text.toLowerCase();
     translations.forEach((vi, zh) {
       result = result.replaceAll(vi, zh);
@@ -174,7 +181,7 @@ class TranslationService {
       'travel': '旅游',
       'hotel': '酒店',
     };
-    
+
     String result = text.toLowerCase();
     translations.forEach((en, zh) {
       result = result.replaceAll(en, zh);
@@ -183,7 +190,9 @@ class TranslationService {
   }
 
   bool _containsVietnamese(String text) {
-    return RegExp(r'[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]').hasMatch(text);
+    return RegExp(
+      r'[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]',
+    ).hasMatch(text);
   }
 
   bool _containsChinese(String text) {

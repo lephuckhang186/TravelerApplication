@@ -8,7 +8,12 @@ import '../services/ai_trip_planner_service.dart';
 import '../models/trip_model.dart';
 import '../models/activity_models.dart';
 
+/// A dialog widget that provides AI assistance for trip planning and modification.
+///
+/// It can be used to create new trip plans from scratch or modify an existing trip plan
+/// based on conversation context with an AI assistant.
 class AiAssistantDialog extends StatefulWidget {
+  /// The trip currently being viewed or edited, if any.
   final TripModel? currentTrip;
 
   const AiAssistantDialog({super.key, this.currentTrip});
@@ -42,7 +47,13 @@ class AiAssistantDialog extends StatefulWidget {
 class _AiAssistantDialogState extends State<AiAssistantDialog> {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController _styleController =
-      TextEditingController(); // Travel style input
+      TextEditingController(); // More information input
+  final TextEditingController _startingLocationController =
+      TextEditingController(); // Starting location input
+  final TextEditingController _departureTimeController =
+      TextEditingController(); // Departure time input
+  final TextEditingController _transportationController =
+      TextEditingController(); // Transportation method input
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
   int _peopleCount = 1;
@@ -60,9 +71,14 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
   void dispose() {
     _controller.dispose();
     _styleController.dispose();
+    _startingLocationController.dispose();
+    _departureTimeController.dispose();
+    _transportationController.dispose();
     super.dispose();
   }
 
+  /// Loads chat history from [SharedPreferences].
+  /// If [currentTrip] is provided, it uses a specific history for that plan.
   Future<void> _loadChatHistories() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -78,12 +94,21 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
     }
   }
 
+  /// Saves the current conversation history to [SharedPreferences].
   Future<void> _saveMessages() async {
     final prefs = await SharedPreferences.getInstance();
     final history = _messages.map((message) => jsonEncode(message)).toList();
     await prefs.setStringList(_currentChat, history);
   }
 
+  /// Process and send the user's message.
+  ///
+  /// Logic flow:
+  /// 1. If it's a comprehensive trip planning request (destination, dates, etc.),
+  ///    route to [_handleTripPlanning].
+  /// 2. If it's a modification request for an existing trip, route to
+  ///    [_handlePlanModificationWithGemini].
+  /// 3. Otherwise, send as a general query to the AI assistant.
   Future<void> _sendMessage() async {
     if (_controller.text.isEmpty) {
       return;
@@ -146,7 +171,10 @@ class _AiAssistantDialogState extends State<AiAssistantDialog> {
     }
   }
 
-  /// Handle trip planning requests
+  /// Handle trip planning requests by analyzing the message and creating a new plan or activities.
+  ///
+  /// If [currentTrip] exists, it builds an enhanced prompt with current destination, dates, etc.,
+  /// to ensure the AI creates relevant activities for the existing trip.
   Future<void> _handleTripPlanning(String userMessage) async {
     try {
       // Show planning in progress
@@ -183,7 +211,6 @@ Current trip information (from Trip Card):
 User request: $userMessage
 
 Please create a detailed plan based on the trip information above and the user's request. Use EXACTLY the trip name, destination, dates, and budget information from the Trip Card above.''';
-
       }
 
       // Use AI Trip Planner Service
@@ -225,7 +252,6 @@ Please create a detailed plan based on the trip information above and the user's
     Map<String, dynamic> planData,
   ) async {
     try {
-
       // First, collect all existing activities to delete
       final List<Map<String, dynamic>> allChanges = [];
 
@@ -352,7 +378,8 @@ Please create a detailed plan based on the trip information above and the user's
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': '❌ An error occurred while adding an activity to the current plan.: $e',
+          'content':
+              '❌ An error occurred while adding an activity to the current plan.: $e',
         });
       });
     }
@@ -434,7 +461,6 @@ Please create a detailed plan based on the trip information above and the user's
     List<Map<String, String>> conversationHistory,
   ) async {
     try {
-
       // Call the backend /edit-plan endpoint with conversation context
       final response = await http.post(
         Uri.parse('http://127.0.0.1:5000/edit-plan'),
@@ -462,7 +488,6 @@ Please create a detailed plan based on the trip information above and the user's
 
           // If Gemini determined it can modify the plan, execute the changes
           if (canModify && actionType != 'none') {
-
             // Create the activity modifications based on Gemini's response
             final List<Map<String, dynamic>> activityChanges = [];
 
@@ -526,7 +551,8 @@ Please create a detailed plan based on the trip information above and the user's
             _messages.add({
               'role': 'assistant',
               'content':
-                  responseData['message'] ?? 'An error occurred while processing the request.',
+                  responseData['message'] ??
+                  'An error occurred while processing the request.',
             });
           });
         }
@@ -542,13 +568,19 @@ Please create a detailed plan based on the trip information above and the user's
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': 'An error occurred while processing the plan editing request.',
+          'content':
+              'An error occurred while processing the plan editing request.',
         });
       });
     }
   }
 
-  /// Detect comprehensive trip planning requests that create new trips
+  /// Detects if the user's message indicates a comprehensive trip planning request.
+  ///
+  /// A comprehensive request typically includes planning keywords and multiple trip parameters
+  /// like duration, budget, or destination.
+  ///
+  /// Returns [true] if the intent is detected.
   bool _isComprehensiveTripPlanning(String message) {
     final lowerMessage = message.toLowerCase();
 
@@ -622,8 +654,6 @@ Please create a detailed plan based on the trip information above and the user's
     // Comprehensive planning requires at least 2 parameters + planning intent
     return paramCount >= 2;
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -942,8 +972,7 @@ Please create a detailed plan based on the trip information above and the user's
             {
               'icon': Icons.flight,
               'text': 'Plan a trip',
-              'query':
-                  'I want to plan a 3-day 2-night trip',
+              'query': 'I want to plan a 3-day 2-night trip',
             },
             {
               'icon': Icons.restaurant,
@@ -1227,15 +1256,96 @@ Please create a detailed plan based on the trip information above and the user's
               ),
             ),
             const SizedBox(height: 16),
-            // Travel style input field
+            // Starting location input field
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _startingLocationController,
+                decoration: InputDecoration(
+                  labelText: 'Starting location (optional)',
+                  hintText:
+                      'Examples: Ho Chi Minh City train station, Tan Son Nhat airport...',
+                  prefixIcon: Icon(Icons.location_on, color: AppColors.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Departure time input field
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _departureTimeController,
+                decoration: InputDecoration(
+                  labelText: 'Departure time (optional)',
+                  hintText:
+                      'Examples: 5:00 AM, morning, afternoon (local time)',
+                  prefixIcon: Icon(Icons.schedule, color: AppColors.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Transportation method input field
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _transportationController,
+                decoration: InputDecoration(
+                  labelText: 'Transportation method (optional)',
+                  hintText: 'Examples: train, bus, flight, car, motorbike...',
+                  prefixIcon: Icon(
+                    Icons.directions_car,
+                    color: AppColors.primary,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // More information input field
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 controller: _styleController,
                 decoration: InputDecoration(
-                  labelText: 'Travel style (optional)',
-                  hintText: 'Examples: lively, meditative, backpacking...',
-                  prefixIcon: Icon(Icons.style, color: AppColors.primary),
+                  labelText: 'More information (optional)',
+                  hintText:
+                      'Examples: romantic, family-friendly, adventurous...',
+                  prefixIcon: Icon(
+                    Icons.info_outline,
+                    color: AppColors.primary,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1409,10 +1519,28 @@ Please create a detailed plan based on the trip information above and the user's
 
     String message = 'Create a plan for $count people';
 
-    // Append travel style if provided
+    // Append starting location if provided
+    final startingLocation = _startingLocationController.text.trim();
+    if (startingLocation.isNotEmpty) {
+      message += ' starting from $startingLocation';
+    }
+
+    // Append departure time if provided
+    final departureTime = _departureTimeController.text.trim();
+    if (departureTime.isNotEmpty) {
+      message += ' at $departureTime';
+    }
+
+    // Append transportation method if provided
+    final transportation = _transportationController.text.trim();
+    if (transportation.isNotEmpty) {
+      message += ' using $transportation';
+    }
+
+    // Append more information if provided
     final style = _styleController.text.trim();
     if (style.isNotEmpty) {
-      message += ' with style $style';
+      message += ' with more information $style';
     }
 
     _controller.text = message;

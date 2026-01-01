@@ -9,7 +9,10 @@ import '../../Core/theme/app_theme.dart';
 import '../../Core/providers/app_mode_provider.dart';
 import '../../Plan/providers/collaboration_provider.dart';
 
-/// Home Screen - Travel & Tourism Dashboard
+/// The primary navigation hub of the application.
+///
+/// Host the bottom navigation bar and manages the transitions between the
+/// [PlanWrapperScreen], [AnalysisScreen], [MapScreen], and [SettingsScreen].
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -42,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final collaborationProvider = context.read<CollaborationProvider>();
       await collaborationProvider.initialize();
     } catch (e) {
-      //      
+      //
     }
   }
 
